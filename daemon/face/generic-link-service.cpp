@@ -85,13 +85,13 @@ GenericLinkService::sendLpPacket(lp::Packet&& pkt, const EndpointId& endpointId)
     checkCongestionLevel(pkt);
   }
 
-  Transport::Packet tp(pkt.wireEncode());
-  if (mtu != MTU_UNLIMITED && tp.packet.size() > static_cast<size_t>(mtu)) {
+  auto block = pkt.wireEncode();
+  if (mtu != MTU_UNLIMITED && block.size() > static_cast<size_t>(mtu)) {
     ++this->nOutOverMtu;
     NFD_LOG_FACE_WARN("attempted to send packet over MTU limit");
     return;
   }
-  this->sendPacket(std::move(tp), endpointId);
+  this->sendPacket(block, endpointId);
 }
 
 void
@@ -276,10 +276,10 @@ GenericLinkService::checkCongestionLevel(lp::Packet& pkt)
 }
 
 void
-GenericLinkService::doReceivePacket(Transport::Packet&& packet)
+GenericLinkService::doReceivePacket(const Block& packet, const EndpointId& endpoint)
 {
   try {
-    lp::Packet pkt(packet.packet);
+    lp::Packet pkt(packet);
 
     if (m_options.reliabilityOptions.isEnabled) {
       m_reliability.processIncomingPacket(pkt);
@@ -299,10 +299,9 @@ GenericLinkService::doReceivePacket(Transport::Packet&& packet)
     bool isReassembled = false;
     Block netPkt;
     lp::Packet firstPkt;
-    std::tie(isReassembled, netPkt, firstPkt) = m_reassembler.receiveFragment(packet.remoteEndpoint,
-                                                                              pkt);
+    std::tie(isReassembled, netPkt, firstPkt) = m_reassembler.receiveFragment(endpoint, pkt);
     if (isReassembled) {
-      this->decodeNetPacket(netPkt, firstPkt, packet.remoteEndpoint);
+      this->decodeNetPacket(netPkt, firstPkt, endpoint);
     }
   }
   catch (const tlv::Error& e) {

@@ -82,13 +82,13 @@ MulticastUdpTransport::getSendQueueLength()
 }
 
 void
-MulticastUdpTransport::doSend(Transport::Packet&& packet)
+MulticastUdpTransport::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  m_sendSocket.async_send_to(boost::asio::buffer(packet.packet), m_multicastGroup,
-                             // packet.packet is copied into the lambda to retain the underlying Buffer
-                             [this, p = packet.packet] (auto&&... args) {
+  m_sendSocket.async_send_to(boost::asio::buffer(packet), m_multicastGroup,
+                             // 'packet' is copied into the lambda to retain the underlying Buffer
+                             [this, packet] (auto&&... args) {
                                this->handleSend(std::forward<decltype(args)>(args)...);
                              });
 }

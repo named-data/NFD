@@ -102,11 +102,11 @@ EthernetTransport::handleNetifStateChange(ndn::net::InterfaceState netifState)
 }
 
 void
-EthernetTransport::doSend(Transport::Packet&& packet)
+EthernetTransport::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  sendPacket(packet.packet);
+  sendPacket(packet);
 }
 
 void
@@ -209,13 +209,13 @@ EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
   }
   m_hasRecentlyReceived = true;
 
-  Transport::Packet tp(std::move(element));
-  static_assert(sizeof(tp.remoteEndpoint) >= ethernet::ADDR_LEN,
-                "Transport::Packet::remoteEndpoint is too small");
+  static_assert(sizeof(EndpointId) >= ethernet::ADDR_LEN, "EndpointId is too small");
+  EndpointId endpoint = 0;
   if (m_destAddress.isMulticast()) {
-    std::memcpy(&tp.remoteEndpoint, sender.data(), sender.size());
+    std::memcpy(&endpoint, sender.data(), sender.size());
   }
-  this->receive(std::move(tp));
+
+  this->receive(element, endpoint);
 }
 
 void

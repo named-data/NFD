@@ -30,7 +30,7 @@ namespace face {
 namespace tests {
 
 void
-DummyLinkService::doSendInterest(const Interest& interest, const EndpointId& endpointId)
+DummyLinkService::doSendInterest(const Interest& interest, const EndpointId&)
 {
   if (m_loggingFlags & LogSentInterests)
     sentInterests.push_back(interest);
@@ -39,7 +39,7 @@ DummyLinkService::doSendInterest(const Interest& interest, const EndpointId& end
 }
 
 void
-DummyLinkService::doSendData(const Data& data, const EndpointId& endpointId)
+DummyLinkService::doSendData(const Data& data, const EndpointId&)
 {
   if (m_loggingFlags & LogSentData)
     sentData.push_back(data);
@@ -48,7 +48,7 @@ DummyLinkService::doSendData(const Data& data, const EndpointId& endpointId)
 }
 
 void
-DummyLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointId)
+DummyLinkService::doSendNack(const lp::Nack& nack, const EndpointId&)
 {
   if (m_loggingFlags & LogSentNacks)
     sentNacks.push_back(nack);
@@ -57,10 +57,10 @@ DummyLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointId)
 }
 
 void
-DummyLinkService::doReceivePacket(Transport::Packet&& packet)
+DummyLinkService::doReceivePacket(const Block& packet, const EndpointId& endpoint)
 {
   if (m_loggingFlags & LogReceivedPackets)
-    receivedPackets.push_back(std::move(packet));
+    receivedPackets.push_back({packet, endpoint});
 }
 
 } // namespace tests

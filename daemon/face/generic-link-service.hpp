@@ -232,7 +232,7 @@ private: // receive path
   /** \brief receive Packet from Transport
    */
   void
-  doReceivePacket(Transport::Packet&& packet) OVERRIDE_WITH_TESTS_ELSE_FINAL;
+  doReceivePacket(const Block& packet, const EndpointId& endpoint) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
   /** \brief decode incoming network-layer packet
    *  \param netPkt reassembled network-layer packet

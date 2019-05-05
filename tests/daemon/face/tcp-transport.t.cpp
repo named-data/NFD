@@ -74,17 +74,17 @@ BOOST_AUTO_TEST_CASE(ChangePersistencyFromPermanentWhenDown)
   TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
   transport->afterStateChange.connectSingleShot(
-    [this] (TransportState oldState, TransportState newState) {
+    [this] (auto oldState, auto newState) {
       BOOST_CHECK_EQUAL(oldState, TransportState::UP);
       BOOST_CHECK_EQUAL(newState, TransportState::DOWN);
-      limitedIo.afterOp();
+      this->limitedIo.afterOp();
     });
   remoteSocket.close();
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   bool didStateChange = false;
   transport->afterStateChange.connectSingleShot(
-    [&didStateChange] (TransportState oldState, TransportState newState) {
+    [&didStateChange] (auto oldState, auto newState) {
       didStateChange = true;
       BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
       BOOST_CHECK_EQUAL(newState, TransportState::FAILED);
@@ -98,7 +98,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnect, T, TcpTransportFixtures, T)
   TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
   this->transport->afterStateChange.connectSingleShot(
-    [this] (TransportState oldState, TransportState newState) {
+    [this] (auto oldState, auto newState) {
       BOOST_CHECK_EQUAL(oldState, TransportState::UP);
       BOOST_CHECK_EQUAL(newState, TransportState::DOWN);
       this->limitedIo.afterOp();
@@ -107,7 +107,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnect, T, TcpTransportFixtures, T)
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   this->transport->afterStateChange.connectSingleShot(
-    [this] (TransportState oldState, TransportState newState) {
+    [this] (auto oldState, auto newState) {
       BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
       BOOST_CHECK_EQUAL(newState, TransportState::UP);
       this->limitedIo.afterOp();
@@ -156,7 +156,7 @@ private:
 };
 
 static double
-asFloatMilliseconds(const time::nanoseconds& t)
+asFloatMilliseconds(time::nanoseconds t)
 {
   return static_cast<double>(t.count()) / 1000000.0;
 }

@@ -49,7 +49,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
   TRANSPORT_TEST_INIT();
 
   auto block1 = ndn::encoding::makeStringBlock(300, "hello");
-  this->transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
+  this->transport->send(block1);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPackets, 1);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutBytes, block1.size());
 
@@ -64,14 +64,26 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
 {
   TRANSPORT_TEST_INIT();
 
-  Block pkt = ndn::encoding::makeStringBlock(300, "hello");
-  ndn::Buffer buf(pkt.begin(), pkt.end());
-  this->remoteWrite(buf);
+  auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
+  ndn::Buffer buf1(pkt1.begin(), pkt1.end());
+  this->remoteWrite(buf1);
 
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 1);
-  BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt.size());
-  BOOST_CHECK_EQUAL(this->receivedPackets->size(), 1);
+  BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt1.size());
+
+  auto pkt2 = ndn::encoding::makeStringBlock(301, "world!");
+  ndn::Buffer buf2(pkt2.begin(), pkt2.end());
+  this->remoteWrite(buf2);
+
+  BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 2);
+  BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt1.size() + pkt2.size());
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
+
+  BOOST_REQUIRE_EQUAL(this->receivedPackets->size(), 2);
+  BOOST_CHECK(this->receivedPackets->at(0).packet == pkt1);
+  BOOST_CHECK(this->receivedPackets->at(1).packet == pkt2);
+  BOOST_CHECK_EQUAL(this->receivedPackets->at(0).endpoint,
+                    this->receivedPackets->at(1).endpoint);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures, T)
@@ -90,8 +102,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFix
 {
   TRANSPORT_TEST_INIT();
 
-  Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
-  Block pkt2 = ndn::encoding::makeStringBlock(301, "world");
+  auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
+  auto pkt2 = ndn::encoding::makeStringBlock(301, "world");
   ndn::Buffer buf(pkt1.size() + pkt2.size());
   std::copy(pkt1.begin(), pkt1.end(), buf.begin());
   std::copy(pkt2.begin(), pkt2.end(), buf.begin() + pkt1.size());
@@ -109,11 +121,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, DatagramTransportFixtures, 
   TRANSPORT_TEST_INIT();
 
   std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
-  Block pkt1 = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size() - 6);
+  auto pkt1 = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size() - 6);
   ndn::Buffer buf1(pkt1.begin(), pkt1.end());
   BOOST_REQUIRE_EQUAL(buf1.size(), ndn::MAX_NDN_PACKET_SIZE);
 
-  Block pkt2 = ndn::encoding::makeBinaryBlock(301, bytes.data(), bytes.size());
+  auto pkt2 = ndn::encoding::makeBinaryBlock(301, bytes.data(), bytes.size());
   ndn::Buffer buf2(pkt2.begin(), pkt2.end());
   BOOST_REQUIRE_GT(buf2.size(), ndn::MAX_NDN_PACKET_SIZE);
 
@@ -136,14 +148,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, DatagramTransportFixtures, T)
 {
   TRANSPORT_TEST_INIT();
 
-  this->transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+  this->transport->afterStateChange.connectSingleShot([] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
   });
 
   this->transport->close();
 
-  this->transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+  this->transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
     this->limitedIo.afterOp();

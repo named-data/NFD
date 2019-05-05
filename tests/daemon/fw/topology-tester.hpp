@@ -108,10 +108,7 @@ public:
 
 private:
   void
-  transmit(TopologyNode i, Block&& packet);
-
-  void
-  scheduleReceive(face::InternalTransportBase* recipient, Block&& packet);
+  transmit(TopologyNode i, const Block& packet);
 
 private:
   bool m_isUp = true;
@@ -120,7 +117,7 @@ private:
   class ReceiveProxy : public face::InternalTransportBase
   {
   public:
-    using Callback = std::function<void(Block&&)>;
+    using Callback = std::function<void(const Block&)>;
 
     explicit
     ReceiveProxy(Callback cb)
@@ -129,9 +126,9 @@ private:
     }
 
     void
-    receivePacket(Block&& packet) final
+    receivePacket(const Block& packet) final
     {
-      m_cb(std::move(packet));
+      m_cb(packet);
     }
 
   private:

@@ -52,66 +52,66 @@ LinkService::setFaceAndTransport(Face& face, Transport& transport)
 }
 
 void
-LinkService::sendInterest(const Interest& interest, const EndpointId& endpointId)
+LinkService::sendInterest(const Interest& interest, const EndpointId& endpoint)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutInterests;
 
-  doSendInterest(interest, endpointId);
+  doSendInterest(interest, endpoint);
 }
 
 void
-LinkService::sendData(const Data& data, const EndpointId& endpointId)
+LinkService::sendData(const Data& data, const EndpointId& endpoint)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutData;
 
-  doSendData(data, endpointId);
+  doSendData(data, endpoint);
 }
 
 void
-LinkService::sendNack(const ndn::lp::Nack& nack, const EndpointId& endpointId)
+LinkService::sendNack(const ndn::lp::Nack& nack, const EndpointId& endpoint)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutNacks;
 
-  doSendNack(nack, endpointId);
+  doSendNack(nack, endpoint);
 }
 
 void
-LinkService::receiveInterest(const Interest& interest, const EndpointId& endpointId)
+LinkService::receiveInterest(const Interest& interest, const EndpointId& endpoint)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nInInterests;
 
-  afterReceiveInterest(interest, endpointId);
+  afterReceiveInterest(interest, endpoint);
 }
 
 void
-LinkService::receiveData(const Data& data, const EndpointId& endpointId)
+LinkService::receiveData(const Data& data, const EndpointId& endpoint)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nInData;
 
-  afterReceiveData(data, endpointId);
+  afterReceiveData(data, endpoint);
 }
 
 void
-LinkService::receiveNack(const ndn::lp::Nack& nack, const EndpointId& endpointId)
+LinkService::receiveNack(const ndn::lp::Nack& nack, const EndpointId& endpoint)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nInNacks;
 
-  afterReceiveNack(nack, endpointId);
+  afterReceiveNack(nack, endpoint);
 }
 
 void

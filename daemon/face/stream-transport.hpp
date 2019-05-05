@@ -63,7 +63,7 @@ protected:
   deferredClose();
 
   void
-  doSend(Transport::Packet&& packet) override;
+  doSend(const Block& packet, const EndpointId& endpoint) override;
 
   void
   sendFromQueue();
@@ -180,7 +180,7 @@ StreamTransport<T>::deferredClose()
 
 template<class T>
 void
-StreamTransport<T>::doSend(Transport::Packet&& packet)
+StreamTransport<T>::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
@@ -188,8 +188,8 @@ StreamTransport<T>::doSend(Transport::Packet&& packet)
     return;
 
   bool wasQueueEmpty = m_sendQueue.empty();
-  m_sendQueue.push(packet.packet);
-  m_sendQueueBytes += packet.packet.size();
+  m_sendQueue.push(packet);
+  m_sendQueueBytes += packet.size();
 
   if (wasQueueEmpty)
     sendFromQueue();
@@ -255,7 +255,7 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
     offset += element.size();
     BOOST_ASSERT(offset <= m_receiveBufferSize);
 
-    this->receive(Transport::Packet(std::move(element)));
+    this->receive(element);
   }
 
   if (!isOk && m_receiveBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0) {

@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
 
   int nStateChanges = 0;
   transport->afterStateChange.connect(
-    [this, &nStateChanges] (TransportState oldState, TransportState newState) {
+    [this, &nStateChanges] (auto oldState, auto newState) {
       switch (nStateChanges) {
       case 0:
         BOOST_CHECK_EQUAL(oldState, TransportState::UP);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
         BOOST_CHECK(false);
       }
       nStateChanges++;
-      limitedIo.afterOp();
+      this->limitedIo.afterOp();
     });
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(2, 8_s), LimitedIo::EXCEED_OPS);
@@ -115,18 +115,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistenc
 {
   TRANSPORT_TEST_INIT(Persistency::value);
 
-  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::FAILED);
     this->limitedIo.afterOp();
   });
 
   remoteSocket.close();
-  Transport::Packet pkt(ndn::encoding::makeStringBlock(300, "hello"));
-  transport->send(std::move(pkt)); // trigger ICMP error
+  transport->send(ndn::encoding::makeStringBlock(300, "hello")); // trigger ICMP error
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
-  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::FAILED);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
     this->limitedIo.afterOp();
@@ -142,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
   remoteSocket.close();
 
   Block block1 = ndn::encoding::makeStringBlock(300, "hello");
-  transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
+  transport->send(block1);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 1);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, block1.size());
 
@@ -151,7 +150,7 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
 
   remoteConnect();
 
-  transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
+  transport->send(block1);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 2);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, 2 * block1.size());
 

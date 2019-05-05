@@ -46,21 +46,21 @@ InternalForwarderTransport::InternalForwarderTransport(const FaceUri& localUri, 
 }
 
 void
-InternalForwarderTransport::receivePacket(Block&& packet)
+InternalForwarderTransport::receivePacket(const Block& packet)
 {
-  getGlobalIoService().post([this, pkt = std::move(packet)] () mutable {
-    NFD_LOG_FACE_TRACE("Received: " << pkt.size() << " bytes");
-    receive(Packet{std::move(pkt)});
+  getGlobalIoService().post([this, packet] {
+    NFD_LOG_FACE_TRACE("Received: " << packet.size() << " bytes");
+    receive(packet);
   });
 }
 
 void
-InternalForwarderTransport::doSend(Packet&& packet)
+InternalForwarderTransport::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE("Sending to " << m_peer);
 
   if (m_peer)
-    m_peer->receivePacket(std::move(packet.packet));
+    m_peer->receivePacket(packet);
 }
 
 void
@@ -104,12 +104,12 @@ InternalClientTransport::connectToForwarder(InternalForwarderTransport* forwarde
 }
 
 void
-InternalClientTransport::receivePacket(Block&& packet)
+InternalClientTransport::receivePacket(const Block& packet)
 {
-  getGlobalIoService().post([this, pkt = std::move(packet)] {
-    NFD_LOG_TRACE("Received: " << pkt.size() << " bytes");
+  getGlobalIoService().post([this, packet] {
+    NFD_LOG_TRACE("Received: " << packet.size() << " bytes");
     if (m_receiveCallback) {
-      m_receiveCallback(pkt);
+      m_receiveCallback(packet);
     }
   });
 }
@@ -120,7 +120,7 @@ InternalClientTransport::send(const Block& wire)
   NFD_LOG_TRACE("Sending to " << m_forwarder);
 
   if (m_forwarder)
-    m_forwarder->receivePacket(Block{wire});
+    m_forwarder->receivePacket(wire);
 }
 
 void

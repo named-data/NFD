@@ -52,7 +52,7 @@ private:
   }
 
   void
-  doReceivePacket(Transport::Packet&&) final
+  doReceivePacket(const Block&, const EndpointId&) final
   {
   }
 };

@@ -52,12 +52,6 @@ operator<<(std::ostream& os, TransportState state)
   }
 }
 
-Transport::Packet::Packet(Block&& packet1)
-  : packet(std::move(packet1))
-  , remoteEndpoint(0)
-{
-}
-
 Transport::Transport()
   : m_face(nullptr)
   , m_service(nullptr)
@@ -97,10 +91,11 @@ Transport::close()
 }
 
 void
-Transport::send(Packet&& packet)
+Transport::send(const Block& packet, const EndpointId& endpoint)
 {
+  BOOST_ASSERT(packet.isValid());
   BOOST_ASSERT(this->getMtu() == MTU_UNLIMITED ||
-               packet.packet.size() <= static_cast<size_t>(this->getMtu()));
+               packet.size() <= static_cast<size_t>(this->getMtu()));
 
   TransportState state = this->getState();
   if (state != TransportState::UP && state != TransportState::DOWN) {
@@ -110,22 +105,23 @@ Transport::send(Packet&& packet)
 
   if (state == TransportState::UP) {
     ++this->nOutPackets;
-    this->nOutBytes += packet.packet.size();
+    this->nOutBytes += packet.size();
   }
 
-  this->doSend(std::move(packet));
+  this->doSend(packet, endpoint);
 }
 
 void
-Transport::receive(Packet&& packet)
+Transport::receive(const Block& packet, const EndpointId& endpoint)
 {
+  BOOST_ASSERT(packet.isValid());
   BOOST_ASSERT(this->getMtu() == MTU_UNLIMITED ||
-               packet.packet.size() <= static_cast<size_t>(this->getMtu()));
+               packet.size() <= static_cast<size_t>(this->getMtu()));
 
   ++this->nInPackets;
-  this->nInBytes += packet.packet.size();
+  this->nInBytes += packet.size();
 
-  m_service->receivePacket(std::move(packet));
+  m_service->receivePacket(packet, endpoint);
 }
 
 bool

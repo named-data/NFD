@@ -73,7 +73,7 @@ TopologyLink::setDelay(time::nanoseconds delay)
 void
 TopologyLink::addFace(TopologyNode i, shared_ptr<Face> face)
 {
-  auto receiveCb = [this, i] (Block&& pkt) { transmit(i, std::move(pkt)); };
+  auto receiveCb = [this, i] (const Block& packet) { transmit(i, packet); };
 
   auto ret = m_transports.emplace(std::piecewise_construct,
                                   std::forward_as_tuple(i),
@@ -85,7 +85,7 @@ TopologyLink::addFace(TopologyNode i, shared_ptr<Face> face)
 }
 
 void
-TopologyLink::transmit(TopologyNode i, Block&& packet)
+TopologyLink::transmit(TopologyNode i, const Block& packet)
 {
   if (!m_isUp) {
     return;
@@ -98,16 +98,10 @@ TopologyLink::transmit(TopologyNode i, Block&& packet)
       continue;
     }
 
-    this->scheduleReceive(p.second.transport, Block{packet});
+    getScheduler().schedule(m_delay, [packet, recipient = p.second.transport] {
+      recipient->receivePacket(packet);
+    });
   }
-}
-
-void
-TopologyLink::scheduleReceive(face::InternalTransportBase* recipient, Block&& packet)
-{
-  getScheduler().schedule(m_delay, [=, pkt = std::move(packet)] () mutable {
-    recipient->receivePacket(std::move(pkt));
-  });
 }
 
 TopologyAppLink::TopologyAppLink(shared_ptr<Face> forwarderFace)

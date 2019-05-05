@@ -51,7 +51,7 @@ protected:
 
 private:
   void
-  doSend(Packet&&) OVERRIDE_WITH_TESTS_ELSE_FINAL
+  doSend(const Block&, const EndpointId&) OVERRIDE_WITH_TESTS_ELSE_FINAL
   {
   }
 };

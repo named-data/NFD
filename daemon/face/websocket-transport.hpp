@@ -83,7 +83,7 @@ protected:
 
 private:
   void
-  doSend(Transport::Packet&& packet) final;
+  doSend(const Block& packet, const EndpointId& endpoint) final;
 
   void
   schedulePing();

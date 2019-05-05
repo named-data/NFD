@@ -78,17 +78,17 @@ WebSocketTransport::WebSocketTransport(websocketpp::connection_hdl hdl,
 }
 
 void
-WebSocketTransport::doSend(Transport::Packet&& packet)
+WebSocketTransport::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
   websocketpp::lib::error_code error;
-  m_server.send(m_handle, packet.packet.wire(), packet.packet.size(),
+  m_server.send(m_handle, packet.wire(), packet.size(),
                 websocketpp::frame::opcode::binary, error);
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_FACE_TRACE("Successfully sent: " << packet.packet.size() << " bytes");
+  NFD_LOG_FACE_TRACE("Successfully sent: " << packet.size() << " bytes");
 }
 
 void
@@ -104,7 +104,7 @@ WebSocketTransport::receiveMessage(const std::string& msg)
     return;
   }
 
-  this->receive(Transport::Packet(std::move(element)));
+  this->receive(element);
 }
 
 void

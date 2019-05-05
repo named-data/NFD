@@ -203,7 +203,7 @@ protected:
   websocketpp::connection_hdl serverHdl;
   ip::tcp::endpoint remoteEp;
   WebSocketTransport* transport;
-  std::vector<Transport::Packet>* serverReceivedPackets;
+  std::vector<RxPacket>* serverReceivedPackets;
 
   websocket::Client client;
   websocketpp::connection_hdl clientHdl;

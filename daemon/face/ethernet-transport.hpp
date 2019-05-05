@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "ethernet-protocol.hpp"
 #include "pcap-helper.hpp"
 #include "transport.hpp"
+
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
@@ -43,11 +44,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
   /**
@@ -84,7 +81,7 @@ private:
   handleNetifStateChange(ndn::net::InterfaceState netifState);
 
   void
-  doSend(Transport::Packet&& packet) final;
+  doSend(const Block& packet, const EndpointId& endpoint) final;
 
   /**
    * @brief Sends the specified TLV block on the network wrapped in an Ethernet frame

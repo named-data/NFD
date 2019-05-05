@@ -37,11 +37,19 @@ namespace face {
 class Face;
 class LinkService;
 
-/** \brief identifies an endpoint on the link
+/** \brief Identifies a remote endpoint on the link.
+ *
+ *  This ID is only meaningful in the context of the same Transport.
+ *  Incoming packets from the same remote endpoint have the same EndpointId,
+ *  and incoming packets from different remote endpoints have different EndpointIds.
+ *
+ *  Typically, a point-to-point Transport has only one meaningful EndpointId (usually 0).
+ *
+ *  \sa FaceEndpoint
  */
-typedef uint64_t EndpointId;
+using EndpointId = uint64_t;
 
-/** \brief indicates the state of a transport
+/** \brief Indicates the state of a transport.
  */
 enum class TransportState {
   NONE,
@@ -55,9 +63,9 @@ enum class TransportState {
 std::ostream&
 operator<<(std::ostream& os, TransportState state);
 
-/** \brief counters provided by Transport
- *  \note The type name 'TransportCounters' is implementation detail.
- *        Use 'Transport::Counters' in public API.
+/** \brief Counters provided by a transport.
+ *  \note The type name TransportCounters is an implementation detail.
+ *        Use Transport::Counters in public API.
  */
 class TransportCounters
 {
@@ -111,43 +119,20 @@ const ssize_t QUEUE_UNSUPPORTED = -1;
  */
 const ssize_t QUEUE_ERROR = -2;
 
-/** \brief the lower part of a Face
+/** \brief The lower half of a Face.
  *  \sa Face
  */
 class Transport : protected virtual TransportCounters, noncopyable
 {
 public:
-  /** \brief stores a packet along with the remote endpoint
+  /** \brief Counters provided by a transport.
+   *  \sa TransportCounters
    */
-  class Packet
-  {
-  public:
-    Packet() = default;
+  using Counters = TransportCounters;
 
-    explicit
-    Packet(Block&& packet);
-
-  public:
-    /** \brief the packet as a TLV block
-     */
-    Block packet;
-
-    /** \brief identifies the remote endpoint
-     *
-     *  This ID is only meaningful in the context of the same Transport.
-     *  Incoming packets from the same remote endpoint have the same EndpointId,
-     *  and incoming packets from different remote endpoints have different EndpointIds.
-     */
-    EndpointId remoteEndpoint;
-  };
-
-  /** \brief counters provided by Transport
-   */
-  typedef TransportCounters Counters;
-
-  /** \brief constructor
+  /** \brief Default constructor.
    *
-   *  Transport constructor initializes static properties to invalid values.
+   *  This constructor initializes static properties to invalid values.
    *  Subclass constructor must explicitly set every static property.
    *
    *  This constructor initializes TransportState to UP;
@@ -184,7 +169,7 @@ public:
   getCounters() const;
 
 public: // upper interface
-  /** \brief request the transport to be closed
+  /** \brief Request the transport to be closed
    *
    *  This operation is effective only if transport is in UP or DOWN state,
    *  otherwise it has no effect.
@@ -195,12 +180,14 @@ public: // upper interface
   void
   close();
 
-  /** \brief send a link-layer packet
-   *  \note This operation has no effect if \p getState() is neither UP nor DOWN
-   *  \warning undefined behavior if packet size exceeds MTU limit
+  /** \brief Send a link-layer packet
+   *  \param packet the packet to be sent, must be a valid and well-formed TLV block
+   *  \param endpoint the destination endpoint
+   *  \note This operation has no effect if getState() is neither UP nor DOWN
+   *  \warning Behavior is undefined if packet size exceeds the MTU limit
    */
   void
-  send(Packet&& packet);
+  send(const Block& packet, const EndpointId& endpoint = 0);
 
 public: // static properties
   /** \return a FaceUri representing local endpoint
@@ -239,7 +226,7 @@ public: // static properties
   void
   setPersistency(ndn::nfd::FacePersistency newPersistency);
 
-  /** \return whether face is point-to-point or multi-access
+  /** \return the link type of the transport
    */
   ndn::nfd::LinkType
   getLinkType() const;
@@ -290,11 +277,13 @@ public: // dynamic properties
   }
 
 protected: // upper interface to be invoked by subclass
-  /** \brief receive a link-layer packet
-   *  \warning undefined behavior if packet size exceeds MTU limit
+  /** \brief Pass a received link-layer packet to the upper layer for further processing
+   *  \param packet the received packet, must be a valid and well-formed TLV block
+   *  \param endpoint the source endpoint
+   *  \warning Behavior is undefined if packet size exceeds the MTU limit
    */
   void
-  receive(Packet&& packet);
+  receive(const Block& packet, const EndpointId& endpoint = 0);
 
 protected: // properties to be set by subclass
   void
@@ -360,11 +349,12 @@ protected: // to be overridden by subclass
 
 private: // to be overridden by subclass
   /** \brief performs Transport specific operations to send a packet
-   *  \param packet the packet, which must be a well-formed TLV block
-   *  \pre state is either UP or DOWN
+   *  \param packet the packet to be sent, can be assumed to be valid and well-formed
+   *  \param endpoint the destination endpoint
+   *  \pre transport state is either UP or DOWN
    */
   virtual void
-  doSend(Packet&& packet) = 0;
+  doSend(const Block& packet, const EndpointId& endpoint) = 0;
 
 public:
   /** \brief minimum MTU that may be set on a transport

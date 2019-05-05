@@ -68,22 +68,22 @@ BOOST_AUTO_TEST_CASE(NetifStateChange)
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
 
   // simulate 'ip link set IFNAME down'
-  getScheduler().schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::DOWN); });
-  transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
+  getScheduler().schedule(10_ms, [this] { netif->setState(ndn::net::InterfaceState::DOWN); });
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::DOWN);
-    limitedIo.afterOp();
+    this->limitedIo.afterOp();
   });
   BOOST_CHECK_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::DOWN);
 
   // simulate 'ip link set IFNAME up'
-  getScheduler().schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::NO_CARRIER); });
-  getScheduler().schedule(80_ms, [=] { netif->setState(ndn::net::InterfaceState::RUNNING); });
-  transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
+  getScheduler().schedule(10_ms, [this] { netif->setState(ndn::net::InterfaceState::NO_CARRIER); });
+  getScheduler().schedule(80_ms, [this] { netif->setState(ndn::net::InterfaceState::RUNNING); });
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
     BOOST_CHECK_EQUAL(newState, TransportState::UP);
-    limitedIo.afterOp();
+    this->limitedIo.afterOp();
   });
   BOOST_CHECK_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
@@ -94,17 +94,17 @@ BOOST_AUTO_TEST_CASE(Close)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
   initializeMulticast();
 
-  transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
   });
 
   transport->close();
 
-  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
-    limitedIo.afterOp();
+    this->limitedIo.afterOp();
   });
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);

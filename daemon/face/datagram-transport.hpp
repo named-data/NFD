@@ -69,7 +69,7 @@ protected:
   doClose() override;
 
   void
-  doSend(Transport::Packet&& packet) override;
+  doSend(const Block& packet, const EndpointId& endpoint) override;
 
   void
   handleSend(const boost::system::error_code& error, size_t nBytesSent);
@@ -157,13 +157,13 @@ DatagramTransport<T, U>::doClose()
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::doSend(Transport::Packet&& packet)
+DatagramTransport<T, U>::doSend(const Block& packet, const EndpointId&)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  m_socket.async_send(boost::asio::buffer(packet.packet),
-                      // packet.packet is copied into the lambda to retain the underlying Buffer
-                      [this, p = packet.packet] (auto&&... args) {
+  m_socket.async_send(boost::asio::buffer(packet),
+                      // 'packet' is copied into the lambda to retain the underlying Buffer
+                      [this, packet] (auto&&... args) {
                         this->handleSend(std::forward<decltype(args)>(args)...);
                       });
 }
@@ -193,9 +193,7 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
   }
   m_hasRecentlyReceived = true;
 
-  Transport::Packet tp(std::move(element));
-  tp.remoteEndpoint = makeEndpointId(m_sender);
-  this->receive(std::move(tp));
+  this->receive(element, makeEndpointId(m_sender));
 }
 
 template<class T, class U>

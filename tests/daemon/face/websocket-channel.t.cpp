@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #include "face/websocket-transport.hpp"
 
 #include "test-ip.hpp"
+
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -101,12 +102,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Send, F, AddressFamilies)
   auto transport = listenerFaces.at(0)->getTransport();
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
-  transport->send(Transport::Packet(Block(pkt1)));
+  transport->send(pkt1);
   BOOST_CHECK_EQUAL(limitedIo.run(1, // clientHandleMessage
                                   1_s), LimitedIo::EXCEED_OPS);
 
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world!");
-  transport->send(Transport::Packet(Block(pkt2)));
+  transport->send(pkt2);
   BOOST_CHECK_EQUAL(limitedIo.run(1, // clientHandleMessage
                                   1_s), LimitedIo::EXCEED_OPS);
 

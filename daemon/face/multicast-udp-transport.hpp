@@ -52,11 +52,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
   /**
@@ -88,7 +84,7 @@ public:
 
 private:
   void
-  doSend(Transport::Packet&& packet) final;
+  doSend(const Block& packet, const EndpointId& endpoint) final;
 
   void
   doClose() final;

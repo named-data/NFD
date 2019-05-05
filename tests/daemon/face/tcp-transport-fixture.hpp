@@ -110,7 +110,7 @@ protected:
   remoteWrite(const std::vector<uint8_t>& buf, bool needToCheck = true)
   {
     boost::asio::async_write(remoteSocket, boost::asio::buffer(buf),
-      [needToCheck] (const boost::system::error_code& error, size_t) {
+      [needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -123,7 +123,7 @@ protected:
   TcpTransport* transport;
   tcp::endpoint localEp;
   tcp::socket remoteSocket;
-  std::vector<Transport::Packet>* receivedPackets;
+  std::vector<RxPacket>* receivedPackets;
 
 private:
   tcp::acceptor acceptor;

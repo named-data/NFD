@@ -42,7 +42,7 @@ public:
   ~InternalTransportBase() = default;
 
   virtual void
-  receivePacket(Block&& packet) = 0;
+  receivePacket(const Block& packet) = 0;
 };
 
 /** \brief Implements a forwarder-side transport that can be paired with another transport.
@@ -63,7 +63,7 @@ public:
   }
 
   void
-  receivePacket(Block&& packet) final;
+  receivePacket(const Block& packet) final;
 
 protected:
   void
@@ -71,7 +71,7 @@ protected:
 
 private:
   void
-  doSend(Packet&& packet) final;
+  doSend(const Block& packet, const EndpointId& endpoint) final;
 
 private:
   NFD_LOG_MEMBER_DECL();
@@ -98,7 +98,7 @@ public:
   connectToForwarder(InternalForwarderTransport* forwarder);
 
   void
-  receivePacket(Block&& packet) final;
+  receivePacket(const Block& packet) final;
 
   void
   send(const Block& wire) final;

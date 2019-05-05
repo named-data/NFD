@@ -112,23 +112,23 @@ public:
   getCounters() const;
 
 public: // upper interface to be used by forwarding
-  /** \brief send Interest to \p endpointId
+  /** \brief Send Interest to \p endpoint
    *  \pre setTransport has been called
    */
   void
-  sendInterest(const Interest& interest, const EndpointId& endpointId);
+  sendInterest(const Interest& interest, const EndpointId& endpoint);
 
-  /** \brief send Data to \p endpointId
+  /** \brief Send Data to \p endpoint
    *  \pre setTransport has been called
    */
   void
-  sendData(const Data& data, const EndpointId& endpointId);
+  sendData(const Data& data, const EndpointId& endpoint);
 
-  /** \brief send Nack to \p endpointId
+  /** \brief Send Nack to \p endpoint
    *  \pre setTransport has been called
    */
   void
-  sendNack(const ndn::lp::Nack& nack, const EndpointId& endpointId);
+  sendNack(const ndn::lp::Nack& nack, const EndpointId& endpoint);
 
   /** \brief signals on Interest received
    */
@@ -150,53 +150,53 @@ public: // lower interface to be invoked by Transport
   /** \brief performs LinkService specific operations to receive a lower-layer packet
    */
   void
-  receivePacket(Transport::Packet&& packet);
+  receivePacket(const Block& packet, const EndpointId& endpoint);
 
 protected: // upper interface to be invoked in subclass (receive path termination)
   /** \brief delivers received Interest to forwarding
    */
   void
-  receiveInterest(const Interest& interest, const EndpointId& endpointId);
+  receiveInterest(const Interest& interest, const EndpointId& endpoint);
 
   /** \brief delivers received Data to forwarding
    */
   void
-  receiveData(const Data& data, const EndpointId& endpointId);
+  receiveData(const Data& data, const EndpointId& endpoint);
 
   /** \brief delivers received Nack to forwarding
    */
   void
-  receiveNack(const lp::Nack& nack, const EndpointId& endpointId);
+  receiveNack(const lp::Nack& nack, const EndpointId& endpoint);
 
 protected: // lower interface to be invoked in subclass (send path termination)
-  /** \brief send a lower-layer packet via Transport to \p endpointId
+  /** \brief send a lower-layer packet via Transport to \p endpoint
    */
   void
-  sendPacket(Transport::Packet&& packet, const EndpointId& endpointId);
+  sendPacket(const Block& packet, const EndpointId& endpoint);
 
 protected:
   void
   notifyDroppedInterest(const Interest& packet);
 
 private: // upper interface to be overridden in subclass (send path entrypoint)
-  /** \brief performs LinkService specific operations to send an Interest to \p endpointId
+  /** \brief performs LinkService specific operations to send an Interest to \p endpoint
    */
   virtual void
-  doSendInterest(const Interest& interest, const EndpointId& endpointId) = 0;
+  doSendInterest(const Interest& interest, const EndpointId& endpoint) = 0;
 
-  /** \brief performs LinkService specific operations to send a Data to \p endpointId
+  /** \brief performs LinkService specific operations to send a Data to \p endpoint
    */
   virtual void
-  doSendData(const Data& data, const EndpointId& endpointId) = 0;
+  doSendData(const Data& data, const EndpointId& endpoint) = 0;
 
-  /** \brief performs LinkService specific operations to send a Nack to \p endpointId
+  /** \brief performs LinkService specific operations to send a Nack to \p endpoint
    */
   virtual void
-  doSendNack(const lp::Nack& nack, const EndpointId& endpointId) = 0;
+  doSendNack(const lp::Nack& nack, const EndpointId& endpoint) = 0;
 
 private: // lower interface to be overridden in subclass
   virtual void
-  doReceivePacket(Transport::Packet&& packet) = 0;
+  doReceivePacket(const Block& packet, const EndpointId& endpoint) = 0;
 
 private:
   Face* m_face;
@@ -228,16 +228,15 @@ LinkService::getCounters() const
 }
 
 inline void
-LinkService::receivePacket(Transport::Packet&& packet)
+LinkService::receivePacket(const Block& packet, const EndpointId& endpoint)
 {
-  doReceivePacket(std::move(packet));
+  doReceivePacket(packet, endpoint);
 }
 
 inline void
-LinkService::sendPacket(Transport::Packet&& packet, const EndpointId& endpointId)
+LinkService::sendPacket(const Block& packet, const EndpointId& endpoint)
 {
-  packet.remoteEndpoint = endpointId;
-  m_transport->send(std::move(packet));
+  m_transport->send(packet, endpoint);
 }
 
 std::ostream&

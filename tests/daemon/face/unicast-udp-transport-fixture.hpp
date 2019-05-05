@@ -96,7 +96,7 @@ protected:
   remoteWrite(const std::vector<uint8_t>& buf, bool needToCheck = true)
   {
     remoteSocket.async_send(boost::asio::buffer(buf),
-      [needToCheck] (const boost::system::error_code& error, size_t) {
+      [needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -109,7 +109,7 @@ protected:
   UnicastUdpTransport* transport;
   udp::endpoint localEp;
   udp::socket remoteSocket;
-  std::vector<Transport::Packet>* receivedPackets;
+  std::vector<RxPacket>* receivedPackets;
 
 private:
   unique_ptr<Face> face;

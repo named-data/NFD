@@ -30,7 +30,8 @@
 
 namespace nfd {
 
-/** \brief Represents a face-endpoint pair in the forwarder
+/** \brief Represents a face-endpoint pair in the forwarder.
+ *  \sa face::Face, face::EndpointId
  */
 class FaceEndpoint
 {
@@ -49,7 +50,7 @@ public:
 inline std::ostream&
 operator<<(std::ostream& os, const FaceEndpoint& fe)
 {
-  return os << "(" << fe.face.getId() << "," << fe.endpoint << ")";
+  return os << '(' << fe.face.getId() << ',' << fe.endpoint << ')';
 }
 
 } // namespace nfd

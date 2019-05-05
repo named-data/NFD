@@ -181,15 +181,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 class DummyTransportFixture : public GlobalIoFixture
 {
 protected:
-  DummyTransportFixture()
-    : transport(nullptr)
-    , sentPackets(nullptr)
-    , receivedPackets(nullptr)
-  {
-    // Constructor does not initialize the fixture,
-    // so that test case may specify different parameters to DummyTransport constructor.
-  }
-
   void
   initialize(unique_ptr<DummyTransport> t = make_unique<DummyTransport>())
   {
@@ -201,9 +192,9 @@ protected:
 
 protected:
   unique_ptr<nfd::Face> face;
-  DummyTransport* transport;
-  std::vector<Transport::Packet>* sentPackets;
-  std::vector<Transport::Packet>* receivedPackets;
+  DummyTransport* transport = nullptr;
+  const std::vector<TxPacket>* sentPackets = nullptr;
+  const std::vector<RxPacket>* receivedPackets = nullptr;
 };
 
 BOOST_FIXTURE_TEST_CASE(Send, DummyTransportFixture)
@@ -211,18 +202,18 @@ BOOST_FIXTURE_TEST_CASE(Send, DummyTransportFixture)
   this->initialize();
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "Lorem ipsum dolor sit amet,");
-  transport->send(Transport::Packet(Block(pkt1)));
+  transport->send(pkt1);
 
   Block pkt2 = ndn::encoding::makeStringBlock(301, "consectetur adipiscing elit,");
-  transport->send(Transport::Packet(Block(pkt2)));
+  transport->send(pkt2);
 
   transport->setState(TransportState::DOWN);
   Block pkt3 = ndn::encoding::makeStringBlock(302, "sed do eiusmod tempor incididunt ");
-  transport->send(Transport::Packet(Block(pkt3)));
+  transport->send(pkt3);
 
   transport->setState(TransportState::CLOSING);
   Block pkt4 = ndn::encoding::makeStringBlock(303, "ut labore et dolore magna aliqua.");
-  transport->send(Transport::Packet(Block(pkt4)));
+  transport->send(pkt4);
 
   BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 2);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, pkt1.size() + pkt2.size());

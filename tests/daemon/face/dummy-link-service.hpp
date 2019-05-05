@@ -38,8 +38,14 @@ enum PacketLoggingFlags : unsigned {
   LogSentData         = 1 << 1, ///< log sent Data packets
   LogSentNacks        = 1 << 2, ///< log sent Nack packets
   LogSentPackets      = LogSentInterests | LogSentData | LogSentNacks, ///< log all sent packets
-  LogReceivedPackets  = 1 << 3, ///< log all received packets (as Transport::Packet)
+  LogReceivedPackets  = 1 << 3, ///< log all received link-layer packets
   LogAllPackets       = LogSentPackets | LogReceivedPackets, ///< log all sent and received packets
+};
+
+struct RxPacket
+{
+  Block packet;
+  EndpointId endpoint;
 };
 
 /** \brief A dummy LinkService that logs all sent and received packets.
@@ -67,22 +73,22 @@ public:
 
 private:
   void
-  doSendInterest(const Interest& interest, const EndpointId& endpointId) final;
+  doSendInterest(const Interest& interest, const EndpointId& endpoint) final;
 
   void
-  doSendData(const Data& data, const EndpointId& endpointId) final;
+  doSendData(const Data& data, const EndpointId& endpoint) final;
 
   void
-  doSendNack(const lp::Nack& nack, const EndpointId& endpointId) final;
+  doSendNack(const lp::Nack& nack, const EndpointId& endpoint) final;
 
   void
-  doReceivePacket(Transport::Packet&& packet) final;
+  doReceivePacket(const Block& packet, const EndpointId& endpoint) final;
 
 public:
   std::vector<Interest> sentInterests;
   std::vector<Data> sentData;
   std::vector<lp::Nack> sentNacks;
-  std::vector<Transport::Packet> receivedPackets;
+  std::vector<RxPacket> receivedPackets;
 
 private:
   PacketLoggingFlags m_loggingFlags = LogAllPackets;

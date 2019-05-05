@@ -111,7 +111,7 @@ protected:
   sendToGroup(udp::socket& sock, const std::vector<uint8_t>& buf, bool needToCheck = true) const
   {
     sock.async_send_to(boost::asio::buffer(buf), remoteMcastEp,
-      [needToCheck] (const boost::system::error_code& error, size_t) {
+      [needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -123,7 +123,7 @@ protected:
   MulticastUdpTransport* transport;
   udp::endpoint mcastEp;
   uint16_t txPort;
-  std::vector<Transport::Packet>* receivedPackets;
+  std::vector<RxPacket>* receivedPackets;
 
 private:
   unique_ptr<Face> face;

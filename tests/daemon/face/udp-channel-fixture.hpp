@@ -56,8 +56,7 @@ protected:
           BOOST_REQUIRE(newFace != nullptr);
           connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
           clientFaces.push_back(newFace);
-          face::Transport::Packet pkt(ndn::encoding::makeStringBlock(300, "hello"));
-          newFace->getTransport()->send(std::move(pkt));
+          newFace->getTransport()->send(ndn::encoding::makeStringBlock(300, "hello"));
           limitedIo.afterOp();
         },
         ChannelFixture::unexpectedFailure);

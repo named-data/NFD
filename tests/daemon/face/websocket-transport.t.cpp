@@ -117,14 +117,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, WebSocketTransportFixtures, T)
   TRANSPORT_TEST_INIT();
 
   auto block1 = ndn::encoding::makeStringBlock(300, "hello");
-  this->transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
+  this->transport->send(block1);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // clientHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPackets, 1);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutBytes, block1.size());
 
   auto block2 = ndn::encoding::makeStringBlock(301, "world");
-  this->transport->send(Transport::Packet{Block{block2}}); // make a copy of the block
+  this->transport->send(block2);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // clientHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPackets, 2);
@@ -146,12 +146,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
 {
   TRANSPORT_TEST_INIT();
 
-  Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
+  auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   this->client.send(this->clientHdl, pkt1.wire(), pkt1.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
 
-  Block pkt2 = ndn::encoding::makeStringBlock(301, "world!");
+  BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 1);
+  BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt1.size());
+
+  auto pkt2 = ndn::encoding::makeStringBlock(301, "world!");
   this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
@@ -163,15 +166,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
   BOOST_REQUIRE_EQUAL(this->serverReceivedPackets->size(), 2);
   BOOST_CHECK(this->serverReceivedPackets->at(0).packet == pkt1);
   BOOST_CHECK(this->serverReceivedPackets->at(1).packet == pkt2);
-  BOOST_CHECK_EQUAL(this->serverReceivedPackets->at(0).remoteEndpoint,
-                    this->serverReceivedPackets->at(1).remoteEndpoint);
+  BOOST_CHECK_EQUAL(this->serverReceivedPackets->at(0).endpoint, 0);
+  BOOST_CHECK_EQUAL(this->serverReceivedPackets->at(1).endpoint, 0);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures, T)
 {
   TRANSPORT_TEST_INIT();
 
-  Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
+  auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   this->client.send(this->clientHdl, pkt1.wire(), pkt1.size() - 1, // truncated
                     websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
@@ -181,7 +184,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
   BOOST_CHECK_EQUAL(this->serverReceivedPackets->size(), 0);
 
-  Block pkt2 = ndn::encoding::makeStringBlock(301, "world!");
+  auto pkt2 = ndn::encoding::makeStringBlock(301, "world!");
   this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
@@ -198,7 +201,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, WebSocketTransportFixtures, T)
 
   int nStateChanges = 0;
   this->transport->afterStateChange.connect(
-    [&nStateChanges] (TransportState oldState, TransportState newState) {
+    [&nStateChanges] (auto oldState, auto newState) {
       switch (nStateChanges) {
       case 0:
         BOOST_CHECK_EQUAL(oldState, TransportState::UP);
@@ -224,7 +227,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, WebSocketTransportFixtures, T)
 
   int nStateChanges = 0;
   this->transport->afterStateChange.connect(
-    [&nStateChanges] (TransportState oldState, TransportState newState) {
+    [&nStateChanges] (auto oldState, auto newState) {
       switch (nStateChanges) {
       case 0:
         BOOST_CHECK_EQUAL(oldState, TransportState::UP);

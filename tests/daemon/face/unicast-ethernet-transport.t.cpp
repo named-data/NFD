@@ -76,17 +76,17 @@ BOOST_AUTO_TEST_CASE(Close)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
   initializeUnicast();
 
-  transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
   });
 
   transport->close();
 
-  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+  transport->afterStateChange.connectSingleShot([this] (auto oldState, auto newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
-    limitedIo.afterOp();
+    this->limitedIo.afterOp();
   });
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
 
   int nStateChanges = 0;
   transport->afterStateChange.connect(
-    [this, &nStateChanges] (TransportState oldState, TransportState newState) {
+    [this, &nStateChanges] (auto oldState, auto newState) {
       switch (nStateChanges) {
       case 0:
         BOOST_CHECK_EQUAL(oldState, TransportState::UP);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
         BOOST_CHECK(false);
       }
       nStateChanges++;
-      limitedIo.afterOp();
+      this->limitedIo.afterOp();
     });
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(2, 5_s), LimitedIo::EXCEED_OPS);

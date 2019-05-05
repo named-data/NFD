@@ -34,6 +34,12 @@ namespace nfd {
 namespace face {
 namespace tests {
 
+struct TxPacket
+{
+  Block packet;
+  EndpointId endpoint;
+};
+
 /** \brief Dummy Transport type used in unit tests.
  *
  *  All packets sent through this transport are stored in `sentPackets`.
@@ -75,9 +81,9 @@ public:
   }
 
   void
-  receivePacket(Block block)
+  receivePacket(const Block& block)
   {
-    receive(Packet(std::move(block)));
+    receive(block);
   }
 
 protected:
@@ -95,14 +101,14 @@ protected:
 
 private:
   void
-  doSend(Packet&& packet) override
+  doSend(const Block& packet, const EndpointId& endpoint) override
   {
-    sentPackets.push_back(std::move(packet));
+    sentPackets.push_back({packet, endpoint});
   }
 
 public:
   std::vector<ndn::nfd::FacePersistency> persistencyHistory;
-  std::vector<Packet> sentPackets;
+  std::vector<TxPacket> sentPackets;
 
 private:
   ssize_t m_sendQueueLength = 0;
