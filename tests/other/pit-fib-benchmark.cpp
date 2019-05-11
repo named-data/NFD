@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -90,7 +90,6 @@ private:
 protected:
   std::vector<shared_ptr<Interest>> interests;
   std::vector<shared_ptr<Data>> data;
-  std::vector<shared_ptr<pit::Entry>> pitEntries;
 
 protected:
   NameTree m_nameTree;
@@ -105,10 +104,8 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
   // number of Interest-Data exchanges
   const size_t nRoundTrip = 1000000;
   // number of iterations between processing incoming Interest and processing incoming Data
-  const size_t gap3 = 20000;
-  // number of iterations between processing incoming Data and deleting PIT entry
-  const size_t gap4 = 30000;
-  // total amount of FIB entires
+  const size_t replyGap = 20000;
+  // total amount of FIB entries
   // packet names are homogeneously extended from these FIB entries
   const size_t nFibEntries = 2000;
   // length of fibPrefix, must be >= 1
@@ -127,20 +124,19 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
 
   auto t1 = time::steady_clock::now();
 
-  for (size_t i = 0; i < nRoundTrip + gap3 + gap4; ++i) {
+  for (size_t i = 0; i < nRoundTrip + replyGap; ++i) {
     if (i < nRoundTrip) {
       // process incoming Interest
-      shared_ptr<pit::Entry> pitEntry = m_pit.insert(*interests[i]).first;
-      pitEntries.push_back(pitEntry);
+      auto pitEntry = m_pit.insert(*interests[i]).first;
       m_fib.findLongestPrefixMatch(*pitEntry);
     }
-    if (i >= gap3 && i < nRoundTrip + gap3) {
+    if (i >= replyGap) {
       // process incoming Data
-      m_pit.findAllDataMatches(*data[i - gap3]);
-    }
-    if (i >= gap3 + gap4) {
-      // delete PIT entry
-      m_pit.erase(pitEntries[i - gap3 - gap4].get());
+      auto matches = m_pit.findAllDataMatches(*data[i - replyGap]);
+      // delete matching PIT entries
+      for (const auto& pitEntry : matches) {
+        m_pit.erase(pitEntry.get());
+      }
     }
   }
 
