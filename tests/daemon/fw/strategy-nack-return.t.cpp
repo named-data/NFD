@@ -97,14 +97,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
   fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
-  shared_ptr<Interest> interest1 = makeInterest("/McQYjMbm", 992);
-  shared_ptr<Interest> interest2 = makeInterest("/McQYjMbm", 114);
+  auto interest1 = makeInterest("/McQYjMbm", false, nullopt, 992);
+  auto interest2 = makeInterest("/McQYjMbm", false, nullopt, 114);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
   pitEntry->insertOrUpdateInRecord(*this->face2, 0, *interest2);
   pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
 
-  lp::Nack nack3 = makeNack("/McQYjMbm", 992, lp::NackReason::CONGESTION);
+  lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face3, 0)->setIncomingNack(nack3);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
@@ -132,19 +132,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
   fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
   fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
-  shared_ptr<Interest> interest1 = makeInterest("/aS9FAyUV19", 286);
+  auto interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face4, 0, *interest1);
 
-  lp::Nack nack3 = makeNack("/aS9FAyUV19", 286, lp::NackReason::CONGESTION);
+  lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face3, 0)->setIncomingNack(nack3);
   this->strategy.afterReceiveNack(FaceEndpoint(*this->face3, 0), nack3, pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0); // don't send Nack until all upstreams have Nacked
 
-  lp::Nack nack4 = makeNack("/aS9FAyUV19", 286, lp::NackReason::CONGESTION);
+  lp::Nack nack4 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(FaceEndpoint(*this->face4, 0), nack4, pitEntry); },
@@ -165,20 +165,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
   fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
   fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
-  shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
-  interest1->setInterestLifetime(400_ms);
+  auto interest1 = makeInterest("/sIYw0TXWDj", false, 400_ms, 115);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
 
   this->advanceClocks(300_ms);
-  shared_ptr<Interest> interest2 = makeInterest("/sIYw0TXWDj", 223);
+  auto interest2 = makeInterest("/sIYw0TXWDj", false, nullopt, 223);
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest2);
   pitEntry->insertOrUpdateOutRecord(*this->face4, 0, *interest2);
 
   this->advanceClocks(200_ms); // face3 has timed out
 
-  lp::Nack nack4 = makeNack("/sIYw0TXWDj", 223, lp::NackReason::CONGESTION);
+  lp::Nack nack4 = makeNack(*interest2, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
   this->strategy.afterReceiveNack(FaceEndpoint(*this->face4, 0), nack4, pitEntry);
 
@@ -255,11 +254,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LiveDeadlock,
   ndn::Face& appD = topo.addAppFace("D", nodeD)->getClientFace();
 
   int nNacksA = 0, nNacksD = 0;
-  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
-  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  appA.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
+  appD.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
   this->advanceClocks(1_ms, 5_ms);
-  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
-  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  appA.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
+  appD.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
   this->advanceClocks(1_ms, 100_ms);
 
   // As long as at least one Nack arrives at each client, strategy behavior is correct.
@@ -318,7 +317,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinat
   fibEntry.addOrUpdateNextHop(*face4, 0, 20);
   fibEntry.addOrUpdateNextHop(*face5, 0, 30);
 
-  shared_ptr<Interest> interest1 = makeInterest("/F6sEwB24I", 282);
+  auto interest1 = makeInterest("/F6sEwB24I", false, nullopt, 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest1);
   pitEntry->insertOrUpdateOutRecord(*face3, 0, *interest1);

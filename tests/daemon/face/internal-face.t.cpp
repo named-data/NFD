@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
 {
-  auto interest = makeInterest("/PQstEJGdL");
+  auto interest = makeInterest("/PQstEJGdL", true);
 
   bool hasReceivedData = false;
   clientFace->expressInterest(*interest,
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
 {
-  auto interest = makeInterest("/1HrsRM1X", 152);
+  auto interest = makeInterest("/1HrsRM1X");
 
   bool hasReceivedNack = false;
   clientFace->expressInterest(*interest,
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/1HrsRM1X");
 
-  forwarderFace->sendNack(makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE), 0);
+  forwarderFace->sendNack(makeNack(*interest, lp::NackReason::NO_ROUTE), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedNack);
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
       clientFace->put(*makeData("/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi"));
     });
 
-  forwarderFace->sendInterest(*makeInterest("/Wpc8TnEeoF/f6SzV8hD"), 0);
+  forwarderFace->sendInterest(*makeInterest("/Wpc8TnEeoF/f6SzV8hD", true), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
@@ -167,16 +167,17 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
 
 BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
 {
+  auto interest = makeInterest("/4YgJKWcXN/5oaTe05o");
+
   bool hasDeliveredInterest = false;
   clientFace->setInterestFilter("/4YgJKWcXN",
     [this, &hasDeliveredInterest] (const ndn::InterestFilter&, const Interest& interest) {
       hasDeliveredInterest = true;
       BOOST_CHECK_EQUAL(interest.getName(), "/4YgJKWcXN/5oaTe05o");
-
-      clientFace->put(makeNack("/4YgJKWcXN/5oaTe05o", 191, lp::NackReason::NO_ROUTE));
+      clientFace->put(makeNack(interest, lp::NackReason::NO_ROUTE));
     });
 
-  forwarderFace->sendInterest(*makeInterest("/4YgJKWcXN/5oaTe05o", 191), 0);
+  forwarderFace->sendInterest(*interest, 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);

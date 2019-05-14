@@ -31,11 +31,16 @@ namespace nfd {
 namespace tests {
 
 shared_ptr<Interest>
-makeInterest(const Name& name, uint32_t nonce)
+makeInterest(const Name& name, bool canBePrefix, optional<time::milliseconds> lifetime,
+             optional<uint32_t> nonce)
 {
   auto interest = make_shared<Interest>(name);
-  if (nonce != 0) {
-    interest->setNonce(nonce);
+  interest->setCanBePrefix(canBePrefix);
+  if (lifetime) {
+    interest->setInterestLifetime(*lifetime);
+  }
+  if (nonce) {
+    interest->setNonce(*nonce);
   }
   return interest;
 }
@@ -64,14 +69,6 @@ makeNack(Interest interest, lp::NackReason reason)
   lp::Nack nack(std::move(interest));
   nack.setReason(reason);
   return nack;
-}
-
-lp::Nack
-makeNack(const Name& name, uint32_t nonce, lp::NackReason reason)
-{
-  Interest interest(name);
-  interest.setNonce(nonce);
-  return makeNack(std::move(interest), reason);
 }
 
 ndn::PrefixAnnouncement

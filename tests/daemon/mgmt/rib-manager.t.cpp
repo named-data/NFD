@@ -445,7 +445,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     }
   }
 
-  receiveInterest(Interest("/localhost/nfd/rib/list"));
+  receiveInterest(*makeInterest("/localhost/nfd/rib/list", true));
 
   Block content = concatenateResponses();
   content.parse();

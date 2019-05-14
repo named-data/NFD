@@ -148,7 +148,7 @@ ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
     Name prefix = name.getPrefix(-1);
     uint64_t segmentNo = name.at(-1).toSegment() + 1;
     // request for the next segment
-    receiveInterest(Interest(prefix.appendSegment(segmentNo)));
+    receiveInterest(*makeInterest(prefix.appendSegment(segmentNo)));
   }
 
   size_t endIndex = startIndex + nResponses; // not included

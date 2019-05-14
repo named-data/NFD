@@ -130,8 +130,8 @@ BOOST_AUTO_TEST_CASE(UnsatisfiedInterest)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest1 = makeInterest("/A/0");
-  shared_ptr<Interest> interest2 = makeInterest("/A/1");
+  auto interest1 = makeInterest("/A/0");
+  auto interest2 = makeInterest("/A/1");
   interest1->setInterestLifetime(90_ms);
   interest2->setInterestLifetime(90_ms);
 
@@ -154,9 +154,9 @@ BOOST_AUTO_TEST_CASE(SatisfiedInterest)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest = makeInterest("/A/0");
+  auto interest = makeInterest("/A/0");
   interest->setInterestLifetime(90_ms);
-  shared_ptr<Data> data = makeData("/A/0");
+  auto data = makeData("/A/0");
 
   face1->receiveInterest(*interest, 0);
 
@@ -180,10 +180,10 @@ BOOST_AUTO_TEST_CASE(CsHit)
   PitExpiryTestStrategy::registerAs(strategyA);
   choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
-  shared_ptr<Interest> interest = makeInterest("/A/0");
+  auto interest = makeInterest("/A/0");
   interest->setInterestLifetime(90_ms);
 
-  shared_ptr<Data> data = makeData("/A/0");
+  auto data = makeData("/A/0");
   data->setTag(make_shared<lp::IncomingFaceIdTag>(face2->getId()));
 
   Pit& pit = forwarder.getPit();
@@ -221,9 +221,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest = makeInterest("/A/0", 562);
-  interest->setInterestLifetime(90_ms);
-  lp::Nack nack = makeNack("/A/0", 562, lp::NackReason::CONGESTION);
+  auto interest = makeInterest("/A/0", false, 90_ms, 562);
+  lp::Nack nack = makeNack(*interest, lp::NackReason::CONGESTION);
 
   face1->receiveInterest(*interest, 0);
   auto entry = pit.find(*interest);
@@ -253,8 +252,7 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveInterest)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest = makeInterest("/A/0");
-  interest->setInterestLifetime(90_ms);
+  auto interest = makeInterest("/A/0", false, 90_ms);
 
   face->receiveInterest(*interest, 0);
   BOOST_CHECK_EQUAL(pit.size(), 1);
@@ -285,11 +283,9 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
   auto& sB = choose<PitExpiryTestStrategy>(forwarder, "/A/0", strategyB);
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest1 = makeInterest("/A");
-  shared_ptr<Interest> interest2 = makeInterest("/A/0");
-  interest1->setInterestLifetime(90_ms);
-  interest2->setInterestLifetime(90_ms);
-  shared_ptr<Data> data = makeData("/A/0");
+  auto interest1 = makeInterest("/A", true, 90_ms);
+  auto interest2 = makeInterest("/A/0", false, 90_ms);
+  auto data = makeData("/A/0");
 
   face1->receiveInterest(*interest1, 0);
   face2->receiveInterest(*interest2, 0);
@@ -339,9 +335,8 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest = makeInterest("/A/0");
-  interest->setInterestLifetime(90_ms);
-  shared_ptr<Data> data = makeData("/A/0");
+  auto interest = makeInterest("/A/0", false, 90_ms);
+  auto data = makeData("/A/0");
 
   face1->receiveInterest(*interest, 0);
 
@@ -388,9 +383,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
 
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Interest> interest = makeInterest("/A/0", 562);
-  interest->setInterestLifetime(90_ms);
-  lp::Nack nack = makeNack("/A/0", 562, lp::NackReason::CONGESTION);
+  auto interest = makeInterest("/A/0", false, 90_ms, 562);
+  lp::Nack nack = makeNack(*interest, lp::NackReason::CONGESTION);
 
   face1->receiveInterest(*interest, 0);
   auto entry = pit.find(*interest);

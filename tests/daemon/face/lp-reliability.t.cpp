@@ -56,6 +56,7 @@ public:
   {
     if (frags.front().has<lp::FragmentField>()) {
       Interest interest("/test/prefix");
+      interest.setCanBePrefix(false);
       lp::Packet pkt;
       pkt.add<lp::FragmentField>(make_pair(interest.wireEncode().begin(), interest.wireEncode().end()));
       m_reliability.handleOutgoing(frags, std::move(pkt), true);

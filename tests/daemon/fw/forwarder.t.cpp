@@ -44,10 +44,6 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
   Forwarder forwarder;
 
-  shared_ptr<Interest> interestAB = makeInterest("/A/B");
-  interestAB->setInterestLifetime(4_s);
-  shared_ptr<Data> dataABC = makeData("/A/B/C");
-
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
   forwarder.addFace(face1);
@@ -60,7 +56,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
-  face1->receiveInterest(*interestAB, 0);
+  face1->receiveInterest(*makeInterest("/A/B"), 0);
   this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), "/A/B");
@@ -73,10 +69,10 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
-  face2->receiveData(*dataABC, 0);
+  face2->receiveData(*makeData("/A/B"), 0);
   this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
-  BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B/C");
+  BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B");
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face1->sentData[0].getTag<lp::IncomingFaceIdTag>(), face2->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 1);
@@ -94,23 +90,19 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   forwarder.addFace(face2);
   forwarder.addFace(face3);
 
-  shared_ptr<Interest> interestA = makeInterest("/A");
-  interestA->setInterestLifetime(4_s);
-  shared_ptr<Data> dataA = makeData("/A");
-  dataA->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
-
   Fib& fib = forwarder.getFib();
   fib.insert("/A").first->addOrUpdateNextHop(*face2, 0, 0);
 
   Pit& pit = forwarder.getPit();
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  Cs& cs = forwarder.getCs();
-  cs.insert(*dataA);
+  auto data = makeData("/A/B");
+  data->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
+  forwarder.getCs().insert(*data);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
-  face1->receiveInterest(*interestA, 0);
+  face1->receiveInterest(*makeInterest("/A", true), 0);
   this->advanceClocks(1_ms, 5_ms);
   // Interest matching ContentStore should not be forwarded
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 0);
@@ -119,6 +111,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
 
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
   // IncomingFaceId field should be reset to represent CS
+  BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B");
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face1->sentData[0].getTag<lp::IncomingFaceIdTag>(), face::FACEID_CONTENT_STORE);
 
@@ -136,13 +129,11 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   forwarder.addFace(face2);
 
   Pit& pit = forwarder.getPit();
-  auto interestA1 = makeInterest("/A");
-  interestA1->setNonce(8378);
+  auto interestA1 = makeInterest("/A", false, nullopt, 8378);
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA1).first;
   pitA->insertOrUpdateInRecord(*face1, 0, *interestA1);
 
-  auto interestA2 = makeInterest("/A");
-  interestA2->setNonce(1698);
+  auto interestA2 = makeInterest("/A", false, nullopt, 1698);
   forwarder.onOutgoingInterest(pitA, FaceEndpoint(*face2, 0), *interestA2);
 
   pit::OutRecordCollection::iterator outA2 = pitA->getOutRecord(*face2, 0);
@@ -167,7 +158,7 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   Fib& fib = forwarder.getFib();
   fib.insert("/A").first->addOrUpdateNextHop(*face3, 0, 0);
 
-  shared_ptr<Interest> interest = makeInterest("/A/B");
+  auto interest = makeInterest("/A/B");
   interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
 
   face1->receiveInterest(*interest, 0);
@@ -208,49 +199,49 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 
   // local face, /localhost: OK
   forwarder.dispatchToStrategy_count = 0;
-  shared_ptr<Interest> i1 = makeInterest("/localhost/A1");
+  auto i1 = makeInterest("/localhost/A1");
   forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *i1);
   BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // non-local face, /localhost: violate
   forwarder.dispatchToStrategy_count = 0;
-  shared_ptr<Interest> i2 = makeInterest("/localhost/A2");
+  auto i2 = makeInterest("/localhost/A2");
   forwarder.onIncomingInterest(FaceEndpoint(*face2, 0), *i2);
   BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.dispatchToStrategy_count = 0;
-  shared_ptr<Interest> i3 = makeInterest("/A3");
+  auto i3 = makeInterest("/A3");
   forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *i3);
   BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.dispatchToStrategy_count = 0;
-  shared_ptr<Interest> i4 = makeInterest("/A4");
+  auto i4 = makeInterest("/A4");
   forwarder.onIncomingInterest(FaceEndpoint(*face2, 0), *i4);
   BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // local face, /localhost: OK
   forwarder.onDataUnsolicited_count = 0;
-  shared_ptr<Data> d1 = makeData("/localhost/B1");
+  auto d1 = makeData("/localhost/B1");
   forwarder.onIncomingData(FaceEndpoint(*face1, 0), *d1);
   BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 
   // non-local face, /localhost: OK
   forwarder.onDataUnsolicited_count = 0;
-  shared_ptr<Data> d2 = makeData("/localhost/B2");
+  auto d2 = makeData("/localhost/B2");
   forwarder.onIncomingData(FaceEndpoint(*face2, 0), *d2);
   BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.onDataUnsolicited_count = 0;
-  shared_ptr<Data> d3 = makeData("/B3");
+  auto d3 = makeData("/B3");
   forwarder.onIncomingData(FaceEndpoint(*face1, 0), *d3);
   BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.onDataUnsolicited_count = 0;
-  shared_ptr<Data> d4 = makeData("/B4");
+  auto d4 = makeData("/B4");
   forwarder.onIncomingData(FaceEndpoint(*face2, 0), *d4);
   BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 }
@@ -263,16 +254,16 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
-  DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "ndn:/", DummyStrategy::getStrategyName());
-  DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "ndn:/B", DummyStrategy::getStrategyName());
+  DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "/", DummyStrategy::getStrategyName());
+  DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "/B", DummyStrategy::getStrategyName());
 
-  shared_ptr<Interest> interest1 = makeInterest("ndn:/A/1");
+  auto interest1 = makeInterest("/A/1");
   strategyA.afterReceiveInterest_count = 0;
   strategyA.interestOutFace = face2;
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest1);
   BOOST_CHECK_EQUAL(strategyA.afterReceiveInterest_count, 1);
 
-  shared_ptr<Interest> interest2 = makeInterest("ndn:/B/2");
+  auto interest2 = makeInterest("/B/2", true);
   strategyB.afterReceiveInterest_count = 0;
   strategyB.interestOutFace = face2;
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest2);
@@ -280,21 +271,19 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 
   this->advanceClocks(1_ms, 5_ms);
 
-  shared_ptr<Data> data1 = makeData("ndn:/A/1/a");
+  auto data1 = makeData("/A/1");
   strategyA.beforeSatisfyInterest_count = 0;
   forwarder.startProcessData(FaceEndpoint(*face2, 0), *data1);
   BOOST_CHECK_EQUAL(strategyA.beforeSatisfyInterest_count, 1);
 
-  shared_ptr<Data> data2 = makeData("ndn:/B/2/b");
+  auto data2 = makeData("/B/2/b");
   strategyB.beforeSatisfyInterest_count = 0;
   forwarder.startProcessData(FaceEndpoint(*face2, 0), *data2);
   BOOST_CHECK_EQUAL(strategyB.beforeSatisfyInterest_count, 1);
 
-  shared_ptr<Interest> interest3 = makeInterest("ndn:/A/3");
-  interest3->setInterestLifetime(30_ms);
+  auto interest3 = makeInterest("/A/3", false, 30_ms);
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest3);
-  shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
-  interest4->setInterestLifetime(5_s);
+  auto interest4 = makeInterest("/B/4", false, 5_s);
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest4);
 }
 
@@ -311,19 +300,19 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   forwarder.addFace(face4);
 
   Pit& pit = forwarder.getPit();
-  shared_ptr<Interest> interest0 = makeInterest("ndn:/");
-  shared_ptr<pit::Entry> pit0 = pit.insert(*interest0).first;
-  pit0->insertOrUpdateInRecord(*face1, 0, *interest0);
-  shared_ptr<Interest> interestA = makeInterest("ndn:/A");
+  auto interestD = makeInterest("/A/B/C/D");
+  shared_ptr<pit::Entry> pitD = pit.insert(*interestD).first;
+  pitD->insertOrUpdateInRecord(*face1, 0, *interestD);
+  auto interestA = makeInterest("/A", true);
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
-  pitA->insertOrUpdateInRecord(*face1, 0, *interestA);
   pitA->insertOrUpdateInRecord(*face2, 0, *interestA);
-  shared_ptr<Interest> interestC = makeInterest("ndn:/A/B/C");
+  pitA->insertOrUpdateInRecord(*face3, 0, *interestA);
+  auto interestC = makeInterest("/A/B/C", true);
   shared_ptr<pit::Entry> pitC = pit.insert(*interestC).first;
   pitC->insertOrUpdateInRecord(*face3, 0, *interestC);
   pitC->insertOrUpdateInRecord(*face4, 0, *interestC);
 
-  shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
+  auto dataD = makeData("/A/B/C/D");
   forwarder.onIncomingData(FaceEndpoint(*face3, 0), *dataD);
   this->advanceClocks(1_ms, 5_ms);
 
@@ -346,27 +335,27 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   forwarder.addFace(face2);
   forwarder.addFace(face3);
 
-  DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "ndn:/", DummyStrategy::getStrategyName());
-  DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "ndn:/B", DummyStrategy::getStrategyName());
+  DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "/", DummyStrategy::getStrategyName());
+  DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "/B", DummyStrategy::getStrategyName());
 
   Pit& pit = forwarder.getPit();
 
   // dispatch to the correct strategy
-  shared_ptr<Interest> interest1 = makeInterest("/A/AYJqayrzF", 562);
+  auto interest1 = makeInterest("/A/AYJqayrzF", false, nullopt, 562);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
   pit1->insertOrUpdateOutRecord(*face1, 0, *interest1);
-  shared_ptr<Interest> interest2 = makeInterest("/B/EVyP73ru", 221);
+  auto interest2 = makeInterest("/B/EVyP73ru", false, nullopt, 221);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
   pit2->insertOrUpdateOutRecord(*face1, 0, *interest2);
 
-  lp::Nack nack1 = makeNack("/A/AYJqayrzF", 562, lp::NackReason::CONGESTION);
+  lp::Nack nack1 = makeNack(*interest1, lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(FaceEndpoint(*face1, 0), nack1);
   BOOST_CHECK_EQUAL(strategyA.afterReceiveNack_count, 1);
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
-  lp::Nack nack2 = makeNack("/B/EVyP73ru", 221, lp::NackReason::CONGESTION);
+  lp::Nack nack2 = makeNack(*interest2, lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(FaceEndpoint(*face1, 0), nack2);
@@ -380,7 +369,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
 
   // drop if no PIT entry
-  lp::Nack nack3 = makeNack("/yEcw5HhdM", 243, lp::NackReason::CONGESTION);
+  lp::Nack nack3 = makeNack(*makeInterest("/yEcw5HhdM", false, nullopt, 243), lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(FaceEndpoint(*face1, 0), nack3);
@@ -388,11 +377,11 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
   // drop if no out-record
-  shared_ptr<Interest> interest4 = makeInterest("/Etab4KpY", 157);
+  auto interest4 = makeInterest("/Etab4KpY", false, nullopt, 157);
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
   pit4->insertOrUpdateOutRecord(*face1, 0, *interest4);
 
-  lp::Nack nack4a = makeNack("/Etab4KpY", 157, lp::NackReason::CONGESTION);
+  lp::Nack nack4a = makeNack(*interest4, lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(FaceEndpoint(*face2, 0), nack4a);
@@ -400,7 +389,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
   // drop if Nonce does not match out-record
-  lp::Nack nack4b = makeNack("/Etab4KpY", 294, lp::NackReason::CONGESTION);
+  lp::Nack nack4b = makeNack(*makeInterest("/Etab4KpY", false, nullopt, 294), lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(FaceEndpoint(*face1, 0), nack4b);
@@ -435,7 +424,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   nackHeader.setReason(lp::NackReason::CONGESTION);
 
   // don't send Nack if there's no in-record
-  shared_ptr<Interest> interest1 = makeInterest("/fM5IVEtC", 719);
+  auto interest1 = makeInterest("/fM5IVEtC", false, nullopt, 719);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
   pit1->insertOrUpdateInRecord(*face1, 0, *interest1);
 
@@ -444,10 +433,10 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face2->sentNacks.size(), 0);
 
   // send Nack with correct Nonce
-  shared_ptr<Interest> interest2a = makeInterest("/Vi8tRm9MG3", 152);
+  auto interest2a = makeInterest("/Vi8tRm9MG3", false, nullopt, 152);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2a).first;
   pit2->insertOrUpdateInRecord(*face1, 0, *interest2a);
-  shared_ptr<Interest> interest2b = makeInterest("/Vi8tRm9MG3", 808);
+  auto interest2b = makeInterest("/Vi8tRm9MG3", false, nullopt, 808);
   pit2->insertOrUpdateInRecord(*face2, 0, *interest2b);
 
   face1->sentNacks.clear();
@@ -472,7 +461,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK(inRecord2b == pit2->in_end());
 
   // don't send Nack to multi-access face
-  shared_ptr<Interest> interest2c = makeInterest("/Vi8tRm9MG3", 228);
+  auto interest2c = makeInterest("/Vi8tRm9MG3", false, nullopt, 228);
   pit2->insertOrUpdateInRecord(*face3, 0, *interest2c);
 
   face3->sentNacks.clear();
@@ -500,19 +489,19 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
 
   // receive Interest on face1
   face1->sentNacks.clear();
-  shared_ptr<Interest> interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  auto interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
   face1->receiveInterest(*interest1a, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face1: legit retransmission
   face1->sentNacks.clear();
-  shared_ptr<Interest> interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  auto interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
   face1->receiveInterest(*interest1b, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face2
   face2->sentNacks.clear();
-  shared_ptr<Interest> interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  auto interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
   face2->receiveInterest(*interest2a, 0);
   BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest(), *interest2a);
@@ -520,13 +509,13 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
 
   // receive Interest with new Nonce on face2
   face2->sentNacks.clear();
-  shared_ptr<Interest> interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 944);
+  auto interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 944);
   face2->receiveInterest(*interest2b, 0);
   BOOST_CHECK(face2->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face3, don't send Nack to multi-access face
   face3->sentNacks.clear();
-  shared_ptr<Interest> interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  auto interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
   face3->receiveInterest(*interest3a, 0);
   BOOST_CHECK(face3->sentNacks.empty());
 }
@@ -551,9 +540,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
   fib.insert("/A").first->addOrUpdateNextHop(*face2, 0, 0);
 
   // receive an Interest
-  shared_ptr<Interest> interest = makeInterest("ndn:/A/1");
-  interest->setNonce(82101183);
-  interest->setInterestLifetime(50_ms);
+  auto interest = makeInterest("/A/1", false, 50_ms, 82101183);
   face1->receiveInterest(*interest, 0);
 
   // interest should be forwarded only once, as long as Nonce is in Dead Nonce List
@@ -575,9 +562,7 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   forwarder.addFace(face1);
 
-  shared_ptr<Interest> interest = makeInterest("ndn:/hcLSAsQ9A");
-  interest->setNonce(61883075);
-  interest->setInterestLifetime(2_s);
+  auto interest = makeInterest("/hcLSAsQ9A", false, 2_s, 61883075);
 
   DeadNonceList& dnl = forwarder.getDeadNonceList();
   dnl.add(interest->getName(), interest->getNonce());

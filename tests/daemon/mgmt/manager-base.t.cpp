@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
   m_manager.registerStatusDatasetHandler("test-status", handler);
   setTopPrefix();
 
-  receiveInterest(Interest("/localhost/nfd/test-module/test-status"));
+  receiveInterest(*makeInterest("/localhost/nfd/test-module/test-status", true));
   BOOST_CHECK(isStatusDatasetCalled);
 }
 

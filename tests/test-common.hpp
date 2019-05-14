@@ -48,12 +48,11 @@ namespace nfd {
 namespace tests {
 
 /** \brief create an Interest
- *  \param name Interest name
- *  \param nonce if non-zero, set Nonce to this value
- *               (useful for creating Nack with same Nonce)
  */
 shared_ptr<Interest>
-makeInterest(const Name& name, uint32_t nonce = 0);
+makeInterest(const Name& name, bool canBePrefix = false,
+             optional<time::milliseconds> lifetime = nullopt,
+             optional<uint32_t> nonce = nullopt);
 
 /** \brief create a Data with fake signature
  *  \note Data may be modified afterwards without losing the fake signature.
@@ -82,14 +81,6 @@ signData(shared_ptr<Data> data)
  */
 lp::Nack
 makeNack(Interest interest, lp::NackReason reason);
-
-/** \brief create a Nack
- *  \param name Interest name
- *  \param nonce Interest nonce
- *  \param reason Nack reason
- */
-lp::Nack
-makeNack(const Name& name, uint32_t nonce, lp::NackReason reason);
 
 /** \brief replace a name component
  *  \param[inout] name name

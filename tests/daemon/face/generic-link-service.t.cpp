@@ -139,7 +139,8 @@ BOOST_AUTO_TEST_CASE(SendNack)
   options.allowLocalFields = false;
   initialize(options);
 
-  auto nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
+  auto nack1 = makeNack(*makeInterest("/localhost/test", false, nullopt, 323),
+                        lp::NackReason::NO_ROUTE);
   face->sendNack(nack1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutNacks, 1);
@@ -172,7 +173,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterest)
   options.allowLocalFields = false;
   initialize(options);
 
-  shared_ptr<Interest> interest1 = makeInterest("/23Rd9hEiR");
+  auto interest1 = makeInterest("/23Rd9hEiR");
   lp::Packet lpPacket;
   lpPacket.set<lp::FragmentField>(std::make_pair(
     interest1->wireEncode().begin(), interest1->wireEncode().end()));
@@ -207,7 +208,7 @@ BOOST_AUTO_TEST_CASE(ReceiveData)
   options.allowLocalFields = false;
   initialize(options);
 
-  shared_ptr<Data> data1 = makeData("/12345689");
+  auto data1 = makeData("/12345689");
   lp::Packet lpPacket;
   lpPacket.set<lp::FragmentField>(std::make_pair(
     data1->wireEncode().begin(), data1->wireEncode().end()));
@@ -227,7 +228,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
   options.allowLocalFields = false;
   initialize(options);
 
-  lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
+  lp::Nack nack1 = makeNack(*makeInterest("/localhost/test", false, nullopt, 323),
+                            lp::NackReason::NO_ROUTE);
   lp::Packet lpPacket;
   lpPacket.set<lp::FragmentField>(std::make_pair(
     nack1.getInterest().wireEncode().begin(), nack1.getInterest().wireEncode().end()));
@@ -273,7 +275,7 @@ BOOST_AUTO_TEST_CASE(FragmentationDisabledExceedMtuDrop)
 
   transport->setMtu(55);
 
-  shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
+  auto data = makeData("/test/data/123456789/987654321/123456789");
   face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
@@ -289,7 +291,7 @@ BOOST_AUTO_TEST_CASE(FragmentationUnlimitedMtu)
 
   transport->setMtu(MTU_UNLIMITED);
 
-  shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
+  auto data = makeData("/test/data/123456789/987654321/123456789");
   face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 1);
@@ -304,7 +306,7 @@ BOOST_AUTO_TEST_CASE(FragmentationUnderMtu)
 
   transport->setMtu(105);
 
-  shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
+  auto data = makeData("/test/data/123456789/987654321/123456789");
   face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 1);
@@ -319,7 +321,7 @@ BOOST_AUTO_TEST_CASE(FragmentationOverMtu)
 
   transport->setMtu(60);
 
-  shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
+  auto data = makeData("/test/data/123456789/987654321/123456789");
   face->sendData(*data, 0);
 
   BOOST_CHECK_GT(transport->sentPackets.size(), 1);
@@ -332,7 +334,7 @@ BOOST_AUTO_TEST_CASE(ReassembleFragments)
   options.allowReassembly = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest(
+  auto interest = makeInterest(
     "/mt7P130BHXmtLm5dwaY5dpUM6SWYNN2B05g7y3UhsQuLvDdnTWdNnTeEiLuW3FAbJRSG3tzQ0UfaSEgG9rvYHmsKtgPMag1Hj4Tr");
   lp::Packet packet(interest->wireEncode());
 
@@ -371,7 +373,7 @@ BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragIndex)
   options.allowReassembly = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/IgFe6NvH");
+  auto interest = makeInterest("/IgFe6NvH");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::FragIndexField>(140);
 
@@ -388,7 +390,7 @@ BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragCount)
   options.allowReassembly = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/SeGmEjvIVX");
+  auto interest = makeInterest("/SeGmEjvIVX");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::FragCountField>(276);
 
@@ -446,7 +448,8 @@ BOOST_AUTO_TEST_CASE(SendNack)
   options.reliabilityOptions.isEnabled = true;
   initialize(options);
 
-  auto nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
+  auto nack1 = makeNack(*makeInterest("/localhost/test", false, nullopt, 323),
+                        lp::NackReason::NO_ROUTE);
   face->sendNack(nack1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutNacks, 1);
@@ -472,7 +475,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
 
   // congestion threshold will be 32768 bytes, since min(65536, 65536 / 2) = 32768 bytes
 
@@ -508,7 +511,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
 
   // congestion threshold will be 32768 bytes, since min(65536, 65536 / 2) = 32768 bytes
 
@@ -750,7 +753,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
 
   // congestion threshold will be 65536 bytes, since the transport reports that it cannot measure
   // the queue capacity
@@ -799,7 +802,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceId)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::NextHopFaceIdField>(1000);
 
@@ -818,7 +821,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDisabled)
   options.allowLocalFields = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::NextHopFaceIdField>(1000);
 
@@ -835,7 +838,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropData)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   packet.set<lp::NextHopFaceIdField>(1000);
 
@@ -852,7 +855,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropNack)
   options.allowLocalFields = true;
   initialize(options);
 
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   lp::Packet packet;
   packet.set<lp::FragmentField>(std::make_pair(
     nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
@@ -873,7 +877,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCachePolicy)
   initialize(options);
   // CachePolicy is unprivileged and does not require allowLocalFields option.
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   packet.set<lp::CachePolicyField>(lp::CachePolicy().setPolicy(lp::CachePolicyType::NO_CACHE));
 
@@ -892,7 +896,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCachePolicyDropInterest)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   lp::CachePolicy policy;
   policy.setPolicy(lp::CachePolicyType::NO_CACHE);
@@ -911,7 +915,8 @@ BOOST_AUTO_TEST_CASE(ReceiveCachePolicyDropNack)
   options.allowLocalFields = true;
   initialize(options);
 
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   lp::Packet packet(nack.getInterest().wireEncode());
   packet.set<lp::NackField>(nack.getHeader());
   lp::CachePolicy policy;
@@ -931,7 +936,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceId)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
   face->sendInterest(*interest, 0);
@@ -949,7 +954,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceIdDisabled)
   options.allowLocalFields = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
   face->sendInterest(*interest, 0);
@@ -966,7 +971,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreInterest)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::IncomingFaceIdField>(1000);
 
@@ -984,7 +989,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreData)
   options.allowLocalFields = true;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/z1megUh9Bj");
+  auto data = makeData("/z1megUh9Bj");
   lp::Packet packet(data->wireEncode());
   packet.set<lp::IncomingFaceIdField>(1000);
 
@@ -1002,7 +1007,8 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
   options.allowLocalFields = true;
   initialize(options);
 
-  lp::Nack nack = makeNack("/TPAhdiHz", 278, lp::NackReason::CONGESTION);
+  lp::Nack nack = makeNack(*makeInterest("/TPAhdiHz", false, nullopt, 278),
+                           lp::NackReason::CONGESTION);
   lp::Packet packet(nack.getInterest().wireEncode());
   packet.set<lp::NackField>(nack.getHeader());
   packet.set<lp::IncomingFaceIdField>(1000);
@@ -1016,7 +1022,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
 
 BOOST_AUTO_TEST_CASE(SendCongestionMarkInterest)
 {
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::CongestionMarkTag>(1));
 
   face->sendInterest(*interest, 0);
@@ -1029,7 +1035,7 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkInterest)
 
 BOOST_AUTO_TEST_CASE(SendCongestionMarkData)
 {
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   data->setTag(make_shared<lp::CongestionMarkTag>(0));
 
   face->sendData(*data, 0);
@@ -1042,7 +1048,8 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkData)
 
 BOOST_AUTO_TEST_CASE(SendCongestionMarkNack)
 {
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   nack.setTag(make_shared<lp::CongestionMarkTag>(std::numeric_limits<uint64_t>::max()));
 
   face->sendNack(nack, 0);
@@ -1055,7 +1062,7 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkNack)
 
 BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkInterest)
 {
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::CongestionMarkField>(1);
 
@@ -1069,7 +1076,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkInterest)
 
 BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkData)
 {
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   packet.set<lp::CongestionMarkField>(1);
 
@@ -1083,7 +1090,8 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkData)
 
 BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkNack)
 {
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   lp::Packet packet;
   packet.set<lp::FragmentField>(std::make_pair(
     nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
@@ -1104,7 +1112,7 @@ BOOST_AUTO_TEST_CASE(SendNonDiscovery)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
 
   face->sendInterest(*interest, 0);
@@ -1120,7 +1128,7 @@ BOOST_AUTO_TEST_CASE(SendNonDiscoveryDisabled)
   options.allowSelfLearning = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
 
   face->sendInterest(*interest, 0);
@@ -1136,7 +1144,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscovery)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
 
@@ -1153,7 +1161,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDisabled)
   options.allowSelfLearning = false;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
 
@@ -1172,7 +1180,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDropData)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
 
@@ -1188,7 +1196,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDropNack)
   options.allowSelfLearning = true;
   initialize(options);
 
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   lp::Packet packet;
   packet.set<lp::FragmentField>(std::make_pair(
     nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
@@ -1207,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncement)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
@@ -1224,7 +1233,7 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncementDisabled)
   options.allowSelfLearning = false;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
@@ -1241,7 +1250,7 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncement)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   packet.set<lp::PrefixAnnouncementField>(pah);
@@ -1259,7 +1268,7 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDisabled)
   options.allowSelfLearning = false;
   initialize(options);
 
-  shared_ptr<Data> data = makeData("/12345678");
+  auto data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   packet.set<lp::PrefixAnnouncementField>(pah);
@@ -1279,7 +1288,7 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropInterest)
   options.allowSelfLearning = true;
   initialize(options);
 
-  shared_ptr<Interest> interest = makeInterest("/12345678");
+  auto interest = makeInterest("/12345678");
   lp::Packet packet(interest->wireEncode());
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   packet.set<lp::PrefixAnnouncementField>(pah);
@@ -1296,7 +1305,8 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropNack)
   options.allowSelfLearning = true;
   initialize(options);
 
-  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, nullopt, 123),
+                           lp::NackReason::NO_ROUTE);
   lp::Packet packet;
   packet.set<lp::FragmentField>(std::make_pair(
     nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));

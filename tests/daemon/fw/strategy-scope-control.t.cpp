@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
 
-  shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
+  auto interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
@@ -137,7 +137,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
 
-  shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
+  auto interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
@@ -160,7 +160,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
   fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 20);
 
-  shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
+  auto interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
 
-  shared_ptr<Interest> interest = makeInterest("/localhop/A/1");
+  auto interest = makeInterest("/localhop/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, 0, *interest);
 
@@ -203,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
   fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 20);
 
-  shared_ptr<Interest> interest = makeInterest("/localhop/A/1");
+  auto interest = makeInterest("/localhop/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, 0, *interest);
 
@@ -224,10 +224,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
   fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 20);
 
-  shared_ptr<Interest> interest = makeInterest("/localhost/A/1", 1460);
+  auto interest = makeInterest("/localhost/A/1", false, nullopt, 1460);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
-  lp::Nack nack = makeNack("/localhost/A/1", 1460, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*interest, lp::NackReason::NO_ROUTE);
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, 0, *interest)->setIncomingNack(nack);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
@@ -249,10 +249,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
   fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
   fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 20);
 
-  shared_ptr<Interest> interest = makeInterest("/localhop/A/1", 1377);
+  auto interest = makeInterest("/localhop/A/1", 1377);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, 0, *interest);
-  lp::Nack nack = makeNack("/localhop/A/1", 1377, lp::NackReason::NO_ROUTE);
+  lp::Nack nack = makeNack(*interest, lp::NackReason::NO_ROUTE);
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, 0, *interest)->setIncomingNack(nack);
 
   BOOST_REQUIRE(this->strategy.waitForAction(

@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(Info)
   m_fwCnt.nCsHits.set(362);
   m_fwCnt.nCsMisses.set(1493);
 
-  receiveInterest(Interest("/localhost/nfd/cs/info").setCanBePrefix(true));
+  receiveInterest(*makeInterest("/localhost/nfd/cs/info", true));
   Block dataset = concatenateResponses();
   dataset.parse();
   BOOST_REQUIRE_EQUAL(dataset.elements_size(), 1);

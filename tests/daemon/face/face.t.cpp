@@ -106,33 +106,29 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
   face1->afterReceiveNack.connect(bind([&nReceivedNacks] { ++nReceivedNacks; }));
 
   for (size_t i = 0; i < nInInterests; ++i) {
-    shared_ptr<Interest> interest = makeInterest("/JSQdqward4");
-    face1->receiveInterest(*interest, 0);
+    face1->receiveInterest(*makeInterest("/JSQdqward4"), 0);
   }
 
   for (size_t i = 0; i < nInData; ++i) {
-    shared_ptr<Data> data = makeData("/hT8FDigWn1");
-    face1->receiveData(*data, 0);
+    face1->receiveData(*makeData("/hT8FDigWn1"), 0);
   }
 
   for (size_t i = 0; i < nInNacks; ++i) {
-    lp::Nack nack = makeNack("/StnEVTj4Ex", 561, lp::NackReason::CONGESTION);
-    face1->receiveNack(nack, 0);
+    face1->receiveNack(makeNack(*makeInterest("/StnEVTj4Ex", false, nullopt, 561),
+                                lp::NackReason::CONGESTION), 0);
   }
 
   for (size_t i = 0; i < nOutInterests; ++i) {
-    shared_ptr<Interest> interest = makeInterest("/XyUAFYQDmd");
-    face1->sendInterest(*interest, 0);
+    face1->sendInterest(*makeInterest("/XyUAFYQDmd"), 0);
   }
 
   for (size_t i = 0; i < nOutData; ++i) {
-    shared_ptr<Data> data = makeData("/GigPEtPH6");
-    face1->sendData(*data, 0);
+    face1->sendData(*makeData("/GigPEtPH6"), 0);
   }
 
   for (size_t i = 0; i < nOutNacks; ++i) {
-    lp::Nack nack = makeNack("/9xK6FbwIBM", 365, lp::NackReason::CONGESTION);
-    face1->sendNack(nack, 0);
+    face1->sendNack(makeNack(*makeInterest("/9xK6FbwIBM", false, nullopt, 365),
+                             lp::NackReason::CONGESTION), 0);
   }
 
   BOOST_CHECK_EQUAL(face1->getCounters().nInInterests, nInInterests);
