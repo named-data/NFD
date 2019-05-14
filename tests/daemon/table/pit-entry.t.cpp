@@ -41,26 +41,23 @@ BOOST_FIXTURE_TEST_SUITE(TestPitEntry, GlobalIoFixture)
 BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(CanMatch, 1)
 BOOST_AUTO_TEST_CASE(CanMatch)
 {
-  shared_ptr<Interest> interest0 = makeInterest("/A");
+  auto interest0 = makeInterest("/A");
   Entry entry(*interest0);
 
-  shared_ptr<Interest> interest1 = makeInterest("/B");
+  auto interest1 = makeInterest("/B");
   BOOST_CHECK_EQUAL(entry.canMatch(*interest1), false);
 
-  shared_ptr<Interest> interest2 = makeInterest("/A");
-  interest2->setNonce(27956);
+  auto interest2 = makeInterest("/A", false, nullopt, 27956);
   BOOST_CHECK_EQUAL(entry.canMatch(*interest2), true);
 
-  shared_ptr<Interest> interest3 = makeInterest("/A");
-  interest3->setInterestLifetime(6210_ms);
+  auto interest3 = makeInterest("/A", false, 6210_ms);
   BOOST_CHECK_EQUAL(entry.canMatch(*interest3), true);
 
-  shared_ptr<Interest> interest4 = makeInterest("/A");
+  auto interest4 = makeInterest("/A");
   interest4->setForwardingHint({{10, "/telia/terabits"}, {20, "/ucla/cs"}});
   BOOST_CHECK_EQUAL(entry.canMatch(*interest4), false); // expected failure until #3162
 
-  shared_ptr<Interest> interest5 = makeInterest("/A");
-  interest5->setMaxSuffixComponents(21);
+  auto interest5 = makeInterest("/A", true);
   BOOST_CHECK_EQUAL(entry.canMatch(*interest5), false);
 }
 
@@ -69,20 +66,12 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
 
-  Name name("ndn:/KuYfjtRq");
+  Name name("/KuYfjtRq");
   auto interest = makeInterest(name);
-  auto interest1 = makeInterest(name);
-  interest1->setInterestLifetime(2528_ms);
-  interest1->setNonce(25559);
-  auto interest2 = makeInterest(name);
-  interest2->setInterestLifetime(6464_ms);
-  interest2->setNonce(19004);
-  auto interest3 = makeInterest(name);
-  interest3->setInterestLifetime(3585_ms);
-  interest3->setNonce(24216);
-  auto interest4 = makeInterest(name);
-  interest4->setInterestLifetime(8795_ms);
-  interest4->setNonce(17365);
+  auto interest1 = makeInterest(name, false, 2528_ms, 25559);
+  auto interest2 = makeInterest(name, false, 6464_ms, 19004);
+  auto interest3 = makeInterest(name, false, 3585_ms, 24216);
+  auto interest4 = makeInterest(name, false, 8795_ms, 17365);
 
   Entry entry(*interest);
 
@@ -194,7 +183,7 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
 BOOST_AUTO_TEST_CASE(Lifetime)
 {
-  auto interest = makeInterest("ndn:/7oIEurbgy6");
+  auto interest = makeInterest("/7oIEurbgy6");
   auto face = make_shared<DummyFace>();
   Entry entry(*interest);
 
@@ -211,12 +200,12 @@ BOOST_AUTO_TEST_CASE(OutRecordNack)
   OutRecord outR(*face1, 0);
   BOOST_CHECK(outR.getIncomingNack() == nullptr);
 
-  auto interest1 = makeInterest("ndn:/uWiapGjYL");
+  auto interest1 = makeInterest("/uWiapGjYL");
   interest1->setNonce(165);
   outR.update(*interest1);
   BOOST_CHECK(outR.getIncomingNack() == nullptr);
 
-  auto interest2 = makeInterest("ndn:/uWiapGjYL");
+  auto interest2 = makeInterest("/uWiapGjYL");
   interest2->setNonce(996);
   lp::Nack nack2(*interest2);
   nack2.setReason(lp::NackReason::CONGESTION);

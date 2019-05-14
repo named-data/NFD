@@ -43,8 +43,9 @@ Entry::canMatch(const Interest& interest, size_t nEqualNameComps) const
 
   return m_interest->getName().compare(nEqualNameComps, Name::npos,
                                        interest.getName(), nEqualNameComps) == 0 &&
-         m_interest->getSelectors() == interest.getSelectors();
-  /// \todo #3162 match Link field
+         m_interest->getCanBePrefix() == interest.getCanBePrefix() &&
+         m_interest->getMustBeFresh() == interest.getMustBeFresh();
+  /// \todo #3162 match ForwardingHint field
 }
 
 InRecordCollection::iterator

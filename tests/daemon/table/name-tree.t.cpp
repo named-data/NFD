@@ -239,9 +239,10 @@ BOOST_AUTO_TEST_CASE(TableEntries)
   BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
   BOOST_CHECK_EQUAL(npe.isEmpty(), true);
 
-  auto pit1 = make_shared<pit::Entry>(*makeInterest(name));
-  shared_ptr<Interest> interest2 = makeInterest(name);
-  interest2->setMinSuffixComponents(2);
+  auto interest1 = makeInterest(name);
+  auto pit1 = make_shared<pit::Entry>(*interest1);
+  auto interest2 = makeInterest(name);
+  interest2->setMustBeFresh(true);
   auto pit2 = make_shared<pit::Entry>(*interest2);
 
   npe.insertPitEntry(pit1);

@@ -29,8 +29,6 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-#include <ndn-cxx/exclude.hpp>
-
 namespace nfd {
 namespace pit {
 namespace tests {
@@ -61,108 +59,62 @@ BOOST_AUTO_TEST_CASE(Find)
 
 BOOST_AUTO_TEST_CASE(Insert)
 {
-  Name name1("ndn:/5vzBNnMst");
-  Name name2("ndn:/igSGfEIM62");
-  ndn::Exclude exclude1;
-  exclude1.excludeOne(Name::Component("u26p47oep"));
-  ndn::Exclude exclude2;
-  exclude2.excludeBefore(Name::Component("u26p47oep"));
-  ndn::KeyLocator keyLocator1("ndn:/sGAE3peMHA");
-  ndn::KeyLocator keyLocator2("ndn:/nIJH6pr4");
+  Name name1("/5vzBNnMst");
+  Name name2("/igSGfEIM62");
 
   NameTree nameTree(16);
   Pit pit(nameTree);
   BOOST_CHECK_EQUAL(pit.size(), 0);
-  std::pair<shared_ptr<Entry>, bool> insertResult;
+
+  shared_ptr<Entry> entry;
+  bool isNew = false;
 
   // base
-  auto interestA = make_shared<Interest>(name1);
-  insertResult = pit.insert(*interestA);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
+  auto interestA = makeInterest(name1, false, nullopt, 2148);
+  std::tie(entry, isNew) = pit.insert(*interestA);
+  BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
-  // same as A
+  // same Interest, same PIT entry
   auto interestA2 = make_shared<Interest>(*interestA);
-  insertResult = pit.insert(*interestA2);
-  BOOST_CHECK_EQUAL(insertResult.second, false); // sharing the same PIT entry
+  std::tie(entry, isNew) = pit.insert(*interestA2);
+  BOOST_CHECK_EQUAL(isNew, false);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
-  // A+MinSuffixComponents
+  // different CanBePrefix, different PIT entry
   auto interestB = make_shared<Interest>(*interestA);
-  interestB->setMinSuffixComponents(2);
-  insertResult = pit.insert(*interestB);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
+  interestB->setCanBePrefix(true);
+  std::tie(entry, isNew) = pit.insert(*interestB);
+  BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 2);
 
-  // A+MaxSuffixComponents
+  // different MustBeFresh, different PIT entry
   auto interestC = make_shared<Interest>(*interestA);
-  interestC->setMaxSuffixComponents(4);
-  insertResult = pit.insert(*interestC);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
+  interestC->setMustBeFresh(true);
+  std::tie(entry, isNew) = pit.insert(*interestC);
+  BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
-  // A+KeyLocator1
+  // different InterestLifetime, same PIT entry
   auto interestD = make_shared<Interest>(*interestA);
-  interestD->setPublisherPublicKeyLocator(keyLocator1);
-  insertResult = pit.insert(*interestD);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 4);
+  interestD->setInterestLifetime(1_s);
+  std::tie(entry, isNew) = pit.insert(*interestD);
+  BOOST_CHECK_EQUAL(isNew, false);
+  BOOST_CHECK_EQUAL(pit.size(), 3);
 
-  // A+KeyLocator2
+  // different Nonce, same PIT entry
   auto interestE = make_shared<Interest>(*interestA);
-  interestE->setPublisherPublicKeyLocator(keyLocator2);
-  insertResult = pit.insert(*interestE);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 5);
+  interestE->setNonce(2192);
+  std::tie(entry, isNew) = pit.insert(*interestE);
+  BOOST_CHECK_EQUAL(isNew, false);
+  BOOST_CHECK_EQUAL(pit.size(), 3);
 
-  // A+Exclude1
+  // different name, different PIT entry
   auto interestF = make_shared<Interest>(*interestA);
-  interestF->setExclude(exclude1);
-  insertResult = pit.insert(*interestF);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 6);
-
-  // A+Exclude2
-  auto interestG = make_shared<Interest>(*interestA);
-  interestG->setExclude(exclude2);
-  insertResult = pit.insert(*interestG);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 7);
-
-  // A+ChildSelector1
-  auto interestI = make_shared<Interest>(*interestA);
-  interestI->setChildSelector(1);
-  insertResult = pit.insert(*interestI);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 8);
-
-  // A+MustBeFresh
-  auto interestJ = make_shared<Interest>(*interestA);
-  interestJ->setMustBeFresh(true);
-  insertResult = pit.insert(*interestJ);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 9);
-
-  // A+InterestLifetime
-  auto interestK = make_shared<Interest>(*interestA);
-  interestK->setInterestLifetime(1_s);
-  insertResult = pit.insert(*interestK);
-  BOOST_CHECK_EQUAL(insertResult.second, false); // only guiders differ
-  BOOST_CHECK_EQUAL(pit.size(), 9);
-
-  // A+Nonce
-  auto interestL = make_shared<Interest>(*interestA);
-  interestL->setNonce(2192);
-  insertResult = pit.insert(*interestL);
-  BOOST_CHECK_EQUAL(insertResult.second, false); // only guiders differ
-  BOOST_CHECK_EQUAL(pit.size(), 9);
-
-  // different Name+Exclude1
-  auto interestM = make_shared<Interest>(name2);
-  interestM->setExclude(exclude1);
-  insertResult = pit.insert(*interestM);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
-  BOOST_CHECK_EQUAL(pit.size(), 10);
+  interestF->setName(name2);
+  std::tie(entry, isNew) = pit.insert(*interestF);
+  BOOST_CHECK_EQUAL(isNew, true);
+  BOOST_CHECK_EQUAL(pit.size(), 4);
 }
 
 BOOST_AUTO_TEST_CASE(Erase)
@@ -172,26 +124,27 @@ BOOST_AUTO_TEST_CASE(Erase)
   NameTree nameTree(16);
   Pit pit(nameTree);
 
-  std::pair<shared_ptr<Entry>, bool> insertResult;
+  shared_ptr<Entry> entry;
+  bool isNew = false;
 
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  insertResult = pit.insert(*interest);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
+  std::tie(entry, isNew) = pit.insert(*interest);
+  BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
   BOOST_CHECK(pit.find(*interest) != nullptr);
 
-  insertResult = pit.insert(*interest);
-  BOOST_CHECK_EQUAL(insertResult.second, false);
+  std::tie(entry, isNew) = pit.insert(*interest);
+  BOOST_CHECK_EQUAL(isNew, false);
   BOOST_CHECK_EQUAL(pit.size(), 1);
   BOOST_CHECK(pit.find(*interest) != nullptr);
 
-  pit.erase(insertResult.first.get());
+  pit.erase(entry.get());
   BOOST_CHECK_EQUAL(pit.size(), 0);
   BOOST_CHECK(pit.find(*interest) == nullptr);
 
-  insertResult = pit.insert(*interest);
-  BOOST_CHECK_EQUAL(insertResult.second, true);
+  std::tie(entry, isNew) = pit.insert(*interest);
+  BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
   BOOST_CHECK(pit.find(*interest) != nullptr);
 }
@@ -203,7 +156,7 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   size_t nNameTreeEntriesBefore = nameTree.size();
 
   auto interest = makeInterest("/37xWVvQ2K");
-  shared_ptr<Entry> entry = pit.insert(*interest).first;
+  auto entry = pit.insert(*interest).first;
   pit.erase(entry.get());
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
@@ -238,11 +191,11 @@ BOOST_AUTO_TEST_CASE(EraseWithFullName)
 
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 {
-  Name nameA   ("ndn:/A");
-  Name nameAB  ("ndn:/A/B");
-  Name nameABC ("ndn:/A/B/C");
-  Name nameABCD("ndn:/A/B/C/D");
-  Name nameD   ("ndn:/D");
+  Name nameA   ("/A");
+  Name nameAB  ("/A/B");
+  Name nameABC ("/A/B/C");
+  Name nameABCD("/A/B/C/D");
+  Name nameD   ("/D");
 
   auto interestA   = makeInterest(nameA,   true);
   auto interestABC = makeInterest(nameABC, true);
@@ -271,7 +224,7 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   bool hasABC = false;
   bool hasD   = false;
 
-  for (const shared_ptr<Entry>& entry : matches) {
+  for (const auto& entry : matches) {
     ++count;
 
     if (entry->getName().equals(nameA ))
@@ -307,7 +260,7 @@ BOOST_AUTO_TEST_CASE(MatchFullName) // Bug 3363
   DataMatchResult matches = pit.findAllDataMatches(*data);
 
   BOOST_REQUIRE_EQUAL(std::distance(matches.begin(), matches.end()), 1);
-  shared_ptr<Entry> found = *matches.begin();
+  auto found = *matches.begin();
   BOOST_CHECK_EQUAL(found->getName(), fullName);
 }
 
@@ -333,8 +286,8 @@ BOOST_AUTO_TEST_CASE(InsertMatchLongName)
   auto d3 = makeData(n3);
   auto i3 = makeInterest(d3->getFullName());
 
-  shared_ptr<Entry> entry2 = pit.insert(*i2).first;
-  shared_ptr<Entry> entry3 = pit.insert(*i3).first;
+  auto entry2 = pit.insert(*i2).first;
+  auto entry3 = pit.insert(*i3).first;
 
   BOOST_CHECK_EQUAL(pit.size(), 2);
   BOOST_CHECK_EQUAL(nameTree.size(), 1 + NameTree::getMaxDepth()); // root node + max depth
@@ -354,11 +307,11 @@ BOOST_AUTO_TEST_CASE(Iterator)
   NameTree nameTree(16);
   Pit pit(nameTree);
 
-  auto interestA    = makeInterest("/A");
+  auto interestA = makeInterest("/A");
   auto interestABC1 = makeInterest("/A/B/C");
   auto interestABC2 = makeInterest("/A/B/C");
-  interestABC2->setSelectors(ndn::Selectors().setMinSuffixComponents(10));
-  auto interestD    = makeInterest("/D");
+  interestABC2->setMustBeFresh(true);
+  auto interestD = makeInterest("/D");
 
   BOOST_CHECK_EQUAL(pit.size(), 0);
   BOOST_CHECK(pit.begin() == pit.end());
@@ -379,16 +332,13 @@ BOOST_AUTO_TEST_CASE(Iterator)
   pit.insert(*interestABC2);
   pit.insert(*interestD);
 
-  std::set<const Interest*> expected = {&*interestA, &*interestABC1, &*interestABC2, &*interestD};
   std::set<const Interest*> actual;
   for (const auto& pitEntry : pit) {
     actual.insert(&pitEntry.getInterest());
   }
-  BOOST_CHECK(actual == expected);
-  for (auto actualIt = actual.begin(), expectedIt = expected.begin();
-       actualIt != actual.end() && expectedIt != expected.end(); ++actualIt, ++expectedIt) {
-    BOOST_CHECK_EQUAL(**actualIt, **expectedIt);
-  }
+  std::set<const Interest*> expected = {interestA.get(), interestABC1.get(),
+                                        interestABC2.get(), interestD.get()};
+  BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPit
