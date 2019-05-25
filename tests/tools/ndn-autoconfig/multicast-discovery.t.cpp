@@ -100,6 +100,7 @@ BOOST_AUTO_TEST_CASE(Normal)
     if (interest.getName() == "/localhop/ndn-autoconf/hub") {
       const char FACEURI[] = "udp://router.example.net";
       auto data = makeData(Name("/localhop/ndn-autoconf/hub").appendVersion());
+      data->setFreshnessPeriod(1_s);
       data->setContent(makeBinaryBlock(tlv::nfd::Uri, FACEURI, ::strlen(FACEURI)));
       face.receive(*data);
       return;

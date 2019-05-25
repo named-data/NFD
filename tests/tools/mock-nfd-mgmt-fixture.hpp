@@ -191,6 +191,7 @@ private:
     }
 
     auto data = make_shared<Data>(name);
+    data->setFreshnessPeriod(1_s);
     data->setFinalBlock(name[-1]);
     data->setContent(std::forward<ContentArgs>(contentArgs)...);
     this->signDatasetReply(*data);

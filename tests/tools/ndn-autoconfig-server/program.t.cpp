@@ -67,6 +67,7 @@ BOOST_AUTO_TEST_CASE(HubData)
   this->initialize(options);
 
   Interest interest("/localhop/ndn-autoconf/hub");
+  interest.setMustBeFresh(true);
   face.receive(interest);
   face.processEvents(500_ms);
 
