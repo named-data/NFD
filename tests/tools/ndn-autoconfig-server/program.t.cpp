@@ -28,8 +28,9 @@
 #include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
 
-#include <ndn-cxx/encoding/buffer.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/util/segment-fetcher.hpp>
 
 namespace ndn {
 namespace tools {
@@ -67,6 +68,7 @@ BOOST_AUTO_TEST_CASE(HubData)
   this->initialize(options);
 
   Interest interest("/localhop/ndn-autoconf/hub");
+  interest.setCanBePrefix(true);
   interest.setMustBeFresh(true);
   face.receive(interest);
   face.processEvents(500_ms);
@@ -79,6 +81,7 @@ BOOST_AUTO_TEST_CASE(HubData)
 
   // interest2 asks for a different version, and should not be responded
   Interest interest2(Name(interest.getName()).appendVersion(dataName.at(-1).toVersion() - 1));
+  interest2.setCanBePrefix(false);
   face.receive(interest2);
   face.processEvents(500_ms);
   BOOST_CHECK_EQUAL(face.sentData.size(), 1);
@@ -94,36 +97,34 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
   }
   this->initialize(options);
 
-  Interest interest("/localhop/nfd/rib/routable-prefixes");
-  face.receive(interest);
-  face.processEvents(500_ms);
+  util::DummyClientFace clientFace(face.getIoService());
+  clientFace.linkTo(face);
 
-  BOOST_REQUIRE_EQUAL(face.sentData.size(), 1);
-  const Name& dataName0 = face.sentData[0].getName();
-  BOOST_CHECK_EQUAL(dataName0.size(), interest.getName().size() + 2);
-  BOOST_CHECK(interest.getName().isPrefixOf(dataName0));
-  BOOST_CHECK(dataName0.at(-2).isVersion());
-  BOOST_CHECK(dataName0.at(-1).isSegment());
+  Name baseName("/localhop/nfd/rib/routable-prefixes");
+  auto fetcher = util::SegmentFetcher::start(clientFace, Interest(baseName),
+                                             security::v2::getAcceptAllValidator());
+  fetcher->afterSegmentReceived.connect([baseName] (const Data& data) {
+    const Name& dataName = data.getName();
+    BOOST_CHECK_EQUAL(dataName.size(), baseName.size() + 2);
+    BOOST_CHECK(dataName.at(-2).isVersion());
+    BOOST_CHECK(dataName.at(-1).isSegment());
+  });
+  fetcher->onError.connect([] (uint32_t code, const std::string& msg) {
+    BOOST_FAIL(msg);
+  });
+  bool isComplete = false;
+  fetcher->onComplete.connect([&isComplete, nRoutablePrefixes, options] (ConstBufferPtr buffer) {
+    Block payload(tlv::Content, buffer);
+    payload.parse();
+    BOOST_REQUIRE_EQUAL(payload.elements_size(), nRoutablePrefixes);
+    for (size_t i = 0; i < nRoutablePrefixes; ++i) {
+      BOOST_CHECK_EQUAL(Name(payload.elements()[i]), options.routablePrefixes[i]);
+    }
+    isComplete = true;
+  });
 
-  while (face.sentData.back().getFinalBlock() != face.sentData.back().getName().at(-1)) {
-    const Name& lastName = face.sentData.back().getName();
-    Interest interest2(lastName.getPrefix(-1).appendSegment(lastName.at(-1).toSegment() + 1));
-    face.receive(interest2);
-    face.processEvents(500_ms);
-  }
-
-  auto buffer = make_shared<Buffer>();
-  for (const Data& data : face.sentData) {
-    const Block& content = data.getContent();
-    std::copy(content.value_begin(), content.value_end(), std::back_inserter(*buffer));
-  }
-
-  Block payload(tlv::Content, buffer);
-  payload.parse();
-  BOOST_REQUIRE_EQUAL(payload.elements_size(), nRoutablePrefixes);
-  for (size_t i = 0; i < nRoutablePrefixes; ++i) {
-    BOOST_CHECK_EQUAL(Name(payload.elements()[i]), options.routablePrefixes[i]);
-  }
+  face.processEvents(100_ms, 2000);
+  BOOST_CHECK(isComplete);
 }
 
 BOOST_AUTO_TEST_CASE(RoutablePrefixesDisabled)
@@ -133,6 +134,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDisabled)
   this->initialize(options);
 
   Interest interest("/localhop/nfd/rib/routable-prefixes");
+  interest.setCanBePrefix(true);
   face.receive(interest);
   face.processEvents(500_ms);
   BOOST_CHECK_EQUAL(face.sentData.size(), 0);

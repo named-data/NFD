@@ -130,8 +130,9 @@ void
 MulticastDiscovery::requestHubData()
 {
   Interest interest(HUB_DISCOVERY_PREFIX);
-  interest.setInterestLifetime(HUB_DISCOVERY_INTEREST_LIFETIME);
+  interest.setCanBePrefix(true);
   interest.setMustBeFresh(true);
+  interest.setInterestLifetime(HUB_DISCOVERY_INTEREST_LIFETIME);
 
   m_face.expressInterest(interest,
     [this] (const Interest&, const Data& data) {
