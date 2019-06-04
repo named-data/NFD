@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,6 +65,7 @@ FibModule::formatItemXml(std::ostream& os, const FibEntry& item) const
   for (const NextHopRecord& nh : item.getNextHopRecords()) {
     os << "<nextHop>"
        << "<faceId>" << nh.getFaceId() << "</faceId>"
+       << "<endpointId>" << (nh.hasEndpointId() ? nh.getEndpointId() : 0) << "</endpointId>"
        << "<cost>" << nh.getCost() << "</cost>"
        << "</nextHop>";
   }
@@ -90,8 +91,13 @@ FibModule::formatItemText(std::ostream& os, const FibEntry& item) const
   text::Separator sep(", ");
   for (const NextHopRecord& nh : item.getNextHopRecords()) {
     os << sep
-       << "faceid=" << nh.getFaceId()
-       << " (cost=" << nh.getCost() << ")";
+       << "face=" << nh.getFaceId();
+
+    if (nh.hasEndpointId() && nh.getEndpointId() != 0) {
+      os << ":" << nh.getEndpointId();
+    }
+
+    os << " (cost=" << nh.getCost() << ")";
   }
 
   os << "}";

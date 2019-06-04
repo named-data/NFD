@@ -252,6 +252,12 @@
               </xsl:for-each>
             </tr>
             <tr>
+              <th>EndpointId</th>
+              <xsl:for-each select="nfd:nextHops/nfd:nextHop">
+                <td><xsl:value-of select="nfd:endpointId"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
               <th>Cost</th>
               <xsl:for-each select="nfd:nextHops/nfd:nextHop">
                 <td><xsl:value-of select="nfd:cost"/></td>
