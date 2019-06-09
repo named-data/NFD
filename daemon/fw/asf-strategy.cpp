@@ -247,7 +247,7 @@ AsfStrategy::forwardInterest(const Interest& interest,
 
   if (!faceInfo.isTimeoutScheduled()) {
     // Estimate and schedule timeout
-    RttEstimator::Duration timeout = faceInfo.computeRto();
+    auto timeout = faceInfo.computeRto();
 
     NFD_LOG_TRACE("Scheduling timeout for " << fibEntry.getPrefix() << " to: " << egress
                   << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
@@ -261,27 +261,27 @@ AsfStrategy::forwardInterest(const Interest& interest,
 struct FaceStats
 {
   Face* face;
-  RttStats::Rtt rtt;
-  RttStats::Rtt srtt;
+  time::nanoseconds rtt;
+  time::nanoseconds srtt;
   uint64_t cost;
 };
 
-double
+time::nanoseconds
 getValueForSorting(const FaceStats& stats)
 {
   // These values allow faces with no measurements to be ranked better than timeouts
   // srtt < RTT_NO_MEASUREMENT < RTT_TIMEOUT
-  static const RttStats::Rtt SORTING_RTT_TIMEOUT = time::microseconds::max();
-  static const RttStats::Rtt SORTING_RTT_NO_MEASUREMENT = SORTING_RTT_TIMEOUT / 2;
+  static const time::nanoseconds SORTING_RTT_TIMEOUT = time::nanoseconds::max();
+  static const time::nanoseconds SORTING_RTT_NO_MEASUREMENT = SORTING_RTT_TIMEOUT / 2;
 
   if (stats.rtt == RttStats::RTT_TIMEOUT) {
-    return SORTING_RTT_TIMEOUT.count();
+    return SORTING_RTT_TIMEOUT;
   }
   else if (stats.rtt == RttStats::RTT_NO_MEASUREMENT) {
-    return SORTING_RTT_NO_MEASUREMENT.count();
+    return SORTING_RTT_NO_MEASUREMENT;
   }
   else {
-    return stats.srtt.count();
+    return stats.srtt;
   }
 }
 
@@ -298,8 +298,8 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
   FaceStatsSet rankedFaces(
     [] (const FaceStats& lhs, const FaceStats& rhs) -> bool {
       // Sort by RTT and then by cost
-      double lhsValue = getValueForSorting(lhs);
-      double rhsValue = getValueForSorting(rhs);
+      time::nanoseconds lhsValue = getValueForSorting(lhs);
+      time::nanoseconds rhsValue = getValueForSorting(rhs);
 
       if (lhsValue < rhsValue) {
         return true;

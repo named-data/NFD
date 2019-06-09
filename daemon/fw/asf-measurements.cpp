@@ -32,8 +32,8 @@ namespace asf {
 
 NFD_LOG_INIT(AsfMeasurements);
 
-const RttStats::Rtt RttStats::RTT_TIMEOUT(-1.0);
-const RttStats::Rtt RttStats::RTT_NO_MEASUREMENT(0.0);
+const time::nanoseconds RttStats::RTT_TIMEOUT(-1);
+const time::nanoseconds RttStats::RTT_NO_MEASUREMENT(0);
 const double RttStats::ALPHA = 0.125;
 
 RttStats::RttStats()
@@ -43,23 +43,11 @@ RttStats::RttStats()
 }
 
 void
-RttStats::addRttMeasurement(RttEstimator::Duration& durationRtt)
+RttStats::addRttMeasurement(time::nanoseconds durationRtt)
 {
-  m_rtt = static_cast<RttStats::Rtt>(durationRtt.count());
-
-  m_rttEstimator.addMeasurement(durationRtt);
-
-  m_srtt = computeSrtt(m_srtt, m_rtt);
-}
-
-RttStats::Rtt
-RttStats::computeSrtt(Rtt previousSrtt, Rtt currentRtt)
-{
-  if (previousSrtt == RTT_NO_MEASUREMENT) {
-    return currentRtt;
-  }
-
-  return Rtt(ALPHA * currentRtt + (1 - ALPHA) * previousSrtt);
+  m_rtt = durationRtt;
+  m_rttEstimator.addMeasurement(durationRtt, 1);
+  m_srtt = m_rttEstimator.getSmoothedRtt();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,14 +110,9 @@ FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
     return;
   }
 
-  time::steady_clock::Duration steadyRtt = time::steady_clock::now() - outRecord->getLastRenewed();
-  auto durationRtt = time::duration_cast<RttEstimator::Duration>(steadyRtt);
-
-  m_rttStats.addRttMeasurement(durationRtt);
-
+  m_rttStats.addRttMeasurement(time::steady_clock::now() - outRecord->getLastRenewed());
   NFD_LOG_TRACE("Recording RTT for FaceId: " << inFace.getId()
-                                             << " RTT: "    << m_rttStats.getRtt()
-                                             << " SRTT: "   << m_rttStats.getSrtt());
+                << " RTT: " << m_rttStats.getRtt() << " SRTT: " << m_rttStats.getSrtt());
 }
 
 void
@@ -167,9 +150,10 @@ NamespaceInfo::getOrCreateFaceInfo(const fib::Entry&, FaceId faceId)
   FaceInfo* info = nullptr;
 
   if (it == m_fit.end()) {
-    const auto& pair = m_fit.emplace(faceId, FaceInfo());
+    const auto& pair = m_fit.emplace(std::piecewise_construct,
+                                     std::forward_as_tuple(faceId),
+                                     std::forward_as_tuple());
     info = &pair.first->second;
-
     extendFaceInfoLifetime(*info, faceId);
   }
   else {

@@ -26,9 +26,10 @@
 #ifndef NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 #define NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 
-#include "core/rtt-estimator.hpp"
 #include "fw/strategy-info.hpp"
 #include "table/measurements-accessor.hpp"
+
+#include <ndn-cxx/util/rtt-estimator.hpp>
 
 namespace nfd {
 namespace fw {
@@ -37,12 +38,10 @@ namespace asf {
 class RttStats
 {
 public:
-  typedef time::duration<double, boost::micro> Rtt;
-
   RttStats();
 
   void
-  addRttMeasurement(RttEstimator::Duration& durationRtt);
+  addRttMeasurement(time::nanoseconds rtt);
 
   void
   recordTimeout()
@@ -50,36 +49,32 @@ public:
     m_rtt = RTT_TIMEOUT;
   }
 
-  Rtt
+  time::nanoseconds
   getRtt() const
   {
     return m_rtt;
   }
 
-  Rtt
+  time::nanoseconds
   getSrtt() const
   {
     return m_srtt;
   }
 
-  RttEstimator::Duration
+  time::nanoseconds
   computeRto() const
   {
-    return m_rttEstimator.computeRto();
+    return m_rttEstimator.getEstimatedRto();
   }
 
-private:
-  static Rtt
-  computeSrtt(Rtt previousSrtt, Rtt currentRtt);
-
 public:
-  static const Rtt RTT_TIMEOUT;
-  static const Rtt RTT_NO_MEASUREMENT;
+  static const time::nanoseconds RTT_TIMEOUT;
+  static const time::nanoseconds RTT_NO_MEASUREMENT;
 
 private:
-  Rtt m_srtt;
-  Rtt m_rtt;
-  RttEstimator m_rttEstimator;
+  time::nanoseconds m_srtt;
+  time::nanoseconds m_rtt;
+  ndn::util::RttEstimator m_rttEstimator;
 
   static const double ALPHA;
 };
@@ -142,19 +137,19 @@ public:
     return getRtt() == RttStats::RTT_TIMEOUT;
   }
 
-  RttEstimator::Duration
+  time::nanoseconds
   computeRto() const
   {
     return m_rttStats.computeRto();
   }
 
-  RttStats::Rtt
+  time::nanoseconds
   getRtt() const
   {
     return m_rttStats.getRtt();
   }
 
-  RttStats::Rtt
+  time::nanoseconds
   getSrtt() const
   {
     return m_rttStats.getSrtt();
@@ -203,7 +198,7 @@ typedef std::unordered_map<FaceId, FaceInfo> FaceInfoTable;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/** \brief stores stategy information about each face in this namespace
+/** \brief stores strategy information about each face in this namespace
  */
 class NamespaceInfo : public StrategyInfo
 {
@@ -251,10 +246,12 @@ public:
     return m_fit.end();
   }
 
-  const FaceInfoTable::iterator
+  FaceInfoTable::iterator
   insert(FaceId faceId)
   {
-    return m_fit.emplace(faceId, FaceInfo()).first;
+    return m_fit.emplace(std::piecewise_construct,
+                         std::forward_as_tuple(faceId),
+                         std::forward_as_tuple()).first;
   }
 
   bool
