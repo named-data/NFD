@@ -17,6 +17,8 @@ matrix:
       env: COMPILER=g++-7
     - os: linux
       env: COMPILER=g++-8
+    - os: linux
+      env: COMPILER=g++-9
 
     # Linux/clang
     # https://apt.llvm.org/
