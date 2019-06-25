@@ -141,8 +141,6 @@ RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseco
     NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
   }
 
-  m_registeredFaces.insert(route.faceId);
-
   RibUpdate update;
   update.setAction(RibUpdate::REGISTER)
         .setName(name)
@@ -200,8 +198,6 @@ RibManager::registerTopPrefix(const Name& topPrefix)
       route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
 
       m_rib.insert(topPrefix, route);
-
-      m_registeredFaces.insert(route.faceId);
     },
     [=] (const ControlResponse& res) {
       NDN_THROW(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
@@ -449,13 +445,6 @@ RibManager::onFetchActiveFacesFailure(uint32_t code, const std::string& reason)
 }
 
 void
-RibManager::onFaceDestroyedEvent(uint64_t faceId)
-{
-  m_rib.beginRemoveFace(faceId);
-  m_registeredFaces.erase(faceId);
-}
-
-void
 RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
 {
   m_activeFaceFetchEvent = getScheduler().schedule(timeToWait, [this] { fetchActiveFaces(); });
@@ -466,19 +455,11 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
 {
   NFD_LOG_DEBUG("Checking for invalid face registrations");
 
-  FaceIdSet activeFaceIds;
+  std::set<uint64_t> activeFaceIds;
   for (const auto& faceStatus : activeFaces) {
     activeFaceIds.insert(faceStatus.getFaceId());
   }
-
-  // Look for face IDs that were registered but not active to find missed
-  // face destroyed events
-  for (auto faceId : m_registeredFaces) {
-    if (activeFaceIds.count(faceId) == 0) {
-      NFD_LOG_DEBUG("Removing invalid FaceId " << faceId);
-      getGlobalIoService().post([this, faceId] { onFaceDestroyedEvent(faceId); });
-    }
-  }
+  getGlobalIoService().post([=] { m_rib.beginRemoveFailedFaces(activeFaceIds); });
 
   // Reschedule the check for future clean up
   scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
@@ -491,7 +472,7 @@ RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
 
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
     NFD_LOG_DEBUG("Received notification for destroyed FaceId " << notification.getFaceId());
-    getGlobalIoService().post([this, id = notification.getFaceId()] { onFaceDestroyedEvent(id); });
+    getGlobalIoService().post([this, id = notification.getFaceId()] { m_rib.beginRemoveFace(id); });
   }
 }
 

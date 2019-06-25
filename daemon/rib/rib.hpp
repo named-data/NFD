@@ -62,7 +62,6 @@ public:
   typedef std::list<shared_ptr<RibEntry>> RibEntryList;
   typedef std::map<Name, shared_ptr<RibEntry>> RibTable;
   typedef RibTable::const_iterator const_iterator;
-  typedef std::map<uint64_t, std::list<shared_ptr<RibEntry>>> FaceLookupTable;
   typedef bool (*RouteComparePredicate)(const Route&, const Route&);
   typedef std::set<Route, RouteComparePredicate> RouteSet;
 
@@ -135,6 +134,9 @@ public:
   beginRemoveFace(uint64_t faceId);
 
   void
+  beginRemoveFailedFaces(const std::set<uint64_t>& activeFaceIds);
+
+  void
   onFibUpdateSuccess(const RibUpdateBatch& batch,
                      const RibUpdateList& inheritedRoutes,
                      const Rib::UpdateSuccessCallback& onSuccess);
@@ -150,6 +152,9 @@ public:
   insert(const Name& prefix, const Route& route);
 
 private:
+  void
+  enqueueRemoveFace(const RibEntry& entry, uint64_t faceId);
+
   /** \brief adds the passed update to a RibUpdateBatch and adds the batch to
   *          the end of the update queue.
   *
@@ -219,12 +224,6 @@ private:
   void
   modifyInheritedRoutes(const RibUpdateList& inheritedRoutes);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  using NameAndRoute = std::pair<const Name&, const Route&>;
-
-  std::list<NameAndRoute>
-  findRoutesWithFaceId(uint64_t faceId);
-
 public:
   /** \brief signals after a RIB entry is inserted
    *
@@ -251,7 +250,7 @@ public:
 
 private:
   RibTable m_rib;
-  FaceLookupTable m_faceMap;
+  std::multimap<uint64_t, shared_ptr<RibEntry>> m_faceEntries; ///< FaceId => Entry with Route on this face
   FibUpdater* m_fibUpdater;
 
   size_t m_nItems;

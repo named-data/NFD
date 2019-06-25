@@ -223,9 +223,6 @@ private: // Face monitor
   void
   onFetchActiveFacesFailure(uint32_t code, const std::string& reason);
 
-  void
-  onFaceDestroyedEvent(uint64_t faceId);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   scheduleActiveFaceFetch(const time::seconds& timeToWait);
@@ -251,8 +248,6 @@ private:
   bool m_isLocalhopEnabled;
 
   scheduler::ScopedEventId m_activeFaceFetchEvent;
-  using FaceIdSet = std::set<uint64_t>;
-  FaceIdSet m_registeredFaces; ///< contains FaceIds with one or more Routes in the RIB
 };
 
 std::ostream&

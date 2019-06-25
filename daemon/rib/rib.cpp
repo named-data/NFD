@@ -114,7 +114,7 @@ Rib::insert(const Name& prefix, const Route& route)
       afterAddRoute(RibRouteRef{entry, entryIt});
 
       // Register with face lookup table
-      m_faceMap[route.faceId].push_back(entry);
+      m_faceEntries.emplace(route.faceId, entry);
     }
     else {
       // Route exists, update fields
@@ -159,7 +159,7 @@ Rib::insert(const Name& prefix, const Route& route)
     }
 
     // Register with face lookup table
-    m_faceMap[route.faceId].push_back(entry);
+    m_faceEntries.emplace(route.faceId, entry);
 
     // do something after inserting an entry
     afterInsertEntry(prefix);
@@ -171,28 +171,35 @@ void
 Rib::erase(const Name& prefix, const Route& route)
 {
   auto ribIt = m_rib.find(prefix);
+  if (ribIt == m_rib.end()) {
+    // Name prefix does not exist
+    return;
+  }
 
-  // Name prefix exists
-  if (ribIt != m_rib.end()) {
-    shared_ptr<RibEntry> entry = ribIt->second;
-    auto routeIt = entry->findRoute(route);
+  shared_ptr<RibEntry> entry = ribIt->second;
+  auto routeIt = entry->findRoute(route);
 
-    if (routeIt != entry->end()) {
-      beforeRemoveRoute(RibRouteRef{entry, routeIt});
+  if (routeIt != entry->end()) {
+    beforeRemoveRoute(RibRouteRef{entry, routeIt});
 
-      auto faceId = route.faceId;
-      entry->eraseRoute(routeIt);
-      m_nItems--;
+    auto faceId = route.faceId;
+    entry->eraseRoute(routeIt);
+    m_nItems--;
 
-      // If this RibEntry no longer has this faceId, unregister from face lookup table
-      if (!entry->hasFaceId(faceId)) {
-        m_faceMap[faceId].remove(entry);
+    // If this RibEntry no longer has this faceId, unregister from face lookup table
+    if (!entry->hasFaceId(faceId)) {
+      auto range = m_faceEntries.equal_range(faceId);
+      for (auto it = range.first; it != range.second; ++it) {
+        if (it->second == entry) {
+          m_faceEntries.erase(it);
+          break;
+        }
       }
+    }
 
-      // If a RibEntry's route list is empty, remove it from the tree
-      if (entry->getRoutes().empty()) {
-        eraseEntry(ribIt);
-      }
+    // If a RibEntry's route list is empty, remove it from the tree
+    if (entry->getRoutes().empty()) {
+      eraseEntry(ribIt);
     }
   }
 }
@@ -361,16 +368,39 @@ Rib::beginApplyUpdate(const RibUpdate& update,
 void
 Rib::beginRemoveFace(uint64_t faceId)
 {
-  for (const auto& nameAndRoute : findRoutesWithFaceId(faceId)) {
+  auto range = m_faceEntries.equal_range(faceId);
+  for (auto it = range.first; it != range.second; ++it) {
+    enqueueRemoveFace(*it->second, faceId);
+  }
+  sendBatchFromQueue();
+}
+
+void
+Rib::beginRemoveFailedFaces(const std::set<uint64_t>& activeFaceIds)
+{
+  for (auto it = m_faceEntries.begin(); it != m_faceEntries.end(); ++it) {
+    if (activeFaceIds.count(it->first) > 0) {
+      continue;
+    }
+    enqueueRemoveFace(*it->second, it->first);
+  }
+  sendBatchFromQueue();
+}
+
+void
+Rib::enqueueRemoveFace(const RibEntry& entry, uint64_t faceId)
+{
+  for (const Route& route : entry) {
+    if (route.faceId != faceId) {
+      continue;
+    }
+
     RibUpdate update;
     update.setAction(RibUpdate::REMOVE_FACE)
-          .setName(nameAndRoute.first)
-          .setRoute(nameAndRoute.second);
-
+          .setName(entry.getName())
+          .setRoute(route);
     addUpdateToQueue(update, nullptr, nullptr);
   }
-
-  sendBatchFromQueue();
 }
 
 void
@@ -488,30 +518,6 @@ Rib::modifyInheritedRoutes(const RibUpdateList& inheritedRoutes)
       break;
     }
   }
-}
-
-std::list<Rib::NameAndRoute>
-Rib::findRoutesWithFaceId(uint64_t faceId)
-{
-  std::list<NameAndRoute> routes;
-
-  auto lookupIt = m_faceMap.find(faceId);
-  if (lookupIt == m_faceMap.end()) {
-    // No RIB entries have this face
-    return routes;
-  }
-
-  // For each RIB entry that has faceId
-  for (const auto& entry : lookupIt->second) {
-    // Find the routes in the entry
-    for (const Route& route : *entry) {
-      if (route.faceId == faceId) {
-        routes.emplace_back(entry->getName(), route);
-      }
-    }
-  }
-
-  return routes;
 }
 
 std::ostream&
