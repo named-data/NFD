@@ -167,10 +167,12 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
   ++m_counters.nCsMisses;
 
-  // insert in-record
   // FIXME Strategies are not prepared to handle non-zero EndpointIds, so always insert
-  //       the in-record with EndpointId=0 for now. Eventually, this pipeline will need
-  //       to be refactored so that strategies can control the in-record insertion.
+  //       the in-record and dispatch to strategy with EndpointId=0 for now. Eventually,
+  //       this pipeline will need to be refactored so that strategies can control the
+  //       in-record insertion.
+
+  // insert in-record
   pitEntry->insertOrUpdateInRecord(ingress.face, 0, interest);
 
   // set PIT expiry timer to the time that the last PIT in-record expires
@@ -198,7 +200,9 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
 
   // dispatch to strategy: after incoming Interest
   this->dispatchToStrategy(*pitEntry,
-    [&] (fw::Strategy& strategy) { strategy.afterReceiveInterest(ingress, interest, pitEntry); });
+    [&] (fw::Strategy& strategy) {
+      strategy.afterReceiveInterest(FaceEndpoint(ingress.face, 0), interest, pitEntry);
+    });
 }
 
 void
