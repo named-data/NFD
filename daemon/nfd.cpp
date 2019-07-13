@@ -44,12 +44,14 @@ namespace nfd {
 
 NFD_LOG_INIT(Nfd);
 
-static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
+const std::string INTERNAL_CONFIG("internal://nfd.conf");
 
 Nfd::Nfd(ndn::KeyChain& keyChain)
   : m_keyChain(keyChain)
   , m_netmon(make_shared<ndn::net::NetworkMonitor>(getGlobalIoService()))
 {
+  // Disable automatic verification of parameters digest for decoded Interests.
+  Interest::setAutoCheckParametersDigest(false);
 }
 
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)

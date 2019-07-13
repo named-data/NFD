@@ -28,22 +28,17 @@
 
 #include "common/config-file.hpp"
 
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-
-namespace ndn {
-class Face;
-namespace mgmt {
-class Dispatcher;
-} // namespace mgmt
-} // namespace ndn
 
 namespace nfd {
 
 class Forwarder;
 class CommandAuthenticator;
 
-// forward-declare management modules, in the order as defined in management protocol
+// forward-declare management modules, in the order defined in management protocol
 class ForwarderStatusManager;
 class FaceManager;
 class FibManager;
@@ -56,40 +51,44 @@ class FaceSystem;
 } // namespace face
 
 /**
- * \brief Class representing NFD instance
- * This class can be used to initialize all components of NFD
+ * \brief Class representing the NFD instance.
+ *
+ * This class is used to initialize all components of NFD.
  */
 class Nfd : noncopyable
 {
 public:
   /**
-   * \brief Create NFD instance using absolute or relative path to \p configFile
+   * \brief Create NFD instance using an absolute or relative path to a configuration file.
    */
   Nfd(const std::string& configFile, ndn::KeyChain& keyChain);
 
   /**
-   * \brief Create NFD instance using a parsed ConfigSection \p config
+   * \brief Create NFD instance using a parsed ConfigSection.
+   *
    * This version of the constructor is more appropriate for integrated environments,
-   * such as NS-3 or android.
-   * \note When using this version of the constructor, error messages will include
-   *      "internal://nfd.conf" when referring to configuration errors.
+   * such as NS-3 or Android.
+   *
+   * \note When using this version of the constructor, error messages will show
+   *       "internal://nfd.conf" when referring to configuration errors.
    */
   Nfd(const ConfigSection& config, ndn::KeyChain& keyChain);
 
   /**
-   * \brief Destructor
+   * \brief Destructor.
    */
   ~Nfd();
 
   /**
-   * \brief Perform initialization of NFD instance
-   * After initialization, NFD instance can be started by invoking run on globalIoService
+   * \brief Perform initialization of NFD instance.
+   *
+   * After initialization, NFD can be started by invoking `getGlobalIoService().run()`.
    */
   void
   initialize();
 
   /**
-   * \brief Reload configuration file and apply update (if any)
+   * \brief Reload configuration file and apply updates (if any).
    */
   void
   reloadConfigFile();
