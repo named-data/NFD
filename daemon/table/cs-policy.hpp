@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_CS_POLICY_HPP
 #define NFD_DAEMON_TABLE_CS_POLICY_HPP
 
-#include "cs-internal.hpp"
-#include "cs-entry-impl.hpp"
+#include "cs-entry.hpp"
 
 namespace nfd {
 namespace cs {
@@ -67,23 +66,36 @@ public:
   ~Policy() = default;
 
   const std::string&
-  getName() const;
+  getName() const
+  {
+    return m_policyName;
+  }
+
 
 public:
   /** \brief gets cs
    */
   Cs*
-  getCs() const;
+  getCs() const
+  {
+    return m_cs;
+  }
 
   /** \brief sets cs
    */
   void
-  setCs(Cs *cs);
+  setCs(Cs* cs)
+  {
+    m_cs = cs;
+  }
 
   /** \brief gets hard limit (in number of entries)
    */
   size_t
-  getLimit() const;
+  getLimit() const
+  {
+    return m_limit;
+  }
 
   /** \brief sets hard limit (in number of entries)
    *  \post getLimit() == nMaxEntries
@@ -188,30 +200,6 @@ private:
   size_t m_limit;
   Cs* m_cs;
 };
-
-inline const std::string&
-Policy::getName() const
-{
-  return m_policyName;
-}
-
-inline Cs*
-Policy::getCs() const
-{
-  return m_cs;
-}
-
-inline void
-Policy::setCs(Cs *cs)
-{
-  m_cs = cs;
-}
-
-inline size_t
-Policy::getLimit() const
-{
-  return m_limit;
-}
 
 } // namespace cs
 } // namespace nfd

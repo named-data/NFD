@@ -113,7 +113,7 @@ PriorityFifoPolicy::attachQueue(iterator i)
   if (i->isUnsolicited()) {
     entryInfo->queueType = QUEUE_UNSOLICITED;
   }
-  else if (i->isStale()) {
+  else if (!i->isFresh()) {
     entryInfo->queueType = QUEUE_STALE;
   }
   else {

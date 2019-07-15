@@ -31,112 +31,91 @@
 namespace nfd {
 namespace cs {
 
-/** \brief represents a base class for CS entry
+/** \brief a ContentStore entry
  */
 class Entry
 {
 public: // exposed through ContentStore enumeration
-  /** \return the stored Data
-   *  \pre hasData()
+  /** \brief return the stored Data
    */
   const Data&
   getData() const
   {
-    BOOST_ASSERT(this->hasData());
     return *m_data;
   }
 
-  /** \return Name of the stored Data
-   *  \pre hasData()
+  /** \brief return stored Data name
    */
   const Name&
   getName() const
   {
-    BOOST_ASSERT(this->hasData());
     return m_data->getName();
   }
 
-  /** \return full name (including implicit digest) of the stored Data
-   *  \pre hasData()
+  /** \brief return full name (including implicit digest) of the stored Data
    */
   const Name&
   getFullName() const
   {
-    BOOST_ASSERT(this->hasData());
     return m_data->getFullName();
   }
 
-  /** \return whether the stored Data is unsolicited
-   *  \pre hasData()
+  /** \brief return whether the stored Data is unsolicited
    */
   bool
   isUnsolicited() const
   {
-    BOOST_ASSERT(this->hasData());
     return m_isUnsolicited;
   }
 
-  /** \return the absolute time when the stored Data becomes stale
-   *  \note if the returned TimePoint is in the past, the Data is stale
-   *  \pre hasData()
-   */
-  const time::steady_clock::TimePoint&
-  getStaleTime() const
-  {
-    BOOST_ASSERT(this->hasData());
-    return m_staleTime;
-  }
-
-  /** \brief checks if the stored Data is stale now
-   *  \pre hasData()
+  /** \brief check if the stored Data is fresh now
    */
   bool
-  isStale() const;
+  isFresh() const;
 
-  /** \brief determines whether Interest can be satisified by the stored Data
-   *  \pre hasData()
+  /** \brief determine whether Interest can be satisified by the stored Data
    */
   bool
   canSatisfy(const Interest& interest) const;
 
-public: // used by generic ContentStore implementation
-  /** \return true if a Data packet is stored
+public: // used by ContentStore implementation
+  Entry(shared_ptr<const Data> data, bool isUnsolicited);
+
+  /** \brief recalculate when the entry would become non-fresh, relative to current time
    */
-  bool
-  hasData() const
+  void
+  updateFreshUntil();
+
+  /** \brief clear 'unsolicited' flag
+   */
+  void
+  clearUnsolicited()
   {
-    return m_data != nullptr;
+    m_isUnsolicited = false;
   }
-
-  /** \brief replaces the stored Data
-   */
-  void
-  setData(shared_ptr<const Data> data, bool isUnsolicited);
-
-  /** \brief replaces the stored Data
-   */
-  void
-  setData(const Data& data, bool isUnsolicited)
-  {
-    this->setData(data.shared_from_this(), isUnsolicited);
-  }
-
-  /** \brief refreshes stale time relative to current time
-   */
-  void
-  updateStaleTime();
-
-  /** \brief clears the entry
-   *  \post !hasData()
-   */
-  void
-  reset();
 
 private:
   shared_ptr<const Data> m_data;
   bool m_isUnsolicited;
-  time::steady_clock::TimePoint m_staleTime;
+  time::steady_clock::TimePoint m_freshUntil;
 };
+
+bool
+operator<(const Entry& entry, const Name& queryName);
+
+bool
+operator<(const Name& queryName, const Entry& entry);
+
+bool
+operator<(const Entry& lhs, const Entry& rhs);
+
+/** \brief an ordered container of ContentStore entries
+ *
+ *  This container uses std::less<> comparator to enable lookup with queryName.
+ */
+using Table = std::set<Entry, std::less<>>;
+
+using iterator = Table::const_iterator;
 
 } // namespace cs
 } // namespace nfd

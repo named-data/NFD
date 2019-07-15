@@ -28,50 +28,87 @@
 namespace nfd {
 namespace cs {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
+Entry::Entry(shared_ptr<const Data> data, bool isUnsolicited)
+  : m_data(std::move(data))
+  , m_isUnsolicited(isUnsolicited)
 {
-  m_data = std::move(data);
-  m_isUnsolicited = isUnsolicited;
-
-  updateStaleTime();
+  updateFreshUntil();
 }
 
 bool
-Entry::isStale() const
+Entry::isFresh() const
 {
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
+  return m_freshUntil >= time::steady_clock::now();
 }
 
 void
-Entry::updateStaleTime()
+Entry::updateFreshUntil()
 {
-  BOOST_ASSERT(this->hasData());
-  m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
+  m_freshUntil = time::steady_clock::now() + m_data->getFreshnessPeriod();
 }
 
 bool
 Entry::canSatisfy(const Interest& interest) const
 {
-  BOOST_ASSERT(this->hasData());
   if (!interest.matchesData(*m_data)) {
     return false;
   }
 
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
+  if (interest.getMustBeFresh() && !this->isFresh()) {
     return false;
   }
 
   return true;
 }
 
-void
-Entry::reset()
+static int
+compareQueryWithData(const Name& queryName, const Data& data)
 {
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
+  bool queryIsFullName = !queryName.empty() && queryName[-1].isImplicitSha256Digest();
+
+  int cmp = queryIsFullName ?
+            queryName.compare(0, queryName.size() - 1, data.getName()) :
+            queryName.compare(data.getName());
+
+  if (cmp != 0) { // Name without digest differs
+    return cmp;
+  }
+
+  if (queryIsFullName) { // Name without digest equals, compare digest
+    return queryName[-1].compare(data.getFullName()[-1]);
+  }
+  else { // queryName is a proper prefix of Data fullName
+    return -1;
+  }
+}
+
+static int
+compareDataWithData(const Data& lhs, const Data& rhs)
+{
+  int cmp = lhs.getName().compare(rhs.getName());
+  if (cmp != 0) {
+    return cmp;
+  }
+
+  return lhs.getFullName()[-1].compare(rhs.getFullName()[-1]);
+}
+
+bool
+operator<(const Entry& entry, const Name& queryName)
+{
+  return compareQueryWithData(queryName, entry.getData()) > 0;
+}
+
+bool
+operator<(const Name& queryName, const Entry& entry)
+{
+  return compareQueryWithData(queryName, entry.getData()) < 0;
+}
+
+bool
+operator<(const Entry& lhs, const Entry& rhs)
+{
+  return compareDataWithData(lhs.getData(), rhs.getData()) < 0;
 }
 
 } // namespace cs

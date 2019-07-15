@@ -69,14 +69,14 @@ Cs::insert(const Data& data, bool isUnsolicited)
   iterator it;
   bool isNewEntry = false;
   std::tie(it, isNewEntry) = m_table.emplace(data.shared_from_this(), isUnsolicited);
-  EntryImpl& entry = const_cast<EntryImpl&>(*it);
+  Entry& entry = const_cast<Entry&>(*it);
 
-  entry.updateStaleTime();
+  entry.updateFreshUntil();
 
   if (!isNewEntry) { // existing entry
     // XXX This doesn't forbid unsolicited Data from refreshing a solicited entry.
     if (entry.isUnsolicited() && !isUnsolicited) {
-      entry.unsetUnsolicited();
+      entry.clearUnsolicited();
     }
 
     m_policy->afterRefresh(it);
@@ -137,7 +137,7 @@ void
 Cs::dump()
 {
   NFD_LOG_DEBUG("dump table");
-  for (const EntryImpl& entry : m_table) {
+  for (const Entry& entry : m_table) {
     NFD_LOG_TRACE(entry.getFullName());
   }
 }

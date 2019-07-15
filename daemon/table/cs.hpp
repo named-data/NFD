@@ -27,10 +27,6 @@
 #define NFD_DAEMON_TABLE_CS_HPP
 
 #include "cs-policy.hpp"
-#include "cs-internal.hpp"
-#include "cs-entry-impl.hpp"
-
-#include <boost/iterator/transform_iterator.hpp>
 
 namespace nfd {
 namespace cs {
@@ -162,32 +158,20 @@ public: // configuration
   enableServe(bool shouldServe);
 
 public: // enumeration
-  class EntryFromEntryImpl
-  {
-  public:
-    typedef const Entry& result_type;
-
-    const Entry&
-    operator()(const EntryImpl& entry) const
-    {
-      return entry;
-    }
-  };
-
   /** \brief ContentStore iterator (public API)
    */
-  using const_iterator = boost::transform_iterator<EntryFromEntryImpl, iterator, const Entry&>;
+  using const_iterator = iterator;
 
   const_iterator
   begin() const
   {
-    return boost::make_transform_iterator(m_table.begin(), EntryFromEntryImpl());
+    return m_table.begin();
   }
 
   const_iterator
   end() const
   {
-    return boost::make_transform_iterator(m_table.end(), EntryFromEntryImpl());
+    return m_table.end();
   }
 
 private:
