@@ -24,6 +24,7 @@
  */
 
 #include "tcp-channel.hpp"
+#include "face.hpp"
 #include "generic-link-service.hpp"
 #include "tcp-transport.hpp"
 #include "common/global.hpp"

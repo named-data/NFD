@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,11 +27,11 @@
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
 #include "channel.hpp"
+#include "face.hpp"
 #include "face-system.hpp"
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
-#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 namespace face {

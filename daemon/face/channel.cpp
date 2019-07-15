@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "channel.hpp"
+#include "face.hpp"
 
 namespace nfd {
 namespace face {
@@ -37,14 +38,13 @@ Channel::setUri(const FaceUri& uri)
 }
 
 void
-connectFaceClosedSignal(Face& face, const std::function<void()>& f)
+connectFaceClosedSignal(Face& face, std::function<void()> f)
 {
-  face.afterStateChange.connect(
-    [f] (FaceState oldState, FaceState newState) {
-      if (newState == FaceState::CLOSED) {
-        f();
-      }
-    });
+  face.afterStateChange.connect([f = std::move(f)] (auto, FaceState newState) {
+    if (newState == FaceState::CLOSED) {
+      f();
+    }
+  });
 }
 
 } // namespace face

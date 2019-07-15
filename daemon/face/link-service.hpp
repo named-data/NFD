@@ -26,14 +26,12 @@
 #ifndef NFD_DAEMON_FACE_LINK_SERVICE_HPP
 #define NFD_DAEMON_FACE_LINK_SERVICE_HPP
 
-#include "face-log.hpp"
+#include "face-common.hpp"
 #include "transport.hpp"
 #include "common/counter.hpp"
 
 namespace nfd {
 namespace face {
-
-class Face;
 
 /** \brief counters provided by LinkService
  *  \note The type name 'LinkServiceCounters' is implementation detail.

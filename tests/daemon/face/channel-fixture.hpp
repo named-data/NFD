@@ -27,6 +27,7 @@
 #define NFD_TESTS_DAEMON_FACE_CHANNEL_FIXTURE_HPP
 
 #include "face/channel.hpp"
+#include "face/face.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"

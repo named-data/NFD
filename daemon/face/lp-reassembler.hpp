@@ -26,15 +26,12 @@
 #ifndef NFD_DAEMON_FACE_LP_REASSEMBLER_HPP
 #define NFD_DAEMON_FACE_LP_REASSEMBLER_HPP
 
-#include "face-log.hpp"
-#include "transport.hpp"
+#include "face-common.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
 
 namespace nfd {
 namespace face {
-
-class LinkService;
 
 /** \brief reassembles fragmented network-layer packets
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2

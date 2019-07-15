@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 #define NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 
-#include "channel.hpp"
 #include "network-predicate.hpp"
 #include "common/config-file.hpp"
 

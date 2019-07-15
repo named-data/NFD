@@ -27,6 +27,7 @@
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 
 #include "manager-base.hpp"
+#include "face/face.hpp"
 #include "face/face-system.hpp"
 
 namespace nfd {

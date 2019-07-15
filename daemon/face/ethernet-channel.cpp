@@ -25,6 +25,7 @@
 
 #include "ethernet-channel.hpp"
 #include "ethernet-protocol.hpp"
+#include "face.hpp"
 #include "generic-link-service.hpp"
 #include "unicast-ethernet-transport.hpp"
 #include "common/global.hpp"

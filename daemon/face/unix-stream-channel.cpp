@@ -24,6 +24,7 @@
  */
 
 #include "unix-stream-channel.hpp"
+#include "face.hpp"
 #include "generic-link-service.hpp"
 #include "unix-stream-transport.hpp"
 #include "common/global.hpp"

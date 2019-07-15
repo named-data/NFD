@@ -26,28 +26,13 @@
 #ifndef NFD_DAEMON_FACE_FACE_HPP
 #define NFD_DAEMON_FACE_FACE_HPP
 
+#include "face-common.hpp"
 #include "face-counters.hpp"
-#include "face-log.hpp"
 #include "link-service.hpp"
 #include "transport.hpp"
 
 namespace nfd {
 namespace face {
-
-/** \brief identifies a face
- */
-typedef uint64_t FaceId;
-
-/// indicates an invalid FaceId
-const FaceId INVALID_FACEID = 0;
-/// identifies the InternalFace used in management
-const FaceId FACEID_INTERNAL_FACE = 1;
-/// identifies a packet comes from the ContentStore
-const FaceId FACEID_CONTENT_STORE = 254;
-/// identifies the NullFace that drops every packet
-const FaceId FACEID_NULL = 255;
-/// upper bound of reserved FaceIds
-const FaceId FACEID_RESERVED_MAX = 255;
 
 /** \brief indicates the state of a face
  */
@@ -295,8 +280,6 @@ operator<<(std::ostream& os, const FaceLogHelper<Face>& flh);
 
 } // namespace face
 
-using face::EndpointId;
-using face::FaceId;
 using face::Face;
 
 } // namespace nfd

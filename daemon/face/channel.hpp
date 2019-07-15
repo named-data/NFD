@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,23 +27,12 @@
 #define NFD_DAEMON_FACE_CHANNEL_HPP
 
 #include "channel-log.hpp"
-#include "face.hpp"
-
-#include <boost/logic/tribool.hpp>
+#include "face-common.hpp"
 
 namespace nfd {
 namespace face {
 
-/** \brief Prototype for the callback that is invoked when a face is created
- *         (in response to an incoming connection or after a connection is established)
- */
-using FaceCreatedCallback = std::function<void(const shared_ptr<Face>& face)>;
-
-/** \brief Prototype for the callback that is invoked when a face fails to be created
- */
-using FaceCreationFailedCallback = std::function<void(uint32_t status, const std::string& reason)>;
-
-/** \brief represent a channel that communicates on a local endpoint
+/** \brief Represents a channel that listens on a local endpoint.
  *  \sa FaceSystem
  *
  *  A channel can listen on a local endpoint and initiate outgoing connection from a local endpoint.
@@ -79,31 +68,24 @@ private:
   FaceUri m_uri;
 };
 
-/** \brief Parameters used to set Transport properties or LinkService options on a newly created face
- *
- *  Parameters are passed as a struct rather than individually, so that a future change in the list
- *  of parameters does not require an update to the method signature in all subclasses.
+/** \brief Prototype for the callback that is invoked when a face is created
+ *         (in response to an incoming connection or after a connection is established).
  */
-struct FaceParams
-{
-  ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  optional<time::nanoseconds> baseCongestionMarkingInterval;
-  optional<uint64_t> defaultCongestionThreshold;
-  optional<ssize_t> mtu;
-  bool wantLocalFields = false;
-  bool wantLpReliability = false;
-  boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
-};
+using FaceCreatedCallback = std::function<void(const shared_ptr<Face>&)>;
 
-/** \brief invokes a callback when the face is closed
+/** \brief Prototype for the callback that is invoked when a face fails to be created.
+ */
+using FaceCreationFailedCallback = std::function<void(uint32_t status, const std::string& reason)>;
+
+/** \brief Invokes a callback when a face is closed.
  *  \param face the face
  *  \param f the callback to be invoked when the face enters CLOSED state
  *
- *  This function connects a callback to the afterStateChange signal on the \p face,
+ *  This function connects a callback to the afterStateChange signal of \p face,
  *  and invokes \p f when the state becomes CLOSED.
  */
 void
-connectFaceClosedSignal(Face& face, const std::function<void()>& f);
+connectFaceClosedSignal(Face& face, std::function<void()> f);
 
 } // namespace face
 } // namespace nfd

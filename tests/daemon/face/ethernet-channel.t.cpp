@@ -24,6 +24,7 @@
  */
 
 #include "face/ethernet-channel.hpp"
+#include "face/face.hpp"
 
 #include "tests/test-common.hpp"
 #include "ethernet-fixture.hpp"

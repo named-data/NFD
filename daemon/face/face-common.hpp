@@ -23,28 +23,77 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_FACE_LOG_HPP
-#define NFD_DAEMON_FACE_FACE_LOG_HPP
+#ifndef NFD_DAEMON_FACE_FACE_COMMON_HPP
+#define NFD_DAEMON_FACE_FACE_COMMON_HPP
 
+#include "core/common.hpp"
 #include "common/logger.hpp"
+
+#include <ndn-cxx/encoding/nfd-constants.hpp>
+
+#include <boost/logic/tribool.hpp>
 
 namespace nfd {
 namespace face {
 
-/** \brief for internal use by FaceLogging macros
+class Face;
+class LinkService;
+
+/** \brief Identifies a face.
+ */
+using FaceId = uint64_t;
+
+/// indicates an invalid FaceId
+const FaceId INVALID_FACEID = ndn::nfd::INVALID_FACE_ID;
+/// identifies the InternalFace used in management
+const FaceId FACEID_INTERNAL_FACE = 1;
+/// identifies a packet comes from the ContentStore
+const FaceId FACEID_CONTENT_STORE = 254;
+/// identifies the NullFace that drops every packet
+const FaceId FACEID_NULL = 255;
+/// upper bound of reserved FaceIds
+const FaceId FACEID_RESERVED_MAX = 255;
+
+/** \brief Identifies a remote endpoint on the link.
  *
- *  FaceLogHelper wraps a Face, LinkService, or Transport object.
+ *  This ID is only meaningful in the context of the same Transport.
+ *  Incoming packets from the same remote endpoint have the same EndpointId,
+ *  and incoming packets from different remote endpoints have different EndpointIds.
  *
- *  std::ostream& operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
+ *  Typically, a point-to-point Transport has only one meaningful EndpointId (usually 0).
+ */
+using EndpointId = uint64_t;
+
+/** \brief Parameters used to set Transport properties or LinkService options on a newly created face.
+ *
+ *  Parameters are passed as a struct rather than individually, so that a future change in the list
+ *  of parameters does not require an update to the method signature in all subclasses.
+ */
+struct FaceParams
+{
+  ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
+  optional<time::nanoseconds> baseCongestionMarkingInterval;
+  optional<uint64_t> defaultCongestionThreshold;
+  optional<ssize_t> mtu;
+  bool wantLocalFields = false;
+  bool wantLpReliability = false;
+  boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
+};
+
+/** \brief For internal use by FaceLogging macros.
+ *
+ *  FaceLogHelper wraps a reference to Face, LinkService, or Transport object.
+ *
+ *  `std::ostream& operator<<(std::ostream& os, const FaceLogHelper<T>& flh)`
  *  should be specialized to print "[id=888,local=scheme://local/uri,remote=scheme://remote/uri] "
- *  which appears as part of the log message.
+ *  which will appear as part of the log message.
  */
 template<typename T>
 class FaceLogHelper
 {
 public:
   explicit
-  FaceLogHelper(const T& obj1)
+  FaceLogHelper(const T& obj1) noexcept
     : obj(obj1)
   {
   }
@@ -54,6 +103,10 @@ public:
 };
 
 } // namespace face
+
+using face::EndpointId;
+using face::FaceId;
+
 } // namespace nfd
 
 /** \defgroup FaceLogging Face logging macros
@@ -66,6 +119,7 @@ public:
  */
 
 /** \cond */
+// implementation detail
 #define NFD_LOG_FACE(level, msg) NFD_LOG_##level( \
   ::nfd::face::FaceLogHelper< \
     typename std::remove_cv< \
@@ -92,4 +146,4 @@ public:
 
 /** @} */
 
-#endif // NFD_DAEMON_FACE_FACE_LOG_HPP
+#endif // NFD_DAEMON_FACE_FACE_COMMON_HPP

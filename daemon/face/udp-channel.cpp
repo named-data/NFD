@@ -24,6 +24,7 @@
  */
 
 #include "udp-channel.hpp"
+#include "face.hpp"
 #include "generic-link-service.hpp"
 #include "unicast-udp-transport.hpp"
 #include "common/global.hpp"

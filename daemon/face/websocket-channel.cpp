@@ -24,6 +24,7 @@
  */
 
 #include "websocket-channel.hpp"
+#include "face.hpp"
 #include "generic-link-service.hpp"
 #include "websocket-transport.hpp"
 #include "common/global.hpp"

@@ -26,28 +26,11 @@
 #ifndef NFD_DAEMON_FACE_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_TRANSPORT_HPP
 
-#include "face-log.hpp"
+#include "face-common.hpp"
 #include "common/counter.hpp"
-
-#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 namespace face {
-
-class Face;
-class LinkService;
-
-/** \brief Identifies a remote endpoint on the link.
- *
- *  This ID is only meaningful in the context of the same Transport.
- *  Incoming packets from the same remote endpoint have the same EndpointId,
- *  and incoming packets from different remote endpoints have different EndpointIds.
- *
- *  Typically, a point-to-point Transport has only one meaningful EndpointId (usually 0).
- *
- *  \sa FaceEndpoint
- */
-using EndpointId = uint64_t;
 
 /** \brief Indicates the state of a transport.
  */
