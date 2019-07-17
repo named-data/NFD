@@ -32,14 +32,14 @@ matrix:
       env: COMPILER=clang++-5.0
     - os: linux
       env: COMPILER=clang++-6.0
-    # temporarily disable AddressSanitizer on clang-7 and later
+    # disable AddressSanitizer with clang 7 and 8
     # due to https://bugs.llvm.org/show_bug.cgi?id=40808
     - os: linux
       env: COMPILER=clang++-7 DISABLE_ASAN=yes
     - os: linux
       env: COMPILER=clang++-8 DISABLE_ASAN=yes
     - os: linux
-      env: COMPILER=clang++-9 DISABLE_ASAN=yes
+      env: COMPILER=clang++-9
 
     # macOS/clang
     # https://docs.travis-ci.com/user/reference/osx/#macos-version
@@ -58,9 +58,12 @@ matrix:
     - os: osx
       osx_image: xcode10.2
       env: OSX_VERSION=10.14
+    - os: osx
+      osx_image: xcode11
+      env: OSX_VERSION=10.14
 
   allow_failures:
-    - env: COMPILER=clang++-9 DISABLE_ASAN=yes
+    - env: COMPILER=clang++-9
 
   fast_finish: true
 
