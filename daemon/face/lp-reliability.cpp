@@ -36,7 +36,6 @@ LpReliability::LpReliability(const LpReliability::Options& options, GenericLinkS
   , m_linkService(linkService)
   , m_firstUnackedFrag(m_unackedFrags.begin())
   , m_lastTxSeqNo(-1) // set to "-1" to start TxSequence numbers at 0
-  , m_isIdleAckTimerRunning(false)
 {
   BOOST_ASSERT(m_linkService != nullptr);
   BOOST_ASSERT(m_options.idleAckTimerPeriod > 0_ns);
@@ -48,7 +47,7 @@ LpReliability::setOptions(const Options& options)
   BOOST_ASSERT(options.idleAckTimerPeriod > 0_ns);
 
   if (m_options.isEnabled && !options.isEnabled) {
-    this->stopIdleAckTimer();
+    m_idleAckTimer.cancel();
   }
 
   m_options = options;
@@ -81,7 +80,7 @@ LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, 
                                                  std::forward_as_tuple(txSeq),
                                                  std::forward_as_tuple(frag));
     unackedFragsIt->second.sendTime = sendTime;
-    unackedFragsIt->second.rtoTimer = getScheduler().schedule(m_rto.computeRto(),
+    unackedFragsIt->second.rtoTimer = getScheduler().schedule(m_rttEst.getEstimatedRto(),
                                                               [=] { onLpPacketLost(txSeq); });
     unackedFragsIt->second.netPkt = netPkt;
 
@@ -114,8 +113,8 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
     frag.rtoTimer.cancel();
 
     if (frag.retxCount == 0) {
-      // This sequence had no retransmissions, so use it to calculate the RTO
-      m_rto.addMeasurement(time::duration_cast<RttEstimator::Duration>(now - frag.sendTime));
+      // This sequence had no retransmissions, so use it to estimate the RTO
+      m_rttEst.addMeasurement(now - frag.sendTime, 1);
     }
 
     // Look for frags with TxSequence numbers < ackSeq (allowing for wraparound) and consider them
@@ -136,7 +135,7 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
     // Resend or fail fragments considered lost. Potentially increment the start of the window.
     for (lp::Sequence txSeq : lostLpPackets) {
       if (removedLpPackets.find(txSeq) == removedLpPackets.end()) {
-        auto removedThisTxSeq = this->onLpPacketLost(txSeq);
+        auto removedThisTxSeq = onLpPacketLost(txSeq);
         for (auto removedTxSeq : removedThisTxSeq) {
           removedLpPackets.insert(removedTxSeq);
         }
@@ -147,9 +146,7 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
   // If packet has Fragment and TxSequence fields, extract TxSequence and add to AckQueue
   if (pkt.has<lp::FragmentField>() && pkt.has<lp::TxSequenceField>()) {
     m_ackQueue.push(pkt.get<lp::TxSequenceField>());
-    if (!m_isIdleAckTimerRunning) {
-      this->startIdleAckTimer();
-    }
+    startIdleAckTimer();
   }
 }
 
@@ -168,7 +165,7 @@ LpReliability::piggyback(lp::Packet& pkt, ssize_t mtu)
 
   while (!m_ackQueue.empty()) {
     lp::Sequence ackSeq = m_ackQueue.front();
-    // Ack size = Ack TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + uint64_t (8 octets)
+    // Ack size = Ack TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + lp::Sequence (8 octets)
     const ssize_t ackSize = tlv::sizeOfVarNumber(lp::tlv::Ack) +
                             tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
                             sizeof(lp::Sequence);
@@ -197,23 +194,16 @@ LpReliability::assignTxSequence(lp::Packet& frag)
 void
 LpReliability::startIdleAckTimer()
 {
-  BOOST_ASSERT(!m_isIdleAckTimerRunning);
-  m_isIdleAckTimerRunning = true;
+  if (m_idleAckTimer) {
+    // timer is already running, do nothing
+    return;
+  }
 
   m_idleAckTimer = getScheduler().schedule(m_options.idleAckTimerPeriod, [this] {
     while (!m_ackQueue.empty()) {
       m_linkService->requestIdlePacket(0);
     }
-
-    m_isIdleAckTimerRunning = false;
   });
-}
-
-void
-LpReliability::stopIdleAckTimer()
-{
-  m_idleAckTimer.cancel();
-  m_isIdleAckTimerRunning = false;
 }
 
 std::vector<lp::Sequence>
@@ -305,7 +295,8 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq)
     m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt), 0);
 
     // Start RTO timer for this sequence
-    newTxFrag.rtoTimer = getScheduler().schedule(m_rto.computeRto(), [=] { onLpPacketLost(newTxSeq); });
+    newTxFrag.rtoTimer = getScheduler().schedule(m_rttEst.getEstimatedRto(),
+                                                 [=] { onLpPacketLost(newTxSeq); });
   }
 
   return removedThisTxSeq;

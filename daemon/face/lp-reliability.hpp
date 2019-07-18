@@ -26,10 +26,11 @@
 #ifndef NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 #define NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 
-#include "core/rtt-estimator.hpp"
+#include "core/common.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>
+#include <ndn-cxx/util/rtt-estimator.hpp>
 
 #include <queue>
 
@@ -126,11 +127,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   startIdleAckTimer();
 
-  /** \brief cancel the idle Ack timer
-   */
-  void
-  stopIdleAckTimer();
-
   /** \brief find and mark as lost fragments where a configurable number of Acks
    *         (\p m_options.seqNumLossThreshold) have been received for greater TxSequence numbers
    *  \param ackIt iterator pointing to acknowledged fragment
@@ -198,8 +194,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   };
 
 public:
-  /// TxSequence TLV-TYPE (3 octets) + TxSequence TLV-LENGTH (1 octet) + sizeof(lp::Sequence)
-  static constexpr size_t RESERVED_HEADER_SPACE = 3 + 1 + sizeof(lp::Sequence);
+  /// TxSequence TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + lp::Sequence (8 octets)
+  static constexpr size_t RESERVED_HEADER_SPACE = tlv::sizeOfVarNumber(lp::tlv::TxSequence) +
+                                                  tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
+                                                  sizeof(lp::Sequence);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Options m_options;
@@ -214,8 +212,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::queue<lp::Sequence> m_ackQueue;
   lp::Sequence m_lastTxSeqNo;
   scheduler::ScopedEventId m_idleAckTimer;
-  bool m_isIdleAckTimerRunning;
-  RttEstimator m_rto;
+  ndn::util::RttEstimator m_rttEst;
 };
 
 } // namespace face

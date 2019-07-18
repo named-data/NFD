@@ -40,8 +40,6 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_AUTO_TEST_SUITE(Face)
-
 class DummyLpReliabilityLinkService : public GenericLinkService
 {
 public:
@@ -58,11 +56,11 @@ public:
       Interest interest("/test/prefix");
       interest.setCanBePrefix(false);
       lp::Packet pkt;
-      pkt.add<lp::FragmentField>(make_pair(interest.wireEncode().begin(), interest.wireEncode().end()));
+      pkt.add<lp::FragmentField>({interest.wireEncode().begin(), interest.wireEncode().end()});
       m_reliability.handleOutgoing(frags, std::move(pkt), true);
     }
 
-    for (lp::Packet frag : frags) {
+    for (auto frag : frags) {
       this->sendLpPacket(std::move(frag), 0);
     }
   }
@@ -116,9 +114,7 @@ public:
   netPktHasUnackedFrag(const shared_ptr<LpReliability::NetPkt>& netPkt, lp::Sequence txSeq)
   {
     return std::any_of(netPkt->unackedFrags.begin(), netPkt->unackedFrags.end(),
-                       [txSeq] (const LpReliability::UnackedFrags::iterator& frag) {
-                         return frag->first == txSeq;
-                       });
+                       [txSeq] (auto fragIt) { return fragIt->first == txSeq; });
   }
 
   /** \brief make an LpPacket with fragment of specified size
@@ -134,7 +130,7 @@ public:
     lp::Packet pkt;
     ndn::Buffer buf(payloadSize);
     std::memcpy(buf.data(), &pktNo, sizeof(pktNo));
-    pkt.set<lp::FragmentField>(make_pair(buf.cbegin(), buf.cend()));
+    pkt.set<lp::FragmentField>({buf.cbegin(), buf.cend()});
     return pkt;
   }
 
@@ -164,6 +160,7 @@ protected:
   LpReliability* reliability;
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestLpReliability, LpReliabilityFixture)
 
 BOOST_AUTO_TEST_CASE(SendNoFragmentField)
@@ -715,7 +712,7 @@ BOOST_AUTO_TEST_CASE(CancelLossNotificationOnAck)
 
 BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
 {
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
 
   lp::Packet pkt1 = makeFrag(100, 40);
@@ -723,7 +720,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
 
   reliability->processIncomingPacket(pkt1);
 
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
   BOOST_REQUIRE_EQUAL(reliability->m_ackQueue.size(), 1);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 765432);
 
@@ -732,14 +729,14 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
 
   reliability->processIncomingPacket(pkt2);
 
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
   BOOST_REQUIRE_EQUAL(reliability->m_ackQueue.size(), 2);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 765432);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.back(), 234567);
 
   // T+5ms
   advanceClocks(1_ms, 5);
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
 }
 
 BOOST_AUTO_TEST_CASE(PiggybackAcks)
@@ -820,38 +817,38 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtuNoSpace)
 
 BOOST_AUTO_TEST_CASE(StartIdleAckTimer)
 {
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
 
   lp::Packet pkt1 = makeFrag(1, 100);
   pkt1.add<lp::TxSequenceField>(12);
   reliability->processIncomingPacket({pkt1});
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+1ms
   advanceClocks(1_ms, 1);
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   lp::Packet pkt2 = makeFrag(2, 100);
   pkt2.add<lp::TxSequenceField>(13);
   reliability->processIncomingPacket({pkt2});
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+5ms
   advanceClocks(1_ms, 4);
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
 
   lp::Packet pkt3 = makeFrag(3, 100);
   pkt3.add<lp::TxSequenceField>(15);
   reliability->processIncomingPacket({pkt3});
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+9ms
   advanceClocks(1_ms, 4);
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+10ms
   advanceClocks(1_ms, 1);
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
 }
 
 BOOST_AUTO_TEST_CASE(IdleAckTimer)
@@ -862,13 +859,13 @@ BOOST_AUTO_TEST_CASE(IdleAckTimer)
     reliability->m_ackQueue.push(i);
     expectedAcks.insert(i);
   }
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
   reliability->startIdleAckTimer();
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+4ms: idle ack timer has not yet expired, no IDLE packet generated
   advanceClocks(1_ms, 4);
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 500);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 1000);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.back(), 1499);
@@ -876,7 +873,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimer)
 
   // T+5ms: idle ack timer expires, IDLE packet generated
   advanceClocks(1_ms, 1);
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
 
@@ -898,13 +895,13 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
     reliability->m_ackQueue.push(i);
     expectedAcks.insert(i);
   }
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
   reliability->startIdleAckTimer();
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
 
   // T+4ms: idle ack timer has not yet expired, no IDLE packet generated
   advanceClocks(1_ms, 4);
-  BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(reliability->m_idleAckTimer);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 500);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 1000);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.back(), 1499);
@@ -912,7 +909,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
 
   // T+5ms: idle ack timer expires, IDLE packets generated
   advanceClocks(1_ms, 1);
-  BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
+  BOOST_CHECK(!reliability->m_idleAckTimer);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
 
   // MTU is 1500. LpPacket TL occupies 4 octets. Each Ack header is 12 octets. There are room for
