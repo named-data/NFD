@@ -94,23 +94,6 @@ public:
   shared_ptr<RibEntry>
   findParent(const Name& prefix) const;
 
-  /** \brief finds namespaces under the passed prefix
-   *  \return{ a list of entries which are under the passed prefix }
-   */
-  std::list<shared_ptr<RibEntry>>
-  findDescendants(const Name& prefix) const;
-
-  /** \brief finds namespaces under the passed prefix
-   *
-   *  \note Unlike findDescendants, needs to find where prefix would fit in tree
-   *  before collecting list of descendant prefixes
-   *
-   *  \return{ a list of entries which would be under the passed prefix if the prefix
-   *  existed in the RIB }
-   */
-  std::list<shared_ptr<RibEntry>>
-  findDescendantsForNonInsertedName(const Name& prefix) const;
-
 public:
   using UpdateSuccessCallback = std::function<void()>;
   using UpdateFailureCallback = std::function<void(uint32_t code, const std::string& error)>;
@@ -137,15 +120,6 @@ public:
   beginRemoveFailedFaces(const std::set<uint64_t>& activeFaceIds);
 
   void
-  onFibUpdateSuccess(const RibUpdateBatch& batch,
-                     const RibUpdateList& inheritedRoutes,
-                     const Rib::UpdateSuccessCallback& onSuccess);
-
-  void
-  onFibUpdateFailure(const Rib::UpdateFailureCallback& onFailure,
-                     uint32_t code, const std::string& error);
-
-  void
   onRouteExpiration(const Name& prefix, const Route& route);
 
   void
@@ -155,30 +129,28 @@ private:
   void
   enqueueRemoveFace(const RibEntry& entry, uint64_t faceId);
 
-  /** \brief adds the passed update to a RibUpdateBatch and adds the batch to
-  *          the end of the update queue.
-  *
-  *   If an update is not in progress, the front update batch in the queue will be
-  *   processed by the RIB.
-  *
-  *   If an update is in progress, the added update will eventually be processed
-  *   when it reaches the front of the queue; after other update batches are
-  *   processed, the queue is advanced.
-  */
+  /** \brief Append the RIB update to the update queue.
+   *
+   *  To start updates, invoke sendBatchFromQueue() .
+   */
   void
   addUpdateToQueue(const RibUpdate& update,
                    const Rib::UpdateSuccessCallback& onSuccess,
                    const Rib::UpdateFailureCallback& onFailure);
 
-  /** \brief Attempts to send the front update batch in the queue.
-  *
-  *   If an update is not in progress, the front update batch in the queue will be
-  *   sent to the RIB for processing.
-  *
-  *   If an update is in progress, nothing will be done.
-  */
+  /** \brief Send the first update batch in the queue, if no other update is in progress.
+   */
   void
   sendBatchFromQueue();
+
+  void
+  onFibUpdateSuccess(const RibUpdateBatch& batch,
+                     const RibUpdateList& inheritedRoutes,
+                     const Rib::UpdateSuccessCallback& onSuccess);
+
+  void
+  onFibUpdateFailure(const Rib::UpdateFailureCallback& onFailure,
+                     uint32_t code, const std::string& error);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 #ifdef WITH_TESTS
@@ -196,6 +168,18 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   erase(const Name& prefix, const Route& route);
 
 private:
+  /** \brief find entries under \p prefix
+   *  \pre a RIB entry exists at \p prefix
+   */
+  std::list<shared_ptr<RibEntry>>
+  findDescendants(const Name& prefix) const;
+
+  /** \brief find entries under \p prefix
+   *  \pre a RIB entry does not exist at \p prefix
+   */
+  std::list<shared_ptr<RibEntry>>
+  findDescendantsForNonInsertedName(const Name& prefix) const;
+
   RibTable::iterator
   eraseEntry(RibTable::iterator it);
 
