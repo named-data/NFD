@@ -33,8 +33,6 @@
 namespace nfd {
 namespace cs {
 
-NDN_CXX_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
-
 NFD_LOG_INIT(ContentStore);
 
 static unique_ptr<Policy>
@@ -66,7 +64,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
     }
   }
 
-  iterator it;
+  const_iterator it;
   bool isNewEntry = false;
   std::tie(it, isNewEntry) = m_table.emplace(data.shared_from_this(), isUnsolicited);
   Entry& entry = const_cast<Entry&>(*it);
@@ -86,11 +84,11 @@ Cs::insert(const Data& data, bool isUnsolicited)
   }
 }
 
-std::pair<iterator, iterator>
+std::pair<Cs::const_iterator, Cs::const_iterator>
 Cs::findPrefixRange(const Name& prefix) const
 {
-  iterator first = m_table.lower_bound(prefix);
-  iterator last = m_table.end();
+  auto first = m_table.lower_bound(prefix);
+  auto last = m_table.end();
   if (prefix.size() > 0) {
     last = m_table.lower_bound(prefix.getSuccessor());
   }
@@ -100,7 +98,7 @@ Cs::findPrefixRange(const Name& prefix) const
 size_t
 Cs::eraseImpl(const Name& prefix, size_t limit)
 {
-  iterator i, last;
+  const_iterator i, last;
   std::tie(i, last) = findPrefixRange(prefix);
 
   size_t nErased = 0;
@@ -112,7 +110,7 @@ Cs::eraseImpl(const Name& prefix, size_t limit)
   return nErased;
 }
 
-iterator
+Cs::const_iterator
 Cs::findImpl(const Interest& interest) const
 {
   if (!m_shouldServe || m_policy->getLimit() == 0) {
@@ -157,9 +155,7 @@ Cs::setPolicyImpl(unique_ptr<Policy> policy)
 {
   NFD_LOG_DEBUG("set-policy " << policy->getName());
   m_policy = std::move(policy);
-  m_beforeEvictConnection = m_policy->beforeEvict.connect([this] (iterator it) {
-      m_table.erase(it);
-    });
+  m_beforeEvictConnection = m_policy->beforeEvict.connect([this] (auto it) { m_table.erase(it); });
 
   m_policy->setCs(this);
   BOOST_ASSERT(m_policy->getCs() == this);

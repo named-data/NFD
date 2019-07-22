@@ -115,7 +115,11 @@ operator<(const Entry& lhs, const Entry& rhs);
  */
 using Table = std::set<Entry, std::less<>>;
 
-using iterator = Table::const_iterator;
+inline bool
+operator<(Table::const_iterator lhs, Table::const_iterator rhs)
+{
+  return *lhs < *rhs;
+}
 
 } // namespace cs
 } // namespace nfd

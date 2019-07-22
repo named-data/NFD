@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,26 +39,26 @@ LruPolicy::LruPolicy()
 }
 
 void
-LruPolicy::doAfterInsert(iterator i)
+LruPolicy::doAfterInsert(EntryRef i)
 {
   this->insertToQueue(i, true);
   this->evictEntries();
 }
 
 void
-LruPolicy::doAfterRefresh(iterator i)
+LruPolicy::doAfterRefresh(EntryRef i)
 {
   this->insertToQueue(i, false);
 }
 
 void
-LruPolicy::doBeforeErase(iterator i)
+LruPolicy::doBeforeErase(EntryRef i)
 {
   m_queue.get<1>().erase(i);
 }
 
 void
-LruPolicy::doBeforeUse(iterator i)
+LruPolicy::doBeforeUse(EntryRef i)
 {
   this->insertToQueue(i, false);
 }
@@ -69,18 +69,18 @@ LruPolicy::evictEntries()
   BOOST_ASSERT(this->getCs() != nullptr);
   while (this->getCs()->size() > this->getLimit()) {
     BOOST_ASSERT(!m_queue.empty());
-    iterator i = m_queue.front();
+    EntryRef i = m_queue.front();
     m_queue.pop_front();
     this->emitSignal(beforeEvict, i);
   }
 }
 
 void
-LruPolicy::insertToQueue(iterator i, bool isNewEntry)
+LruPolicy::insertToQueue(EntryRef i, bool isNewEntry)
 {
   Queue::iterator it;
   bool isNew = false;
-  // push_back only if iterator i does not exist
+  // push_back only if i does not exist
   std::tie(it, isNew) = m_queue.push_back(i);
 
   BOOST_ASSERT(isNew == isNewEntry);

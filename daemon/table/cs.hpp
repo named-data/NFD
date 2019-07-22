@@ -80,7 +80,7 @@ public:
   void
   find(const Interest& interest, HitCallback&& hit, MissCallback&& miss) const
   {
-    iterator match = findImpl(interest);
+    auto match = findImpl(interest);
     if (match == m_table.end()) {
       miss(interest);
       return;
@@ -158,9 +158,7 @@ public: // configuration
   enableServe(bool shouldServe);
 
 public: // enumeration
-  /** \brief ContentStore iterator (public API)
-   */
-  using const_iterator = iterator;
+  using const_iterator = Table::const_iterator;
 
   const_iterator
   begin() const
@@ -175,13 +173,13 @@ public: // enumeration
   }
 
 private:
-  std::pair<iterator, iterator>
+  std::pair<const_iterator, const_iterator>
   findPrefixRange(const Name& prefix) const;
 
   size_t
   eraseImpl(const Name& prefix, size_t limit);
 
-  iterator
+  const_iterator
   findImpl(const Interest& interest) const;
 
   void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,36 +30,21 @@
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 
 namespace nfd {
 namespace cs {
 namespace lru {
 
-struct EntryItComparator
-{
-  bool
-  operator()(const iterator& a, const iterator& b) const
-  {
-    return *a < *b;
-  }
-};
+using Queue = boost::multi_index_container<
+                Policy::EntryRef,
+                boost::multi_index::indexed_by<
+                  boost::multi_index::sequenced<>,
+                  boost::multi_index::ordered_unique<boost::multi_index::identity<Policy::EntryRef>>
+                >
+              >;
 
-typedef boost::multi_index_container<
-    iterator,
-    boost::multi_index::indexed_by<
-      boost::multi_index::sequenced<>,
-      boost::multi_index::ordered_unique<
-        boost::multi_index::identity<iterator>, EntryItComparator
-      >
-    >
-  > Queue;
-
-/** \brief LRU cs replacement policy
- *
- * The least recently used entries get removed first.
- * Everytime when any entry is used or refreshed, Policy should witness the usage
- * of it.
+/** \brief Least-Recently-Used (LRU) replacement policy
  */
 class LruPolicy : public Policy
 {
@@ -70,26 +55,26 @@ public:
   static const std::string POLICY_NAME;
 
 private:
-  virtual void
-  doAfterInsert(iterator i) override;
+  void
+  doAfterInsert(EntryRef i) override;
 
-  virtual void
-  doAfterRefresh(iterator i) override;
+  void
+  doAfterRefresh(EntryRef i) override;
 
-  virtual void
-  doBeforeErase(iterator i) override;
+  void
+  doBeforeErase(EntryRef i) override;
 
-  virtual void
-  doBeforeUse(iterator i) override;
+  void
+  doBeforeUse(EntryRef i) override;
 
-  virtual void
+  void
   evictEntries() override;
 
 private:
   /** \brief moves an entry to the end of queue
    */
   void
-  insertToQueue(iterator i, bool isNewEntry);
+  insertToQueue(EntryRef i, bool isNewEntry);
 
 private:
   Queue m_queue;

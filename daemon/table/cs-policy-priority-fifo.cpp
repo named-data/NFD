@@ -47,27 +47,27 @@ PriorityFifoPolicy::~PriorityFifoPolicy()
 }
 
 void
-PriorityFifoPolicy::doAfterInsert(iterator i)
+PriorityFifoPolicy::doAfterInsert(EntryRef i)
 {
   this->attachQueue(i);
   this->evictEntries();
 }
 
 void
-PriorityFifoPolicy::doAfterRefresh(iterator i)
+PriorityFifoPolicy::doAfterRefresh(EntryRef i)
 {
   this->detachQueue(i);
   this->attachQueue(i);
 }
 
 void
-PriorityFifoPolicy::doBeforeErase(iterator i)
+PriorityFifoPolicy::doBeforeErase(EntryRef i)
 {
   this->detachQueue(i);
 }
 
 void
-PriorityFifoPolicy::doBeforeUse(iterator i)
+PriorityFifoPolicy::doBeforeUse(EntryRef i)
 {
   BOOST_ASSERT(m_entryInfoMap.find(i) != m_entryInfoMap.end());
 }
@@ -89,7 +89,7 @@ PriorityFifoPolicy::evictOne()
                !m_queues[QUEUE_STALE].empty() ||
                !m_queues[QUEUE_FIFO].empty());
 
-  iterator i;
+  EntryRef i;
   if (!m_queues[QUEUE_UNSOLICITED].empty()) {
     i = m_queues[QUEUE_UNSOLICITED].front();
   }
@@ -105,7 +105,7 @@ PriorityFifoPolicy::evictOne()
 }
 
 void
-PriorityFifoPolicy::attachQueue(iterator i)
+PriorityFifoPolicy::attachQueue(EntryRef i)
 {
   BOOST_ASSERT(m_entryInfoMap.find(i) == m_entryInfoMap.end());
 
@@ -128,7 +128,7 @@ PriorityFifoPolicy::attachQueue(iterator i)
 }
 
 void
-PriorityFifoPolicy::detachQueue(iterator i)
+PriorityFifoPolicy::detachQueue(EntryRef i)
 {
   BOOST_ASSERT(m_entryInfoMap.find(i) != m_entryInfoMap.end());
 
@@ -143,7 +143,7 @@ PriorityFifoPolicy::detachQueue(iterator i)
 }
 
 void
-PriorityFifoPolicy::moveToStaleQueue(iterator i)
+PriorityFifoPolicy::moveToStaleQueue(EntryRef i)
 {
   BOOST_ASSERT(m_entryInfoMap.find(i) != m_entryInfoMap.end());
 

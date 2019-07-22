@@ -34,8 +34,7 @@ namespace nfd {
 namespace cs {
 namespace priority_fifo {
 
-typedef std::list<iterator> Queue;
-typedef Queue::iterator QueueIt;
+using Queue = std::list<Policy::EntryRef>;
 
 enum QueueType {
   QUEUE_UNSOLICITED,
@@ -47,30 +46,19 @@ enum QueueType {
 struct EntryInfo
 {
   QueueType queueType;
-  QueueIt queueIt;
+  Queue::iterator queueIt;
   scheduler::EventId moveStaleEventId;
 };
-
-struct EntryItComparator
-{
-  bool
-  operator()(const iterator& a, const iterator& b) const
-  {
-    return *a < *b;
-  }
-};
-
-typedef std::map<iterator, EntryInfo*, EntryItComparator> EntryInfoMapFifo;
 
 /** \brief Priority FIFO replacement policy
  *
  *  This policy maintains a set of cleanup queues to decide the eviction order of CS entries.
- *  The cleanup queues are three doubly linked lists that store Table iterators.
+ *  The cleanup queues are three doubly linked lists that store EntryRefs.
  *  The three queues keep track of unsolicited, stale, and fresh Data packet, respectively.
- *  Table iterator is placed into, removed from, and moved between suitable queues
+ *  EntryRef is placed into, removed from, and moved between suitable queues
  *  whenever an Entry is added, removed, or has other attribute changes.
- *  The Table iterator of an Entry should be in exactly one queue at any moment.
- *  Within each queue, the iterators are kept in first-in-first-out order.
+ *  Each Entry should be in exactly one queue at any moment.
+ *  Within each queue, the EntryRefs are kept in first-in-first-out order.
  *  Eviction procedure exhausts the first queue before moving onto the next queue,
  *  in the order of unsolicited, stale, and fresh queue.
  */
@@ -86,16 +74,16 @@ public:
 
 private:
   void
-  doAfterInsert(iterator i) override;
+  doAfterInsert(EntryRef i) override;
 
   void
-  doAfterRefresh(iterator i) override;
+  doAfterRefresh(EntryRef i) override;
 
   void
-  doBeforeErase(iterator i) override;
+  doBeforeErase(EntryRef i) override;
 
   void
-  doBeforeUse(iterator i) override;
+  doBeforeUse(EntryRef i) override;
 
   void
   evictEntries() override;
@@ -111,22 +99,22 @@ private:
    *  \pre the entry is not in any queue
    */
   void
-  attachQueue(iterator i);
+  attachQueue(EntryRef i);
 
   /** \brief detaches the entry from its current queue
    *  \post the entry is not in any queue
    */
   void
-  detachQueue(iterator i);
+  detachQueue(EntryRef i);
 
   /** \brief moves an entry from FIFO queue to STALE queue
    */
   void
-  moveToStaleQueue(iterator i);
+  moveToStaleQueue(EntryRef i);
 
 private:
   Queue m_queues[QUEUE_MAX];
-  EntryInfoMapFifo m_entryInfoMap;
+  std::map<EntryRef, EntryInfo*> m_entryInfoMap;
 };
 
 } // namespace priority_fifo

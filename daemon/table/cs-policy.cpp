@@ -73,28 +73,28 @@ Policy::setLimit(size_t nMaxEntries)
 }
 
 void
-Policy::afterInsert(iterator i)
+Policy::afterInsert(EntryRef i)
 {
   BOOST_ASSERT(m_cs != nullptr);
   this->doAfterInsert(i);
 }
 
 void
-Policy::afterRefresh(iterator i)
+Policy::afterRefresh(EntryRef i)
 {
   BOOST_ASSERT(m_cs != nullptr);
   this->doAfterRefresh(i);
 }
 
 void
-Policy::beforeErase(iterator i)
+Policy::beforeErase(EntryRef i)
 {
   BOOST_ASSERT(m_cs != nullptr);
   this->doBeforeErase(i);
 }
 
 void
-Policy::beforeUse(iterator i)
+Policy::beforeUse(EntryRef i)
 {
   BOOST_ASSERT(m_cs != nullptr);
   this->doBeforeUse(i);
