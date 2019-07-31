@@ -50,7 +50,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0);
+  fib::Entry* entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 0);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
@@ -91,7 +92,8 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0);
+  fib::Entry* entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 0);
 
   Pit& pit = forwarder.getPit();
   BOOST_CHECK_EQUAL(pit.size(), 0);
@@ -156,7 +158,8 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addOrUpdateNextHop(*face3, 0);
+  fib::Entry* entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face3, 0);
 
   auto interest = makeInterest("/A/B");
   interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
@@ -485,7 +488,8 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   forwarder.addFace(face4);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/zT4XwK0Hnx").first->addOrUpdateNextHop(*face4, 0);
+  fib::Entry* entry = fib.insert("/zT4XwK0Hnx").first;
+  fib.addOrUpdateNextHop(*entry, *face4, 0);
 
   // receive Interest on face1
   face1->sentNacks.clear();
@@ -537,7 +541,8 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
   });
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0);
+  fib::Entry* entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 0);
 
   // receive an Interest
   auto interest = makeInterest("/A/1", false, 50_ms, 82101183);

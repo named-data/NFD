@@ -133,13 +133,31 @@ Fib::erase(const Entry& entry)
 }
 
 void
+Fib::addOrUpdateNextHop(Entry& entry, Face& face, uint64_t cost)
+{
+  NextHopList::iterator it;
+  bool isNew;
+  std::tie(it, isNew) = entry.addOrUpdateNextHop(face, cost);
+
+  if (isNew)
+    this->afterNewNextHop(entry.getPrefix(), *it);
+}
+
+Fib::RemoveNextHopResult
 Fib::removeNextHop(Entry& entry, const Face& face)
 {
-  entry.removeNextHop(face);
+  bool isRemoved = entry.removeNextHop(face);
 
-  if (!entry.hasNextHops()) {
+  if (!isRemoved) {
+    return RemoveNextHopResult::NO_SUCH_NEXTHOP;
+  }
+  else if (!entry.hasNextHops()) {
     name_tree::Entry* nte = m_nameTree.getEntry(entry);
     this->erase(nte, false);
+    return RemoveNextHopResult::FIB_ENTRY_REMOVED;
+  }
+  else {
+    return RemoveNextHopResult::NEXTHOP_REMOVED;
   }
 }
 

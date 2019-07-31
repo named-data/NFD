@@ -48,26 +48,32 @@ Entry::hasNextHop(const Face& face) const
   return const_cast<Entry*>(this)->findNextHop(face) != m_nextHops.end();
 }
 
-void
+std::pair<NextHopList::iterator, bool>
 Entry::addOrUpdateNextHop(Face& face, uint64_t cost)
 {
   auto it = this->findNextHop(face);
+  bool isNew = false;
   if (it == m_nextHops.end()) {
     m_nextHops.emplace_back(face);
     it = std::prev(m_nextHops.end());
+    isNew = true;
   }
 
   it->setCost(cost);
   this->sortNextHops();
+
+  return std::make_pair(it, isNew);
 }
 
-void
+bool
 Entry::removeNextHop(const Face& face)
 {
   auto it = this->findNextHop(face);
   if (it != m_nextHops.end()) {
     m_nextHops.erase(it);
+    return true;
   }
+  return false;
 }
 
 void

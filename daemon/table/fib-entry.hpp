@@ -36,6 +36,8 @@ class Entry;
 
 namespace fib {
 
+class Fib;
+
 /** \class nfd::fib::NextHopList
  *  \brief Represents a collection of nexthops.
  *
@@ -79,21 +81,24 @@ public:
   bool
   hasNextHop(const Face& face) const;
 
-  /** \brief adds a NextHop record
+private:
+  /** \brief adds a NextHop record to the entry
    *
-   *  If a NextHop record for \p face already exists, its cost is updated.
+   *  If a NextHop record for \p face already exists in the entry, its cost is set to \p cost.
+   *
+   *  \return the iterator to the new or updated NextHop and a bool indicating whether a new
+   *  NextHop was inserted
    */
-  void
+  std::pair<NextHopList::iterator, bool>
   addOrUpdateNextHop(Face& face, uint64_t cost);
 
   /** \brief removes a NextHop record
    *
    *  If no NextHop record for face exists, do nothing.
    */
-  void
+  bool
   removeNextHop(const Face& face);
 
-private:
   /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
@@ -111,6 +116,7 @@ private:
   name_tree::Entry* m_nameTreeEntry = nullptr;
 
   friend class name_tree::Entry;
+  friend class Fib;
 };
 
 } // namespace fib

@@ -103,9 +103,22 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief Remove the NextHop record for \p face
+  /** \brief Add a NextHop record
+   *
+   *  If a NextHop record for \p face already exists in \p entry, its cost is set to \p cost.
    */
   void
+  addOrUpdateNextHop(Entry& entry, Face& face, uint64_t cost);
+
+  enum class RemoveNextHopResult {
+    NO_SUCH_NEXTHOP, ///< the nexthop is not found
+    NEXTHOP_REMOVED, ///< the nexthop is removed and the fib entry stays
+    FIB_ENTRY_REMOVED ///< the nexthop is removed and the fib entry is removed
+  };
+
+  /** \brief Remove the NextHop record for \p face from \p entry
+   */
+  RemoveNextHopResult
   removeNextHop(Entry& entry, const Face& face);
 
 public: // enumeration
@@ -131,6 +144,11 @@ public: // enumeration
   {
     return this->getRange().end();
   }
+
+public: // signal
+  /** \brief signals on Fib entry nexthop creation
+   */
+  signal::Signal<Fib, Name, NextHop> afterNewNextHop;
 
 private:
   /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch

@@ -42,29 +42,53 @@ BOOST_FIXTURE_TEST_SUITE(TestFib, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(FibEntry)
 {
-  Name prefix("ndn:/pxWhfFza");
+  NameTree nameTree;
+  Fib fib(nameTree);
+
+  Name prefix("/pxWhfFza");
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
 
-  Entry entry(prefix);
+  Face* expectedFace = nullptr;
+  uint64_t expectedCost = 0;
+  size_t nNewNextHopSignals = 0;
+
+  fib.afterNewNextHop.connect(
+    [&] (const Name& prefix1, const NextHop& nextHop) {
+      ++nNewNextHopSignals;
+      BOOST_CHECK_EQUAL(prefix1, prefix);
+      BOOST_CHECK_EQUAL(&nextHop.getFace(), expectedFace);
+      BOOST_CHECK_EQUAL(nextHop.getCost(), expectedCost);
+    });
+
+  Entry& entry = *fib.insert(prefix).first;
+
   BOOST_CHECK_EQUAL(entry.getPrefix(), prefix);
 
   // []
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 
-  entry.addOrUpdateNextHop(*face1, 20);
+  expectedFace = face1.get();
+  expectedCost = 20;
+
+  fib.addOrUpdateNextHop(entry, *face1, 20);
   // [(face1,20)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
   BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 20);
+  BOOST_CHECK_EQUAL(nNewNextHopSignals, 1);
 
-  entry.addOrUpdateNextHop(*face1, 30);
+  fib.addOrUpdateNextHop(entry, *face1, 30);
   // [(face1,30)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
   BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 30);
+  BOOST_CHECK_EQUAL(nNewNextHopSignals, 1);
 
-  entry.addOrUpdateNextHop(*face2, 40);
+  expectedFace = face2.get();
+  expectedCost = 40;
+
+  fib.addOrUpdateNextHop(entry, *face2, 40);
   // [(face1,30), (face2,40)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
   {
@@ -80,9 +104,11 @@ BOOST_AUTO_TEST_CASE(FibEntry)
 
     ++it;
     BOOST_CHECK(it == entry.getNextHops().end());
+
+    BOOST_CHECK_EQUAL(nNewNextHopSignals, 2);
   }
 
-  entry.addOrUpdateNextHop(*face2, 10);
+  fib.addOrUpdateNextHop(entry, *face2, 10);
   // [(face2,10), (face1,30)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
   {
@@ -98,27 +124,28 @@ BOOST_AUTO_TEST_CASE(FibEntry)
 
     ++it;
     BOOST_CHECK(it == entry.getNextHops().end());
+
+    BOOST_CHECK_EQUAL(nNewNextHopSignals, 2);
   }
 
-  entry.removeNextHop(*face1);
+  Fib::RemoveNextHopResult status = fib.removeNextHop(entry, *face1);
   // [(face2,10)]
+  BOOST_CHECK(status == Fib::RemoveNextHopResult::NEXTHOP_REMOVED);
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(*face1);
+  status = fib.removeNextHop(entry, *face1);
   // [(face2,10)]
+  BOOST_CHECK(status == Fib::RemoveNextHopResult::NO_SUCH_NEXTHOP);
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(*face2);
+  status = fib.removeNextHop(entry, *face2);
   // []
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
-
-  entry.removeNextHop(*face2);
-  // []
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
+  BOOST_CHECK(status == Fib::RemoveNextHopResult::FIB_ENTRY_REMOVED);
+  BOOST_CHECK(fib.findExactMatch(prefix) == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)

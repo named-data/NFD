@@ -77,9 +77,9 @@ BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
 BOOST_AUTO_TEST_CASE(Forward)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face1, 10);
-  fibEntry.addOrUpdateNextHop(*face2, 20);
-  fibEntry.addOrUpdateNextHop(*face3, 30);
+  fib.addOrUpdateNextHop(fibEntry, *face1, 10);
+  fib.addOrUpdateNextHop(fibEntry, *face2, 20);
+  fib.addOrUpdateNextHop(fibEntry, *face3, 30);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[4].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[5].outFaceId, face3->getId());
 
-  fibEntry.removeNextHop(*face1);
+  fib.removeNextHop(fibEntry, *face1);
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {

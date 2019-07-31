@@ -301,9 +301,9 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_REQUIRE_NE(face3, face::INVALID_FACEID);
 
   fib::Entry* entry = m_fib.insert("/hello").first;
-  entry->addOrUpdateNextHop(*m_faceTable.get(face1), 101);
-  entry->addOrUpdateNextHop(*m_faceTable.get(face2), 202);
-  entry->addOrUpdateNextHop(*m_faceTable.get(face3), 303);
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face1), 101);
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face2), 202);
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face3), 303);
 
   testRemoveNextHop(makeParameters("/hello", face1));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -354,8 +354,8 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   };
 
   fib::Entry* entry = m_fib.insert("/hello").first;
-  entry->addOrUpdateNextHop(*m_faceTable.get(face1), 101);
-  entry->addOrUpdateNextHop(*m_faceTable.get(face2), 202);
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face1), 101);
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face2), 202);
 
   testWithImplicitFaceId(ControlParameters().setName("/hello").setFaceId(0), face1);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -385,7 +385,8 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
     receiveInterest(req);
   };
 
-  m_fib.insert("/hello").first->addOrUpdateNextHop(*m_faceTable.get(face1), 101);
+  fib::Entry* entry = m_fib.insert("/hello").first;
+  m_fib.addOrUpdateNextHop(*entry, *m_faceTable.get(face1), 101);
 
   testRemoveNextHop(makeParameters("/hello", face2 + 100));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // face does not exist
@@ -410,8 +411,8 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     Name prefix = Name("test").appendSegment(i);
     actualPrefixes.insert(prefix);
     fib::Entry* fibEntry = m_fib.insert(prefix).first;
-    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 1);
-    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
+    m_fib.addOrUpdateNextHop(*fibEntry, *m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 1);
+    m_fib.addOrUpdateNextHop(*fibEntry, *m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
   }
 
   receiveInterest(Interest("/localhost/nfd/fib/list").setCanBePrefix(true));
