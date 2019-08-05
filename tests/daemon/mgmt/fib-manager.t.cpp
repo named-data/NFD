@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     actualPrefixes.insert(prefix);
     fib::Entry* fibEntry = m_fib.insert(prefix).first;
     fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), 0, std::numeric_limits<uint8_t>::max() - 1);
-    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), 7, std::numeric_limits<uint8_t>::max() - 2);
+    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), 0, std::numeric_limits<uint8_t>::max() - 2);
   }
 
   receiveInterest(Interest("/localhost/nfd/fib/list").setCanBePrefix(true));
@@ -434,7 +434,6 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     for (const auto& nh : matchedEntry->getNextHops()) {
       expectedRecords.back().addNextHopRecord(ndn::nfd::NextHopRecord()
                                               .setFaceId(nh.getFace().getId())
-                                              .setEndpointId(nh.getEndpointId())
                                               .setCost(nh.getCost()));
     }
   }

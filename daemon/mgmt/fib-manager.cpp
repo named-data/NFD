@@ -125,7 +125,6 @@ FibManager::listEntries(const Name& topPrefix, const Interest& interest,
                            boost::adaptors::transformed([] (const fib::NextHop& nh) {
                              return ndn::nfd::NextHopRecord()
                                  .setFaceId(nh.getFace().getId())
-                                 .setEndpointId(nh.getEndpointId())
                                  .setCost(nh.getCost());
                            });
     context.append(ndn::nfd::FibEntry()
