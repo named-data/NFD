@@ -100,7 +100,6 @@
 <xs:complexType name="nextHopType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
-    <xs:element type="xs:nonNegativeInteger" name="endpointId"/>
     <xs:element type="xs:nonNegativeInteger" name="cost"/>
   </xs:sequence>
 </xs:complexType>
