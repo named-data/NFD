@@ -77,7 +77,7 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
   }
 
   fib::Entry* entry = m_fib.insert(prefix).first;
-  entry->addOrUpdateNextHop(*face, 0, cost);
+  entry->addOrUpdateNextHop(*face, cost);
 
   NFD_LOG_TRACE("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost << "): OK");
   return done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
@@ -106,7 +106,7 @@ FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
     return;
   }
 
-  entry->removeNextHop(*face, 0);
+  entry->removeNextHop(*face);
   if (!entry->hasNextHops()) {
     m_fib.erase(*entry);
     NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK entry-erased");

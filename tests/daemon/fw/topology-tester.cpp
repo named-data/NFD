@@ -242,7 +242,7 @@ TopologyTester::registerPrefix(TopologyNode i, const Face& face, const Name& pre
 {
   Forwarder& forwarder = this->getForwarder(i);
   Fib& fib = forwarder.getFib();
-  fib.insert(prefix).first->addOrUpdateNextHop(const_cast<Face&>(face), 0, cost);
+  fib.insert(prefix).first->addOrUpdateNextHop(const_cast<Face&>(face), cost);
 }
 
 void

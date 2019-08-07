@@ -74,36 +74,32 @@ public:
     return !m_nextHops.empty();
   }
 
-  /** \return whether there is a NextHop record for \p face with the given \p endpointId
+  /** \return whether there is a NextHop record for \p face
    */
   bool
-  hasNextHop(const Face& face, EndpointId endpointId) const;
+  hasNextHop(const Face& face) const;
 
   /** \brief adds a NextHop record
    *
-   *  If a NextHop record for \p face and \p endpointId already exists,
-   *  its cost is updated.
+   *  If a NextHop record for \p face already exists, its cost is updated.
    */
   void
-  addOrUpdateNextHop(Face& face, EndpointId endpointId, uint64_t cost);
+  addOrUpdateNextHop(Face& face, uint64_t cost);
 
-  /** \brief removes the NextHop record for \p face with the given \p endpointId
+  /** \brief removes a NextHop record
+   *
+   *  If no NextHop record for face exists, do nothing.
    */
   void
-  removeNextHop(const Face& face, EndpointId endpointId);
-
-  /** \brief removes all NextHop records on \p face for any \p endpointId
-   */
-  void
-  removeNextHopByFace(const Face& face);
+  removeNextHop(const Face& face);
 
 private:
   /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
-  findNextHop(const Face& face, EndpointId endpointId);
+  findNextHop(const Face& face);
 
-  /** \brief sorts the nexthop list by cost
+  /** \brief sorts the nexthop list
    */
   void
   sortNextHops();

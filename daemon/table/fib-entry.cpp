@@ -34,49 +34,40 @@ Entry::Entry(const Name& prefix)
 }
 
 NextHopList::iterator
-Entry::findNextHop(const Face& face, EndpointId endpointId)
+Entry::findNextHop(const Face& face)
 {
   return std::find_if(m_nextHops.begin(), m_nextHops.end(),
-                      [&face, endpointId] (const NextHop& nexthop) {
-                        return &nexthop.getFace() == &face && nexthop.getEndpointId() == endpointId;
+                      [&face] (const NextHop& nexthop) {
+                        return &nexthop.getFace() == &face;
                       });
 }
 
 bool
-Entry::hasNextHop(const Face& face, EndpointId endpointId) const
+Entry::hasNextHop(const Face& face) const
 {
-  return const_cast<Entry*>(this)->findNextHop(face, endpointId) != m_nextHops.end();
+  return const_cast<Entry*>(this)->findNextHop(face) != m_nextHops.end();
 }
 
 void
-Entry::addOrUpdateNextHop(Face& face, EndpointId endpointId, uint64_t cost)
+Entry::addOrUpdateNextHop(Face& face, uint64_t cost)
 {
-  auto it = this->findNextHop(face, endpointId);
+  auto it = this->findNextHop(face);
   if (it == m_nextHops.end()) {
-    m_nextHops.emplace_back(face, endpointId);
+    m_nextHops.emplace_back(face);
     it = std::prev(m_nextHops.end());
   }
+
   it->setCost(cost);
   this->sortNextHops();
 }
 
 void
-Entry::removeNextHop(const Face& face, EndpointId endpointId)
+Entry::removeNextHop(const Face& face)
 {
-  auto it = this->findNextHop(face, endpointId);
+  auto it = this->findNextHop(face);
   if (it != m_nextHops.end()) {
     m_nextHops.erase(it);
   }
-}
-
-void
-Entry::removeNextHopByFace(const Face& face)
-{
-  auto it = std::remove_if(m_nextHops.begin(), m_nextHops.end(),
-                           [&face] (const NextHop& nexthop) {
-                             return &nexthop.getFace() == &face;
-                           });
-  m_nextHops.erase(it, m_nextHops.end());
 }
 
 void

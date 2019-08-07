@@ -59,8 +59,8 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face1, 0, 10);
-  fibEntry.addOrUpdateNextHop(*face2, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face1, 10);
+  fibEntry.addOrUpdateNextHop(*face2, 20);
 
   Pit& pit = forwarder.getPit();
 
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face1, 0, 10);
+  fibEntry.addOrUpdateNextHop(*face1, 10);
 
   Pit& pit = forwarder.getPit();
 
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest2, pitEntry2);
 
   // FIB entry is changed before doPropagate executes
-  fibEntry.addOrUpdateNextHop(*face2, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face2, 20);
   this->advanceClocks(10_ms, 1_s);// should not crash
 }
 
@@ -169,8 +169,8 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face1, 0, 10);
-  fibEntry.addOrUpdateNextHop(*face2, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face1, 10);
+  fibEntry.addOrUpdateNextHop(*face2, 20);
 
   Pit& pit = forwarder.getPit();
 
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face2, 0, 10);
+  fibEntry.addOrUpdateNextHop(*face2, 10);
 
   Pit& pit = forwarder.getPit();
 
@@ -265,8 +265,8 @@ BOOST_AUTO_TEST_CASE(Bug1998)
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face1, 0, 10); // face1 is top-ranked nexthop
-  fibEntry.addOrUpdateNextHop(*face2, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face1, 10); // face1 is top-ranked nexthop
+  fibEntry.addOrUpdateNextHop(*face2, 20);
 
   Pit& pit = forwarder.getPit();
 
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
   // NccStrategy has selected one path as the best.
   // When we reduce the RTT of the other path, ideally it should be selected as the best face.
   // However, this won't happen due to a weakness in NccStrategy.
-  // See https://redmine.named-data.net/issues/3411#note-4
+  // See  https://redmine.named-data.net/issues/3411#note-4
   shared_ptr<Face> bestFace1 = getMeInfo()->bestFace.lock();
   if (bestFace1.get() == &linkAB->getFace(nodeA)) {
     linkCD->setDelay(5_ms);

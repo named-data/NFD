@@ -170,7 +170,7 @@ Nfd::initializeManagement()
 
   // add FIB entry for NFD Management Protocol
   Name topPrefix("/localhost/nfd");
-  m_forwarder->getFib().insert(topPrefix).first->addOrUpdateNextHop(*m_internalFace, 0, 0);
+  m_forwarder->getFib().insert(topPrefix).first->addOrUpdateNextHop(*m_internalFace, 0);
   m_dispatcher->addTopPrefix(topPrefix, false);
 }
 

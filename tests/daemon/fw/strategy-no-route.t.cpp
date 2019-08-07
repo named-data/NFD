@@ -115,7 +115,7 @@ public:
   void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
-    fixture->fib.insert(Name()).first->addOrUpdateNextHop(*fixture->face1, 0, 10);
+    fixture->fib.insert(Name()).first->addOrUpdateNextHop(*fixture->face1, 10);
   }
 };
 
@@ -132,7 +132,7 @@ public:
   void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
-    fixture->fib.insert("/localhop").first->addOrUpdateNextHop(*fixture->face2, 0, 10);
+    fixture->fib.insert("/localhop").first->addOrUpdateNextHop(*fixture->face2, 10);
     // face1 and face2 are both non-local; Interest from face1 cannot be forwarded to face2
   }
 };

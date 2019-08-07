@@ -37,9 +37,9 @@ namespace fib {
 class NextHop
 {
 public:
-  NextHop(Face& face, EndpointId endpointId)
+  explicit
+  NextHop(Face& face)
     : m_face(&face)
-    , m_endpointId(endpointId)
   {
   }
 
@@ -47,12 +47,6 @@ public:
   getFace() const
   {
     return *m_face;
-  }
-
-  EndpointId
-  getEndpointId() const
-  {
-    return m_endpointId;
   }
 
   uint64_t
@@ -69,7 +63,6 @@ public:
 
 private:
   Face* m_face; // pointer instead of reference so that NextHop is movable
-  EndpointId m_endpointId;
   uint64_t m_cost = 0;
 };
 

@@ -93,9 +93,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
-  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
-  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 30);
 
   auto interest1 = makeInterest("/McQYjMbm", false, nullopt, 992);
   auto interest2 = makeInterest("/McQYjMbm", false, nullopt, 114);
@@ -128,9 +128,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
-  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
-  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 30);
 
   auto interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
@@ -161,9 +161,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
-  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
-  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 30);
 
   auto interest1 = makeInterest("/sIYw0TXWDj", false, 400_ms, 115);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
@@ -313,9 +313,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinat
                                  StrategyNackReturnFixture<BestRouteStrategy2>)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addOrUpdateNextHop(*face3, 0, 10);
-  fibEntry.addOrUpdateNextHop(*face4, 0, 20);
-  fibEntry.addOrUpdateNextHop(*face5, 0, 30);
+  fibEntry.addOrUpdateNextHop(*face3, 10);
+  fibEntry.addOrUpdateNextHop(*face4, 20);
+  fibEntry.addOrUpdateNextHop(*face5, 30);
 
   auto interest1 = makeInterest("/F6sEwB24I", false, nullopt, 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;

@@ -133,26 +133,14 @@ Fib::erase(const Entry& entry)
 }
 
 void
-Fib::eraseIfEmpty(Entry& entry)
+Fib::removeNextHop(Entry& entry, const Face& face)
 {
+  entry.removeNextHop(face);
+
   if (!entry.hasNextHops()) {
     name_tree::Entry* nte = m_nameTree.getEntry(entry);
     this->erase(nte, false);
   }
-}
-
-void
-Fib::removeNextHop(Entry& entry, const Face& face, EndpointId endpointId)
-{
-  entry.removeNextHop(face, endpointId);
-  this->eraseIfEmpty(entry);
-}
-
-void
-Fib::removeNextHopByFace(Entry& entry, const Face& face)
-{
-  entry.removeNextHopByFace(face);
-  this->eraseIfEmpty(entry);
 }
 
 Fib::Range

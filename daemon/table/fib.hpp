@@ -103,15 +103,10 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief Remove the NextHop record for the given \p face and \p endpointId
+  /** \brief Remove the NextHop record for \p face
    */
   void
-  removeNextHop(Entry& entry, const Face& face, EndpointId endpointId);
-
-  /** \brief Remove all NextHop records for \p face
-   */
-  void
-  removeNextHopByFace(Entry& entry, const Face& face);
+  removeNextHop(Entry& entry, const Face& face);
 
 public: // enumeration
   typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
@@ -146,11 +141,6 @@ private:
 
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);
-
-  /** \brief Erase \p entry if it contains no nexthop records
-   */
-  void
-  eraseIfEmpty(Entry& entry);
 
   Range
   getRange() const;
