@@ -114,7 +114,7 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
 
     if (frag.retxCount == 0) {
       // This sequence had no retransmissions, so use it to estimate the RTO
-      m_rttEst.addMeasurement(now - frag.sendTime, 1);
+      m_rttEst.addMeasurement(now - frag.sendTime);
     }
 
     // Look for frags with TxSequence numbers < ackSeq (allowing for wraparound) and consider them

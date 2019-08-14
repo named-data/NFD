@@ -28,7 +28,8 @@
 
 #include "strategy.hpp"
 #include "retx-suppression-fixed.hpp"
-#include "core/rtt-estimator.hpp"
+
+#include <ndn-cxx/util/rtt-estimator.hpp>
 
 namespace nfd {
 namespace fw {
@@ -65,6 +66,8 @@ public: // triggers
                         const FaceEndpoint& ingress, const Data& data) override;
 
 private: // StrategyInfo
+  using RttEstimator = ndn::util::RttEstimator;
+
   /** \brief StrategyInfo on PIT entry
    */
   class PitInfo : public StrategyInfo
@@ -91,9 +94,15 @@ private: // StrategyInfo
       return 1011;
     }
 
+    explicit
+    MtInfo(shared_ptr<const RttEstimator::Options> opts)
+      : rtt(std::move(opts))
+    {
+    }
+
   public:
     FaceId lastNexthop = face::INVALID_FACEID;
-    RttEstimator rtt{1, 1_ms, 0.1};
+    RttEstimator rtt;
   };
 
   /** \brief find per-prefix measurements for Interest
@@ -108,16 +117,21 @@ private: // StrategyInfo
   addPrefixMeasurements(const Data& data);
 
   /** \brief global per-face StrategyInfo
+   *  \todo Currently stored inside AccessStrategy instance; should be moved
+   *        to measurements table or somewhere else.
    */
-  struct FaceInfo
+  class FaceInfo
   {
-    RttEstimator rtt{1, 1_ms, 0.1};
+  public:
+    explicit
+    FaceInfo(shared_ptr<const RttEstimator::Options> opts)
+      : rtt(std::move(opts))
+    {
+    }
+
+  public:
+    RttEstimator rtt;
   };
-
-  typedef std::unordered_map<FaceId, FaceInfo> FaceInfoTable;
-
-  void
-  removeFaceInfo(const Face& face);
 
 private: // forwarding procedures
   void
@@ -141,8 +155,8 @@ private: // forwarding procedures
                   FaceId inFaceId, EndpointId inEndpointId, FaceId firstOutFaceId);
 
   /** \brief multicast to all nexthops
-   *  \param exceptFace don't forward to this face; also, inFace is always excluded
-   *  \return how many Interests are sent
+   *  \param exceptFace don't forward to this face; also, \p inFace is always excluded
+   *  \return number of Interests that were sent
    */
   size_t
   multicast(const Face& inFace, const Interest& interest,
@@ -150,13 +164,13 @@ private: // forwarding procedures
             FaceId exceptFace = face::INVALID_FACEID);
 
   void
-  updateMeasurements(const Face& inFace, const Data& data,
-                     const RttEstimator::Duration& rtt);
+  updateMeasurements(const Face& inFace, const Data& data, time::nanoseconds rtt);
 
 private:
-  FaceInfoTable m_fit;
+  const shared_ptr<const RttEstimator::Options> m_rttEstimatorOpts;
+  std::unordered_map<FaceId, FaceInfo> m_fit;
   RetxSuppressionFixed m_retxSuppression;
-  signal::ScopedConnection m_removeFaceInfoConn;
+  signal::ScopedConnection m_removeFaceConn;
 };
 
 } // namespace fw
