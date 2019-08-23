@@ -1,29 +1,12 @@
 Getting Started with NFD
 ========================
 
-Installing NFD from Binaries
-----------------------------
-
-We provide NFD binaries for the supported platforms, which are the preferred installation
-method. In addition to simplifying installation, the binary release also includes automatic
-initial configuration and platform-specific tools to automatically start NFD and related
-daemons.  In particular, on macOS the binary release of NFD comes as part of the `NDN Control
-Center <https://named-data.net/codebase/applications/ndn-control-center/>`__ and provides a
-convenient way to configure and launch the NFD daemon. :ref:`PPA packages for Ubuntu <Install
-NFD Using the NDN PPA Repository on Ubuntu Linux>` include ``systemd`` service files to
-automatically start the daemon after boot.
-
-Besides officially supported platforms, NFD is known to work on: Fedora 20+, CentOS 6+, Gentoo
-Linux, Raspberry Pi, OpenWRT, FreeBSD 10+, and several `other platforms
-<https://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms>`__.
-We would also appreciate feedback and help packaging NDN releases for other platforms.
-
 .. _Install NFD Using the NDN PPA Repository on Ubuntu Linux:
 
 Install NFD Using the NDN PPA Repository on Ubuntu Linux
 --------------------------------------------------------
 
-NFD binaries and related tools for Ubuntu 16.04 and 18.04 can be installed using PPA
+NFD binaries and related tools for the latest versions of Ubuntu Linux can be installed using PPA
 packages from named-data repository.  First, you will need to add ``named-data/ppa``
 repository to binary package sources and update list of available packages.
 
@@ -71,7 +54,7 @@ Downloading from Git
 
 The first step is to obtain the source code for ``NFD`` and, its main dependency, the
 ``ndn-cxx`` library.  If you are not planning to work with the bleeding edge code, make
-sure you checkout the correct release tag (e.g., ``*-0.6.0``) for both repositories:
+sure you checkout the correct release tag (e.g., ``*-0.6.6``) for both repositories:
 
 ::
 
