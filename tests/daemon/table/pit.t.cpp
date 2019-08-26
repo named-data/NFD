@@ -319,8 +319,8 @@ BOOST_AUTO_TEST_CASE(Iterator)
   pit.insert(*interestABC1);
   BOOST_CHECK_EQUAL(pit.size(), 1);
   BOOST_CHECK(pit.begin() != pit.end());
-  BOOST_CHECK(pit.begin()->getInterest() == *interestABC1);
-  BOOST_CHECK((*pit.begin()).getInterest() == *interestABC1);
+  BOOST_CHECK(&pit.begin()->getInterest() == interestABC1.get());
+  BOOST_CHECK(&(*pit.begin()).getInterest() == interestABC1.get());
 
   auto i = pit.begin();
   auto j = pit.begin();

@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   auto interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
   face2->receiveInterest(*interest2a, 0);
   BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
-  BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest(), *interest2a);
+  BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().wireEncode(), interest2a->wireEncode());
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getReason(), lp::NackReason::DUPLICATE);
 
   // receive Interest with new Nonce on face2

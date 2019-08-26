@@ -107,17 +107,21 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face3, 0)->setIncomingNack(nack3);
 
-  BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveNack(FaceEndpoint(*this->face3, 0), nack3, pitEntry); },
-    this->limitedIo, 2));
+  auto f = [&] {
+    this->strategy.afterReceiveNack(FaceEndpoint(*this->face3, 0), nack3, pitEntry);
+  };
+  BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo, 2));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 2);
-  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].header.getReason(), lp::NackReason::CONGESTION);
-  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[1].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[1].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[1].header.getReason(), lp::NackReason::CONGESTION);
+
   std::set<FaceId> nackFaceIds{this->strategy.sendNackHistory[0].outFaceId,
-                                         this->strategy.sendNackHistory[1].outFaceId};
+                               this->strategy.sendNackHistory[1].outFaceId};
   std::set<FaceId> expectedNackFaceIds{this->face1->getId(), this->face2->getId()};
   BOOST_CHECK_EQUAL_COLLECTIONS(nackFaceIds.begin(), nackFaceIds.end(),
                                 expectedNackFaceIds.begin(), expectedNackFaceIds.end());
@@ -146,12 +150,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
 
   lp::Nack nack4 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
-  BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveNack(FaceEndpoint(*this->face4, 0), nack4, pitEntry); },
-    this->limitedIo));
+
+  auto f = [&] {
+    this->strategy.afterReceiveNack(FaceEndpoint(*this->face4, 0), nack4, pitEntry);
+  };
+  BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].outFaceId, this->face1->getId());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].header.getReason(), lp::NackReason::CONGESTION);
 }
@@ -334,7 +341,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinat
   strategy.afterReceiveNack(FaceEndpoint(*face4, 0), nack4, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), Combination::getExpectedResult());
 }

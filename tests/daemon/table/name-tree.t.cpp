@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(TableEntries)
   BOOST_CHECK_EQUAL(pit1weak.use_count(), 1); // npe is the sole owner of pit1
   npe.erasePitEntry(pit1ptr);
   BOOST_REQUIRE_EQUAL(npe.getPitEntries().size(), 1);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().front()->getInterest(), *interest2);
+  BOOST_CHECK(&npe.getPitEntries().front()->getInterest() == interest2.get());
 
   npe.erasePitEntry(pit2.get());
   BOOST_CHECK_EQUAL(npe.hasPitEntries(), false);

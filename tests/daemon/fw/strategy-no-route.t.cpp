@@ -157,19 +157,22 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,
   typename T::Case scenario;
   scenario.insertFibEntry(this);
 
-  shared_ptr<Interest> interest = makeInterest(scenario.getInterestName());
-  shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
+  auto interest = makeInterest(scenario.getInterestName());
+  auto pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest);
 
-  BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->face1, 0), *interest, pitEntry); },
-    this->limitedIo, 2));
+  auto f = [&] {
+    this->strategy.afterReceiveInterest(FaceEndpoint(*this->face1, 0), *interest, pitEntry);
+  };
+  BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo, 2));
 
   BOOST_REQUIRE_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory[0].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory[0].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
+  BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].pitInterest.wireEncode(),
+                    pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].outFaceId, this->face1->getId());
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory[0].header.getReason(), lp::NackReason::NO_ROUTE);
 }

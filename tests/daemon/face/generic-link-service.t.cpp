@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(ReceiveBareInterest)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInInterests, 1);
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  BOOST_CHECK_EQUAL(receivedInterests.back(), *interest1);
+  BOOST_CHECK_EQUAL(receivedInterests.back().wireEncode(), interest1->wireEncode());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveInterest)
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterest)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInInterests, 1);
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  BOOST_CHECK_EQUAL(receivedInterests.back(), *interest1);
+  BOOST_CHECK_EQUAL(receivedInterests.back().wireEncode(), interest1->wireEncode());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveBareData)
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(ReceiveBareData)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInData, 1);
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_CHECK_EQUAL(receivedData.back(), *data1);
+  BOOST_CHECK_EQUAL(receivedData.back().wireEncode(), data1->wireEncode());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveData)
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(ReceiveData)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInData, 1);
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_CHECK_EQUAL(receivedData.back(), *data1);
+  BOOST_CHECK_EQUAL(receivedData.back().wireEncode(), data1->wireEncode());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNack)
@@ -239,8 +239,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNacks, 1);
   BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
-  BOOST_CHECK(receivedNacks.back().getReason() == nack1.getReason());
-  BOOST_CHECK(receivedNacks.back().getInterest() == nack1.getInterest());
+  BOOST_CHECK_EQUAL(receivedNacks.back().getReason(), nack1.getReason());
+  BOOST_CHECK_EQUAL(receivedNacks.back().getInterest().wireEncode(), nack1.getInterest().wireEncode());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveIdlePacket)
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(ReassembleFragments)
     }
     else {
       BOOST_CHECK_EQUAL(receivedInterests.size(), 1);
-      BOOST_CHECK_EQUAL(receivedInterests.back(), *interest);
+      BOOST_CHECK_EQUAL(receivedInterests.back().wireEncode(), interest->wireEncode());
       BOOST_CHECK_EQUAL(service->getCounters().nReassembling, 0);
     }
   }
@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceId)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  shared_ptr<lp::NextHopFaceIdTag> tag = receivedInterests.back().getTag<lp::NextHopFaceIdTag>();
+  auto tag = receivedInterests.back().getTag<lp::NextHopFaceIdTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(*tag, 1000);
 }
@@ -884,7 +884,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCachePolicy)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  shared_ptr<lp::CachePolicyTag> tag = receivedData.back().getTag<lp::CachePolicyTag>();
+  auto tag = receivedData.back().getTag<lp::CachePolicyTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(tag->get().getPolicy(), lp::CachePolicyType::NO_CACHE);
 }
@@ -1069,7 +1069,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkInterest)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  shared_ptr<lp::CongestionMarkTag> tag = receivedInterests.back().getTag<lp::CongestionMarkTag>();
+  auto tag = receivedInterests.back().getTag<lp::CongestionMarkTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(*tag, 1);
 }
@@ -1083,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkData)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  shared_ptr<lp::CongestionMarkTag> tag = receivedData.back().getTag<lp::CongestionMarkTag>();
+  auto tag = receivedData.back().getTag<lp::CongestionMarkTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(*tag, 1);
 }
@@ -1101,7 +1101,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkNack)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
-  shared_ptr<lp::CongestionMarkTag> tag = receivedNacks.back().getTag<lp::CongestionMarkTag>();
+  auto tag = receivedNacks.back().getTag<lp::CongestionMarkTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(*tag, 1);
 }
@@ -1151,7 +1151,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscovery)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  shared_ptr<lp::NonDiscoveryTag> tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
+  auto tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
   BOOST_CHECK(tag != nullptr);
 }
 
@@ -1169,8 +1169,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDisabled)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_CHECK_EQUAL(receivedInterests.size(), 1);
-
-  shared_ptr<lp::NonDiscoveryTag> tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
+  auto tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
   BOOST_CHECK(tag == nullptr);
 }
 
@@ -1258,7 +1257,7 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncement)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  shared_ptr<lp::PrefixAnnouncementTag> tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
+  auto tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
   BOOST_CHECK_EQUAL(tag->get().getPrefixAnn()->getAnnouncedName(), "/local/ndn/prefix");
 }
 
@@ -1277,8 +1276,7 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDisabled)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_CHECK_EQUAL(receivedData.size(), 1);
-
-  shared_ptr<lp::PrefixAnnouncementTag> tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
+  auto tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
   BOOST_CHECK(tag == nullptr);
 }
 
