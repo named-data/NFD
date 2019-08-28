@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(Retransmission)
   consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
   this->advanceClocks(time::milliseconds(100));
 
-  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkBC->getFace(nodeB), 0);
+  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkBC->getFace(nodeB));
   BOOST_CHECK(outRecord != pitEntry->out_end());
 
   this->advanceClocks(time::milliseconds(100));
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       // Get pitEntry of node A
       shared_ptr<pit::Entry> pitEntry = topo.getForwarder(nodeA).getPit().find(*interest);
       //get outRecord associated with face towards B
-      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA), 0);
+      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA));
 
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
@@ -383,13 +383,13 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       pitEntry = topo.getForwarder(nodeB).getPit().find(*interest);
 
       // Get outRecord associated with face towards D.
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB), 0);
+      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
 
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
       // RTT between B and D
       this->advanceClocks(5_ms, 160_ms);
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB), 0);
+      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
 
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nInData, i);
 

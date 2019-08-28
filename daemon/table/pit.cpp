@@ -112,11 +112,12 @@ Pit::erase(Entry* entry, bool canDeleteNte)
 }
 
 void
-Pit::deleteInOutRecordsByFace(Entry* entry, const Face& face)
+Pit::deleteInOutRecords(Entry* entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
-  entry->deleteInOutRecordsByFace(face);
+  entry->deleteInRecord(face);
+  entry->deleteOutRecord(face);
 
   /// \todo decide whether to delete PIT entry if there's no more in/out-record left
 }

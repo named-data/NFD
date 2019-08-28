@@ -143,7 +143,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
   if (pitEntry == nullptr) {
     return;
   }
-  auto inRecord = pitEntry->getInRecord(*inFace, 0);
+  auto inRecord = pitEntry->getInRecord(*inFace);
   if (inRecord == pitEntry->in_end()) {
     return;
   }

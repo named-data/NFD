@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
   // insert in-record
   auto before1 = time::steady_clock::now();
-  InRecordCollection::iterator in1 = entry.insertOrUpdateInRecord(*face1, 0, *interest1);
+  InRecordCollection::iterator in1 = entry.insertOrUpdateInRecord(*face1, *interest1);
   auto after1 = time::steady_clock::now();
   const InRecordCollection& inRecords2 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords2.size(), 1);
@@ -96,11 +96,11 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   BOOST_CHECK_LE(in1->getLastRenewed(), after1);
   BOOST_CHECK_LE(in1->getExpiry() - in1->getLastRenewed() - interest1->getInterestLifetime(),
                  after1 - before1);
-  BOOST_CHECK(in1 == entry.getInRecord(*face1, 0));
+  BOOST_CHECK(in1 == entry.getInRecord(*face1));
 
   // insert out-record
   auto before2 = time::steady_clock::now();
-  OutRecordCollection::iterator out1 = entry.insertOrUpdateOutRecord(*face1, 0, *interest1);
+  OutRecordCollection::iterator out1 = entry.insertOrUpdateOutRecord(*face1, *interest1);
   auto after2 = time::steady_clock::now();
   const OutRecordCollection& outRecords2 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords2.size(), 1);
@@ -111,11 +111,11 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   BOOST_CHECK_LE(out1->getLastRenewed(), after2);
   BOOST_CHECK_LE(out1->getExpiry() - out1->getLastRenewed() - interest1->getInterestLifetime(),
                  after2 - before2);
-  BOOST_CHECK(out1 == entry.getOutRecord(*face1, 0));
+  BOOST_CHECK(out1 == entry.getOutRecord(*face1));
 
   // update in-record
   auto before3 = time::steady_clock::now();
-  InRecordCollection::iterator in2 = entry.insertOrUpdateInRecord(*face1, 0, *interest2);
+  InRecordCollection::iterator in2 = entry.insertOrUpdateInRecord(*face1, *interest2);
   auto after3 = time::steady_clock::now();
   const InRecordCollection& inRecords3 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords3.size(), 1);
@@ -125,60 +125,45 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   BOOST_CHECK_LE(in2->getExpiry() - in2->getLastRenewed() - interest2->getInterestLifetime(),
                  after3 - before3);
 
-  // insert another in-record (different face)
-  InRecordCollection::iterator in3 = entry.insertOrUpdateInRecord(*face2, 0, *interest3);
+  // insert another in-record
+  InRecordCollection::iterator in3 = entry.insertOrUpdateInRecord(*face2, *interest3);
   const InRecordCollection& inRecords4 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(&in3->getFace(), face2.get());
-  BOOST_CHECK_EQUAL(in3->getEndpointId(), 0);
-
-  // insert another in-record (different endpoint)
-  InRecordCollection::iterator in4 = entry.insertOrUpdateInRecord(*face1, 42, *interest4);
-  const InRecordCollection& inRecords5 = entry.getInRecords();
-  BOOST_CHECK_EQUAL(inRecords5.size(), 3);
-  BOOST_CHECK_EQUAL(&in4->getFace(), face1.get());
-  BOOST_CHECK_EQUAL(in4->getEndpointId(), 42);
 
   // get in-record
-  InRecordCollection::iterator in5 = entry.getInRecord(*face1, 0);
-  BOOST_REQUIRE(in5 != entry.in_end());
-  BOOST_CHECK_EQUAL(&in5->getFace(), face1.get());
-  BOOST_CHECK_EQUAL(in5->getEndpointId(), 0);
-  InRecordCollection::iterator in6 = entry.getInRecord(*face1, 42);
-  BOOST_REQUIRE(in6 != entry.in_end());
-  BOOST_CHECK_EQUAL(&in6->getFace(), face1.get());
-  BOOST_CHECK_EQUAL(in6->getEndpointId(), 42);
-  BOOST_CHECK(in5 != in6);
+  InRecordCollection::iterator in4 = entry.getInRecord(*face1);
+  BOOST_REQUIRE(in4 != entry.in_end());
+  BOOST_CHECK_EQUAL(&in4->getFace(), face1.get());
 
   // delete in-record
-  entry.deleteInRecord(*face1, 0);
-  BOOST_CHECK_EQUAL(entry.getInRecords().size(), 2);
-  BOOST_CHECK(entry.getInRecord(*face1, 0) == entry.in_end());
-  BOOST_CHECK(entry.getInRecord(*face1, 42) != entry.in_end());
+  entry.deleteInRecord(*face1);
+  BOOST_CHECK_EQUAL(entry.getInRecords().size(), 1);
+  BOOST_CHECK(entry.getInRecord(*face1) == entry.in_end());
 
   // clear in-records
   entry.clearInRecords();
   BOOST_CHECK_EQUAL(entry.getInRecords().size(), 0);
-  BOOST_CHECK(entry.getInRecord(*face1, 0) == entry.in_end());
-  BOOST_CHECK(entry.getInRecord(*face1, 42) == entry.in_end());
+  BOOST_CHECK(entry.getInRecord(*face1) == entry.in_end());
+  BOOST_CHECK(entry.getInRecord(*face2) == entry.in_end());
 
   // insert another out-record
-  OutRecordCollection::iterator out2 = entry.insertOrUpdateOutRecord(*face2, 0, *interest4);
+  OutRecordCollection::iterator out2 = entry.insertOrUpdateOutRecord(*face2, *interest4);
   const OutRecordCollection& outRecords3 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(&out2->getFace(), face2.get());
 
   // get out-record
-  OutRecordCollection::iterator out3 = entry.getOutRecord(*face1, 0);
+  OutRecordCollection::iterator out3 = entry.getOutRecord(*face1);
   BOOST_REQUIRE(out3 != entry.out_end());
   BOOST_CHECK_EQUAL(&out3->getFace(), face1.get());
 
   // delete out-record
-  entry.deleteOutRecord(*face2, 0);
+  entry.deleteOutRecord(*face2);
   const OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
   BOOST_CHECK_EQUAL(&outRecords4.begin()->getFace(), face1.get());
-  BOOST_CHECK(entry.getOutRecord(*face2, 0) == entry.out_end());
+  BOOST_CHECK(entry.getOutRecord(*face2) == entry.out_end());
 }
 
 BOOST_AUTO_TEST_CASE(Lifetime)
@@ -187,17 +172,17 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   auto face = make_shared<DummyFace>();
   Entry entry(*interest);
 
-  auto inIt = entry.insertOrUpdateInRecord(*face, 0, *interest);
+  auto inIt = entry.insertOrUpdateInRecord(*face, *interest);
   BOOST_CHECK_GT(inIt->getExpiry(), time::steady_clock::now());
 
-  auto outIt = entry.insertOrUpdateOutRecord(*face, 0, *interest);
+  auto outIt = entry.insertOrUpdateOutRecord(*face, *interest);
   BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
 }
 
 BOOST_AUTO_TEST_CASE(OutRecordNack)
 {
   auto face1 = make_shared<DummyFace>();
-  OutRecord outR(*face1, 0);
+  OutRecord outR(*face1);
   BOOST_CHECK(outR.getIncomingNack() == nullptr);
 
   auto interest1 = makeInterest("/uWiapGjYL");

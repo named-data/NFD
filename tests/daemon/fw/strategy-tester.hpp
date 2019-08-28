@@ -112,7 +112,7 @@ protected:
                const Interest& interest) override
   {
     sendInterestHistory.push_back({pitEntry->getInterest(), egress.face.getId(), interest});
-    pitEntry->insertOrUpdateOutRecord(egress.face, egress.endpoint, interest);
+    pitEntry->insertOrUpdateOutRecord(egress.face, interest);
     afterAction();
   }
 
@@ -128,7 +128,7 @@ protected:
            const lp::NackHeader& header) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), egress.face.getId(), header});
-    pitEntry->deleteInRecord(egress.face, egress.endpoint);
+    pitEntry->deleteInRecord(egress.face);
     afterAction();
   }
 

@@ -199,7 +199,7 @@ Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data,
 
   // delete the PIT entry's in-record based on egress,
   // since Data is sent to face and endpoint from which the Interest was received
-  pitEntry->deleteInRecord(egress.face, egress.endpoint);
+  pitEntry->deleteInRecord(egress.face);
 
   m_forwarder.onOutgoingData(data, egress);
 }
@@ -208,23 +208,22 @@ void
 Strategy::sendDataToAll(const shared_ptr<pit::Entry>& pitEntry,
                         const FaceEndpoint& ingress, const Data& data)
 {
-  std::set<std::pair<Face*, EndpointId>> pendingDownstreams;
+  std::set<Face*> pendingDownstreams;
   auto now = time::steady_clock::now();
 
   // remember pending downstreams
   for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
     if (inRecord.getExpiry() > now) {
       if (inRecord.getFace().getId() == ingress.face.getId() &&
-          inRecord.getEndpointId() == ingress.endpoint &&
           inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
       }
-      pendingDownstreams.emplace(&inRecord.getFace(), inRecord.getEndpointId());
+      pendingDownstreams.emplace(&inRecord.getFace());
     }
   }
 
   for (const auto& pendingDownstream : pendingDownstreams) {
-    this->sendData(pitEntry, data, FaceEndpoint(*pendingDownstream.first, pendingDownstream.second));
+    this->sendData(pitEntry, data, FaceEndpoint(*pendingDownstream, 0));
   }
 }
 
@@ -233,20 +232,20 @@ Strategy::sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader
                     std::initializer_list<FaceEndpoint> exceptFaceEndpoints)
 {
   // populate downstreams with all downstreams faces
-  std::set<std::pair<Face*, EndpointId>> downstreams;
+  std::set<Face*> downstreams;
   std::transform(pitEntry->in_begin(), pitEntry->in_end(), std::inserter(downstreams, downstreams.end()),
                  [] (const pit::InRecord& inR) {
-                  return std::make_pair(&inR.getFace(), inR.getEndpointId());
+                  return &inR.getFace();
                  });
 
   // delete excluded faces
   for (const auto& exceptFaceEndpoint : exceptFaceEndpoints) {
-    downstreams.erase({&exceptFaceEndpoint.face, exceptFaceEndpoint.endpoint});
+    downstreams.erase(&exceptFaceEndpoint.face);
   }
 
   // send Nacks
   for (const auto& downstream : downstreams) {
-    this->sendNack(pitEntry, FaceEndpoint(*downstream.first, downstream.second), header);
+    this->sendNack(pitEntry, FaceEndpoint(*downstream, 0), header);
   }
   // warning: don't loop on pitEntry->getInRecords(), because in-record is deleted when sending Nack
 }

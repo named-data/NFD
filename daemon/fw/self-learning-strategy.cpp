@@ -73,7 +73,7 @@ SelfLearningStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const In
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   bool isNonDiscovery = interest.getTag<lp::NonDiscoveryTag>() != nullptr;
-  auto inRecordInfo = pitEntry->getInRecord(ingress.face, ingress.endpoint)->insertStrategyInfo<InRecordInfo>().first;
+  auto inRecordInfo = pitEntry->getInRecord(ingress.face)->insertStrategyInfo<InRecordInfo>().first;
   if (isNonDiscovery) { // "non-discovery" Interest
     inRecordInfo->isNonDiscoveryInterest = true;
     if (nexthops.empty()) { // return NACK if no matching FIB entry exists
@@ -103,7 +103,7 @@ void
 SelfLearningStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
                                        const FaceEndpoint& ingress, const Data& data)
 {
-  OutRecordInfo* outRecordInfo = pitEntry->getOutRecord(ingress.face, ingress.endpoint)->getStrategyInfo<OutRecordInfo>();
+  OutRecordInfo* outRecordInfo = pitEntry->getOutRecord(ingress.face)->getStrategyInfo<OutRecordInfo>();
   if (outRecordInfo && outRecordInfo->isNonDiscoveryInterest) { // outgoing Interest was non-discovery
     if (!needPrefixAnn(pitEntry)) { // no need to attach a PA (common cases)
       sendDataToAll(pitEntry, ingress, data);
@@ -147,7 +147,7 @@ SelfLearningStrategy::broadcastInterest(const Interest& interest, const Face& in
       continue;
     }
     this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
-    pitEntry->getOutRecord(outFace, 0)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
+    pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
     NFD_LOG_DEBUG("send discovery Interest=" << interest << " from="
                   << inFace.getId() << " to=" << outFace.getId());
   }
@@ -165,7 +165,7 @@ SelfLearningStrategy::multicastInterest(const Interest& interest, const Face& in
       continue;
     }
     this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
-    pitEntry->getOutRecord(outFace, 0)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
+    pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
     NFD_LOG_DEBUG("send non-discovery Interest=" << interest << " from="
                   << inFace.getId() << " to=" << outFace.getId());
   }

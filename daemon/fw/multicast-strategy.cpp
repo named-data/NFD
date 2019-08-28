@@ -93,7 +93,7 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
     NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
 
     if (suppressResult == RetxSuppressionResult::FORWARD) {
-      m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace, 0));
+      m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace));
     }
     ++nEligibleNextHops;
   }

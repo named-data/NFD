@@ -181,7 +181,7 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
     return;
   }
 
-  auto outRecord = pitEntry->getOutRecord(ingress.face, 0);
+  auto outRecord = pitEntry->getOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG(pitEntry->getName() << " data from=" << ingress << " no-out-record");
   }

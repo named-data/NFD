@@ -56,7 +56,7 @@ ProcessNackTraitsBase::processNack(const Face& inFace, const lp::Nack& nack,
 
   if (nOutRecordsNotNacked == 1) {
     BOOST_ASSERT(lastFaceNotNacked != nullptr);
-    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked, 0);
+    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
     if (inR != pitEntry->in_end()) {
       // one out-record not Nacked, which is also a downstream
       NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<

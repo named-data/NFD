@@ -40,7 +40,7 @@ cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
     }
 
     for (const auto& pitEntry : nte.getPitEntries()) {
-      pit.deleteInOutRecordsByFace(pitEntry.get(), face);
+      pit.deleteInOutRecords(pitEntry.get(), face);
     }
 
     if (!nte.hasTableEntries()) {

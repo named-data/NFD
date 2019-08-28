@@ -226,8 +226,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 
   face1->receiveInterest(*interest, 0);
   auto entry = pit.find(*interest);
-  entry->insertOrUpdateOutRecord(*face2, 0, *interest);
-  entry->insertOrUpdateOutRecord(*face3, 0, *interest);
+  entry->insertOrUpdateOutRecord(*face2, *interest);
+  entry->insertOrUpdateOutRecord(*face3, *interest);
 
   this->advanceClocks(10_ms);
   face2->receiveNack(nack, 0);
@@ -388,8 +388,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
 
   face1->receiveInterest(*interest, 0);
   auto entry = pit.find(*interest);
-  entry->insertOrUpdateOutRecord(*face2, 0, *interest);
-  entry->insertOrUpdateOutRecord(*face3, 0, *interest);
+  entry->insertOrUpdateOutRecord(*face2, *interest);
+  entry->insertOrUpdateOutRecord(*face3, *interest);
 
   //pitEntry is not erased after receiving the first Nack
   this->advanceClocks(10_ms);

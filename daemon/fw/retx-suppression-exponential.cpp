@@ -95,7 +95,7 @@ RetxSuppressionResult
 RetxSuppressionExponential::decidePerUpstream(pit::Entry& pitEntry, Face& outFace)
 {
   // NEW if outRecord for the face does not exist
-  auto outRecord = pitEntry.getOutRecord(outFace, 0);
+  auto outRecord = pitEntry.getOutRecord(outFace);
   if (outRecord == pitEntry.out_end()) {
     return RetxSuppressionResult::NEW;
   }

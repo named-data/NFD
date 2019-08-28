@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA" + std::to_string(i));
     shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
-    pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
+    pitEntry->insertOrUpdateInRecord(*face1, *interest);
     strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
   }
 

@@ -98,15 +98,15 @@ BOOST_AUTO_TEST_CASE(CanForwardToLegacy)
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
 
-  entry.insertOrUpdateInRecord(*face1, 0, *interest);
+  entry.insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), false);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
 
-  entry.insertOrUpdateInRecord(*face2, 0, *interest);
+  entry.insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), true);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
 
-  entry.insertOrUpdateOutRecord(*face1, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), false);
   BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
 }
@@ -126,22 +126,22 @@ BOOST_AUTO_TEST_CASE(Nonce)
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry0, 19004, *face2), DUPLICATE_NONCE_NONE);
 
   pit::Entry entry1(*interest);
-  entry1.insertOrUpdateInRecord(*face1, 0, *interest);
+  entry1.insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry1, 25559, *face1), DUPLICATE_NONCE_IN_SAME);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry1, 25559, *face2), DUPLICATE_NONCE_IN_OTHER);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry1, 19004, *face1), DUPLICATE_NONCE_NONE);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry1, 19004, *face2), DUPLICATE_NONCE_NONE);
 
   pit::Entry entry2(*interest);
-  entry2.insertOrUpdateOutRecord(*face1, 0, *interest);
+  entry2.insertOrUpdateOutRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry2, 25559, *face1), DUPLICATE_NONCE_OUT_SAME);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry2, 25559, *face2), DUPLICATE_NONCE_OUT_OTHER);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry2, 19004, *face1), DUPLICATE_NONCE_NONE);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry2, 19004, *face2), DUPLICATE_NONCE_NONE);
 
   pit::Entry entry3(*interest);
-  entry3.insertOrUpdateInRecord(*face1, 0, *interest);
-  entry3.insertOrUpdateOutRecord(*face1, 0, *interest);
+  entry3.insertOrUpdateInRecord(*face1, *interest);
+  entry3.insertOrUpdateOutRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry3, 25559, *face1),
                     DUPLICATE_NONCE_IN_SAME | DUPLICATE_NONCE_OUT_SAME);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry3, 25559, *face2),
@@ -150,8 +150,8 @@ BOOST_AUTO_TEST_CASE(Nonce)
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry3, 19004, *face2), DUPLICATE_NONCE_NONE);
 
   pit::Entry entry4(*interest);
-  entry4.insertOrUpdateInRecord(*face1, 0, *interest);
-  entry4.insertOrUpdateInRecord(*face2, 0, *interest);
+  entry4.insertOrUpdateInRecord(*face1, *interest);
+  entry4.insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry4, 25559, *face1),
                     DUPLICATE_NONCE_IN_SAME | DUPLICATE_NONCE_IN_OTHER);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry4, 25559, *face2),
@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE(Nonce)
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry4, 19004, *face2), DUPLICATE_NONCE_NONE);
 
   pit::Entry entry5(*interest);
-  entry5.insertOrUpdateOutRecord(*face1, 0, *interest);
-  entry5.insertOrUpdateOutRecord(*face2, 0, *interest);
+  entry5.insertOrUpdateOutRecord(*face1, *interest);
+  entry5.insertOrUpdateOutRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry5, 25559, *face1),
                     DUPLICATE_NONCE_OUT_SAME | DUPLICATE_NONCE_OUT_OTHER);
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry5, 25559, *face2),
@@ -181,15 +181,15 @@ BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, GlobalIoTimeFixture)
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 
   // Interest-Data
-  entry.insertOrUpdateOutRecord(*face1, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
-  entry.deleteOutRecord(*face1, 0);
+  entry.deleteOutRecord(*face1);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 
   // Interest-Nack
-  entry.insertOrUpdateOutRecord(*face2, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
-  pit::OutRecordCollection::iterator outR = entry.getOutRecord(*face2, 0);
+  pit::OutRecordCollection::iterator outR = entry.getOutRecord(*face2);
   BOOST_REQUIRE(outR != entry.out_end());
   lp::Nack nack = makeNack(*interest, lp::NackReason::DUPLICATE);
   bool isNackAccepted = outR->setIncomingNack(nack); // Nack arrival
@@ -197,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, GlobalIoTimeFixture)
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 
   // Interest-timeout
-  entry.insertOrUpdateOutRecord(*face3, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face3, *interest);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
   this->advanceClocks(ndn::DEFAULT_INTEREST_LIFETIME, 2);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
@@ -213,12 +213,12 @@ BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, GlobalIoTimeFixture)
 
   time::steady_clock::TimePoint before = time::steady_clock::now();
 
-  entry.insertOrUpdateOutRecord(*face1, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face1, *interest);
   this->advanceClocks(1_s);
 
   BOOST_CHECK_EQUAL(getLastOutgoing(entry), before);
 
-  entry.insertOrUpdateOutRecord(*face2, 0, *interest);
+  entry.insertOrUpdateOutRecord(*face2, *interest);
 
   BOOST_CHECK_EQUAL(getLastOutgoing(entry), time::steady_clock::now());
 }

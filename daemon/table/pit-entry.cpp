@@ -49,25 +49,21 @@ Entry::canMatch(const Interest& interest, size_t nEqualNameComps) const
 }
 
 InRecordCollection::iterator
-Entry::getInRecord(const Face& face, EndpointId endpointId)
+Entry::getInRecord(const Face& face)
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face, endpointId] (const InRecord& inRecord) {
-      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
 }
 
 InRecordCollection::iterator
-Entry::insertOrUpdateInRecord(Face& face, EndpointId endpointId, const Interest& interest)
+Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face, endpointId] (const InRecord& inRecord) {
-      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it == m_inRecords.end()) {
-    m_inRecords.emplace_front(face, endpointId);
+    m_inRecords.emplace_front(face);
     it = m_inRecords.begin();
   }
 
@@ -76,12 +72,10 @@ Entry::insertOrUpdateInRecord(Face& face, EndpointId endpointId, const Interest&
 }
 
 void
-Entry::deleteInRecord(const Face& face, EndpointId endpointId)
+Entry::deleteInRecord(const Face& face)
 {
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face, endpointId] (const InRecord& inRecord) {
-      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it != m_inRecords.end()) {
     m_inRecords.erase(it);
   }
@@ -94,25 +88,21 @@ Entry::clearInRecords()
 }
 
 OutRecordCollection::iterator
-Entry::getOutRecord(const Face& face, EndpointId endpointId)
+Entry::getOutRecord(const Face& face)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face, endpointId] (const OutRecord& outRecord) {
-      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
 }
 
 OutRecordCollection::iterator
-Entry::insertOrUpdateOutRecord(Face& face, EndpointId endpointId, const Interest& interest)
+Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face, endpointId] (const OutRecord& outRecord) {
-      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it == m_outRecords.end()) {
-    m_outRecords.emplace_front(face, endpointId);
+    m_outRecords.emplace_front(face);
     it = m_outRecords.begin();
   }
 
@@ -121,26 +111,13 @@ Entry::insertOrUpdateOutRecord(Face& face, EndpointId endpointId, const Interest
 }
 
 void
-Entry::deleteOutRecord(const Face& face, EndpointId endpointId)
+Entry::deleteOutRecord(const Face& face)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face, endpointId] (const OutRecord& outRecord) {
-      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
-    });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }
-}
-
-void
-Entry::deleteInOutRecordsByFace(const Face& face)
-{
-  m_inRecords.remove_if([&face] (const InRecord& inRecord) {
-    return &inRecord.getFace() == &face;
-  });
-  m_outRecords.remove_if([&face] (const OutRecord& outRecord) {
-    return &outRecord.getFace() == &face;
-  });
 }
 
 } // namespace pit

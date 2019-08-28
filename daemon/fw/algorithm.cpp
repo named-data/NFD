@@ -140,7 +140,7 @@ findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& int
     if (!isNextHopEligible(inFace, interest, *it, pitEntry))
       continue;
 
-    auto outRecord = pitEntry->getOutRecord(it->getFace(), 0);
+    auto outRecord = pitEntry->getOutRecord(it->getFace());
     BOOST_ASSERT(outRecord != pitEntry->out_end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;
@@ -166,7 +166,7 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 
   if (wantUnused) {
     // nexthop must not have unexpired out-record
-    auto outRecord = pitEntry->getOutRecord(outFace, 0);
+    auto outRecord = pitEntry->getOutRecord(outFace);
     if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
       return false;
     }

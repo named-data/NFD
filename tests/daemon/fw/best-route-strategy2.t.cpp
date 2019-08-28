@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
-  pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.back().outFaceId, face2->getId());
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
-    pitEntry->insertOrUpdateInRecord(*face4, 0, *interest);
+    pitEntry->insertOrUpdateInRecord(*face4, *interest);
     strategy.afterReceiveInterest(FaceEndpoint(*face4, 0), *interest, pitEntry);
 
     size_t nSent = strategy.sendInterestHistory.size();
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
     this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 2);
-    pitEntry->insertOrUpdateInRecord(*face5, 0, *interest);
+    pitEntry->insertOrUpdateInRecord(*face5, *interest);
     strategy.afterReceiveInterest(FaceEndpoint(*face5, 0), *interest, pitEntry);
   }
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 3);

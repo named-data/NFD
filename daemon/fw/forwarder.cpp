@@ -167,13 +167,8 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
   ++m_counters.nCsMisses;
 
-  // FIXME Strategies are not prepared to handle non-zero EndpointIds, so always insert
-  //       the in-record and dispatch to strategy with EndpointId=0 for now. Eventually,
-  //       this pipeline will need to be refactored so that strategies can control the
-  //       in-record insertion.
-
   // insert in-record
-  pitEntry->insertOrUpdateInRecord(ingress.face, 0, interest);
+  pitEntry->insertOrUpdateInRecord(ingress.face, interest);
 
   // set PIT expiry timer to the time that the last PIT in-record expires
   auto lastExpiring = std::max_element(pitEntry->in_begin(), pitEntry->in_end(),
@@ -233,7 +228,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
   NFD_LOG_DEBUG("onOutgoingInterest out=" << egress << " interest=" << pitEntry->getName());
 
   // insert out-record
-  pitEntry->insertOrUpdateOutRecord(egress.face, egress.endpoint, interest);
+  pitEntry->insertOrUpdateOutRecord(egress.face, interest);
 
   // send Interest
   egress.face.sendInterest(interest, egress.endpoint);
@@ -311,7 +306,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     this->insertDeadNonceList(*pitEntry, &ingress.face);
 
     // delete PIT entry's out-record
-    pitEntry->deleteOutRecord(ingress.face, ingress.endpoint);
+    pitEntry->deleteOutRecord(ingress.face);
   }
   // when more than one PIT entry is matched, trigger strategy: before satisfy Interest,
   // and send Data to all matched out faces
@@ -325,7 +320,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
       // remember pending downstreams
       for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
         if (inRecord.getExpiry() > now) {
-          pendingDownstreams.emplace(&inRecord.getFace(), inRecord.getEndpointId());
+          pendingDownstreams.emplace(&inRecord.getFace(), 0);
         }
       }
 
@@ -345,7 +340,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
 
       // clear PIT entry's in and out records
       pitEntry->clearInRecords();
-      pitEntry->deleteOutRecord(ingress.face, ingress.endpoint);
+      pitEntry->deleteOutRecord(ingress.face);
     }
 
     // foreach pending downstream
@@ -424,7 +419,7 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
   }
 
   // has out-record?
-  auto outRecord = pitEntry->getOutRecord(ingress.face, ingress.endpoint);
+  auto outRecord = pitEntry->getOutRecord(ingress.face);
   // if no out-record found, drop
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG("onIncomingNack in=" << ingress << " nack=" << nack.getInterest().getName()
@@ -467,7 +462,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   }
 
   // has in-record?
-  auto inRecord = pitEntry->getInRecord(egress.face, egress.endpoint);
+  auto inRecord = pitEntry->getInRecord(egress.face);
 
   // if no in-record found, drop
   if (inRecord == pitEntry->in_end()) {
@@ -494,7 +489,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   nackPkt.setHeader(nack);
 
   // erase in-record
-  pitEntry->deleteInRecord(egress.face, egress.endpoint);
+  pitEntry->deleteInRecord(egress.face);
 
   // send Nack on face
   egress.face.sendNack(nackPkt, egress.endpoint);
@@ -542,7 +537,7 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, Face* upstream)
   }
   else {
     // insert outgoing Nonce of a specific face
-    auto outRecord = pitEntry.getOutRecord(*upstream, 0);
+    auto outRecord = pitEntry.getOutRecord(*upstream);
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }

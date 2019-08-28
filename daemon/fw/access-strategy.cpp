@@ -172,7 +172,7 @@ AccessStrategy::afterRtoTimeout(const weak_ptr<pit::Entry>& pitWeak,
     return;
   }
 
-  auto inRecord = pitEntry->getInRecord(*inFace, inEndpointId);
+  auto inRecord = pitEntry->getInRecord(*inFace);
   // in-record is erased only if Interest is satisfied, and RTO timer should have been cancelled
   // note: if this strategy is extended to send Nacks, that would also erase the in-record,
   //       and the RTO timer should be cancelled in that case as well
@@ -219,7 +219,7 @@ AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
     return;
   }
 
-  auto outRecord = pitEntry->getOutRecord(ingress.face, 0);
+  auto outRecord = pitEntry->getOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) { // no out-record
     NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << ingress << " no-out-record");
     return;

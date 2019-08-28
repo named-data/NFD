@@ -166,7 +166,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,
 
   auto interest = makeInterest(scenario.getInterestName());
   auto pitEntry = this->pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest);
+  pitEntry->insertOrUpdateInRecord(*this->face1, *interest);
 
   auto f = [&] {
     this->strategy.afterReceiveInterest(FaceEndpoint(*this->face1, 0), *interest, pitEntry);

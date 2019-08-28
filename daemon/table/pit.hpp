@@ -93,10 +93,10 @@ public:
     this->erase(entry, true);
   }
 
-  /** \brief Deletes all in-records and out-records for \p face
+  /** \brief Deletes in-records and out-records for \p face
    */
   void
-  deleteInOutRecordsByFace(Entry* entry, const Face& face);
+  deleteInOutRecords(Entry* entry, const Face& face);
 
 public: // enumeration
   typedef Iterator const_iterator;
