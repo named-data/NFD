@@ -24,7 +24,6 @@
  */
 
 #include "fw/asf-measurements.hpp"
-#include "common/global.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
@@ -40,88 +39,57 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestAsfMeasurements)
 
-BOOST_AUTO_TEST_SUITE(TestRttStats)
-
-BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoFixture)
+BOOST_FIXTURE_TEST_CASE(FaceInfo, GlobalIoTimeFixture)
 {
-  RttStats stats;
+  using asf::FaceInfo;
+  FaceInfo info(nullptr);
 
-  BOOST_CHECK_EQUAL(stats.getRtt(), RttStats::RTT_NO_MEASUREMENT);
-  BOOST_CHECK_EQUAL(stats.getSrtt(), RttStats::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(info.getLastRtt(), FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(info.getSrtt(), FaceInfo::RTT_NO_MEASUREMENT);
 
-  // Receive Data back in 50ms
-  time::nanoseconds rtt(50_ms);
-  stats.addRttMeasurement(rtt);
-
-  BOOST_CHECK_EQUAL(stats.getRtt(), rtt);
-  BOOST_CHECK_EQUAL(stats.getSrtt(), rtt);
-
-  // Receive Data back in 50ms
-  stats.addRttMeasurement(rtt);
-
-  BOOST_CHECK_EQUAL(stats.getRtt(), rtt);
-  BOOST_CHECK_EQUAL(stats.getSrtt(), rtt);
-
-  // Receive Data back with a higher RTT
-  time::nanoseconds higherRtt(100_ms);
-  stats.addRttMeasurement(higherRtt);
-
-  BOOST_CHECK_EQUAL(stats.getRtt(), higherRtt);
-  BOOST_CHECK_GT(stats.getSrtt(), rtt);
-  BOOST_CHECK_LT(stats.getSrtt(), higherRtt);
-
-  // Simulate timeout
-  auto previousSrtt = stats.getSrtt();
-
-  stats.recordTimeout();
-
-  BOOST_CHECK_EQUAL(stats.getRtt(), RttStats::RTT_TIMEOUT);
-  BOOST_CHECK_EQUAL(stats.getSrtt(), previousSrtt);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // TestRttStats
-
-BOOST_AUTO_TEST_SUITE(TestFaceInfo)
-
-BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoTimeFixture)
-{
-  FaceInfo info;
-
-  auto id = getScheduler().schedule(1_s, []{});
-  ndn::Name interestName("/ndn/interest");
+  info.recordRtt(100_ms);
+  Name interestName("/ndn/interest");
 
   // Receive Interest and forward to next hop; should update RTO information
-  info.setTimeoutEvent(id, interestName);
+  BOOST_CHECK_EQUAL(info.isTimeoutScheduled(), false);
+  auto rto = info.scheduleTimeout(interestName, []{});
   BOOST_CHECK_EQUAL(info.isTimeoutScheduled(), true);
-
-  // If the strategy tries to schedule an RTO when one is already scheduled, throw an exception
-  BOOST_CHECK_THROW(info.setTimeoutEvent(id, interestName), FaceInfo::Error);
+  BOOST_CHECK_EQUAL(rto, 300_ms);
 
   // Receive Data
-  shared_ptr<Interest> interest = makeInterest(interestName);
-  shared_ptr<pit::Entry> pitEntry = make_shared<pit::Entry>(*interest);
-  std::shared_ptr<DummyFace> face = make_shared<DummyFace>();
-
-  pitEntry->insertOrUpdateOutRecord(*face, 0, *interest);
-
   time::nanoseconds rtt(5_ms);
   this->advanceClocks(5_ms);
+  info.recordRtt(rtt);
+  info.cancelTimeout(interestName);
 
-  info.recordRtt(pitEntry, *face);
-  info.cancelTimeoutEvent(interestName);
-
-  BOOST_CHECK_EQUAL(info.getRtt(), rtt);
-  BOOST_CHECK_EQUAL(info.getSrtt(), rtt);
+  BOOST_CHECK_EQUAL(info.getLastRtt(), rtt);
+  BOOST_CHECK_EQUAL(info.getSrtt(), 88125_us);
 
   // Send out another Interest which times out
-  info.setTimeoutEvent(id, interestName);
+  rto = info.scheduleTimeout(interestName, []{});
+  BOOST_CHECK_EQUAL(rto, 333125_us);
 
+  auto previousSrtt = info.getSrtt();
   info.recordTimeout(interestName);
-  BOOST_CHECK_EQUAL(info.getRtt(), RttStats::RTT_TIMEOUT);
+
+  BOOST_CHECK_EQUAL(info.getLastRtt(), FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(info.getSrtt(), previousSrtt);
   BOOST_CHECK_EQUAL(info.isTimeoutScheduled(), false);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestFaceInfo
+BOOST_FIXTURE_TEST_CASE(NamespaceInfo, GlobalIoTimeFixture)
+{
+  using asf::NamespaceInfo;
+  NamespaceInfo info(nullptr);
+
+  BOOST_CHECK(info.getFaceInfo(1234) == nullptr);
+
+  auto& faceInfo = info.getOrCreateFaceInfo(1234);
+  BOOST_CHECK(info.getFaceInfo(1234) == &faceInfo);
+
+  this->advanceClocks(AsfMeasurements::MEASUREMENTS_LIFETIME + 1_s);
+  BOOST_CHECK(info.getFaceInfo(1234) == nullptr); // expired
+}
 
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw

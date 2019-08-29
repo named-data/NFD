@@ -30,155 +30,54 @@ namespace nfd {
 namespace fw {
 namespace asf {
 
-NFD_LOG_INIT(AsfMeasurements);
+const time::nanoseconds FaceInfo::RTT_NO_MEASUREMENT{-1};
+const time::nanoseconds FaceInfo::RTT_TIMEOUT{-2};
 
-const time::nanoseconds RttStats::RTT_TIMEOUT(-1);
-const time::nanoseconds RttStats::RTT_NO_MEASUREMENT(0);
-const double RttStats::ALPHA = 0.125;
-
-RttStats::RttStats()
-  : m_srtt(RTT_NO_MEASUREMENT)
-  , m_rtt(RTT_NO_MEASUREMENT)
+time::nanoseconds
+FaceInfo::scheduleTimeout(const Name& interestName, scheduler::EventCallback cb)
 {
+  BOOST_ASSERT(!m_timeoutEvent);
+  m_lastInterestName = interestName;
+  m_timeoutEvent = getScheduler().schedule(m_rttEstimator.getEstimatedRto(), std::move(cb));
+  return m_rttEstimator.getEstimatedRto();
 }
 
 void
-RttStats::addRttMeasurement(time::nanoseconds durationRtt)
+FaceInfo::cancelTimeout(const Name& prefix)
 {
-  m_rtt = durationRtt;
-  m_rttEstimator.addMeasurement(durationRtt, 1);
-  m_srtt = m_rttEstimator.getSmoothedRtt();
+  if (m_lastInterestName.isPrefixOf(prefix)) {
+    m_timeoutEvent.cancel();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
-FaceInfo::FaceInfo()
-  : m_isTimeoutScheduled(false)
-  , m_nSilentTimeouts(0)
-{
-}
-
-FaceInfo::~FaceInfo()
-{
-  cancelTimeoutEvent();
-  m_measurementExpirationId.cancel();
-}
-
-void
-FaceInfo::setTimeoutEvent(const scheduler::EventId& id, const Name& interestName)
-{
-  if (!m_isTimeoutScheduled) {
-    m_timeoutEventId = id;
-    m_isTimeoutScheduled = true;
-    m_lastInterestName = interestName;
-  }
-  else {
-    NDN_THROW(FaceInfo::Error("Tried to schedule a timeout for a face that already has a timeout scheduled"));
-  }
-}
-
-void
-FaceInfo::cancelTimeoutEvent()
-{
-  m_timeoutEventId.cancel();
-  m_isTimeoutScheduled = false;
-}
-
-void
-FaceInfo::cancelTimeoutEvent(const Name& prefix)
-{
-  if (isTimeoutScheduled() && doesNameMatchLastInterest(prefix)) {
-    cancelTimeoutEvent();
-  }
-}
-
-bool
-FaceInfo::doesNameMatchLastInterest(const Name& name)
-{
-  return m_lastInterestName.isPrefixOf(name);
-}
-
-void
-FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
-{
-  // Calculate RTT
-  auto outRecord = pitEntry->getOutRecord(inFace, 0);
-
-  if (outRecord == pitEntry->out_end()) { // no out-record
-    NFD_LOG_TRACE(pitEntry->getInterest() << " dataFrom inFace=" << inFace.getId() << " no-out-record");
-    return;
-  }
-
-  m_rttStats.addRttMeasurement(time::steady_clock::now() - outRecord->getLastRenewed());
-  NFD_LOG_TRACE("Recording RTT for FaceId: " << inFace.getId()
-                << " RTT: " << m_rttStats.getRtt() << " SRTT: " << m_rttStats.getSrtt());
-}
-
-void
-FaceInfo::recordTimeout(const Name& interestName)
-{
-  m_rttStats.recordTimeout();
-  cancelTimeoutEvent(interestName);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-NamespaceInfo::NamespaceInfo()
-  : m_isProbingDue(false)
-  , m_hasFirstProbeBeenScheduled(false)
-{
-}
 
 FaceInfo*
-NamespaceInfo::getFaceInfo(const fib::Entry&, FaceId faceId)
+NamespaceInfo::getFaceInfo(FaceId faceId)
 {
-  auto it = m_fit.find(faceId);
-  if (it != m_fit.end()) {
-    return &it->second;
-  }
-  else {
-    return nullptr;
-  }
+  auto it = m_fiMap.find(faceId);
+  return it != m_fiMap.end() ? &it->second : nullptr;
 }
 
 FaceInfo&
-NamespaceInfo::getOrCreateFaceInfo(const fib::Entry&, FaceId faceId)
+NamespaceInfo::getOrCreateFaceInfo(FaceId faceId)
 {
-  auto it = m_fit.find(faceId);
-  FaceInfo* info = nullptr;
-
-  if (it == m_fit.end()) {
-    const auto& pair = m_fit.emplace(std::piecewise_construct,
-                                     std::forward_as_tuple(faceId),
-                                     std::forward_as_tuple());
-    info = &pair.first->second;
-    extendFaceInfoLifetime(*info, faceId);
+  auto ret = m_fiMap.emplace(std::piecewise_construct,
+                             std::forward_as_tuple(faceId),
+                             std::forward_as_tuple(m_rttEstimatorOpts));
+  auto& faceInfo = ret.first->second;
+  if (ret.second) {
+    extendFaceInfoLifetime(faceInfo, faceId);
   }
-  else {
-    info = &it->second;
-  }
-
-  return *info;
-}
-
-void
-NamespaceInfo::expireFaceInfo(FaceId faceId)
-{
-  m_fit.erase(faceId);
+  return faceInfo;
 }
 
 void
 NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
 {
-  // Cancel previous expiration
-  info.getMeasurementExpirationEventId().cancel();
-
-  // Refresh measurement
-  auto id = getScheduler().schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
-                                    [=] { expireFaceInfo(faceId); });
-  info.setMeasurementExpirationEventId(id);
+  info.m_measurementExpiration = getScheduler().schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
+                                                         [=] { m_fiMap.erase(faceId); });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,22 +87,21 @@ constexpr time::microseconds AsfMeasurements::MEASUREMENTS_LIFETIME;
 
 AsfMeasurements::AsfMeasurements(MeasurementsAccessor& measurements)
   : m_measurements(measurements)
+  , m_rttEstimatorOpts(make_shared<ndn::util::RttEstimator::Options>())
 {
 }
 
 FaceInfo*
 AsfMeasurements::getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, FaceId faceId)
 {
-  NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
-  return info.getFaceInfo(fibEntry, faceId);
+  return getOrCreateNamespaceInfo(fibEntry, interest).getFaceInfo(faceId);
 }
 
 FaceInfo&
 AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest,
                                      FaceId faceId)
 {
-  NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
-  return info.getOrCreateFaceInfo(fibEntry, faceId);
+  return getOrCreateNamespaceInfo(fibEntry, interest).getOrCreateFaceInfo(faceId);
 }
 
 NamespaceInfo*
@@ -217,7 +115,7 @@ AsfMeasurements::getNamespaceInfo(const Name& prefix)
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>().first;
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts).first;
   BOOST_ASSERT(info != nullptr);
   return info;
 }
@@ -240,7 +138,7 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Inte
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>().first;
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts).first;
   BOOST_ASSERT(info != nullptr);
   return *info;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,13 +41,11 @@ public:
   ProbingModule(AsfMeasurements& measurements);
 
   void
-  scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval);
+  scheduleProbe(const fib::Entry& fibEntry, time::milliseconds interval);
 
   Face*
-  getFaceToProbe(const Face& inFace,
-                 const Interest& interest,
-                 const fib::Entry& fibEntry,
-                 const Face& faceUsed);
+  getFaceToProbe(const Face& inFace, const Interest& interest,
+                 const fib::Entry& fibEntry, const Face& faceUsed);
 
   bool
   isProbingNeeded(const fib::Entry& fibEntry, const Interest& interest);
@@ -66,18 +64,29 @@ public:
 
 private:
   // Used to associate FaceInfo with the face in a NextHop
-  typedef std::pair<FaceInfo*, Face*> FaceInfoFacePair;
-  typedef std::function<bool(FaceInfoFacePair, FaceInfoFacePair)> FaceInfoPredicate;
-  typedef std::set<FaceInfoFacePair, FaceInfoPredicate> FaceInfoFacePairSet;
+  using FaceInfoFacePair = std::pair<FaceInfo*, Face*>;
 
-  Face*
-  getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces);
+  struct FaceInfoCompare
+  {
+    bool
+    operator()(const FaceInfoFacePair& leftPair, const FaceInfoFacePair& rightPair) const
+    {
+      const FaceInfo& lhs = *leftPair.first;
+      const FaceInfo& rhs = *rightPair.first;
 
-  double
+      // Sort by RTT: if a face has timed-out, rank it behind non-timed-out faces
+      return (!lhs.hasTimeout() && rhs.hasTimeout()) ||
+             (lhs.hasTimeout() == rhs.hasTimeout() && lhs.getSrtt() < rhs.getSrtt());
+    }
+  };
+
+  using FaceInfoFacePairSet = std::set<FaceInfoFacePair, FaceInfoCompare>;
+
+  static Face*
+  chooseFace(const FaceInfoFacePairSet& rankedFaces);
+
+  static double
   getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t nFaces);
-
-  double
-  getRandomNumber(double start, double end);
 
 public:
   static constexpr time::milliseconds DEFAULT_PROBING_INTERVAL = 1_min;

@@ -67,41 +67,32 @@ public: // triggers
 
 private:
   void
-  forwardInterest(const Interest& interest,
-                  const fib::Entry& fibEntry,
-                  const shared_ptr<pit::Entry>& pitEntry,
-                  Face& outFace,
-                  bool wantNewNonce = false);
+  processParams(const PartialName& parsed);
 
   void
-  sendAsfProbe(const FaceEndpoint& ingress, const Interest& interest,
-               const shared_ptr<pit::Entry>& pitEntry, const Face& faceToUse,
-               const fib::Entry& fibEntry);
+  forwardInterest(const Interest& interest, Face& outFace, const fib::Entry& fibEntry,
+                  const shared_ptr<pit::Entry>& pitEntry, bool wantNewNonce = false);
+
+  void
+  sendProbe(const Interest& interest, const FaceEndpoint& ingress, const Face& faceToUse,
+            const fib::Entry& fibEntry, const shared_ptr<pit::Entry>& pitEntry);
 
   Face*
-  getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest,
-                           const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+  getBestFaceForForwarding(const Interest& interest, const Face& inFace,
+                           const fib::Entry& fibEntry, const shared_ptr<pit::Entry>& pitEntry,
                            bool isNewInterest = true);
 
   void
-  onTimeout(const Name& interestName, const FaceId faceId);
+  onTimeout(const Name& interestName, FaceId faceId);
 
   void
-  sendNoRouteNack(const FaceEndpoint& ingress, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
-
-  void
-  processParams(const PartialName& parsed);
-
-  static uint64_t
-  getParamValue(const std::string& param, const std::string& value);
+  sendNoRouteNack(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry);
 
 private:
   AsfMeasurements m_measurements;
   ProbingModule m_probing;
-  size_t m_maxSilentTimeouts;
-
-private:
   RetxSuppressionExponential m_retxSuppression;
+  size_t m_maxSilentTimeouts = 0;
 
   static const time::milliseconds RETX_SUPPRESSION_INITIAL;
   static const time::milliseconds RETX_SUPPRESSION_MAX;

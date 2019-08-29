@@ -46,18 +46,16 @@ ProbingModule::ProbingModule(AsfMeasurements& measurements)
 }
 
 void
-ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval)
+ProbingModule::scheduleProbe(const fib::Entry& fibEntry, time::milliseconds interval)
 {
   Name prefix = fibEntry.getPrefix();
 
   // Set the probing flag for the namespace to true after passed interval of time
   getScheduler().schedule(interval, [this, prefix] {
     NamespaceInfo* info = m_measurements.getNamespaceInfo(prefix);
-
     if (info == nullptr) {
-      // fib::Entry with the passed prefix has been removed or the fib::Entry has
-      // a name that is not controlled by the AsfStrategy
-      return;
+      // FIB entry with the passed prefix has been removed or
+      // it has a name that is not controlled by the AsfStrategy
     }
     else {
       info->setIsProbingDue(true);
@@ -69,16 +67,7 @@ Face*
 ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
                               const fib::Entry& fibEntry, const Face& faceUsed)
 {
-  FaceInfoFacePairSet rankedFaces(
-    [] (const auto& pairLhs, const auto& pairRhs) -> bool {
-      // Sort by RTT
-      // If a face has timed-out, rank it behind non-timed-out faces
-      FaceInfo& lhs = *pairLhs.first;
-      FaceInfo& rhs = *pairRhs.first;
-
-      return (!lhs.isTimeout() && rhs.isTimeout()) ||
-             (lhs.isTimeout() == rhs.isTimeout() && lhs.getSrtt() < rhs.getSrtt());
-  });
+  FaceInfoFacePairSet rankedFaces;
 
   // Put eligible faces into rankedFaces. If a face does not have an RTT measurement,
   // immediately pick the face for probing
@@ -94,7 +83,7 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
 
     FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace.getId());
     // If no RTT has been recorded, probe this face
-    if (info == nullptr || !info->hasSrttMeasurement()) {
+    if (info == nullptr || info->getLastRtt() == FaceInfo::RTT_NO_MEASUREMENT) {
       return &hopFace;
     }
 
@@ -107,7 +96,7 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
     return nullptr;
   }
 
-  return getFaceBasedOnProbability(rankedFaces);
+  return chooseFace(rankedFaces);
 }
 
 bool
@@ -119,10 +108,10 @@ ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Interest& inter
   // If a first probe has not been scheduled for a namespace
   if (!info.isFirstProbeScheduled()) {
     // Schedule first probe between 0 and 5 seconds
-    uint64_t interval = getRandomNumber(0, 5000);
+    static std::uniform_int_distribution<> randDist(0, 5000);
+    auto interval = randDist(ndn::random::getRandomNumberEngine());
     scheduleProbe(fibEntry, time::milliseconds(interval));
-
-    info.setHasFirstProbeBeenScheduled(true);
+    info.setIsFirstProbeScheduled(true);
   }
 
   return info.isProbingDue();
@@ -140,10 +129,11 @@ ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const Interest& 
 }
 
 Face*
-ProbingModule::getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces)
+ProbingModule::chooseFace(const FaceInfoFacePairSet& rankedFaces)
 {
-  double randomNumber = getRandomNumber(0, 1);
-  uint64_t rankSum = ((rankedFaces.size() + 1) * rankedFaces.size()) / 2;
+  static std::uniform_real_distribution<> randDist;
+  double randomNumber = randDist(ndn::random::getRandomNumberEngine());
+  uint64_t rankSum = (rankedFaces.size() + 1) * rankedFaces.size() / 2;
 
   uint64_t rank = 1;
   double offset = 0.0;
@@ -164,13 +154,11 @@ ProbingModule::getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces)
       // Found face to probe
       return pair.second;
     }
-
     offset += probability;
   }
 
   // Given a set of Faces, this method should always select a Face to probe
-  BOOST_ASSERT(false);
-  return nullptr;
+  NDN_CXX_UNREACHABLE;
 }
 
 double
@@ -182,13 +170,6 @@ ProbingModule::getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t n
   return static_cast<double>(nFaces + 1 - rank) / rankSum;
 }
 
-double
-ProbingModule::getRandomNumber(double start, double end)
-{
-  std::uniform_real_distribution<double> dist(start, end);
-  return dist(ndn::random::getRandomNumberEngine());
-}
-
 void
 ProbingModule::setProbingInterval(size_t probingInterval)
 {
@@ -196,7 +177,7 @@ ProbingModule::setProbingInterval(size_t probingInterval)
     m_probingInterval = time::milliseconds(probingInterval);
   }
   else {
-    NDN_THROW(std::invalid_argument("Probing interval should be >= " +
+    NDN_THROW(std::invalid_argument("Probing interval must be >= " +
                                     to_string(MIN_PROBING_INTERVAL.count()) + " milliseconds"));
   }
 }
