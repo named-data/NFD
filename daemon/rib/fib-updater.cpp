@@ -35,8 +35,8 @@ NFD_LOG_INIT(FibUpdater);
 
 using ndn::nfd::ControlParameters;
 
-const unsigned int FibUpdater::MAX_NUM_TIMEOUTS = 10;
-const uint32_t FibUpdater::ERROR_FACE_NOT_FOUND = 410;
+constexpr int MAX_NUM_TIMEOUTS = 10;
+constexpr uint32_t ERROR_FACE_NOT_FOUND = 410;
 
 FibUpdater::FibUpdater(Rib& rib, ndn::nfd::Controller& controller)
   : m_rib(rib)

@@ -45,12 +45,6 @@ sortRoutes(const Route& lhs, const Route& rhs)
   return lhs.faceId < rhs.faceId;
 }
 
-Rib::Rib()
-  : m_nItems(0)
-  , m_isUpdateInProgress(false)
-{
-}
-
 void
 Rib::setFibUpdater(FibUpdater* updater)
 {
@@ -434,23 +428,6 @@ Rib::sendBatchFromQueue()
 
   auto fibSuccessCb = bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
   auto fibFailureCb = bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
-
-#ifdef WITH_TESTS
-  if (mockFibResponse != nullptr) {
-    m_fibUpdater->computeAndSendFibUpdates(batch, bind([]{}), bind([]{}));
-    bool shouldFibSucceed = mockFibResponse(batch);
-    if (wantMockFibResponseOnce) {
-      mockFibResponse = nullptr;
-    }
-    if (shouldFibSucceed) {
-      fibSuccessCb(m_fibUpdater->m_inheritedRoutes);
-    }
-    else {
-      fibFailureCb(504, "mocked failure");
-    }
-    return;
-  }
-#endif
 
   m_fibUpdater->computeAndSendFibUpdates(batch, fibSuccessCb, fibFailureCb);
 }

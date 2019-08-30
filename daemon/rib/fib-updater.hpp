@@ -48,12 +48,14 @@ public:
   };
 
 public:
-  typedef std::list<FibUpdate> FibUpdateList;
-
-  typedef std::function<void(RibUpdateList inheritedRoutes)> FibUpdateSuccessCallback;
-  typedef std::function<void(uint32_t code, const std::string& error)> FibUpdateFailureCallback;
+  using FibUpdateList = std::list<FibUpdate>;
+  using FibUpdateSuccessCallback = std::function<void(RibUpdateList inheritedRoutes)>;
+  using FibUpdateFailureCallback = std::function<void(uint32_t code, const std::string& error)>;
 
   FibUpdater(Rib& rib, ndn::nfd::Controller& controller);
+
+  VIRTUAL_WITH_TESTS
+  ~FibUpdater() = default;
 
   /** \brief computes FibUpdates using the provided RibUpdateBatch and then sends the
    *         updates to NFD's FIB
@@ -66,7 +68,7 @@ public:
                            const FibUpdateSuccessCallback& onSuccess,
                            const FibUpdateFailureCallback& onFailure);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+private:
   /** \brief determines the type of action that will be performed on the RIB and calls the
   *          corresponding computation method
   */
@@ -100,12 +102,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   sendUpdatesForNonBatchFaceId(const FibUpdateSuccessCallback& onSuccess,
                                const FibUpdateFailureCallback& onFailure);
 
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief sends a FibAddNextHopCommand to NFD using the parameters supplied by
   *          the passed update
   *
   *   \param nTimeouts the number of times this FibUpdate has failed due to timeout
   */
-  void
+  VIRTUAL_WITH_TESTS void
   sendAddNextHopUpdate(const FibUpdate& update,
                        const FibUpdateSuccessCallback& onSuccess,
                        const FibUpdateFailureCallback& onFailure,
@@ -116,7 +119,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   *
   *   \param nTimeouts the number of times this FibUpdate has failed due to timeout
   */
-  void
+  VIRTUAL_WITH_TESTS void
   sendRemoveNextHopUpdate(const FibUpdate& update,
                           const FibUpdateSuccessCallback& onSuccess,
                           const FibUpdateFailureCallback& onFailure,
@@ -133,7 +136,7 @@ private:
   void
   computeUpdatesForUnregistration(const RibUpdate& update);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief callback used by NfdController when a FibAddNextHopCommand or FibRemoveNextHopCommand
   *          is successful.
   *
@@ -239,7 +242,6 @@ private:
   void
   traverseSubTree(const RibEntry& entry, Rib::RouteSet routesToAdd, Rib::RouteSet routesToRemove);
 
-private:
   /** \brief creates a record of a calculated inherited route that should be added to the entry
   */
   void
@@ -263,10 +265,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    *         passed to the RIB when updates are completed successfully
    */
   RibUpdateList m_inheritedRoutes;
-
-private:
-  static const unsigned int MAX_NUM_TIMEOUTS;
-  static const uint32_t ERROR_FACE_NOT_FOUND;
 };
 
 } // namespace rib

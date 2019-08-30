@@ -27,6 +27,7 @@
 #define NFD_TESTS_DAEMON_RIB_FIB_UPDATES_COMMON_HPP
 
 #include "rib/fib-updater.hpp"
+#include "common/global.hpp"
 
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
@@ -39,6 +40,62 @@ namespace rib {
 namespace tests {
 
 using namespace nfd::tests;
+
+class MockFibUpdater : public FibUpdater
+{
+public:
+  using FibUpdater::FibUpdater;
+
+  void
+  sortUpdates()
+  {
+    updates.sort([] (const auto& lhs, const auto& rhs) {
+      return std::tie(lhs.name, lhs.faceId, lhs.cost, lhs.action) <
+             std::tie(rhs.name, rhs.faceId, rhs.cost, rhs.action);
+    });
+  }
+
+private:
+  void
+  sendAddNextHopUpdate(const FibUpdate& update,
+                       const FibUpdateSuccessCallback& onSuccess,
+                       const FibUpdateFailureCallback& onFailure,
+                       uint32_t nTimeouts) override
+  {
+    mockUpdate(update, onSuccess, onFailure, nTimeouts);
+  }
+
+  void
+  sendRemoveNextHopUpdate(const FibUpdate& update,
+                          const FibUpdateSuccessCallback& onSuccess,
+                          const FibUpdateFailureCallback& onFailure,
+                          uint32_t nTimeouts) override
+  {
+    mockUpdate(update, onSuccess, onFailure, nTimeouts);
+  }
+
+  void
+  mockUpdate(const FibUpdate& update,
+             const FibUpdateSuccessCallback& onSuccess,
+             const FibUpdateFailureCallback& onFailure,
+             uint32_t nTimeouts)
+  {
+    updates.push_back(update);
+    getGlobalIoService().post([=] {
+      if (mockSuccess) {
+        onUpdateSuccess(update, onSuccess, onFailure);
+      }
+      else {
+        ndn::mgmt::ControlResponse resp(504, "mocked failure");
+        onUpdateError(update, onSuccess, onFailure, resp, nTimeouts);
+      }
+    });
+  }
+
+public:
+  FibUpdateList updates;
+  bool mockSuccess = true;
+};
 
 class FibUpdatesFixture : public GlobalIoFixture, public KeyChainFixture
 {
@@ -63,8 +120,8 @@ public:
           .setName(name)
           .setRoute(route);
 
-    simulateSuccessfulResponse();
     rib.beginApplyUpdate(update, nullptr, nullptr);
+    pollIo();
   }
 
   void
@@ -78,52 +135,34 @@ public:
           .setName(name)
           .setRoute(route);
 
-    simulateSuccessfulResponse();
     rib.beginApplyUpdate(update, nullptr, nullptr);
+    pollIo();
   }
 
   void
   destroyFace(uint64_t faceId)
   {
-    simulateSuccessfulResponse();
     rib.beginRemoveFace(faceId);
+    pollIo();
   }
 
   const FibUpdater::FibUpdateList&
-  getFibUpdates()
+  getFibUpdates() const
   {
-    fibUpdates.clear();
-    fibUpdates = fibUpdater.m_updatesForBatchFaceId;
-    fibUpdates.insert(fibUpdates.end(), fibUpdater.m_updatesForNonBatchFaceId.begin(),
-                                        fibUpdater.m_updatesForNonBatchFaceId.end());
-
-    return fibUpdates;
+    return fibUpdater.updates;
   }
 
-  FibUpdater::FibUpdateList
+  const FibUpdater::FibUpdateList&
   getSortedFibUpdates()
   {
-    FibUpdater::FibUpdateList updates = getFibUpdates();
-    updates.sort([] (const auto& lhs, const auto& rhs) {
-      return std::tie(lhs.name, lhs.faceId, lhs.cost, lhs.action) <
-             std::tie(rhs.name, rhs.faceId, rhs.cost, rhs.action);
-    });
-    return updates;
+    fibUpdater.sortUpdates();
+    return fibUpdater.updates;
   }
 
   void
   clearFibUpdates()
   {
-    fibUpdater.m_updatesForBatchFaceId.clear();
-    fibUpdater.m_updatesForNonBatchFaceId.clear();
-  }
-
-private:
-  void
-  simulateSuccessfulResponse()
-  {
-    rib.mockFibResponse = [] (const RibUpdateBatch&) { return true; };
-    rib.wantMockFibResponseOnce = true;
+    fibUpdater.updates.clear();
   }
 
 public:
@@ -131,8 +170,7 @@ public:
   ndn::nfd::Controller controller;
 
   Rib rib;
-  FibUpdater fibUpdater;
-  FibUpdater::FibUpdateList fibUpdates;
+  MockFibUpdater fibUpdater;
 };
 
 } // namespace tests

@@ -24,9 +24,9 @@
  */
 
 #include "mgmt/rib-manager.hpp"
-#include "rib/fib-updater.hpp"
 
 #include "manager-common-fixture.hpp"
+#include "tests/daemon/rib/fib-updates-common.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
@@ -53,18 +53,11 @@ class RibManagerFixture : public ManagerCommonFixture
 {
 public:
   RibManagerFixture(const ConfigurationStatus& status, bool shouldClearRib)
-    : m_commands(m_face.sentInterests)
-    , m_status(status)
+    : m_status(status)
     , m_nfdController(m_face, m_keyChain)
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
   {
-    m_rib.mockFibResponse = [] (const rib::RibUpdateBatch& batch) {
-      BOOST_CHECK(batch.begin() != batch.end());
-      return true;
-    };
-    m_rib.wantMockFibResponseOnce = false;
-
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
     }
@@ -105,7 +98,7 @@ private:
     };
 
     Name commandPrefix("/localhost/nfd/fib/add-nexthop");
-    for (const auto& command : m_commands) {
+    for (const auto& command : m_face.sentInterests) {
       if (commandPrefix.isPrefixOf(command.getName())) {
         replyFibAddCommand(command);
         advanceClocks(1_ms);
@@ -114,7 +107,7 @@ private:
 
     // clear commands and responses
     m_responses.clear();
-    m_commands.clear();
+    m_face.sentInterests.clear();
   }
 
   void
@@ -148,90 +141,14 @@ public:
       .setOrigin(ndn::nfd::ROUTE_ORIGIN_NLSR);
   }
 
-public:
-  enum class CheckCommandResult {
-    OK,
-    OUT_OF_BOUNDARY,
-    WRONG_FORMAT,
-    WRONG_VERB,
-    WRONG_PARAMS_FORMAT,
-    WRONG_PARAMS_NAME,
-    WRONG_PARAMS_FACE
-  };
-
-  CheckCommandResult
-  checkCommand(size_t idx, const char* verbStr, const ControlParameters& expectedParams) const
-  {
-    if (idx > m_commands.size()) {
-      return CheckCommandResult::OUT_OF_BOUNDARY;
-    }
-    const auto& name = m_commands[idx].getName();
-
-    if (!FIB_COMMAND_PREFIX.isPrefixOf(name) || FIB_COMMAND_PREFIX.size() >= name.size()) {
-      return CheckCommandResult::WRONG_FORMAT;
-    }
-    const auto& verb = name[FIB_COMMAND_PREFIX.size()];
-
-    Name::Component expectedVerb(verbStr);
-    if (verb != expectedVerb) {
-      return CheckCommandResult::WRONG_VERB;
-    }
-
-    ControlParameters parameters;
-    try {
-      Block rawParameters = name[FIB_COMMAND_PREFIX.size() + 1].blockFromValue();
-      parameters.wireDecode(rawParameters);
-    }
-    catch (...) {
-      return CheckCommandResult::WRONG_PARAMS_FORMAT;
-    }
-
-    if (parameters.getName() != expectedParams.getName()) {
-      return CheckCommandResult::WRONG_PARAMS_NAME;
-    }
-
-    if (parameters.getFaceId() != expectedParams.getFaceId()) {
-      return CheckCommandResult::WRONG_PARAMS_FACE;
-    }
-
-    return CheckCommandResult::OK;
-  }
-
 protected:
-  static const Name FIB_COMMAND_PREFIX;
-  std::vector<Interest>& m_commands;
   ConfigurationStatus m_status;
 
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;
-  rib::FibUpdater m_fibUpdater;
+  rib::tests::MockFibUpdater m_fibUpdater;
   RibManager m_manager;
 };
-
-const Name RibManagerFixture::FIB_COMMAND_PREFIX("/localhost/nfd/fib");
-
-std::ostream&
-operator<<(std::ostream& os, RibManagerFixture::CheckCommandResult result)
-{
-  switch (result) {
-  case RibManagerFixture::CheckCommandResult::OK:
-    return os << "OK";
-  case RibManagerFixture::CheckCommandResult::OUT_OF_BOUNDARY:
-    return os << "OUT_OF_BOUNDARY";
-  case RibManagerFixture::CheckCommandResult::WRONG_FORMAT:
-    return os << "WRONG_FORMAT";
-  case RibManagerFixture::CheckCommandResult::WRONG_VERB:
-    return os << "WRONG_VERB";
-  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FORMAT:
-    return os << "WRONG_PARAMS_FORMAT";
-  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_NAME:
-    return os << "WRONG_PARAMS_NAME";
-  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FACE:
-    return os << "WRONG_PARAMS_FACE";
-  };
-
-  return os << static_cast<int>(result);
-}
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestRibManager)
@@ -346,9 +263,11 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
                     CheckResponseResult::OK);
 
-  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
-  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
-  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
+  BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
+                    rib::FibUpdate::createAddUpdate("/test-register-unregister", 9527, 10));
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
+                    rib::FibUpdate::createRemoveUpdate("/test-register-unregister", 9527));
 }
 
 BOOST_AUTO_TEST_CASE(SelfOperation)
@@ -376,9 +295,11 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
   BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
                     CheckResponseResult::OK);
 
-  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
-  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
-  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
+  BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
+                    rib::FibUpdate::createAddUpdate("/test-self-register-unregister", 9527, 10));
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
+                    rib::FibUpdate::createRemoveUpdate("/test-self-register-unregister", 9527));
 }
 
 BOOST_AUTO_TEST_CASE(Expiration)
@@ -388,17 +309,20 @@ BOOST_AUTO_TEST_CASE(Expiration)
   receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
   advanceClocks(55_ms);
-  BOOST_REQUIRE_EQUAL(m_commands.size(), 2); // the registered route has expired
-  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
-  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
+  BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2); // the registered route has expired
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
+                    rib::FibUpdate::createAddUpdate("/test-expiry", 9527, 10));
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
+                    rib::FibUpdate::createRemoveUpdate("/test-expiry", 9527));
 
-  m_commands.clear();
+  m_fibUpdater.updates.clear();
   paramsRegister.setExpirationPeriod(100_ms);
   receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
   advanceClocks(55_ms);
-  BOOST_REQUIRE_EQUAL(m_commands.size(), 1); // the registered route is still active
-  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
+  BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 1); // the registered route is still active
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
+                    rib::FibUpdate::createAddUpdate("/test-expiry", 9527, 10));
 }
 
 BOOST_AUTO_TEST_CASE(NameTooLong)
@@ -417,7 +341,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
                                                   to_string(Fib::getMaxDepth()) + " components")),
                     CheckResponseResult::OK);
 
-  BOOST_CHECK_EQUAL(m_commands.size(), 0);
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister
@@ -483,12 +407,12 @@ BOOST_FIXTURE_TEST_SUITE(FaceMonitor, LocalhostAuthorizedRibManagerFixture)
 
 BOOST_AUTO_TEST_CASE(FetchActiveFacesEvent)
 {
-  BOOST_CHECK_EQUAL(m_commands.size(), 0);
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.size(), 0);
 
   advanceClocks(301_s); // RibManager::ACTIVE_FACE_FETCH_INTERVAL = 300s
-  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
-  BOOST_CHECK_EQUAL(m_commands[0].getName(), "/localhost/nfd/faces/events");
-  BOOST_CHECK_EQUAL(m_commands[1].getName(), "/localhost/nfd/faces/list");
+  BOOST_REQUIRE_EQUAL(m_face.sentInterests.size(), 2);
+  BOOST_CHECK_EQUAL(m_face.sentInterests[0].getName(), "/localhost/nfd/faces/events");
+  BOOST_CHECK_EQUAL(m_face.sentInterests[1].getName(), "/localhost/nfd/faces/list");
 }
 
 BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)

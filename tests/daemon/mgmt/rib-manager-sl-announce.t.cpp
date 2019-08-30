@@ -24,11 +24,11 @@
  */
 
 #include "mgmt/rib-manager.hpp"
-#include "rib/fib-updater.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/rib/fib-updates-common.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -50,9 +50,6 @@ public:
     , m_trustedSigner(m_keyChain.createIdentity("/trusted", ndn::RsaKeyParams()))
     , m_untrustedSigner(m_keyChain.createIdentity("/untrusted", ndn::RsaKeyParams()))
   {
-    rib.mockFibResponse = [] (const auto&) { return true; };
-    rib.wantMockFibResponseOnce = false;
-
     // Face, Controller, Dispatcher are irrelevant to SlAnnounce functions but required by
     // RibManager construction, so they are private. RibManager is a pointer to avoid code style
     // rule 1.4 violation.
@@ -166,7 +163,7 @@ private:
   ndn::util::DummyClientFace m_face;
   ndn::nfd::Controller m_nfdController;
   Dispatcher m_dispatcher;
-  rib::FibUpdater m_fibUpdater;
+  rib::tests::MockFibUpdater m_fibUpdater;
 
   ndn::security::SigningInfo m_trustedSigner;
   ndn::security::SigningInfo m_untrustedSigner;

@@ -43,6 +43,11 @@ protected:
 
   ~GlobalIoFixture();
 
+  /** \brief Poll the global io_service.
+   */
+  size_t
+  pollIo();
+
 protected:
   /** \brief Reference to the global io_service instance.
    */
