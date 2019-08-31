@@ -59,15 +59,13 @@ ManagerBase::registerNotificationStream(const std::string& verb)
 }
 
 void
-ManagerBase::extractRequester(const Interest& interest,
-                              ndn::mgmt::AcceptContinuation accept)
+ManagerBase::extractRequester(const Interest& interest, ndn::mgmt::AcceptContinuation accept)
 {
   const Name& interestName = interest.getName();
 
   try {
     ndn::SignatureInfo sigInfo(interestName.at(ndn::signed_interest::POS_SIG_INFO).blockFromValue());
-    if (!sigInfo.hasKeyLocator() ||
-        sigInfo.getKeyLocator().getType() != ndn::KeyLocator::KeyLocator_Name) {
+    if (!sigInfo.hasKeyLocator() || sigInfo.getKeyLocator().getType() != tlv::Name) {
       return accept("");
     }
 
