@@ -47,6 +47,7 @@
 #include <thread>
 
 #include <ndn-cxx/util/logging.hpp>
+#include <ndn-cxx/util/ostream-joiner.hpp>
 #include <ndn-cxx/version.hpp>
 
 #ifdef HAVE_LIBPCAP
