@@ -33,6 +33,7 @@
 #include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
+#include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -150,7 +151,11 @@ using Tests = boost::mpl::vector<
 
   Test<MulticastStrategy, EmptyNextHopList<MulticastStrategy>>,
   Test<MulticastStrategy, NextHopIsDownstream<MulticastStrategy>>,
-  Test<MulticastStrategy, NextHopViolatesScope<MulticastStrategy>>
+  Test<MulticastStrategy, NextHopViolatesScope<MulticastStrategy>>,
+
+  Test<RandomStrategy, EmptyNextHopList<RandomStrategy>>,
+  Test<RandomStrategy, NextHopIsDownstream<RandomStrategy>>,
+  Test<RandomStrategy, NextHopViolatesScope<RandomStrategy>>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,

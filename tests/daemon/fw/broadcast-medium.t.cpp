@@ -28,6 +28,7 @@
 #include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
+#include "fw/random-strategy.hpp"
 
 #include "tests/daemon/global-io-fixture.hpp"
 #include "topology-tester.hpp"
@@ -86,7 +87,8 @@ BOOST_AUTO_TEST_SUITE(TestBroadcastMedium)
 using Strategies = boost::mpl::vector<
   AsfStrategy,
   BestRouteStrategy2,
-  MulticastStrategy
+  MulticastStrategy,
+  RandomStrategy
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(SameFaceDifferentEndpoint, S, Strategies, BroadcastMediumFixture<S>)

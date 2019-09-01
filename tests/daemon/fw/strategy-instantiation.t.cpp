@@ -35,6 +35,7 @@
 #include "fw/multicast-strategy.hpp"
 #include "fw/ncc-strategy.hpp"
 #include "fw/self-learning-strategy.hpp"
+#include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
 #include <boost/mpl/vector.hpp>
@@ -80,7 +81,8 @@ using Tests = boost::mpl::vector<
   Test<BestRouteStrategy2, false, 5>,
   Test<MulticastStrategy, false, 3>,
   Test<NccStrategy, false, 1>,
-  Test<SelfLearningStrategy, false, 1>
+  Test<SelfLearningStrategy, false, 1>,
+  Test<RandomStrategy, false, 1>
 >;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Registration, T, Tests)

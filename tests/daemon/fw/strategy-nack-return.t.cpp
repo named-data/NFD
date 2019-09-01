@@ -30,6 +30,7 @@
 // Strategies implementing recommended Nack processing procedure, sorted alphabetically.
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
+#include "fw/random-strategy.hpp"
 
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
@@ -85,7 +86,8 @@ BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
 using Strategies = boost::mpl::vector<
   BestRouteStrategy2,
-  MulticastStrategy
+  MulticastStrategy,
+  RandomStrategy
 >;
 
 // one upstream, send Nack when Nack arrives

@@ -34,6 +34,7 @@
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 #include "fw/ncc-strategy.hpp"
+#include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -109,7 +110,8 @@ using Tests = boost::mpl::vector<
   Test<BestRouteStrategy, false, false>,
   Test<BestRouteStrategy2, true, true>,
   Test<MulticastStrategy, true, true>,
-  Test<NccStrategy, false, false>
+  Test<NccStrategy, false, false>,
+  Test<RandomStrategy, true, true>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
