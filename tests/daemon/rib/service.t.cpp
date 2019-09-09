@@ -29,37 +29,93 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/rib-io-fixture.hpp"
 
+#include <boost/property_tree/info_parser.hpp>
+#include <sstream>
+
 namespace nfd {
 namespace rib {
 namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TestService, RibIoFixture)
+class RibServiceFixture : public RibIoFixture
+{
+protected:
+  static ConfigSection
+  makeSection(const std::string& text, bool wantUnixSocketPath = true)
+  {
+    std::istringstream is(text);
+    ConfigSection section;
+    boost::property_tree::read_info(is, section);
+    if (wantUnixSocketPath)
+      section.put("face_system.unix.path", "/dev/null");
+    return section;
+  }
+
+protected:
+  ndn::KeyChain m_ribKeyChain;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestService, RibServiceFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
-  ConfigSection section;
-  section.put("face_system.unix.path", "/var/run/nfd.sock");
-
-  ndn::KeyChain ribKeyChain;
+  auto section = makeSection("");
 
   BOOST_CHECK_THROW(Service::get(), std::logic_error);
-  BOOST_CHECK_THROW(Service(section, ribKeyChain), std::logic_error);
+  BOOST_CHECK_THROW(Service(section, m_ribKeyChain), std::logic_error);
 
   runOnRibIoService([&] {
     {
       BOOST_CHECK_THROW(Service::get(), std::logic_error);
-      Service ribService(section, ribKeyChain);
+      Service ribService(section, m_ribKeyChain);
       BOOST_CHECK_EQUAL(&ribService, &Service::get());
     }
     BOOST_CHECK_THROW(Service::get(), std::logic_error);
-    Service ribService(section, ribKeyChain);
-    BOOST_CHECK_THROW(Service(section, ribKeyChain), std::logic_error);
+    Service ribService(section, m_ribKeyChain);
+    BOOST_CHECK_THROW(Service(section, m_ribKeyChain), std::logic_error);
   });
+  poll();
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestRibService
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
+
+BOOST_AUTO_TEST_CASE(LocalhopAndPropagate)
+{
+  const std::string CONFIG = R"CONFIG(
+    rib
+    {
+      localhost_security
+      {
+        trust-anchor
+        {
+          type any
+        }
+      }
+      localhop_security
+      {
+        trust-anchor
+        {
+          type any
+        }
+      }
+      auto_prefix_propagate
+    }
+  )CONFIG";
+
+  runOnRibIoService([&] {
+    BOOST_CHECK_EXCEPTION(Service(makeSection(CONFIG), m_ribKeyChain), ConfigFile::Error,
+                          [] (const auto& e) {
+                            return e.what() == "localhop_security and auto_prefix_propagate "
+                                               "cannot be enabled at the same time"s;
+                          });
+  });
+  poll();
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
+
+BOOST_AUTO_TEST_SUITE_END() // TestService
 
 } // namespace tests
 } // namespace rib

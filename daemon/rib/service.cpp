@@ -45,14 +45,14 @@ NFD_LOG_INIT(RibService);
 
 Service* Service::s_instance = nullptr;
 
-static const std::string CFG_SECTION = "rib";
-static const std::string CFG_LOCALHOST_SECURITY = "localhost_security";
-static const std::string CFG_LOCALHOP_SECURITY = "localhop_security";
-static const std::string CFG_PREFIX_PROPAGATE = "auto_prefix_propagate";
-static const std::string CFG_READVERTISE_NLSR = "readvertise_nlsr";
-static const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
-static const uint64_t PROPAGATE_DEFAULT_COST = 15;
-static const time::milliseconds PROPAGATE_DEFAULT_TIMEOUT = 10_s;
+const std::string CFG_SECTION = "rib";
+const std::string CFG_LOCALHOST_SECURITY = "localhost_security";
+const std::string CFG_LOCALHOP_SECURITY = "localhop_security";
+const std::string CFG_PREFIX_PROPAGATE = "auto_prefix_propagate";
+const std::string CFG_READVERTISE_NLSR = "readvertise_nlsr";
+const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
+const uint64_t PROPAGATE_DEFAULT_COST = 15;
+const time::milliseconds PROPAGATE_DEFAULT_TIMEOUT = 10_s;
 
 static ConfigSection
 loadConfigSectionFromFile(const std::string& filename)
@@ -160,14 +160,19 @@ Service::processConfig(const ConfigSection& section, bool isDryRun, const std::s
 void
 Service::checkConfig(const ConfigSection& section, const std::string& filename)
 {
+  bool hasLocalhop = false;
+  bool hasPropagate = false;
+
   for (const auto& item : section) {
     const std::string& key = item.first;
     const ConfigSection& value = item.second;
     if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY) {
+      hasLocalhop = key == CFG_LOCALHOP_SECURITY;
       ndn::ValidatorConfig testValidator(m_face);
       testValidator.load(value, filename);
     }
     else if (key == CFG_PREFIX_PROPAGATE) {
+      hasPropagate = true;
       // AutoPrefixPropagator does not support config dry-run
     }
     else if (key == CFG_READVERTISE_NLSR) {
@@ -176,6 +181,11 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
     else {
       NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
     }
+  }
+
+  if (hasLocalhop && hasPropagate) {
+    NDN_THROW(ConfigFile::Error(CFG_LOCALHOP_SECURITY + " and " + CFG_PREFIX_PROPAGATE +
+                                " cannot be enabled at the same time"));
   }
 }
 
@@ -200,21 +210,15 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
       if (!m_readvertisePropagation) {
         NFD_LOG_DEBUG("Enabling automatic prefix propagation");
 
-        auto parameters = ndn::nfd::ControlParameters()
-          .setCost(PROPAGATE_DEFAULT_COST)
-          .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT);
         auto cost = item.second.get_optional<uint64_t>("cost");
-        if (cost) {
-          parameters.setCost(*cost);
-        }
+        auto parameters = ndn::nfd::ControlParameters()
+                          .setCost(cost.value_or(PROPAGATE_DEFAULT_COST))
+                          .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT);
 
-        auto options = ndn::nfd::CommandOptions()
-          .setPrefix(RibManager::LOCALHOP_TOP_PREFIX)
-          .setTimeout(PROPAGATE_DEFAULT_TIMEOUT);
         auto timeout = item.second.get_optional<uint64_t>("timeout");
-        if (timeout) {
-          options.setTimeout(time::milliseconds(*timeout));
-        }
+        auto options = ndn::nfd::CommandOptions()
+                       .setPrefix(RibManager::LOCALHOP_TOP_PREFIX)
+                       .setTimeout(timeout ? time::milliseconds(*timeout) : PROPAGATE_DEFAULT_TIMEOUT);
 
         m_readvertisePropagation = make_unique<Readvertise>(
           m_rib,
