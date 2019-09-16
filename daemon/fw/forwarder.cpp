@@ -75,6 +75,10 @@ Forwarder::Forwarder(FaceTable& faceTable)
     cleanupOnFaceRemoval(m_nameTree, m_fib, m_pit, face);
   });
 
+  m_fib.afterNewNextHop.connect([&] (const Name& prefix, const fib::NextHop& nextHop) {
+    this->startProcessNewNextHop(prefix, nextHop);
+  });
+
   m_strategyChoice.setDefaultStrategy(getDefaultStrategyName());
 }
 
@@ -501,6 +505,46 @@ void
 Forwarder::onDroppedInterest(const FaceEndpoint& egress, const Interest& interest)
 {
   m_strategyChoice.findEffectiveStrategy(interest.getName()).onDroppedInterest(egress, interest);
+}
+
+void
+Forwarder::onNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
+{
+  const auto affectedEntries = this->getNameTree().partialEnumerate(prefix,
+    [&] (const name_tree::Entry& nte) -> std::pair<bool, bool> {
+      const fib::Entry* fibEntry = nte.getFibEntry();
+      const fw::Strategy* strategy = nullptr;
+      if (nte.getStrategyChoiceEntry() != nullptr) {
+        strategy = &nte.getStrategyChoiceEntry()->getStrategy();
+      }
+      // current nte has buffered Interests but no fibEntry (except for the root nte) and the strategy
+      // enables new nexthop behavior, we enumerate the current nte and keep visiting its children.
+      if (nte.getName().size() == 0 ||
+          (strategy != nullptr && strategy->wantNewNextHopTrigger() &&
+          fibEntry == nullptr && nte.hasPitEntries())) {
+        return {true, true};
+      }
+      // we don't need the current nte (no pitEntry or strategy doesn't support new nexthop), but
+      // if the current nte has no fibEntry, it's still possible that its children are affected by
+      // the new nexthop.
+      else if (fibEntry == nullptr) {
+        return {false, true};
+      }
+      // if the current nte has a fibEntry, we ignore the current nte and don't visit its
+      // children because they are already covered by the current nte's fibEntry.
+      else {
+        return {false, false};
+      }
+    });
+
+  for (const auto& nte : affectedEntries) {
+    for (const auto& pitEntry : nte.getPitEntries()) {
+      this->dispatchToStrategy(*pitEntry,
+        [&] (fw::Strategy& strategy) {
+          strategy.afterNewNextHop(nextHop, pitEntry);
+        });
+    }
+  }
 }
 
 void

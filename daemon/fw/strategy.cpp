@@ -207,6 +207,13 @@ Strategy::sendInterest(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
+Strategy::afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry)
+{
+  NFD_LOG_DEBUG("afterNewNextHop pitEntry=" << pitEntry->getName()
+                << " nexthop=" << nextHop.getFace().getId());
+}
+
+void
 Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data,
                    const FaceEndpoint& egress)
 {

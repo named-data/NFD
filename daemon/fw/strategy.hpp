@@ -82,7 +82,7 @@ public: // registry
   static std::set<Name>
   listRegistered();
 
-public: // constructor, destructor, strategy name
+public: // constructor, destructor, strategy info
   /** \brief Construct a strategy instance.
    *  \param forwarder a reference to the forwarder, used to enable actions and accessors.
    *  \note Strategy subclass constructor must not retain a reference to \p forwarder.
@@ -112,6 +112,14 @@ public: // constructor, destructor, strategy name
   getInstanceName() const
   {
     return m_name;
+  }
+
+  /** \return whether the afterNewNextHop trigger should be invoked for this strategy.
+   */
+  bool
+  wantNewNextHopTrigger() const
+  {
+    return m_wantNewNextHopTrigger;
   }
 
 public: // triggers
@@ -232,6 +240,14 @@ public: // triggers
    */
   virtual void
   onDroppedInterest(const FaceEndpoint& egress, const Interest& interest);
+
+  /** \brief trigger after new nexthop is added
+   *
+   *  The strategy should decide whether to send the buffered Interests to the new nexthop.
+   *  In the base class, this method does nothing.
+   */
+  virtual void
+  afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry);
 
 protected: // actions
   /** \brief send Interest to egress
@@ -368,6 +384,15 @@ protected: // instance name
     m_name = name;
   }
 
+PUBLIC_WITH_TESTS_ELSE_PROTECTED: // setter
+  /** \brief set whether the afterNewNextHop trigger should be invoked for this strategy
+   */
+  void
+  enableNewNextHopTrigger(bool enabled)
+  {
+    m_wantNewNextHopTrigger = enabled;
+  }
+
 private: // registry
   typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
   typedef std::map<Name, CreateFunc> Registry; // indexed by strategy name
@@ -392,6 +417,8 @@ private: // instance fields
   Forwarder& m_forwarder;
 
   MeasurementsAccessor m_measurements;
+
+  bool m_wantNewNextHopTrigger = false;
 };
 
 } // namespace fw

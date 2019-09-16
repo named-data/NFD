@@ -72,6 +72,8 @@ DummyStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                      const FaceEndpoint& ingress, const Data& data)
 {
   ++beforeSatisfyInterest_count;
+
+  Strategy::beforeSatisfyInterest(pitEntry, ingress, data);
 }
 
 void
@@ -97,6 +99,16 @@ DummyStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nac
                                 const shared_ptr<pit::Entry>& pitEntry)
 {
   ++afterReceiveNack_count;
+
+  Strategy::afterReceiveNack(ingress, nack, pitEntry);
+}
+
+void
+DummyStrategy::afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry)
+{
+  afterNewNextHopCalls.push_back(pitEntry->getName());
+
+  Strategy::afterNewNextHop(nextHop, pitEntry);
 }
 
 } // namespace tests

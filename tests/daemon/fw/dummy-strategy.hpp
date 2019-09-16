@@ -82,6 +82,9 @@ public:
   afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
+  void
+  afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry) override;
+
 protected:
   /** \brief register an alias
    *  \tparam S subclass of DummyStrategy
@@ -101,6 +104,9 @@ public:
   int afterContentStoreHit_count;
   int afterReceiveData_count;
   int afterReceiveNack_count;
+
+  // a collection of names of PIT entries that afterNewNextHop() was called on
+  std::vector<Name> afterNewNextHopCalls;
 
   shared_ptr<Face> interestOutFace;
 };

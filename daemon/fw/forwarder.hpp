@@ -107,6 +107,16 @@ public: // forwarding entrypoints and tables
     this->onIncomingNack(ingress, nack);
   }
 
+  /** \brief start new nexthop processing
+   *  \param prefix the prefix of the FibEntry containing the new nexthop
+   *  \param nextHop the new NextHop
+   */
+  void
+  startProcessNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
+  {
+    this->onNewNextHop(prefix, nextHop);
+  }
+
   NameTree&
   getNameTree()
   {
@@ -217,6 +227,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
 
   VIRTUAL_WITH_TESTS void
   onDroppedInterest(const FaceEndpoint& egress, const Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief set a new expiry timer (now + \p duration) on a PIT entry
