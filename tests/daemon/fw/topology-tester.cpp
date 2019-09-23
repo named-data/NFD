@@ -104,9 +104,14 @@ TopologyLink::transmit(TopologyNode i, const Block& packet)
   }
 }
 
-TopologyAppLink::TopologyAppLink(shared_ptr<Face> forwarderFace)
+TopologySingleLink::TopologySingleLink(shared_ptr<Face> forwarderFace)
   : m_face(std::move(forwarderFace))
   , m_forwarderTransport(static_cast<InternalForwarderTransport*>(m_face->getTransport()))
+{
+}
+
+TopologyAppLink::TopologyAppLink(shared_ptr<Face> forwarderFace)
+  : TopologySingleLink(std::move(forwarderFace))
   , m_clientTransport(make_shared<InternalClientTransport>())
   , m_client(make_shared<ndn::Face>(m_clientTransport, getGlobalIoService()))
 {
@@ -123,6 +128,38 @@ void
 TopologyAppLink::recover()
 {
   m_clientTransport->connectToForwarder(m_forwarderTransport);
+}
+
+class TopologyBareLink::Observer : public face::InternalTransportBase
+{
+public:
+  explicit
+  Observer(std::vector<Block>& receivedPackets)
+    : m_receivedPackets(receivedPackets)
+  {
+  }
+
+  void
+  receivePacket(const Block& packet) final
+  {
+    m_receivedPackets.push_back(packet);
+  }
+
+private:
+  std::vector<Block>& m_receivedPackets;
+};
+
+TopologyBareLink::TopologyBareLink(shared_ptr<Face> forwarderFace)
+  : TopologySingleLink(std::move(forwarderFace))
+  , m_observer(make_unique<Observer>(sentPackets))
+{
+  m_forwarderTransport->setPeer(m_observer.get());
+}
+
+void
+TopologyBareLink::receivePacket(const Block& packet)
+{
+  m_forwarderTransport->receivePacket(packet);
 }
 
 class TopologyPcapLinkService : public GenericLinkService
@@ -166,6 +203,19 @@ TopologyTester::addForwarder(const std::string& label)
   return i;
 }
 
+shared_ptr<Face>
+TopologyTester::makeFace(TopologyNode i, const FaceUri& localUri, const FaceUri& remoteUri,
+                         ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType)
+{
+  Forwarder& forwarder = this->getForwarder(i);
+  unique_ptr<GenericLinkService> service = m_wantPcap ? make_unique<TopologyPcapLinkService>() :
+                                                        make_unique<GenericLinkService>();
+  auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri, scope, linkType);
+  auto face = make_shared<Face>(std::move(service), std::move(transport));
+  forwarder.addFace(face);
+  return face;
+}
+
 shared_ptr<TopologyLink>
 TopologyTester::addLink(const std::string& label, time::nanoseconds delay,
                         std::initializer_list<TopologyNode> forwarders,
@@ -180,16 +230,8 @@ TopologyTester::addLink(const std::string& label, time::nanoseconds delay,
   BOOST_ASSERT(forwarders.size() <= 2 || linkType != ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   for (TopologyNode i : forwarders) {
-    Forwarder& forwarder = this->getForwarder(i);
     FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/" + label);
-
-    unique_ptr<GenericLinkService> service = m_wantPcap ? make_unique<TopologyPcapLinkService>() :
-                                                          make_unique<GenericLinkService>();
-    auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
-                     ndn::nfd::FACE_SCOPE_NON_LOCAL, linkType);
-    auto face = make_shared<Face>(std::move(service), std::move(transport));
-
-    forwarder.addFace(face);
+    auto face = makeFace(i, localUri, remoteUri, ndn::nfd::FACE_SCOPE_NON_LOCAL, linkType);
     link->addFace(i, std::move(face));
   }
 
@@ -200,17 +242,9 @@ TopologyTester::addLink(const std::string& label, time::nanoseconds delay,
 shared_ptr<TopologyAppLink>
 TopologyTester::addAppFace(const std::string& label, TopologyNode i)
 {
-  Forwarder& forwarder = this->getForwarder(i);
   FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/local/" + label);
   FaceUri remoteUri("topology://" + m_forwarderLabels.at(i) + "/app/" + label);
-
-  unique_ptr<GenericLinkService> service = m_wantPcap ? make_unique<TopologyPcapLinkService>() :
-                                                        make_unique<GenericLinkService>();
-  auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
-                   ndn::nfd::FACE_SCOPE_LOCAL, ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  auto face = make_shared<Face>(std::move(service), std::move(transport));
-
-  forwarder.addFace(face);
+  auto face = makeFace(i, localUri, remoteUri, ndn::nfd::FACE_SCOPE_LOCAL, ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   auto al = make_shared<TopologyAppLink>(std::move(face));
   m_appLinks.push_back(al); // keep a shared_ptr so callers don't have to
@@ -223,6 +257,19 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i, const Name&
   shared_ptr<TopologyAppLink> al = this->addAppFace(label, i);
   this->registerPrefix(i, al->getForwarderFace(), prefix, cost);
   return al;
+}
+
+shared_ptr<TopologyBareLink>
+TopologyTester::addBareLink(const std::string& label, TopologyNode i, ndn::nfd::FaceScope scope,
+                            ndn::nfd::LinkType linkType)
+{
+  FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/local/" + label);
+  FaceUri remoteUri("topology://" + m_forwarderLabels.at(i) + "/bare/" + label);
+  auto face = makeFace(i, localUri, remoteUri, scope, linkType);
+
+  auto bl = make_shared<TopologyBareLink>(std::move(face));
+  m_bareLinks.push_back(bl); // keep a shared_ptr so callers don't have to
+  return bl;
 }
 
 void

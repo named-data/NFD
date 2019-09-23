@@ -150,9 +150,33 @@ private:
   std::unordered_map<TopologyNode, NodeTransport> m_transports;
 };
 
+/** \brief represents a link on a single forwarder
+ */
+class TopologySingleLink : noncopyable
+{
+public:
+  /** \brief constructor
+   *  \param forwarderFace a Face with InternalForwarderTransport
+   */
+  explicit
+  TopologySingleLink(shared_ptr<Face> forwarderFace);
+
+  /** \return face on forwarder side
+   */
+  Face&
+  getForwarderFace()
+  {
+    return *m_face;
+  }
+
+protected:
+  shared_ptr<Face> m_face;
+  face::InternalForwarderTransport* m_forwarderTransport;
+};
+
 /** \brief represents a link to a local application
  */
-class TopologyAppLink : noncopyable
+class TopologyAppLink : public TopologySingleLink
 {
 public:
   /** \brief constructor
@@ -171,14 +195,6 @@ public:
   void
   recover();
 
-  /** \return face on forwarder side
-   */
-  Face&
-  getForwarderFace()
-  {
-    return *m_face;
-  }
-
   /** \return face on application side
    */
   ndn::Face&
@@ -188,10 +204,30 @@ public:
   }
 
 private:
-  shared_ptr<Face> m_face;
-  face::InternalForwarderTransport* m_forwarderTransport;
   shared_ptr<face::InternalClientTransport> m_clientTransport;
   shared_ptr<ndn::Face> m_client;
+};
+
+/** \brief allows the test case to inject and observe L2 packets on a link
+ */
+class TopologyBareLink : public TopologySingleLink
+{
+public:
+  /** \brief constructor
+   *  \param forwarderFace a Face with InternalForwarderTransport
+   */
+  explicit
+  TopologyBareLink(shared_ptr<Face> forwarderFace);
+
+  void
+  receivePacket(const Block& packet);
+
+public:
+  std::vector<Block> sentPackets;
+
+private:
+  class Observer;
+  unique_ptr<Observer> m_observer;
 };
 
 /** \brief captured packets on a face
@@ -264,6 +300,13 @@ public:
   shared_ptr<TopologyAppLink>
   addAppFace(const std::string& label, TopologyNode i, const Name& prefix, uint64_t cost = 0);
 
+  /** \brief makes a link that allows the test case to inject and observe L2 packets
+   */
+  shared_ptr<TopologyBareLink>
+  addBareLink(const std::string& label, TopologyNode i,
+              ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_LOCAL,
+              ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+
   /** \brief enables packet capture on every forwarder face
    */
   void
@@ -294,11 +337,17 @@ public:
                       size_t n, int seq = -1);
 
 private:
+  shared_ptr<Face>
+  makeFace(TopologyNode i, const FaceUri& localUri, const FaceUri& remoteUri,
+           ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType);
+
+private:
   bool m_wantPcap = false;
   std::vector<unique_ptr<Forwarder>> m_forwarders;
   std::vector<std::string> m_forwarderLabels;
   std::vector<shared_ptr<TopologyLink>> m_links;
   std::vector<shared_ptr<TopologyAppLink>> m_appLinks;
+  std::vector<shared_ptr<TopologyBareLink>> m_bareLinks;
 };
 
 } // namespace tests

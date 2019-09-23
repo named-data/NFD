@@ -241,10 +241,7 @@ protected: // actions
    */
   VIRTUAL_WITH_TESTS void
   sendInterest(const shared_ptr<pit::Entry>& pitEntry,
-               const FaceEndpoint& egress, const Interest& interest)
-  {
-    m_forwarder.onOutgoingInterest(pitEntry, egress, interest);
-  }
+               const FaceEndpoint& egress, const Interest& interest);
 
   /** \brief send \p data to \p egress
    *  \param pitEntry PIT entry

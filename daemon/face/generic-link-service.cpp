@@ -25,6 +25,7 @@
 
 #include "generic-link-service.hpp"
 
+#include <ndn-cxx/lp/pit-token.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
 #include <cmath>
@@ -129,27 +130,32 @@ void
 GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket)
 {
   if (m_options.allowLocalFields) {
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
+    auto incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
     if (incomingFaceIdTag != nullptr) {
       lpPacket.add<lp::IncomingFaceIdField>(*incomingFaceIdTag);
     }
   }
 
-  shared_ptr<lp::CongestionMarkTag> congestionMarkTag = netPkt.getTag<lp::CongestionMarkTag>();
+  auto congestionMarkTag = netPkt.getTag<lp::CongestionMarkTag>();
   if (congestionMarkTag != nullptr) {
     lpPacket.add<lp::CongestionMarkField>(*congestionMarkTag);
   }
 
   if (m_options.allowSelfLearning) {
-    shared_ptr<lp::NonDiscoveryTag> nonDiscoveryTag = netPkt.getTag<lp::NonDiscoveryTag>();
+    auto nonDiscoveryTag = netPkt.getTag<lp::NonDiscoveryTag>();
     if (nonDiscoveryTag != nullptr) {
       lpPacket.add<lp::NonDiscoveryField>(*nonDiscoveryTag);
     }
 
-    shared_ptr<lp::PrefixAnnouncementTag> prefixAnnouncementTag = netPkt.getTag<lp::PrefixAnnouncementTag>();
+    auto prefixAnnouncementTag = netPkt.getTag<lp::PrefixAnnouncementTag>();
     if (prefixAnnouncementTag != nullptr) {
       lpPacket.add<lp::PrefixAnnouncementField>(*prefixAnnouncementTag);
     }
+  }
+
+  auto pitToken = netPkt.getTag<lp::PitToken>();
+  if (pitToken != nullptr) {
+    lpPacket.add<lp::PitTokenField>(*pitToken);
   }
 }
 
@@ -386,6 +392,10 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
     ++this->nInNetInvalid;
     NFD_LOG_FACE_WARN("received PrefixAnnouncement with Interest: DROP");
     return;
+  }
+
+  if (firstPkt.has<lp::PitTokenField>()) {
+    interest->setTag(make_shared<lp::PitToken>(firstPkt.get<lp::PitTokenField>()));
   }
 
   this->receiveInterest(*interest, endpointId);

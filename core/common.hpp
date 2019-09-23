@@ -124,6 +124,7 @@ namespace scheduler = ndn::scheduler;
 namespace signal = ndn::util::signal;
 namespace time = ndn::time;
 using namespace ndn::time_literals;
+using ndn::operator""_block;
 
 } // namespace nfd
 

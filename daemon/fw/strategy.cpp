@@ -27,6 +27,8 @@
 #include "forwarder.hpp"
 #include "common/logger.hpp"
 
+#include <ndn-cxx/lp/pit-token.hpp>
+
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -192,15 +194,40 @@ Strategy::onDroppedInterest(const FaceEndpoint& egress, const Interest& interest
 }
 
 void
+Strategy::sendInterest(const shared_ptr<pit::Entry>& pitEntry,
+                       const FaceEndpoint& egress, const Interest& interest)
+{
+  if (interest.getTag<lp::PitToken>() != nullptr) {
+    Interest interest2 = interest; // make a copy to preserve tag on original packet
+    interest2.removeTag<lp::PitToken>();
+    m_forwarder.onOutgoingInterest(pitEntry, egress, interest2);
+    return;
+  }
+  m_forwarder.onOutgoingInterest(pitEntry, egress, interest);
+}
+
+void
 Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data,
                    const FaceEndpoint& egress)
 {
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
 
+  shared_ptr<lp::PitToken> pitToken;
+  auto inRecord = pitEntry->getInRecord(egress.face);
+  if (inRecord != pitEntry->in_end()) {
+    pitToken = inRecord->getInterest().getTag<lp::PitToken>();
+  }
+
   // delete the PIT entry's in-record based on egress,
   // since Data is sent to face and endpoint from which the Interest was received
   pitEntry->deleteInRecord(egress.face);
 
+  if (pitToken != nullptr) {
+    Data data2 = data; // make a copy so each downstream can get a different PIT token
+    data2.setTag(pitToken);
+    m_forwarder.onOutgoingData(data2, egress);
+    return;
+  }
   m_forwarder.onOutgoingData(data, egress);
 }
 
