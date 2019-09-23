@@ -24,6 +24,7 @@
  */
 
 #include "pcap-helper.hpp"
+#include "ethernet-protocol.hpp"
 
 #include <pcap/pcap.h>
 #include <unistd.h>
@@ -49,6 +50,9 @@ PcapHelper::PcapHelper(const std::string& interfaceName)
   // even if the kernel supports it, thus preventing bug #1511.
   if (pcap_set_immediate_mode(m_pcap, 1) < 0)
     NDN_THROW(Error("pcap_set_immediate_mode failed"));
+
+  pcap_set_snaplen(m_pcap, ethernet::HDR_LEN + ndn::MAX_NDN_PACKET_SIZE);
+  pcap_set_buffer_size(m_pcap, 4 * 1024 * 1024);
 }
 
 PcapHelper::~PcapHelper()
