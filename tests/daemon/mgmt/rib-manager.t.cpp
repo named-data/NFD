@@ -31,6 +31,9 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
+#include <ndn-cxx/security/signing-helpers.hpp>
+
+#include <boost/property_tree/info_parser.hpp>
 
 namespace nfd {
 namespace tests {
@@ -49,20 +52,99 @@ getValidatorConfigSection()
   return section;
 }
 
+static ConfigSection
+makeSection(const std::string& config)
+{
+  std::istringstream inputStream(config);
+  ConfigSection section;
+  boost::property_tree::read_info(inputStream, section);
+  return section;
+}
+
+static ConfigSection
+getLocalhopValidatorConfigSection()
+{
+  std::string config = R"CONF(
+    rule
+    {
+      id rule-id1
+      for interest
+      filter
+      {
+        type name
+        name /localhop/nfd/rib
+        relation is-prefix-of
+      }
+      checker
+      {
+        type customized
+        sig-type ecdsa-sha256
+        key-locator
+        {
+          type name
+          name /TrustAnchor-identity/Derived-identity
+          relation is-prefix-of
+        }
+      }
+    }
+    rule
+    {
+      id rule-id2
+      for data
+      filter
+      {
+        type name
+        name /TrustAnchor-identity/Derived-identity/KEY
+        relation is-prefix-of
+      }
+      checker
+      {
+        type customized
+        sig-type ecdsa-sha256
+        key-locator
+        {
+          type name
+          name /TrustAnchor-identity
+          relation is-prefix-of
+        }
+      }
+    }
+    trust-anchor
+    {
+      type file
+      file-name signer.ndncert
+    }
+  )CONF";
+  return makeSection(config);
+}
+
 class RibManagerFixture : public ManagerCommonFixture
 {
 public:
   RibManagerFixture(const ConfigurationStatus& status, bool shouldClearRib)
     : m_status(status)
+    , m_anchorId("/TrustAnchor-identity")
+    , m_derivedId("/TrustAnchor-identity/Derived-identity")
     , m_nfdController(m_face, m_keyChain)
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
   {
+    addIdentity(m_anchorId);
+    addIdentity(m_derivedId);
+
+    m_derivedCert = m_keyChain.getPib().getIdentity(m_derivedId).getDefaultKey().getDefaultCertificate();
+    ndn::SignatureInfo signatureInfo;
+    signatureInfo.setValidityPeriod(m_derivedCert.getValidityPeriod());
+    ndn::security::SigningInfo signingInfo(ndn::security::SigningInfo::SIGNER_TYPE_ID,
+                                           m_anchorId, signatureInfo);
+    m_keyChain.sign(m_derivedCert, signingInfo);
+    saveIdentityCertificate(m_anchorId, "signer.ndncert", true);
+
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
     }
     if (m_status.isLocalhopConfigured) {
-      m_manager.enableLocalhop(getValidatorConfigSection(), "test");
+      m_manager.enableLocalhop(getLocalhopValidatorConfigSection(), "test");
     }
     else {
       m_manager.disableLocalhop();
@@ -73,6 +155,14 @@ public:
     if (shouldClearRib) {
       clearRib();
     }
+
+    m_face.onSendInterest.connect([this] (const Interest& interest) {
+      if (interest.getName().isPrefixOf(m_derivedCert.getName())) {
+        if (m_status.isLocalhopConfigured && interest.template getTag<lp::NextHopFaceIdTag>() != nullptr) {
+          m_face.put(m_derivedCert);
+        }
+      }
+    });
   }
 
 private:
@@ -143,6 +233,9 @@ public:
 
 protected:
   ConfigurationStatus m_status;
+  Name m_anchorId;
+  Name m_derivedId;
+  ndn::security::v2::Certificate m_derivedCert;
 
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;
@@ -221,7 +314,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
 {
   auto parameters  = this->makeRegisterParameters("/test-authorization", 9527);
   auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters);
-  auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters);
+  auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters,
+                                                     this->m_derivedId);
+  if (this->m_status.isLocalhopConfigured) {
+    commandHop.setTag(make_shared<lp::IncomingFaceIdTag>(123));
+  }
   auto successResp = this->makeResponse(200, "Success", parameters);
   auto failureResp = ControlResponse(403, "authorization rejected");
 

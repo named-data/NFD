@@ -33,6 +33,7 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
+#include <ndn-cxx/security/v2/certificate-fetcher-direct-fetch.hpp>
 
 namespace nfd {
 
@@ -56,7 +57,7 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_dispatcher(dispatcher)
   , m_faceMonitor(face)
   , m_localhostValidator(face)
-  , m_localhopValidator(face)
+  , m_localhopValidator(make_unique<ndn::security::v2::CertificateFetcherDirectFetch>(face))
   , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
