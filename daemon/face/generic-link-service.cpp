@@ -39,8 +39,6 @@ constexpr size_t CONGESTION_MARK_SIZE = tlv::sizeOfVarNumber(lp::tlv::Congestion
                                         tlv::sizeOfVarNumber(sizeof(uint64_t)) +        // length
                                         tlv::sizeOfNonNegativeInteger(UINT64_MAX);      // value
 
-constexpr uint32_t DEFAULT_CONGESTION_THRESHOLD_DIVISOR = 2;
-
 GenericLinkService::GenericLinkService(const GenericLinkService::Options& options)
   : m_options(options)
   , m_fragmenter(m_options.fragmenterOptions, this)
@@ -48,7 +46,6 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_reliability(m_options.reliabilityOptions, this)
   , m_lastSeqNo(-2)
   , m_nextMarkTime(time::steady_clock::TimePoint::max())
-  , m_lastMarkTime(time::steady_clock::TimePoint::min())
   , m_nMarkedSinceInMarkingState(0)
 {
   m_reassembler.beforeTimeout.connect([this] (auto...) { ++this->nReassemblyTimeouts; });
@@ -232,34 +229,26 @@ void
 GenericLinkService::checkCongestionLevel(lp::Packet& pkt)
 {
   ssize_t sendQueueLength = getTransport()->getSendQueueLength();
-  // This operation requires that the transport supports retrieving current send queue length
+  // The transport must support retrieving the current send queue length
   if (sendQueueLength < 0) {
     return;
   }
 
-  // To avoid overflowing the queue, set the congestion threshold to at least half of the send
-  // queue capacity.
-  size_t congestionThreshold = m_options.defaultCongestionThreshold;
-  if (getTransport()->getSendQueueCapacity() >= 0) {
-    congestionThreshold = std::min(congestionThreshold,
-                                   static_cast<size_t>(getTransport()->getSendQueueCapacity()) /
-                                                       DEFAULT_CONGESTION_THRESHOLD_DIVISOR);
-  }
-
   if (sendQueueLength > 0) {
-    NFD_LOG_FACE_TRACE("txqlen=" << sendQueueLength << " threshold=" << congestionThreshold <<
-                       " capacity=" << getTransport()->getSendQueueCapacity());
+    NFD_LOG_FACE_TRACE("txqlen=" << sendQueueLength << " threshold=" <<
+                       m_options.defaultCongestionThreshold << " capacity=" <<
+                       getTransport()->getSendQueueCapacity());
   }
 
-  if (static_cast<size_t>(sendQueueLength) > congestionThreshold) { // Send queue is congested
+  // sendQueue is above target
+  if (static_cast<size_t>(sendQueueLength) > m_options.defaultCongestionThreshold) {
     const auto now = time::steady_clock::now();
-    if (now >= m_nextMarkTime || now >= m_lastMarkTime + m_options.baseCongestionMarkingInterval) {
-      // Mark at most one initial packet per baseCongestionMarkingInterval
-      if (m_nMarkedSinceInMarkingState == 0) {
-        m_nextMarkTime = now;
-      }
 
-      // Time to mark packet
+    if (m_nextMarkTime == time::steady_clock::TimePoint::max()) {
+      m_nextMarkTime = now + m_options.baseCongestionMarkingInterval;
+    }
+    // Mark packet if sendQueue stays above target for one interval
+    else if (now >= m_nextMarkTime) {
       pkt.set<lp::CongestionMarkField>(1);
       ++nCongestionMarked;
       NFD_LOG_FACE_DEBUG("LpPacket was marked as congested");
@@ -267,10 +256,10 @@ GenericLinkService::checkCongestionLevel(lp::Packet& pkt)
       ++m_nMarkedSinceInMarkingState;
       // Decrease the marking interval by the inverse of the square root of the number of packets
       // marked in this incident of congestion
-      m_nextMarkTime += time::nanoseconds(static_cast<time::nanoseconds::rep>(
-                                            m_options.baseCongestionMarkingInterval.count() /
-                                            std::sqrt(m_nMarkedSinceInMarkingState)));
-      m_lastMarkTime = now;
+      time::nanoseconds interval(static_cast<time::nanoseconds::rep>(
+                                   m_options.baseCongestionMarkingInterval.count() /
+                                   std::sqrt(m_nMarkedSinceInMarkingState + 1)));
+      m_nextMarkTime += interval;
     }
   }
   else if (m_nextMarkTime != time::steady_clock::TimePoint::max()) {

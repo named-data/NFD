@@ -134,11 +134,15 @@ public:
 
     /** \brief starting value for congestion marking interval
      *
+     *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
+     *
      *  The default value (100 ms) is taken from RFC 8289 (CoDel).
      */
     time::nanoseconds baseCongestionMarkingInterval = 100_ms;
 
     /** \brief default congestion threshold in bytes
+     *
+     *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
      *
      *  The default value (64 KiB) works well for a queue capacity of 200 KiB.
      */
@@ -294,8 +298,6 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /// Time to mark next packet due to send queue congestion
   time::steady_clock::TimePoint m_nextMarkTime;
-  /// Time last packet was marked
-  time::steady_clock::TimePoint m_lastMarkTime;
   /// number of marked packets in the current incident of congestion
   size_t m_nMarkedSinceInMarkingState;
 
