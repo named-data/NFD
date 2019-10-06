@@ -34,15 +34,17 @@ namespace face {
 
 NFD_LOG_INIT(FaceSystem);
 
-static const std::string SECTION_GENERAL = "general";
-static const std::string SECTION_NETDEVBOUND = "netdev_bound";
+const std::string CFGSEC_FACESYSTEM = "face_system";
+const std::string CFGSEC_GENERAL = "general";
+const std::string CFGSEC_GENERAL_FQ = CFGSEC_FACESYSTEM + ".general";
+const std::string CFGSEC_NETDEVBOUND = "netdev_bound";
 
 FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon)
   : m_faceTable(faceTable)
   , m_netmon(std::move(netmon))
 {
   auto pfCtorParams = this->makePFCtorParams();
-  for (const std::string& id : ProtocolFactory::listRegistered()) {
+  for (const auto& id : ProtocolFactory::listRegistered()) {
     NFD_LOG_TRACE("creating factory " << id);
     m_factories[id] = ProtocolFactory::create(id, pfCtorParams);
   }
@@ -53,7 +55,7 @@ FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor
 ProtocolFactoryCtorParams
 FaceSystem::makePFCtorParams()
 {
-  auto addFace = [&ft = m_faceTable] (auto face) { ft.add(std::move(face)); };
+  auto addFace = [this] (auto face) { m_faceTable.add(std::move(face)); };
   return {addFace, m_netmon};
 }
 
@@ -92,25 +94,25 @@ FaceSystem::hasFactoryForScheme(const std::string& scheme) const
 void
 FaceSystem::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler("face_system", bind(&FaceSystem::processConfig, this, _1, _2, _3));
+  configFile.addSectionHandler(CFGSEC_FACESYSTEM, bind(&FaceSystem::processConfig, this, _1, _2, _3));
 }
 
 void
-FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename)
+FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, const std::string&)
 {
   ConfigContext context;
   context.isDryRun = isDryRun;
 
   // process general protocol factory config section
-  auto generalSection = configSection.get_child_optional(SECTION_GENERAL);
+  auto generalSection = configSection.get_child_optional(CFGSEC_GENERAL);
   if (generalSection) {
     for (const auto& pair : *generalSection) {
       const std::string& key = pair.first;
       if (key == "enable_congestion_marking") {
-        context.generalConfig.wantCongestionMarking = ConfigFile::parseYesNo(pair, "face_system.general");
+        context.generalConfig.wantCongestionMarking = ConfigFile::parseYesNo(pair, CFGSEC_GENERAL_FQ);
       }
       else {
-        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.general." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option " + CFGSEC_GENERAL_FQ + "." + key));
       }
     }
   }
@@ -140,7 +142,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   }
 
   // process netdev_bound section, after factories start providing *+dev schemes
-  auto netdevBoundSection = configSection.get_child_optional(SECTION_NETDEVBOUND);
+  auto netdevBoundSection = configSection.get_child_optional(CFGSEC_NETDEVBOUND);
   m_netdevBound->processConfig(netdevBoundSection, context);
 
   // process other sections
@@ -150,15 +152,15 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     // const ConfigSection& subSection = pair.second;
 
     if (!seenSections.insert(sectionName).second) {
-      NDN_THROW(ConfigFile::Error("Duplicate section face_system." + sectionName));
+      NDN_THROW(ConfigFile::Error("Duplicate section " + CFGSEC_FACESYSTEM + "." + sectionName));
     }
 
-    if (sectionName == SECTION_GENERAL || sectionName == SECTION_NETDEVBOUND ||
+    if (sectionName == CFGSEC_GENERAL || sectionName == CFGSEC_NETDEVBOUND ||
         m_factories.count(sectionName) > 0) {
       continue;
     }
 
-    NDN_THROW(ConfigFile::Error("Unrecognized option face_system." + sectionName));
+    NDN_THROW(ConfigFile::Error("Unrecognized option " + CFGSEC_FACESYSTEM + "." + sectionName));
   }
 }
 

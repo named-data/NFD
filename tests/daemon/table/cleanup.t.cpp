@@ -74,14 +74,15 @@ BOOST_AUTO_TEST_CASE(Basic)
 
 BOOST_AUTO_TEST_CASE(RemoveFibNexthops)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NameTree& nameTree = forwarder.getNameTree();
   Fib& fib = forwarder.getFib();
 
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  shared_ptr<Face> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   // {}
   size_t nNameTreeEntriesBefore = nameTree.size();
@@ -130,13 +131,14 @@ BOOST_AUTO_TEST_CASE(RemoveFibNexthops)
 
 BOOST_AUTO_TEST_CASE(DeletePitInOutRecords)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
 
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  shared_ptr<Face> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   // {}
   BOOST_CHECK_EQUAL(pit.size(), 0);

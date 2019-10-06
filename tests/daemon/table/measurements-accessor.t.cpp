@@ -62,7 +62,6 @@ class MeasurementsAccessorFixture : public GlobalIoFixture
 {
 protected:
   MeasurementsAccessorFixture()
-    : measurements(forwarder.getMeasurements())
   {
     const Name strategyP("/measurements-accessor-test-strategy-P/%FD%01");
     const Name strategyQ("/measurements-accessor-test-strategy-Q/%FD%01");
@@ -81,8 +80,9 @@ protected:
   }
 
 protected:
-  Forwarder forwarder;
-  Measurements& measurements;
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
+  Measurements& measurements{forwarder.getMeasurements()};
   MeasurementsAccessor* accessor1;
   MeasurementsAccessor* accessor2;
   MeasurementsAccessor* accessor3;

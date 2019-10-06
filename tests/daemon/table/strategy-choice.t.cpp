@@ -36,9 +36,6 @@ class StrategyChoiceFixture : public GlobalIoFixture
 {
 protected:
   StrategyChoiceFixture()
-    : sc(forwarder.getStrategyChoice())
-    , strategyNameP("/strategy-choice-P/%FD%00")
-    , strategyNameQ("/strategy-choice-Q/%FD%00")
   {
     DummyStrategy::registerAs(strategyNameP);
     DummyStrategy::registerAs(strategyNameQ);
@@ -77,11 +74,12 @@ protected:
   }
 
 protected:
-  Forwarder forwarder;
-  StrategyChoice& sc;
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
+  StrategyChoice& sc{forwarder.getStrategyChoice()};
 
-  const Name strategyNameP;
-  const Name strategyNameQ;
+  const Name strategyNameP = "/strategy-choice-P/%FD%00";
+  const Name strategyNameQ = "/strategy-choice-Q/%FD%00";
 };
 
 BOOST_AUTO_TEST_SUITE(Table)

@@ -42,11 +42,6 @@ using namespace nfd::tests;
 class UnsolicitedDataPolicyFixture : public GlobalIoTimeFixture
 {
 protected:
-  UnsolicitedDataPolicyFixture()
-    : cs(forwarder.getCs())
-  {
-  }
-
   /** \tparam Policy policy type, or void to keep default policy
    */
   template<typename Policy>
@@ -72,8 +67,9 @@ protected:
   }
 
 protected:
-  Forwarder forwarder;
-  Cs& cs;
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
+  Cs& cs{forwarder.getCs()};
 };
 
 template<>
@@ -117,7 +113,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
 
   auto face1 = make_shared<DummyFace>("dummy://", "dummy://",
                                       ndn::nfd::FACE_SCOPE_LOCAL);
-  forwarder.addFace(face1);
+  faceTable.add(face1);
 
   shared_ptr<Data> data1 = makeData("/unsolicited-from-local");
   forwarder.onIncomingData(FaceEndpoint(*face1, 0), *data1);
@@ -125,7 +121,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
 
   auto face2 = make_shared<DummyFace>("dummy://", "dummy://",
                                       ndn::nfd::FACE_SCOPE_NON_LOCAL);
-  forwarder.addFace(face2);
+  faceTable.add(face2);
 
   shared_ptr<Data> data2 = makeData("/unsolicited-from-non-local");
   forwarder.onIncomingData(FaceEndpoint(*face2, 0), *data2);

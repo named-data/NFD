@@ -121,12 +121,13 @@ public:
 
 BOOST_AUTO_TEST_CASE(UnsatisfiedInterest)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Pit& pit = forwarder.getPit();
 
@@ -145,12 +146,13 @@ BOOST_AUTO_TEST_CASE(UnsatisfiedInterest)
 
 BOOST_AUTO_TEST_CASE(SatisfiedInterest)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Pit& pit = forwarder.getPit();
 
@@ -169,12 +171,13 @@ BOOST_AUTO_TEST_CASE(SatisfiedInterest)
 
 BOOST_AUTO_TEST_CASE(CsHit)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);
@@ -206,14 +209,15 @@ BOOST_AUTO_TEST_CASE(CsHit)
 
 BOOST_AUTO_TEST_CASE(ReceiveNack)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
   auto face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);
@@ -241,10 +245,11 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 
 BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveInterest)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face = make_shared<DummyFace>();
-  forwarder.addFace(face);
+  faceTable.add(face);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);
@@ -266,14 +271,15 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveInterest)
 
 BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
   auto face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Name strategyA("/strategyA/%FD%01");
   Name strategyB("/strategyB/%FD%01");
@@ -322,12 +328,13 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
 
 BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);
@@ -368,14 +375,15 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
 
 BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
   auto face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);

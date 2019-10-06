@@ -30,6 +30,7 @@
 #include "face/face-system.hpp"
 #include "face/internal-face.hpp"
 #include "face/null-face.hpp"
+#include "fw/face-table.hpp"
 #include "fw/forwarder.hpp"
 #include "mgmt/cs-manager.hpp"
 #include "mgmt/face-manager.hpp"
@@ -76,26 +77,25 @@ Nfd::initialize()
 {
   configureLogging();
 
-  m_forwarder = make_unique<Forwarder>();
+  m_faceTable = make_unique<FaceTable>();
+  m_faceTable->addReserved(face::makeNullFace(), face::FACEID_NULL);
+  m_faceTable->addReserved(face::makeNullFace(FaceUri("contentstore://")), face::FACEID_CONTENT_STORE);
 
-  FaceTable& faceTable = m_forwarder->getFaceTable();
-  faceTable.addReserved(face::makeNullFace(), face::FACEID_NULL);
-  faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), face::FACEID_CONTENT_STORE);
-  m_faceSystem = make_unique<face::FaceSystem>(faceTable, m_netmon);
+  m_faceSystem = make_unique<face::FaceSystem>(*m_faceTable, m_netmon);
+  m_forwarder = make_unique<Forwarder>(*m_faceTable);
 
   initializeManagement();
 
   PrivilegeHelper::drop();
 
   m_netmon->onNetworkStateChanged.connect([this] {
-      // delay stages, so if multiple events are triggered in short sequence,
-      // only one auto-detection procedure is triggered
-      m_reloadConfigEvent = getScheduler().schedule(5_s,
-        [this] {
-          NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
-          this->reloadConfigFileFaceSection();
-        });
+    // delay stages, so if multiple events are triggered in short sequence,
+    // only one auto-detection procedure is triggered
+    m_reloadConfigEvent = getScheduler().schedule(5_s, [this] {
+      NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
+      reloadConfigFileFaceSection();
     });
+  });
 }
 
 void
@@ -133,14 +133,14 @@ void
 Nfd::initializeManagement()
 {
   std::tie(m_internalFace, m_internalClientFace) = face::makeInternalFace(m_keyChain);
-  m_forwarder->getFaceTable().addReserved(m_internalFace, face::FACEID_INTERNAL_FACE);
+  m_faceTable->addReserved(m_internalFace, face::FACEID_INTERNAL_FACE);
 
   m_dispatcher = make_unique<ndn::mgmt::Dispatcher>(*m_internalClientFace, m_keyChain);
   m_authenticator = CommandAuthenticator::create();
 
   m_forwarderStatusManager = make_unique<ForwarderStatusManager>(*m_forwarder, *m_dispatcher);
   m_faceManager = make_unique<FaceManager>(*m_faceSystem, *m_dispatcher, *m_authenticator);
-  m_fibManager = make_unique<FibManager>(m_forwarder->getFib(), m_forwarder->getFaceTable(),
+  m_fibManager = make_unique<FibManager>(m_forwarder->getFib(), *m_faceTable,
                                          *m_dispatcher, *m_authenticator);
   m_csManager = make_unique<CsManager>(m_forwarder->getCs(), m_forwarder->getCounters(),
                                        *m_dispatcher, *m_authenticator);

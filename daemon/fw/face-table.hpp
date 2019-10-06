@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FW_FACE_TABLE_HPP
 
 #include "face/face.hpp"
+
 #include <boost/range/adaptor/indirected.hpp>
 #include <boost/range/adaptor/map.hpp>
 
@@ -79,15 +80,15 @@ public: // enumeration
   end() const;
 
 public: // signals
-  /** \brief fires after a face is added
+  /** \brief Fires immediately after a face is added.
    */
-  signal::Signal<FaceTable, Face&> afterAdd;
+  signal::Signal<FaceTable, Face> afterAdd;
 
-  /** \brief fires before a face is removed
+  /** \brief Fires immediately before a face is removed.
    *
-   *  When this signal is emitted, face is still in FaceTable and has valid FaceId.
+   *  When this signal is emitted, the face is still in FaceTable and has a valid FaceId.
    */
-  signal::Signal<FaceTable, Face&> beforeRemove;
+  signal::Signal<FaceTable, Face> beforeRemove;
 
 private:
   void

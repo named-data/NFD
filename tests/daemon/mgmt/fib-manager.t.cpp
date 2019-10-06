@@ -40,7 +40,6 @@ class FibManagerFixture : public ManagerFixtureWithAuthenticator
 public:
   FibManagerFixture()
     : m_fib(m_forwarder.getFib())
-    , m_faceTable(m_forwarder.getFaceTable())
     , m_manager(m_fib, m_faceTable, m_dispatcher, *m_authenticator)
   {
     setTopPrefix();
@@ -126,7 +125,6 @@ public: // for check
 
 protected:
   Fib&       m_fib;
-  FaceTable& m_faceTable;
   FibManager m_manager;
 };
 
@@ -144,8 +142,7 @@ operator<<(std::ostream& os, FibManagerFixture::CheckNextHopResult result)
     return os << "NO_NEXTHOP";
   case FibManagerFixture::CheckNextHopResult::WRONG_COST:
     return os << "WRONG_COST";
-  };
-
+  }
   return os << static_cast<int>(result);
 }
 

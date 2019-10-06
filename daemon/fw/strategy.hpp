@@ -322,13 +322,13 @@ protected: // accessors
   Face*
   getFace(FaceId id) const
   {
-    return m_forwarder.getFace(id);
+    return getFaceTable().get(id);
   }
 
   const FaceTable&
   getFaceTable() const
   {
-    return m_forwarder.getFaceTable();
+    return m_forwarder.m_faceTable;
   }
 
 protected: // instance name
@@ -379,8 +379,8 @@ private: // registry
   find(const Name& instanceName);
 
 protected: // accessors
-  signal::Signal<FaceTable, Face&>& afterAddFace;
-  signal::Signal<FaceTable, Face&>& beforeRemoveFace;
+  signal::Signal<FaceTable, Face>& afterAddFace;
+  signal::Signal<FaceTable, Face>& beforeRemoveFace;
 
 private: // instance fields
   Name m_name;

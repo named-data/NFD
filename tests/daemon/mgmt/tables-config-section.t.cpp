@@ -40,7 +40,8 @@ class TablesConfigSectionFixture : public GlobalIoFixture
 {
 protected:
   TablesConfigSectionFixture()
-    : cs(forwarder.getCs())
+    : forwarder(faceTable)
+    , cs(forwarder.getCs())
     , strategyChoice(forwarder.getStrategyChoice())
     , networkRegionTable(forwarder.getNetworkRegionTable())
     , tablesConfig(forwarder)
@@ -62,6 +63,7 @@ protected:
   }
 
 protected:
+  FaceTable faceTable;
   Forwarder forwarder;
   Cs& cs;
   StrategyChoice& strategyChoice;

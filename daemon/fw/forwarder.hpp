@@ -44,14 +44,15 @@ namespace fw {
 class Strategy;
 } // namespace fw
 
-/** \brief Main class of NFD forwarding engine.
+/** \brief Main class of NFD's forwarding engine.
  *
- *  Forwarder owns all faces and tables, and implements the forwarding pipelines.
+ *  Forwarder owns all tables and implements the forwarding pipelines.
  */
 class Forwarder
 {
 public:
-  Forwarder();
+  explicit
+  Forwarder(FaceTable& faceTable);
 
   VIRTUAL_WITH_TESTS
   ~Forwarder();
@@ -60,33 +61,6 @@ public:
   getCounters() const
   {
     return m_counters;
-  }
-
-public: // faces and policies
-  FaceTable&
-  getFaceTable()
-  {
-    return m_faceTable;
-  }
-
-  /** \brief get existing Face
-   *
-   *  shortcut to .getFaceTable().get(face)
-   */
-  Face*
-  getFace(FaceId id) const
-  {
-    return m_faceTable.get(id);
-  }
-
-  /** \brief add new Face
-   *
-   *  shortcut to .getFaceTable().add(face)
-   */
-  void
-  addFace(shared_ptr<Face> face)
-  {
-    m_faceTable.add(face);
   }
 
   fw::UnsolicitedDataPolicy&
@@ -274,7 +248,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 private:
   ForwarderCounters m_counters;
 
-  FaceTable m_faceTable;
+  FaceTable& m_faceTable;
   unique_ptr<fw::UnsolicitedDataPolicy> m_unsolicitedDataPolicy;
 
   NameTree           m_nameTree;

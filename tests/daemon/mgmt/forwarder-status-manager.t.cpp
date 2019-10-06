@@ -35,13 +35,15 @@ class ForwarderStatusManagerFixture : public ManagerCommonFixture
 {
 protected:
   ForwarderStatusManagerFixture()
-    : m_manager(m_forwarder, m_dispatcher)
+    : m_forwarder(m_faceTable)
+    , m_manager(m_forwarder, m_dispatcher)
     , m_startTime(time::system_clock::now())
   {
     setTopPrefix();
   }
 
 protected:
+  FaceTable m_faceTable;
   Forwarder m_forwarder;
   ForwarderStatusManager m_manager;
   time::system_clock::TimePoint m_startTime;

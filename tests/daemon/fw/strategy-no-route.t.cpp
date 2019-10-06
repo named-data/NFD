@@ -53,19 +53,21 @@ class StrategyNoRouteFixture : public GlobalIoTimeFixture
 public:
   StrategyNoRouteFixture()
     : limitedIo(this)
+    , forwarder(faceTable)
     , strategy(choose<StrategyTester<S>>(forwarder))
     , fib(forwarder.getFib())
     , pit(forwarder.getPit())
     , face1(make_shared<DummyFace>())
     , face2(make_shared<DummyFace>())
   {
-    forwarder.addFace(face1);
-    forwarder.addFace(face2);
+    faceTable.add(face1);
+    faceTable.add(face2);
   }
 
 public:
   LimitedIo limitedIo;
 
+  FaceTable faceTable;
   Forwarder forwarder;
   StrategyTester<S>& strategy;
   Fib& fib;

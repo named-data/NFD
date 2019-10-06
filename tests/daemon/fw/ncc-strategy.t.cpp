@@ -46,16 +46,17 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   // and favors this upstream in subsequent Interests.
 
   LimitedIo limitedIo(this);
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);
   strategy.afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
@@ -106,15 +107,16 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
 BOOST_AUTO_TEST_CASE(Bug1853)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
@@ -156,16 +158,17 @@ BOOST_AUTO_TEST_CASE(Bug1853)
 BOOST_AUTO_TEST_CASE(Bug1961)
 {
   LimitedIo limitedIo(this);
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);
   strategy.afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
@@ -211,14 +214,15 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 BOOST_AUTO_TEST_CASE(Bug1971)
 {
   LimitedIo limitedIo(this);
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);
   strategy.afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
@@ -255,13 +259,14 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 
 BOOST_AUTO_TEST_CASE(Bug1998)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;

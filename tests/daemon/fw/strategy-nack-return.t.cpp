@@ -51,6 +51,7 @@ class StrategyNackReturnFixture : public GlobalIoTimeFixture
 public:
   StrategyNackReturnFixture()
     : limitedIo(this)
+    , forwarder(faceTable)
     , strategy(choose<StrategyTester<S>>(forwarder))
     , fib(forwarder.getFib())
     , pit(forwarder.getPit())
@@ -60,16 +61,17 @@ public:
     , face4(make_shared<DummyFace>())
     , face5(make_shared<DummyFace>())
   {
-    forwarder.addFace(face1);
-    forwarder.addFace(face2);
-    forwarder.addFace(face3);
-    forwarder.addFace(face4);
-    forwarder.addFace(face5);
+    faceTable.add(face1);
+    faceTable.add(face2);
+    faceTable.add(face3);
+    faceTable.add(face4);
+    faceTable.add(face5);
   }
 
 public:
   LimitedIo limitedIo;
 
+  FaceTable faceTable;
   Forwarder forwarder;
   StrategyTester<S>& strategy;
   Fib& fib;

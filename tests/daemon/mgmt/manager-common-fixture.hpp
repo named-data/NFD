@@ -171,7 +171,8 @@ public:
   setPrivilege(const std::string& privilege);
 
 protected:
-  Forwarder m_forwarder;
+  FaceTable m_faceTable;
+  Forwarder m_forwarder{m_faceTable};
   shared_ptr<CommandAuthenticator> m_authenticator = CommandAuthenticator::create();
 };
 

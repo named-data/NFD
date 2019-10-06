@@ -44,14 +44,15 @@ getDefaultStrategyName()
   return fw::BestRouteStrategy2::getStrategyName();
 }
 
-Forwarder::Forwarder()
-  : m_unsolicitedDataPolicy(make_unique<fw::DefaultUnsolicitedDataPolicy>())
+Forwarder::Forwarder(FaceTable& faceTable)
+  : m_faceTable(faceTable)
+  , m_unsolicitedDataPolicy(make_unique<fw::DefaultUnsolicitedDataPolicy>())
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(*this)
 {
-  m_faceTable.afterAdd.connect([this] (Face& face) {
+  m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
       [this, &face] (const Interest& interest, const EndpointId& endpointId) {
         this->startProcessInterest(FaceEndpoint(face, endpointId), interest);
@@ -70,7 +71,7 @@ Forwarder::Forwarder()
       });
   });
 
-  m_faceTable.beforeRemove.connect([this] (Face& face) {
+  m_faceTable.beforeRemove.connect([this] (const Face& face) {
     cleanupOnFaceRemoval(m_nameTree, m_fib, m_pit, face);
   });
 

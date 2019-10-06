@@ -260,7 +260,7 @@ public:
   Forwarder&
   getForwarder(TopologyNode i)
   {
-    return *m_forwarders.at(i);
+    return m_forwarders.at(i)->forwarder;
   }
 
   /** \brief sets strategy on forwarder \p i
@@ -310,7 +310,10 @@ public:
   /** \brief enables packet capture on every forwarder face
    */
   void
-  enablePcap(bool isEnabled = true);
+  enablePcap(bool isEnabled = true)
+  {
+    m_wantPcap = isEnabled;
+  }
 
   /** \return captured packets on a forwarder face
    *  \pre enablePcap(true) is in effect when the face was created
@@ -342,12 +345,26 @@ private:
            ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType);
 
 private:
-  bool m_wantPcap = false;
-  std::vector<unique_ptr<Forwarder>> m_forwarders;
-  std::vector<std::string> m_forwarderLabels;
+  class TopologyForwarder
+  {
+  public:
+    explicit
+    TopologyForwarder(const std::string& label)
+      : label(label)
+    {
+    }
+
+  public:
+    std::string label;
+    FaceTable faceTable;
+    Forwarder forwarder{faceTable};
+  };
+
+  std::vector<unique_ptr<TopologyForwarder>> m_forwarders;
   std::vector<shared_ptr<TopologyLink>> m_links;
   std::vector<shared_ptr<TopologyAppLink>> m_appLinks;
   std::vector<shared_ptr<TopologyBareLink>> m_bareLinks;
+  bool m_wantPcap = false;
 };
 
 } // namespace tests

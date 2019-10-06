@@ -469,7 +469,8 @@ public:
   }
 
 protected:
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
 };
 
 BOOST_FIXTURE_TEST_CASE(InstantiationTest, ParametersFixture)

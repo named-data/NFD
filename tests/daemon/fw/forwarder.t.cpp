@@ -37,17 +37,30 @@
 namespace nfd {
 namespace tests {
 
+class ForwarderFixture : public GlobalIoTimeFixture
+{
+protected:
+  template<typename ...Args>
+  shared_ptr<DummyFace>
+  addFace(Args&&... args)
+  {
+    auto face = make_shared<DummyFace>(std::forward<Args>(args)...);
+    faceTable.add(face);
+    return face;
+  }
+
+protected:
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
+};
+
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestForwarder, GlobalIoTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestForwarder, ForwarderFixture)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
-  Forwarder forwarder;
-
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = addFace();
+  auto face2 = addFace();
 
   Fib& fib = forwarder.getFib();
   fib::Entry* entry = fib.insert("/A").first;
@@ -82,14 +95,9 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
 BOOST_AUTO_TEST_CASE(CsMatched)
 {
-  Forwarder forwarder;
-
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace();
 
   Fib& fib = forwarder.getFib();
   fib::Entry* entry = fib.insert("/A").first;
@@ -124,11 +132,8 @@ BOOST_AUTO_TEST_CASE(CsMatched)
 
 BOOST_AUTO_TEST_CASE(OutgoingInterest)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = addFace();
+  auto face2 = addFace();
 
   Pit& pit = forwarder.getPit();
   auto interestA1 = makeInterest("/A", false, nullopt, 8378);
@@ -148,14 +153,9 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
 
 BOOST_AUTO_TEST_CASE(NextHopFaceId)
 {
-  Forwarder forwarder;
-
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace();
 
   Fib& fib = forwarder.getFib();
   fib::Entry* entry = fib.insert("/A").first;
@@ -174,6 +174,8 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
 class ScopeLocalhostIncomingTestForwarder : public Forwarder
 {
 public:
+  using Forwarder::Forwarder;
+
   void
   onDataUnsolicited(const FaceEndpoint&, const Data&) final
   {
@@ -192,13 +194,15 @@ public:
   int onDataUnsolicited_count = 0;
 };
 
-BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
+BOOST_FIXTURE_TEST_CASE(ScopeLocalhostIncoming, GlobalIoTimeFixture)
 {
-  ScopeLocalhostIncomingTestForwarder forwarder;
+  FaceTable faceTable;
+  ScopeLocalhostIncomingTestForwarder forwarder(faceTable);
+
   auto face1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
   auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   // local face, /localhost: OK
   forwarder.dispatchToStrategy_count = 0;
@@ -251,11 +255,8 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 
 BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = addFace();
+  auto face2 = addFace();
 
   DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "/", DummyStrategy::getStrategyName());
   DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "/B", DummyStrategy::getStrategyName());
@@ -292,15 +293,10 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 
 BOOST_AUTO_TEST_CASE(IncomingData)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>();
-  auto face4 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
-  forwarder.addFace(face4);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace();
+  auto face4 = addFace();
 
   Pit& pit = forwarder.getPit();
   auto interestD = makeInterest("/A/B/C/D");
@@ -327,16 +323,12 @@ BOOST_AUTO_TEST_CASE(IncomingData)
 
 BOOST_AUTO_TEST_CASE(IncomingNack)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>("dummy://", "dummy://",
-                                      ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                                      ndn::nfd::LINK_TYPE_MULTI_ACCESS);
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace("dummy://", "dummy://",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 
   DummyStrategy& strategyA = choose<DummyStrategy>(forwarder, "/", DummyStrategy::getStrategyName());
   DummyStrategy& strategyB = choose<DummyStrategy>(forwarder, "/B", DummyStrategy::getStrategyName());
@@ -410,16 +402,12 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
 
 BOOST_AUTO_TEST_CASE(OutgoingNack)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>("dummy://", "dummy://",
-                                      ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                                      ndn::nfd::LINK_TYPE_MULTI_ACCESS);
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace("dummy://", "dummy://",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 
   Pit& pit = forwarder.getPit();
 
@@ -474,18 +462,13 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
 
 BOOST_AUTO_TEST_CASE(InterestLoopNack)
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  auto face3 = make_shared<DummyFace>("dummy://", "dummy://",
-                                      ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                                      ndn::nfd::LINK_TYPE_MULTI_ACCESS);
-  auto face4 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
-  forwarder.addFace(face4);
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace("dummy://", "dummy://",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  auto face4 = addFace();
 
   Fib& fib = forwarder.getFib();
   fib::Entry* entry = fib.insert("/zT4XwK0Hnx").first;
@@ -526,11 +509,8 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
 
 BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
 {
-  Forwarder forwarder;
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  auto face1 = addFace();
+  auto face2 = addFace();
 
   // cause an Interest sent out of face2 to loop back into face1 after a delay
   face2->afterSend.connect([face1, face2] (uint32_t pktType) {
@@ -563,9 +543,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
 
 BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
 {
-  Forwarder forwarder;
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
+  auto face1 = addFace();
 
   auto interest = makeInterest("/hcLSAsQ9A", false, 2_s, 61883075);
 

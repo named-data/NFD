@@ -83,13 +83,14 @@ public:
 
 BOOST_AUTO_TEST_CASE(FaceTableAccess)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   FaceTableAccessTestStrategy strategy(forwarder);
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
   FaceId id1 = face1->getId();
   FaceId id2 = face2->getId();
 

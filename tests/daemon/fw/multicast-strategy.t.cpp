@@ -41,23 +41,22 @@ class MulticastStrategyFixture : public GlobalIoTimeFixture
 {
 protected:
   MulticastStrategyFixture()
-    : strategy(forwarder)
-    , fib(forwarder.getFib())
-    , pit(forwarder.getPit())
-    , face1(make_shared<DummyFace>())
+    : face1(make_shared<DummyFace>())
     , face2(make_shared<DummyFace>())
     , face3(make_shared<DummyFace>())
   {
-    forwarder.addFace(face1);
-    forwarder.addFace(face2);
-    forwarder.addFace(face3);
+    faceTable.add(face1);
+    faceTable.add(face2);
+    faceTable.add(face3);
   }
 
 protected:
-  Forwarder forwarder;
-  MulticastStrategyTester strategy;
-  Fib& fib;
-  Pit& pit;
+  FaceTable faceTable;
+  Forwarder forwarder{faceTable};
+  MulticastStrategyTester strategy{forwarder};
+  Fib& fib{forwarder.getFib()};
+  Pit& pit{forwarder.getPit()};
+
   shared_ptr<DummyFace> face1;
   shared_ptr<DummyFace> face2;
   shared_ptr<DummyFace> face3;

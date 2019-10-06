@@ -42,7 +42,8 @@ BOOST_FIXTURE_TEST_SUITE(TestRetxSuppression, GlobalIoTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Fixed)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
   static const time::milliseconds MIN_RETX_INTERVAL(200);
   RetxSuppressionFixed rs(MIN_RETX_INTERVAL);
@@ -50,9 +51,9 @@ BOOST_AUTO_TEST_CASE(Fixed)
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  faceTable.add(face3);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/0JiimvmxK8");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -91,14 +92,15 @@ BOOST_AUTO_TEST_CASE(Fixed)
 
 BOOST_AUTO_TEST_CASE(Exponential)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
   RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/smuVeQSW6q");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -159,14 +161,15 @@ BOOST_AUTO_TEST_CASE(Exponential)
 
 BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
 {
-  Forwarder forwarder;
+  FaceTable faceTable;
+  Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
   RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/covfefeW6q");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;

@@ -141,8 +141,8 @@ Strategy::makeInstanceName(const Name& input, const Name& strategyName)
 }
 
 Strategy::Strategy(Forwarder& forwarder)
-  : afterAddFace(forwarder.getFaceTable().afterAdd)
-  , beforeRemoveFace(forwarder.getFaceTable().beforeRemove)
+  : afterAddFace(forwarder.m_faceTable.afterAdd)
+  , beforeRemoveFace(forwarder.m_faceTable.beforeRemove)
   , m_forwarder(forwarder)
   , m_measurements(m_forwarder.getMeasurements(), m_forwarder.getStrategyChoice(), *this)
 {

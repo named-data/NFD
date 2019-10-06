@@ -35,10 +35,10 @@
 
 namespace nfd {
 
+class FaceTable;
 class Forwarder;
-class CommandAuthenticator;
 
-// forward-declare management modules, in the order defined in management protocol
+class CommandAuthenticator;
 class ForwarderStatusManager;
 class FaceManager;
 class FibManager;
@@ -110,8 +110,9 @@ private:
   std::string m_configFile;
   ConfigSection m_configSection;
 
-  unique_ptr<Forwarder> m_forwarder;
+  unique_ptr<FaceTable> m_faceTable;
   unique_ptr<face::FaceSystem> m_faceSystem;
+  unique_ptr<Forwarder> m_forwarder;
 
   ndn::KeyChain& m_keyChain;
   shared_ptr<face::Face> m_internalFace;

@@ -54,6 +54,7 @@ class StrategyScopeControlFixture : public GlobalIoTimeFixture
 public:
   StrategyScopeControlFixture()
     : limitedIo(this)
+    , forwarder(faceTable)
     , strategy(choose<StrategyTester<S>>(forwarder))
     , fib(forwarder.getFib())
     , pit(forwarder.getPit())
@@ -62,15 +63,16 @@ public:
     , localFace3(make_shared<DummyFace>("dummy://3", "dummy://3", ndn::nfd::FACE_SCOPE_LOCAL))
     , localFace4(make_shared<DummyFace>("dummy://4", "dummy://4", ndn::nfd::FACE_SCOPE_LOCAL))
   {
-    forwarder.addFace(nonLocalFace1);
-    forwarder.addFace(nonLocalFace2);
-    forwarder.addFace(localFace3);
-    forwarder.addFace(localFace4);
+    faceTable.add(nonLocalFace1);
+    faceTable.add(nonLocalFace2);
+    faceTable.add(localFace3);
+    faceTable.add(localFace4);
   }
 
 public:
   LimitedIo limitedIo;
 
+  FaceTable faceTable;
   Forwarder forwarder;
   StrategyTester<S>& strategy;
   Fib& fib;
