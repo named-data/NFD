@@ -10,7 +10,7 @@ if has OSX $NODE_LABELS; then
     FORMULAE=(boost openssl pkg-config)
     brew update
     if [[ -n $TRAVIS ]]; then
-        # travis images come with a large number of brew packages
+        # Travis images come with a large number of brew packages
         # pre-installed, don't waste time upgrading all of them
         for FORMULA in "${FORMULAE[@]}"; do
             brew outdated $FORMULA || brew upgrade $FORMULA
@@ -32,7 +32,7 @@ if has Ubuntu $NODE_LABELS; then
     fi
 fi
 
-if has CentOS $NODE_LABELS; then
+if has CentOS-7 $NODE_LABELS; then
     sudo yum -y install yum-utils pkgconfig \
                         openssl-devel libtranslit-icu \
                         python-devel sqlite-devel \

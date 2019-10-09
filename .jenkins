@@ -1,10 +1,27 @@
 #!/usr/bin/env bash
 set -e
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+nanos() {
+    # Cannot use date(1) because macOS does not support %N format specifier
+    python -c 'import time; print(int(time.time() * 1e9))'
+}
 
-for file in "$DIR"/.jenkins.d/*; do
+for file in .jenkins.d/*; do
     [[ -f $file && -x $file ]] || continue
-    echo "Run: $file"
+
+    if [[ -n $TRAVIS ]]; then
+        label=$(basename "$file" | sed -E 's/[[:digit:]]+-(.*)\..*/\1/')
+        echo -ne "travis_fold:start:${label}\r"
+        echo -ne "travis_time:start:${label}\r"
+        start=$(nanos)
+    fi
+
+    echo "\$ $file"
     "$file"
+
+    if [[ -n $TRAVIS ]]; then
+        finish=$(nanos)
+        echo -ne "travis_time:end:${label}:start=${start},finish=${finish},duration=$((finish-start)),event=${label}\r"
+        echo -ne "travis_fold:end:${label}\r"
+    fi
 done
