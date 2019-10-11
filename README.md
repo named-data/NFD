@@ -21,7 +21,7 @@ algorithms; over time, better implementations may emerge within the same design 
 NFD will keep evolving in three aspects: improvement of the modularity framework, keeping
 up with the NDN protocol spec, and addition of other new features. We hope to keep the
 modular framework stable and lean, allowing researchers to implement and experiment with
-various features, some of which may eventually work into the protocol spec.
+various features, some of which may eventually work into the protocol specifications.
 
 ## Documentation
 
