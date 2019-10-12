@@ -103,7 +103,13 @@ void
 SelfLearningStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
                                        const FaceEndpoint& ingress, const Data& data)
 {
-  OutRecordInfo* outRecordInfo = pitEntry->getOutRecord(ingress.face)->getStrategyInfo<OutRecordInfo>();
+  auto outRecord = pitEntry->getOutRecord(ingress.face);
+  if (outRecord == pitEntry->out_end()) {
+    NFD_LOG_DEBUG("Data " << data.getName() << " from=" << ingress << " no out-record");
+    return;
+  }
+
+  OutRecordInfo* outRecordInfo = outRecord->getStrategyInfo<OutRecordInfo>();
   if (outRecordInfo && outRecordInfo->isNonDiscoveryInterest) { // outgoing Interest was non-discovery
     if (!needPrefixAnn(pitEntry)) { // no need to attach a PA (common cases)
       sendDataToAll(pitEntry, ingress, data);
