@@ -80,6 +80,36 @@ BOOST_AUTO_TEST_CASE(Basic)
 
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
+BOOST_AUTO_TEST_CASE(EmptyLocalhostSecurity)
+{
+  const std::string CONFIG = R"CONFIG(
+    rib
+    {
+      localhost_security
+    }
+  )CONFIG";
+
+  runOnRibIoService([&] {
+    BOOST_CHECK_NO_THROW(Service(makeSection(CONFIG), m_ribKeyChain));
+  });
+  poll();
+}
+
+BOOST_AUTO_TEST_CASE(EmptyPrefixAnnouncementValidation)
+{
+  const std::string CONFIG = R"CONFIG(
+    rib
+    {
+      prefix_announcement_validation
+    }
+  )CONFIG";
+
+  runOnRibIoService([&] {
+    BOOST_CHECK_NO_THROW(Service(makeSection(CONFIG), m_ribKeyChain));
+  });
+  poll();
+}
+
 BOOST_AUTO_TEST_CASE(LocalhopAndPropagate)
 {
   const std::string CONFIG = R"CONFIG(

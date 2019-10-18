@@ -32,10 +32,21 @@
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
+#include <boost/property_tree/info_parser.hpp>
+
 namespace nfd {
 namespace tests {
 
 using rib::Route;
+
+static ConfigSection
+makeSection(const std::string& config)
+{
+  std::istringstream inputStream(config);
+  ConfigSection section;
+  boost::property_tree::read_info(inputStream, section);
+  return section;
+}
 
 class RibManagerSlAnnounceFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
@@ -55,7 +66,7 @@ public:
     // rule 1.4 violation.
     manager = make_unique<RibManager>(rib, m_face, m_keyChain, m_nfdController, m_dispatcher);
 
-    loadTrustSchema();
+    loadDefaultPaConfig();
   }
 
   template<typename ...T>
@@ -135,24 +146,16 @@ public:
   }
 
 private:
-  /** \brief Prepare a trust schema and load as localhop_security.
-   *
-   *  Test case may revert this operation with ribManager->disableLocalhop().
-   */
   void
-  loadTrustSchema()
+  loadDefaultPaConfig()
   {
-    ConfigSection section;
-    section.put("rule.id", "PA");
-    section.put("rule.for", "data");
-    section.put("rule.checker.type", "customized");
-    section.put("rule.checker.sig-type", "rsa-sha256");
-    section.put("rule.checker.key-locator.type", "name");
-    section.put("rule.checker.key-locator.name", "/trusted");
-    section.put("rule.checker.key-locator.relation", "is-prefix-of");
-    section.put("trust-anchor.type", "base64");
-    section.put("trust-anchor.base64-string", getIdentityCertificateBase64("/trusted"));
-    manager->enableLocalhop(section, "trust-schema.section");
+    const std::string CONFIG = R"CONFIG(
+      trust-anchor
+      {
+        type any
+      }
+    )CONFIG";
+    manager->applyPaConfig(makeSection(CONFIG), "default");
   }
 
 public:
@@ -173,17 +176,44 @@ BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestRibManager)
 BOOST_FIXTURE_TEST_SUITE(SlAnnounce, RibManagerSlAnnounceFixture)
 
-BOOST_AUTO_TEST_CASE(AnnounceUnconfigured)
+BOOST_AUTO_TEST_CASE(AnnounceWithDefaultConfig)
 {
-  manager->disableLocalhop();
+  auto pa = makeTrustedAnn("/fMXN7UeB", 1_h);
+  BOOST_CHECK_EQUAL(slAnnounceSync(pa, 3275, 1_h), SlAnnounceResult::OK);
+  BOOST_CHECK(findAnnRoute("/fMXN7UeB", 3275) != nullptr);
+
+  auto pa2 = makeUntrustedAnn("/1nzAe0Y4", 1_h);
+  BOOST_CHECK_EQUAL(slAnnounceSync(pa2, 2959, 1_h), SlAnnounceResult::OK);
+  BOOST_CHECK(findAnnRoute("/1nzAe0Y4", 2959) != nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(AnnounceWithEmptyConfig)
+{
+  manager->applyPaConfig(makeSection(""), "empty");
+
   auto pa = makeTrustedAnn("/fMXN7UeB", 1_h);
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 3275, 1_h), SlAnnounceResult::VALIDATION_FAILURE);
-
   BOOST_CHECK(findAnnRoute("/fMXN7UeB", 3275) == nullptr);
+
+  auto pa2 = makeUntrustedAnn("/1nzAe0Y4", 1_h);
+  BOOST_CHECK_EQUAL(slAnnounceSync(pa2, 2959, 1_h), SlAnnounceResult::VALIDATION_FAILURE);
+  BOOST_CHECK(findAnnRoute("/1nzAe0Y4", 2959) == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(AnnounceValidationError)
 {
+  ConfigSection section;
+  section.put("rule.id", "PA");
+  section.put("rule.for", "data");
+  section.put("rule.checker.type", "customized");
+  section.put("rule.checker.sig-type", "rsa-sha256");
+  section.put("rule.checker.key-locator.type", "name");
+  section.put("rule.checker.key-locator.name", "/trusted");
+  section.put("rule.checker.key-locator.relation", "is-prefix-of");
+  section.put("trust-anchor.type", "base64");
+  section.put("trust-anchor.base64-string", getIdentityCertificateBase64("/trusted"));
+  manager->applyPaConfig(section, "trust-schema.section");
+
   auto pa = makeUntrustedAnn("/1nzAe0Y4", 1_h);
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 2959, 1_h), SlAnnounceResult::VALIDATION_FAILURE);
 

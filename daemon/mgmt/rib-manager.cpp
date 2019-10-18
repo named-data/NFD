@@ -58,6 +58,7 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_faceMonitor(face)
   , m_localhostValidator(face)
   , m_localhopValidator(make_unique<ndn::security::v2::CertificateFetcherDirectFetch>(face))
+  , m_paValidator(make_unique<ndn::security::v2::CertificateFetcherDirectFetch>(face))
   , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
@@ -85,6 +86,12 @@ void
 RibManager::disableLocalhop()
 {
   m_isLocalhopEnabled = false;
+}
+
+void
+RibManager::applyPaConfig(const ConfigSection& section, const std::string& filename)
+{
+  m_paValidator.load(section, filename);
 }
 
 void
@@ -356,14 +363,7 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
 {
   BOOST_ASSERT(pa.getData());
 
-  if (!m_isLocalhopEnabled) {
-    NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
-                 ": localhop_security unconfigured");
-    cb(SlAnnounceResult::VALIDATION_FAILURE);
-    return;
-  }
-
-  m_localhopValidator.validate(*pa.getData(),
+  m_paValidator.validate(*pa.getData(),
     [=] (const Data&) {
       Route route(pa, faceId);
       route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);

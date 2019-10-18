@@ -48,6 +48,7 @@ Service* Service::s_instance = nullptr;
 const std::string CFG_SECTION = "rib";
 const std::string CFG_LOCALHOST_SECURITY = "localhost_security";
 const std::string CFG_LOCALHOP_SECURITY = "localhop_security";
+const std::string CFG_PA_VALIDATION = "prefix_announcement_validation";
 const std::string CFG_PREFIX_PROPAGATE = "auto_prefix_propagate";
 const std::string CFG_READVERTISE_NLSR = "readvertise_nlsr";
 const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
@@ -166,7 +167,7 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
   for (const auto& item : section) {
     const std::string& key = item.first;
     const ConfigSection& value = item.second;
-    if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY) {
+    if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY || key == CFG_PA_VALIDATION) {
       hasLocalhop = key == CFG_LOCALHOP_SECURITY;
       ndn::ValidatorConfig testValidator(m_face);
       testValidator.load(value, filename);
@@ -203,6 +204,9 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
     }
     else if (key == CFG_LOCALHOP_SECURITY) {
       m_ribManager.enableLocalhop(value, filename);
+    }
+    else if (key == CFG_PA_VALIDATION) {
+      m_ribManager.applyPaConfig(value, filename);
     }
     else if (key == CFG_PREFIX_PROPAGATE) {
       wantPrefixPropagate = true;

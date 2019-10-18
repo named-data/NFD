@@ -414,6 +414,15 @@ rib
   ;   }
   ; }
 
+  ; The following prefix_announcement_validation accepts any prefix announcement
+  prefix_announcement_validation
+  {
+    trust-anchor
+    {
+      type any
+    }
+  }
+
   auto_prefix_propagate
   {
     cost 15 ; forwarding cost of prefix registered on remote router

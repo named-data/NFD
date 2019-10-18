@@ -72,6 +72,12 @@ public:
   disableLocalhop();
 
   /**
+   * @brief Apply prefix_announcement_validation configuration.
+   */
+  void
+  applyPaConfig(const ConfigSection& section, const std::string& filename);
+
+  /**
    * @brief Start accepting commands and dataset requests.
    */
   void
@@ -245,6 +251,7 @@ private:
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
+  ndn::ValidatorConfig m_paValidator;
   bool m_isLocalhopEnabled;
 
   scheduler::ScopedEventId m_activeFaceFetchEvent;
