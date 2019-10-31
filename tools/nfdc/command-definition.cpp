@@ -90,8 +90,7 @@ getMetavarFromType(ArgValueType vt)
     case ArgValueType::ROUTE_ORIGIN:
       return "origin";
   }
-  BOOST_ASSERT(false);
-  return "";
+  NDN_CXX_UNREACHABLE;
 }
 
 CommandDefinition::CommandDefinition(const std::string& noun, const std::string& verb)
@@ -247,8 +246,7 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
   switch (valueType) {
     case ArgValueType::NONE:
     case ArgValueType::ANY:
-      BOOST_ASSERT(false);
-      return {};
+      break;
 
     case ArgValueType::BOOLEAN:
       return parseBoolean(token);
@@ -289,8 +287,7 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
       return boost::lexical_cast<RouteOrigin>(token);
   }
 
-  BOOST_ASSERT(false);
-  return {};
+  NDN_CXX_UNREACHABLE;
 }
 
 } // namespace nfdc

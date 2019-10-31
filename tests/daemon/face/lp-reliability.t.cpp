@@ -69,25 +69,25 @@ private:
   void
   doSendInterest(const Interest&, const EndpointId&) final
   {
-    BOOST_ASSERT(false);
+    BOOST_FAIL("unexpected doSendInterest");
   }
 
   void
   doSendData(const Data&, const EndpointId&) final
   {
-    BOOST_ASSERT(false);
+    BOOST_FAIL("unexpected doSendData");
   }
 
   void
   doSendNack(const lp::Nack&, const EndpointId&) final
   {
-    BOOST_ASSERT(false);
+    BOOST_FAIL("unexpected doSendNack");
   }
 
   void
   doReceivePacket(const Block&, const EndpointId&) final
   {
-    BOOST_ASSERT(false);
+    BOOST_FAIL("unexpected doReceivePacket");
   }
 };
 

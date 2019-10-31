@@ -314,8 +314,7 @@ RibManager::makeAuthorization(const std::string& verb)
     BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
     BOOST_ASSERT(prefix == LOCALHOST_TOP_PREFIX || prefix == LOCALHOP_TOP_PREFIX);
 
-    ndn::ValidatorConfig& validator = prefix == LOCALHOST_TOP_PREFIX ?
-                                      m_localhostValidator : m_localhopValidator;
+    auto& validator = prefix == LOCALHOST_TOP_PREFIX ? m_localhostValidator : m_localhopValidator;
     validator.validate(interest,
                        bind([&interest, this, accept] { extractRequester(interest, accept); }),
                        bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
@@ -326,19 +325,18 @@ std::ostream&
 operator<<(std::ostream& os, RibManager::SlAnnounceResult res)
 {
   switch (res) {
-    case RibManager::SlAnnounceResult::OK:
-      return os << "OK";
-    case RibManager::SlAnnounceResult::ERROR:
-      return os << "ERROR";
-    case RibManager::SlAnnounceResult::VALIDATION_FAILURE:
-      return os << "VALIDATION_FAILURE";
-    case RibManager::SlAnnounceResult::EXPIRED:
-      return os << "EXPIRED";
-    case RibManager::SlAnnounceResult::NOT_FOUND:
-      return os << "NOT_FOUND";
+  case RibManager::SlAnnounceResult::OK:
+    return os << "OK";
+  case RibManager::SlAnnounceResult::ERROR:
+    return os << "ERROR";
+  case RibManager::SlAnnounceResult::VALIDATION_FAILURE:
+    return os << "VALIDATION_FAILURE";
+  case RibManager::SlAnnounceResult::EXPIRED:
+    return os << "EXPIRED";
+  case RibManager::SlAnnounceResult::NOT_FOUND:
+    return os << "NOT_FOUND";
   }
-  BOOST_ASSERT_MSG(false, "bad SlAnnounceResult");
-  return os;
+  NDN_THROW(std::invalid_argument("Unknown SlAnnounceResult"));
 }
 
 RibManager::SlAnnounceResult
@@ -351,10 +349,8 @@ RibManager::getSlAnnounceResultFromRibUpdateResult(RibUpdateResult r)
     return SlAnnounceResult::ERROR;
   case RibUpdateResult::EXPIRED:
     return SlAnnounceResult::EXPIRED;
-  default:
-    BOOST_ASSERT(false);
-    return SlAnnounceResult::ERROR;
   }
+  NDN_CXX_UNREACHABLE;
 }
 
 void
