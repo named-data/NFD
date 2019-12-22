@@ -34,6 +34,8 @@
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
+#include <boost/concept/assert.hpp>
+
 namespace nfd {
 namespace tools {
 namespace tests {

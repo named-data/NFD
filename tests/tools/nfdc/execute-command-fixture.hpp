@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,15 +28,19 @@
 
 #include "mock-nfd-mgmt-fixture.hpp"
 #include "nfdc/available-commands.hpp"
-#include <boost/algorithm/string/split.hpp>
+
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#if BOOST_VERSION >= 105900
+#include <boost/test/tools/output_test_stream.hpp>
+#else
+#include <boost/test/output_test_stream.hpp>
+#endif
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 namespace tests {
-
-using boost::test_tools::output_test_stream;
 
 /** \brief fixture to test command execution
  */
@@ -64,8 +68,8 @@ protected:
   }
 
 protected:
-  output_test_stream out;
-  output_test_stream err;
+  boost::test_tools::output_test_stream out;
+  boost::test_tools::output_test_stream err;
   int exitCode = -1;
 };
 

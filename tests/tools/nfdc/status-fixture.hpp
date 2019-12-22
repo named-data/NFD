@@ -31,6 +31,12 @@
 
 #include <ndn-cxx/security/validator-null.hpp>
 
+#if BOOST_VERSION >= 105900
+#include <boost/test/tools/output_test_stream.hpp>
+#else
+#include <boost/test/output_test_stream.hpp>
+#endif
+
 namespace nfd {
 namespace tools {
 namespace nfdc {

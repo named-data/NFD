@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,8 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_ALTERNATIVE_INIT_API
+// BOOST_TEST_MODULE is defined in tests/wscript
 
 #include <boost/version.hpp>
 
@@ -32,9 +31,9 @@
 // Boost.Test v3.3 (Boost 1.62) natively supports multi-logger output
 #include "boost-test.hpp"
 #else
+#define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_NO_MAIN
 #include "boost-test.hpp"
-
 #include "boost-multi-log-formatter.hpp"
 
 #include <boost/program_options/options_description.hpp>
