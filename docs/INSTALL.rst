@@ -54,7 +54,7 @@ Downloading from Git
 
 The first step is to obtain the source code for ``NFD`` and, its main dependency, the
 ``ndn-cxx`` library.  If you are not planning to work with the bleeding edge code, make
-sure you checkout the correct release tag (e.g., ``*-0.6.6``) for both repositories:
+sure you checkout the correct release tag (e.g., ``*-0.7.0``) for both repositories:
 
 ::
 
