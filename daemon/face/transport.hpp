@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -442,13 +442,6 @@ inline ssize_t
 Transport::getMtu() const
 {
   return m_mtu;
-}
-
-inline void
-Transport::setMtu(ssize_t mtu)
-{
-  BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu > 0);
-  m_mtu = mtu;
 }
 
 inline ssize_t

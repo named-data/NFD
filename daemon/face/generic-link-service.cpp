@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -171,7 +171,8 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId
     mtu -= CONGESTION_MARK_SIZE;
   }
 
-  BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu > 0);
+  // An MTU of 0 is allowed but will cause all packets to be dropped before transmission
+  BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu >= 0);
 
   if (m_options.allowFragmentation && mtu != MTU_UNLIMITED) {
     bool isOk = false;

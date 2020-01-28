@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -87,6 +87,25 @@ BOOST_AUTO_TEST_CASE(NetifStateChange)
   });
   BOOST_CHECK_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(NetifMtuChange)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeMulticast();
+  BOOST_CHECK_EQUAL(transport->getMtu(), netif->getMtu());
+
+  // netif changes MTU from initial value to 1024
+  netif->setMtu(1024);
+  BOOST_CHECK_EQUAL(transport->getMtu(), 1024);
+
+  // netif changes MTU from 1024 to 4000
+  netif->setMtu(4000);
+  BOOST_CHECK_EQUAL(transport->getMtu(), 4000);
+
+  // netif changes MTU from 4000 to 0
+  netif->setMtu(0);
+  BOOST_CHECK_EQUAL(transport->getMtu(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(Close)

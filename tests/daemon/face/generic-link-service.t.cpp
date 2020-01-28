@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -282,6 +282,24 @@ BOOST_AUTO_TEST_CASE(FragmentationDisabledExceedMtuDrop)
   BOOST_CHECK_EQUAL(service->getCounters().nOutOverMtu, 1);
 }
 
+// It is possible for some interfaces (e.g., virtual Ethernet) to have their MTU set to zero
+// This test case ensures that packets are dropped if the MTU is zero
+BOOST_AUTO_TEST_CASE(FragmentationDisabledZeroMtuDrop)
+{
+  // Initialize with Options that disable fragmentation
+  GenericLinkService::Options options;
+  options.allowFragmentation = false;
+  initialize(options);
+
+  transport->setMtu(0);
+
+  auto data = makeData("/test/data/123456789/987654321/123456789");
+  face->sendData(*data, 0);
+
+  BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
+  BOOST_CHECK_EQUAL(service->getCounters().nOutOverMtu, 1);
+}
+
 BOOST_AUTO_TEST_CASE(FragmentationUnlimitedMtu)
 {
   // Initialize with Options that enable fragmentation
@@ -325,6 +343,24 @@ BOOST_AUTO_TEST_CASE(FragmentationOverMtu)
   face->sendData(*data, 0);
 
   BOOST_CHECK_GT(transport->sentPackets.size(), 1);
+}
+
+// It is possible for some interfaces (e.g., virtual Ethernet) to have their MTU set to zero
+// This test case ensures that packets are dropped if the MTU is zero
+BOOST_AUTO_TEST_CASE(FragmentationZeroMtuDrop)
+{
+  // Initialize with Options that enable fragmentation
+  GenericLinkService::Options options;
+  options.allowFragmentation = true;
+  initialize(options);
+
+  transport->setMtu(0);
+
+  auto data = makeData("/test/data/123456789/987654321/123456789");
+  face->sendData(*data, 0);
+
+  BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
+  BOOST_CHECK_EQUAL(service->getCounters().nFragmentationErrors, 1);
 }
 
 BOOST_AUTO_TEST_CASE(ReassembleFragments)

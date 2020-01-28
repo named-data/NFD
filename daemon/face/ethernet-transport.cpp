@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,9 +58,14 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
     NDN_THROW_NESTED(Error(e.what()));
   }
 
-  m_netifStateConn = localEndpoint.onStateChanged.connect(
-    [=] (ndn::net::InterfaceState, ndn::net::InterfaceState newState) {
+  m_netifStateChangedConn = localEndpoint.onStateChanged.connect(
+    [this] (ndn::net::InterfaceState, ndn::net::InterfaceState newState) {
       handleNetifStateChange(newState);
+    });
+
+  m_netifMtuChangedConn = localEndpoint.onMtuChanged.connect(
+    [this] (uint32_t, uint32_t mtu) {
+      setMtu(mtu);
     });
 
   asyncRead();
