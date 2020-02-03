@@ -67,6 +67,7 @@ GenericLinkService::requestIdlePacket(const EndpointId& endpointId)
 {
   // No need to request Acks to attach to this packet from LpReliability, as they are already
   // attached in sendLpPacket
+  NFD_LOG_FACE_TRACE("IDLE packet requested");
   this->sendLpPacket({}, endpointId);
 }
 

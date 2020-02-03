@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 #define NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 
-#include "core/common.hpp"
+#include "face-common.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>
@@ -214,6 +214,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   scheduler::ScopedEventId m_idleAckTimer;
   ndn::util::RttEstimator m_rttEst;
 };
+
+std::ostream&
+operator<<(std::ostream& os, const FaceLogHelper<LpReliability>& flh);
 
 } // namespace face
 } // namespace nfd
