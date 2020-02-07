@@ -125,6 +125,14 @@ GenericLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointI
 }
 
 void
+GenericLinkService::assignSequences(std::vector<lp::Packet>& pkts)
+{
+  std::for_each(pkts.begin(), pkts.end(), [this] (lp::Packet& pkt) {
+    pkt.set<lp::SequenceField>(++m_lastSeqNo);
+  });
+}
+
+void
 GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket)
 {
   if (m_options.allowLocalFields) {
@@ -200,8 +208,8 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId
     BOOST_ASSERT(!frags.front().has<lp::FragCountField>());
   }
 
-  // Only assign sequences to fragments if packet contains more than 1 fragment
-  if (frags.size() > 1) {
+  // Only assign sequences to fragments if reliability enabled or if packet contains >1 fragment
+  if (m_options.reliabilityOptions.isEnabled || frags.size() > 1) {
     // Assign sequences to all fragments
     this->assignSequences(frags);
   }
@@ -213,18 +221,6 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId
   for (lp::Packet& frag : frags) {
     this->sendLpPacket(std::move(frag), endpointId);
   }
-}
-
-void
-GenericLinkService::assignSequence(lp::Packet& pkt)
-{
-  pkt.set<lp::SequenceField>(++m_lastSeqNo);
-}
-
-void
-GenericLinkService::assignSequences(std::vector<lp::Packet>& pkts)
-{
-  std::for_each(pkts.begin(), pkts.end(), [this] (auto& pkt) { this->assignSequence(pkt); });
 }
 
 void
@@ -279,7 +275,11 @@ GenericLinkService::doReceivePacket(const Block& packet, const EndpointId& endpo
     lp::Packet pkt(packet);
 
     if (m_options.reliabilityOptions.isEnabled) {
-      m_reliability.processIncomingPacket(pkt);
+      if (!m_reliability.processIncomingPacket(pkt)) {
+        NFD_LOG_FACE_TRACE("received duplicate fragment: DROP");
+        ++this->nDuplicateSequence;
+        return;
+      }
     }
 
     if (!pkt.has<lp::FragmentField>()) {

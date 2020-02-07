@@ -496,6 +496,33 @@ BOOST_AUTO_TEST_CASE(SendNack)
   BOOST_CHECK(nack1pkt.has<lp::TxSequenceField>());
 }
 
+BOOST_AUTO_TEST_CASE(DropDuplicatePacket)
+{
+  // Initialize with Options that enables reliability
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  options.reliabilityOptions.isEnabled = true;
+  initialize(options);
+
+  Interest interest("/test/prefix");
+  interest.setCanBePrefix(false);
+  lp::Packet pkt1;
+  pkt1.add<lp::FragmentField>({interest.wireEncode().begin(), interest.wireEncode().end()});
+  pkt1.add<lp::SequenceField>(7);
+  pkt1.add<lp::TxSequenceField>(12);
+  transport->receivePacket(pkt1.wireEncode());
+  BOOST_CHECK_EQUAL(service->getCounters().nInInterests, 1);
+  BOOST_CHECK_EQUAL(service->getCounters().nDuplicateSequence, 0);
+
+  lp::Packet pkt2;
+  pkt2.add<lp::FragmentField>({interest.wireEncode().begin(), interest.wireEncode().end()});
+  pkt2.add<lp::SequenceField>(7);
+  pkt2.add<lp::TxSequenceField>(13);
+  transport->receivePacket(pkt2.wireEncode());
+  BOOST_CHECK_EQUAL(service->getCounters().nInInterests, 1);
+  BOOST_CHECK_EQUAL(service->getCounters().nDuplicateSequence, 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // Reliability
 
 // congestion detection and marking

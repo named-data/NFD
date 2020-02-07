@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -80,6 +80,10 @@ public:
    *         of retransmissions
    */
   PacketCounter nRetxExhausted;
+
+  /** \brief count of LpPackets dropped due to duplicate Sequence numbers
+   */
+  PacketCounter nDuplicateSequence;
 
   /** \brief count of outgoing LpPackets that were marked with congestion marks
    */
@@ -199,6 +203,11 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   void
   doSendNack(const ndn::lp::Nack& nack, const EndpointId& endpointId) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
+  /** \brief assign consecutive sequence numbers to LpPackets
+   */
+  void
+  assignSequences(std::vector<lp::Packet>& pkts);
+
 private: // send path
   /** \brief encode link protocol fields from tags onto an outgoing LpPacket
    *  \param netPkt network-layer packet to extract tags from
@@ -214,16 +223,6 @@ private: // send path
    */
   void
   sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId, bool isInterest);
-
-  /** \brief assign a sequence number to an LpPacket
-   */
-  void
-  assignSequence(lp::Packet& pkt);
-
-  /** \brief assign consecutive sequence numbers to LpPackets
-   */
-  void
-  assignSequences(std::vector<lp::Packet>& pkts);
 
   /** \brief if the send queue is found to be congested, add a congestion mark to the packet
    *         according to CoDel
