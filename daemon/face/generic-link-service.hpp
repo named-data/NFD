@@ -102,7 +102,6 @@ public:
   class Options
   {
   public:
-    constexpr
     Options() noexcept
     {
     }
@@ -155,6 +154,16 @@ public:
     /** \brief enables self-learning forwarding support
      */
     bool allowSelfLearning = true;
+
+    /** \brief overrides MTU provided by Transport
+     *
+     *  This MTU value will be used instead of the MTU provided by the transport if it is less than
+     *  the transport MTU. However, it will not be utilized when the transport MTU is unlimited.
+     *
+     *  Acceptable values for the override MTU are values >= MIN_MTU, which can be validated before
+     *  being set with canOverrideMtuTo().
+     */
+    ssize_t overrideMtu = std::numeric_limits<ssize_t>::max();
   };
 
   /** \brief counters provided by GenericLinkService
@@ -176,6 +185,16 @@ public:
 
   const Counters&
   getCounters() const OVERRIDE_WITH_TESTS_ELSE_FINAL;
+
+  ssize_t
+  getEffectiveMtu() const OVERRIDE_WITH_TESTS_ELSE_FINAL;
+
+  /** \brief Whether MTU can be overridden to the specified value
+   *
+   *  If the transport MTU is unlimited, then this will always return false.
+   */
+  bool
+  canOverrideMtuTo(ssize_t mtu) const;
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   /** \brief request an IDLE packet to transmit pending service fields

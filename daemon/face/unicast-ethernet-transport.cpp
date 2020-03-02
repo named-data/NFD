@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,8 +36,7 @@ NFD_LOG_INIT(UnicastEthernetTransport);
 UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                                                    const ethernet::Address& remoteEndpoint,
                                                    ndn::nfd::FacePersistency persistency,
-                                                   time::nanoseconds idleTimeout,
-                                                   optional<ssize_t> overrideMtu)
+                                                   time::nanoseconds idleTimeout)
   : EthernetTransport(localEndpoint, remoteEndpoint)
   , m_idleTimeout(idleTimeout)
 {
@@ -46,13 +45,7 @@ UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterf
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-
-  if (overrideMtu) {
-    this->setMtu(std::min<ssize_t>(localEndpoint.getMtu(), *overrideMtu));
-  }
-  else {
-    this->setMtu(localEndpoint.getMtu());
-  }
+  this->setMtu(localEndpoint.getMtu());
 
   NFD_LOG_FACE_DEBUG("Creating transport");
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,8 +41,7 @@ class UnicastUdpTransport final : public DatagramTransport<boost::asio::ip::udp,
 public:
   UnicastUdpTransport(protocol::socket&& socket,
                       ndn::nfd::FacePersistency persistency,
-                      time::nanoseconds idleTimeout,
-                      optional<ssize_t> overrideMtu = {});
+                      time::nanoseconds idleTimeout);
 
 protected:
   bool

@@ -62,6 +62,25 @@ GenericLinkService::setOptions(const GenericLinkService::Options& options)
   m_reliability.setOptions(m_options.reliabilityOptions);
 }
 
+ssize_t
+GenericLinkService::getEffectiveMtu() const
+{
+  // Since MTU_UNLIMITED is negative, it will implicitly override any finite override MTU
+  return std::min(m_options.overrideMtu, getTransport()->getMtu());
+}
+
+bool
+GenericLinkService::canOverrideMtuTo(ssize_t mtu) const
+{
+  // Not allowed to override unlimited transport MTU
+  if (getTransport()->getMtu() == MTU_UNLIMITED) {
+    return false;
+  }
+
+  // Override MTU must be at least MIN_MTU (also implicitly forbids MTU_UNLIMITED and MTU_INVALID)
+  return mtu >= MIN_MTU;
+}
+
 void
 GenericLinkService::requestIdlePacket(const EndpointId& endpointId)
 {
@@ -74,7 +93,7 @@ GenericLinkService::requestIdlePacket(const EndpointId& endpointId)
 void
 GenericLinkService::sendLpPacket(lp::Packet&& pkt, const EndpointId& endpointId)
 {
-  const ssize_t mtu = this->getTransport()->getMtu();
+  const ssize_t mtu = getEffectiveMtu();
 
   if (m_options.reliabilityOptions.isEnabled) {
     m_reliability.piggyback(pkt, mtu);
@@ -169,7 +188,7 @@ void
 GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId, bool isInterest)
 {
   std::vector<lp::Packet> frags;
-  ssize_t mtu = this->getTransport()->getMtu();
+  ssize_t mtu = getEffectiveMtu();
 
   // Make space for feature fields in fragments
   if (m_options.reliabilityOptions.isEnabled && mtu != MTU_UNLIMITED) {

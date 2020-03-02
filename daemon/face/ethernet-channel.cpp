@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -201,11 +201,13 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
   options.allowFragmentation = true;
   options.allowReassembly = true;
   options.reliabilityOptions.isEnabled = params.wantLpReliability;
+  if (params.mtu) {
+    options.overrideMtu = *params.mtu;
+  }
 
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
-                                                         params.persistency, m_idleFaceTimeout,
-                                                         params.mtu);
+                                                         params.persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;

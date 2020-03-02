@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -268,10 +268,10 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
     return;
   }
 
-  if (req.params.mtu && *req.params.mtu < Transport::MIN_MTU) {
+  if (req.params.mtu && *req.params.mtu < MIN_MTU) {
     // The specified MTU must be greater than the minimum possible
-    NFD_LOG_TRACE("createFace cannot create a face with MTU less than " << Transport::MIN_MTU);
-    onFailure(406, "MTU cannot be less than " + to_string(Transport::MIN_MTU));
+    NFD_LOG_TRACE("createFace: override MTU cannot be less than " << MIN_MTU);
+    onFailure(406, "Override MTU cannot be less than " + to_string(MIN_MTU));
     return;
   }
 

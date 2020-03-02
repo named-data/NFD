@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,7 +117,8 @@ FaceManager::createFace(const ControlParameters& parameters,
     faceParams.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
   }
   if (parameters.hasMtu()) {
-    faceParams.mtu = parameters.getMtu();
+    // Cap this value at the maximum representable value in an ssize_t
+    faceParams.mtu = std::min<uint64_t>(std::numeric_limits<ssize_t>::max(), parameters.getMtu());
   }
   faceParams.wantLocalFields = parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
                                parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
@@ -152,13 +153,10 @@ template<typename T>
 static void
 copyMtu(const Face& face, T& to)
 {
-  auto transport = face.getTransport();
-  BOOST_ASSERT(transport != nullptr);
-
-  if (transport->getMtu() > 0) {
-    to.setMtu(std::min(static_cast<size_t>(transport->getMtu()), ndn::MAX_NDN_PACKET_SIZE));
+  if (face.getMtu() >= 0) {
+    to.setMtu(std::min<size_t>(face.getMtu(), ndn::MAX_NDN_PACKET_SIZE));
   }
-  else if (transport->getMtu() == face::MTU_UNLIMITED) {
+  else if (face.getMtu() == face::MTU_UNLIMITED) {
     to.setMtu(ndn::MAX_NDN_PACKET_SIZE);
   }
 }

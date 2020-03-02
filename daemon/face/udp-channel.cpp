@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -180,9 +180,13 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
     options.defaultCongestionThreshold = *params.defaultCongestionThreshold;
   }
 
+  if (params.mtu) {
+    options.overrideMtu = *params.mtu;
+  }
+
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastUdpTransport>(std::move(socket), params.persistency,
-                                                    m_idleFaceTimeout, params.mtu);
+                                                    m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;

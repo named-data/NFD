@@ -132,6 +132,61 @@ BOOST_AUTO_TEST_CASE(SendData)
   BOOST_CHECK(!data1pkt.has<lp::SequenceField>());
 }
 
+BOOST_AUTO_TEST_CASE(SendDataOverrideMtu)
+{
+  // Initialize with Options that disables all services and does not override MTU
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+  BOOST_CHECK_EQUAL(service->getEffectiveMtu(), MTU_UNLIMITED);
+  BOOST_CHECK_EQUAL(face->getMtu(), MTU_UNLIMITED);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MTU_UNLIMITED), false);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MTU_INVALID), false);
+  // Attempts to override MTU will fail when transport MTU is unlimited
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(4000), false);
+
+  // Initialize with Options that disables all services and overrides MTU (Transport MTU 8800)
+  options.overrideMtu = MIN_MTU;
+  initialize(options, ndn::MAX_NDN_PACKET_SIZE);
+
+  // Ensure effective MTU is override value
+  BOOST_CHECK_EQUAL(transport->getMtu(), ndn::MAX_NDN_PACKET_SIZE);
+  BOOST_CHECK_EQUAL(service->getEffectiveMtu(), MIN_MTU);
+  BOOST_CHECK_EQUAL(face->getMtu(), MIN_MTU);
+
+  // Check MTU overrides with Transport MTU finite
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MTU_UNLIMITED), false);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MTU_INVALID), false);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MIN_MTU - 1), false);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(MIN_MTU), true);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(4000), true);
+  BOOST_CHECK_EQUAL(service->canOverrideMtuTo(20000), true);
+
+  // Send Data with less than MIN_MTU octets
+  auto data1 = makeData("/localhost");
+  BOOST_CHECK_LE(data1->wireEncode().size(), MIN_MTU);
+  face->sendData(*data1, 0);
+
+  BOOST_CHECK_EQUAL(service->getCounters().nOutData, 1);
+  BOOST_CHECK_EQUAL(service->getCounters().nOutOverMtu, 0);
+
+  // Send Data with more than MIN_MTU octets
+  auto data2 = makeData("/localhost/test/1234567890/1234567890/1234567890/1234567890");
+  BOOST_CHECK_GT(data2->wireEncode().size(), MIN_MTU);
+  face->sendData(*data2, 0);
+
+  BOOST_CHECK_EQUAL(service->getCounters().nOutData, 2);
+  BOOST_CHECK_EQUAL(service->getCounters().nOutOverMtu, 1);
+
+  // Override MTU greater than the Transport's MTU will not be utilized
+  options.overrideMtu = 5000;
+  initialize(options, 4000);
+  BOOST_CHECK_EQUAL(service->getEffectiveMtu(), 4000);
+  BOOST_CHECK_EQUAL(face->getMtu(), 4000);
+}
+
 BOOST_AUTO_TEST_CASE(SendNack)
 {
   // Initialize with Options that disables all services

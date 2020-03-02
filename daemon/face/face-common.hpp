@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,6 +53,12 @@ const FaceId FACEID_CONTENT_STORE = 254;
 const FaceId FACEID_NULL = 255;
 /// upper bound of reserved FaceIds
 const FaceId FACEID_RESERVED_MAX = 255;
+
+/** \brief Minimum MTU that may be set
+ *
+ *  This is done to ensure the NDNLPv2 fragmentation feature functions properly.
+ */
+const ssize_t MIN_MTU = 64;
 
 /** \brief Identifies a remote endpoint on the link.
  *

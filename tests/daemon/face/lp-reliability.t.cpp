@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtuNoSpace)
   // for Sequence and TxSequence, leaving 6 octets for piggybacking. Each Ack header is 12 octets,
   // so there's no room to piggyback any Ack in LpPacket.
 
-  transport->setMtu(Transport::MIN_MTU);
+  transport->setMtu(MIN_MTU);
 
   for (lp::Sequence i = 1000; i < 1100; i++) {
     reliability->m_ackQueue.push(i);

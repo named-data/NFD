@@ -339,13 +339,6 @@ private: // to be overridden by subclass
   virtual void
   doSend(const Block& packet, const EndpointId& endpoint) = 0;
 
-public:
-  /** \brief minimum MTU that may be set on a transport
-   *
-   *  This is done to ensure the NDNLPv2 fragmentation feature functions properly.
-   */
-  static constexpr ssize_t MIN_MTU = 64;
-
 private:
   Face* m_face;
   LinkService* m_service;

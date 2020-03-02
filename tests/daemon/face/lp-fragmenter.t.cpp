@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(FragmentSingleFragment)
 
 BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
 {
-  size_t mtu = Transport::MIN_MTU;
+  size_t mtu = MIN_MTU;
 
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
 BOOST_AUTO_TEST_CASE(FragmentMtuTooSmall)
 {
   size_t mtu = 20;
-  BOOST_ASSERT(mtu < Transport::MIN_MTU);
+  BOOST_ASSERT(mtu < MIN_MTU);
 
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
