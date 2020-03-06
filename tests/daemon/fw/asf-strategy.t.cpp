@@ -143,7 +143,8 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   // and the probe should return Data quicker. ASF should then use the Face
   // to nodeB to forward the remaining Interests.
   BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 30);
-  BOOST_CHECK_GE(linkAB->getFace(nodeA).getCounters().nOutInterests, 24);
+  // Because of exploration, will forward to AB and AD simultaneously at least once
+  BOOST_CHECK_GE(linkAB->getFace(nodeA).getCounters().nOutInterests, 25);
   BOOST_CHECK_LE(linkAD->getFace(nodeA).getCounters().nOutInterests, 6);
 
   // If the link from nodeA to nodeB fails, ASF should start using the Face
@@ -151,11 +152,10 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   linkAB->fail();
 
   runConsumer();
-
-  // Only 59 Data because the first Interest to nodeB after the failure should timeout
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 59);
-  BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 30);
-  BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 30);
+  // We experience 3 silent timeouts before marking AB as timed out on the fourth interest.
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 56);
+  BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 36);
+  BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 24);
 
   // If the link from nodeA to nodeB recovers, ASF should probe the Face
   // to nodeB and start using it again.
@@ -165,8 +165,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   this->advanceClocks(10_ms, 10_s);
 
   runConsumer();
-
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 89);
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 86);
   BOOST_CHECK_GE(linkAB->getFace(nodeA).getCounters().nOutInterests, 50);
   BOOST_CHECK_LE(linkAD->getFace(nodeA).getCounters().nOutInterests, 40);
 
@@ -176,9 +175,9 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
 
   runConsumer();
 
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 89);
-  BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 61); // FIXME #3830
-  BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 59); // FIXME #3830
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 86);
+  BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 65); // FIXME #3830
+  BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 57); // FIXME #3830
 }
 
 BOOST_FIXTURE_TEST_CASE(Nack, AsfGridFixture)

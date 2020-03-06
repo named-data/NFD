@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,7 +83,7 @@ private:
                            bool isNewInterest = true);
 
   void
-  onTimeout(const Name& interestName, FaceId faceId);
+  onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNack);
 
   void
   sendNoRouteNack(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry);
@@ -92,7 +92,7 @@ private:
   AsfMeasurements m_measurements;
   ProbingModule m_probing;
   RetxSuppressionExponential m_retxSuppression;
-  size_t m_maxSilentTimeouts = 0;
+  size_t m_nMaxSilentTimeouts = 3;
 
   static const time::milliseconds RETX_SUPPRESSION_INITIAL;
   static const time::milliseconds RETX_SUPPRESSION_MAX;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,7 +58,7 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
   NFD_LOG_DEBUG("probing-interval=" << m_probing.getProbingInterval()
-                << " n-silent-timeouts=" << m_maxSilentTimeouts);
+                << " n-silent-timeouts=" << m_nMaxSilentTimeouts);
 }
 
 const Name&
@@ -98,7 +98,7 @@ AsfStrategy::processParams(const PartialName& parsed)
       m_probing.setProbingInterval(getParamValue(f, s));
     }
     else if (f == "n-silent-timeouts") {
-      m_maxSilentTimeouts = getParamValue(f, s);
+      m_nMaxSilentTimeouts = getParamValue(f, s);
     }
     else {
       NDN_THROW(std::invalid_argument("Parameter should be probing-interval or n-silent-timeouts"));
@@ -193,7 +193,8 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
 
   // Extend lifetime for measurements associated with Face
   namespaceInfo->extendFaceInfoLifetime(*faceInfo, ingress.face.getId());
-
+  // Extend PIT entry timer to allow slower probes to arrive
+  this->setExpiryTimer(pitEntry, 50_ms);
   faceInfo->cancelTimeout(data.getName());
 }
 
@@ -202,7 +203,7 @@ AsfStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                               const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG(nack.getInterest() << " nack from=" << ingress << " reason=" << nack.getReason());
-  onTimeout(pitEntry->getName(), ingress.face.getId());
+  onTimeoutOrNack(pitEntry->getName(), ingress.face.getId(), true);
 }
 
 void
@@ -230,7 +231,7 @@ AsfStrategy::forwardInterest(const Interest& interest, Face& outFace, const fib:
   if (!faceInfo.isTimeoutScheduled()) {
     auto timeout = faceInfo.scheduleTimeout(interest.getName(),
       [this, name = interest.getName(), faceId = egress.face.getId()] {
-        onTimeout(name, faceId);
+        onTimeoutOrNack(name, faceId, false);
       });
     NFD_LOG_TRACE("Scheduled timeout for " << fibEntry.getPrefix() << " to=" << egress
                   << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
@@ -318,7 +319,7 @@ AsfStrategy::getBestFaceForForwarding(const Interest& interest, const Face& inFa
 }
 
 void
-AsfStrategy::onTimeout(const Name& interestName, FaceId faceId)
+AsfStrategy::onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNack)
 {
   NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(interestName);
   if (namespaceInfo == nullptr) {
@@ -336,7 +337,7 @@ AsfStrategy::onTimeout(const Name& interestName, FaceId faceId)
   size_t nTimeouts = faceInfo.getNSilentTimeouts() + 1;
   faceInfo.setNSilentTimeouts(nTimeouts);
 
-  if (nTimeouts <= m_maxSilentTimeouts) {
+  if (nTimeouts <= m_nMaxSilentTimeouts && !isNack) {
     NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts << " ignoring");
     // Extend lifetime for measurements associated with Face
     namespaceInfo->extendFaceInfoLifetime(faceInfo, faceId);
