@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,7 +58,7 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("congestion-marking", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
     .addArg("congestion-marking-interval", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
     .addArg("default-congestion-threshold", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
-    .addArg("mtu", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+    .addArg("mtu", ArgValueType::STRING, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -160,13 +160,30 @@ FaceModule::create(ExecuteContext& ctx)
   auto congestionMarking = ctx.args.getTribool("congestion-marking");
   auto baseCongestionMarkingIntervalMs = ctx.args.getOptional<uint64_t>("congestion-marking-interval");
   auto defaultCongestionThreshold = ctx.args.getOptional<uint64_t>("default-congestion-threshold");
-  auto mtu = ctx.args.getOptional<uint64_t>("mtu");
+  auto mtuArg = ctx.args.getOptional<std::string>("mtu");
+
+  // MTU is nominally a uint64_t, but can be the string value 'auto' to unset an override MTU
+  optional<uint64_t> mtu;
+  if (mtuArg == "auto") {
+    mtu = std::numeric_limits<uint64_t>::max();
+  }
+  else if (mtuArg) {
+    // boost::lexical_cast<uint64_t> will accept negative numbers
+    int64_t v = -1;
+    if (!boost::conversion::try_lexical_convert<int64_t>(*mtuArg, v) || v < 0) {
+      ctx.exitCode = 2;
+      ctx.err << "MTU must either be a non-negative integer or 'auto'\n";
+      return;
+    }
+
+    mtu = static_cast<uint64_t>(v);
+  }
 
   FaceUri canonicalRemote;
   optional<FaceUri> canonicalLocal;
 
   auto handleCanonizeError = [&] (const FaceUri& faceUri, const std::string& error) {
-    ctx.exitCode = 4;
+    ctx.exitCode = static_cast<int>(FindFace::Code::CANONIZE_ERROR);
     ctx.err << "Error when canonizing '" << faceUri << "': " << error << '\n';
   };
 
@@ -194,59 +211,54 @@ FaceModule::create(ExecuteContext& ctx)
       return false;
     }
 
+    bool isChangingParams = false;
+    ControlParameters params;
+    params.setFaceId(respParams.getFaceId());
+
     if (mtu && (!respParams.hasMtu() || respParams.getMtu() != *mtu)) {
-      // Mtu cannot be changed with faces/update
-      return false;
+      isChangingParams = true;
+      params.setMtu(*mtu);
     }
-    else if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
-      // need to upgrade persistency
-      ControlParameters params;
-      params.setFaceId(respParams.getFaceId()).setFacePersistency(persistency);
-      if (!boost::logic::indeterminate(lpReliability)) {
-        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
-      }
-      ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
-          params,
-          bind(updateFace, respParams, _1),
-          ctx.makeCommandFailureHandler("upgrading face persistency"),
-          ctx.makeCommandOptions());
+
+    if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
+      isChangingParams = true;
+      params.setFacePersistency(persistency);
     }
-    else if ((!boost::logic::indeterminate(lpReliability) &&
-              lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) ||
-             (!boost::logic::indeterminate(congestionMarking) &&
-              congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) ||
-             baseCongestionMarkingIntervalMs ||
-             defaultCongestionThreshold) {
-      ControlParameters params;
-      params.setFaceId(respParams.getFaceId());
 
-      if (!boost::logic::indeterminate(lpReliability) &&
-          lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
-      }
-      if (!boost::logic::indeterminate(congestionMarking) &&
-          congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
-        params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, bool(congestionMarking));
-      }
+    if (!boost::logic::indeterminate(lpReliability) &&
+        lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+      isChangingParams = true;
+      params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
+    }
 
-      if (baseCongestionMarkingIntervalMs) {
-        params.setBaseCongestionMarkingInterval(time::milliseconds(*baseCongestionMarkingIntervalMs));
-      }
+    if (!boost::logic::indeterminate(congestionMarking) &&
+        congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+      isChangingParams = true;
+      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, bool(congestionMarking));
+    }
 
-      if (defaultCongestionThreshold) {
-        params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
-      }
+    if (baseCongestionMarkingIntervalMs) {
+      isChangingParams = true;
+      params.setBaseCongestionMarkingInterval(time::milliseconds(*baseCongestionMarkingIntervalMs));
+    }
 
+    if (defaultCongestionThreshold) {
+      isChangingParams = true;
+      params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
+    }
+
+    if (isChangingParams) {
       ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
-          params,
-          bind(updateFace, respParams, _1),
-          ctx.makeCommandFailureHandler("updating face"),
-          ctx.makeCommandOptions());
+        params,
+        bind(updateFace, respParams, _1),
+        ctx.makeCommandFailureHandler("updating face"),
+        ctx.makeCommandOptions());
     }
     else {
       // don't do anything
       printPositiveResult("face-exists", respParams);
     }
+
     return true;
   };
 

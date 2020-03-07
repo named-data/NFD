@@ -117,7 +117,7 @@ FaceManager::createFace(const ControlParameters& parameters,
     faceParams.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
   }
   if (parameters.hasMtu()) {
-    // Cap this value at the maximum representable value in an ssize_t
+    // The face system limits MTUs to ssize_t, but the management protocol uses uint64_t
     faceParams.mtu = std::min<uint64_t>(std::numeric_limits<ssize_t>::max(), parameters.getMtu());
   }
   faceParams.wantLocalFields = parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
@@ -167,6 +167,7 @@ makeUpdateFaceResponse(const Face& face)
   ControlParameters params;
   params.setFaceId(face.getId())
         .setFacePersistency(face.getPersistency());
+  copyMtu(face, params);
 
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
   if (linkService != nullptr) {
@@ -187,8 +188,6 @@ makeCreateFaceResponse(const Face& face)
   ControlParameters params = makeUpdateFaceResponse(face);
   params.setUri(face.getRemoteUri().toString())
         .setLocalUri(face.getLocalUri().toString());
-
-  copyMtu(face, params);
 
   return params;
 }
@@ -244,6 +243,11 @@ updateLinkServiceOptions(Face& face, const ControlParameters& parameters)
     options.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
   }
 
+  if (parameters.hasMtu()) {
+    // The face system limits MTUs to ssize_t, but the management protocol uses uint64_t
+    options.overrideMtu = std::min<uint64_t>(std::numeric_limits<ssize_t>::max(), parameters.getMtu());
+  }
+
   linkService->setOptions(options);
 }
 
@@ -290,6 +294,19 @@ FaceManager::updateFace(const Interest& interest,
       NFD_LOG_TRACE("cannot change face persistency to " << persistency);
       areParamsValid = false;
       response.setFacePersistency(persistency);
+    }
+  }
+
+  // check whether the requested MTU override is valid (if it's present)
+  if (parameters.hasMtu()) {
+    auto mtu = parameters.getMtu();
+    // The face system limits MTUs to ssize_t, but the management protocol uses uint64_t
+    auto actualMtu = std::min<uint64_t>(std::numeric_limits<ssize_t>::max(), mtu);
+    auto linkService = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
+    if (linkService == nullptr || !linkService->canOverrideMtuTo(actualMtu)) {
+      NFD_LOG_TRACE("cannot override face MTU to " << mtu);
+      areParamsValid = false;
+      response.setMtu(mtu);
     }
   }
 

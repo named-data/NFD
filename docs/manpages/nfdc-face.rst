@@ -27,6 +27,8 @@ When multiple filters are specified, returned faces must satisfy all filters.
 The **nfdc face show** command shows properties and statistics of one specific face.
 
 The **nfdc face create** command creates a UDP unicast, TCP, or Ethernet unicast face.
+If the face already exists, the specified arguments will be used to update its properties, if
+possible.
 Local FaceUri is required for creating Ethernet unicast faces; otherwise it must be omitted.
 The NDNLPv2 unicast reliability feature may be explicitly enabled by specifying **reliability on**
 or explicitly disabled by specifying **reliability off**.
@@ -38,11 +40,10 @@ Congestion marking is enabled by default on TCP, UDP, and Unix stream faces and 
 default on all other face types.
 Parameters for this feature can set with the **congestion-marking-interval** option (specified in
 milliseconds) and the **default-congestion-threshold** option (specified in bytes).
-The MTUs of unicast Ethernet and UDP faces may be overridden using the **mtu** parameter (specified
-in bytes).
-However, a face may choose to limit the range of acceptable values for this parameter or disregard
-it altogether when setting its MTU.
-The MTU of an existing face may not be modified using this parameter and will result in an error.
+The effective MTUs of unicast Ethernet and UDP faces may be overridden using the **mtu** parameter
+(specified in bytes).
+The forwarder may limit the range of this override MTU and will use the minimum of it and the MTU
+of the underlying Ethernet or UDP transport.
 
 The **nfdc face destroy** command destroys an existing face.
 
@@ -93,6 +94,12 @@ OPTIONS
     It is the maximum bound of the congestion threshold for the face, as well as the default
     threshold used if the face does not support retrieving the capacity of the send queue.
 
+<MTU>
+    The MTU used to override the MTU of the underlying transport on Ethernet and UDP faces.
+    This MTU serves as an upper bound for the MTU provided by the transport.
+    The range of acceptable values may be limited by the forwarder.
+    To unset this override, specify the MTU as "auto".
+
 EXIT CODES
 ----------
 0: Success
@@ -135,8 +142,7 @@ nfdc face create remote udp://router.example.net congestion-marking off
     Create a face with the specified remote FaceUri and explicitly disable congestion marking.
 
 nfdc face create remote udp://router.example.net mtu 4000
-    Create a face with the specified remote FaceUri and an MTU of 4000 bytes (which may be ignored
-    or limited to within a certain range by the internal logic of the face).
+    Create a face with the specified remote FaceUri and set the override MTU to 4000 bytes.
 
 nfdc face destroy 300
     Destroy the face whose FaceId is 300.

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -476,17 +476,74 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
   BOOST_CHECK(err.is_empty());
 }
 
-BOOST_AUTO_TEST_CASE(MtuExistingFace)
+BOOST_AUTO_TEST_CASE(ChangingMtu)
 {
-  this->processInterest = [this] (const Interest& interest) {
-    this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND, 4000);
-    // no command other than faces/create is expected
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT, 5000);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(!req.hasFacePersistency());
+    BOOST_REQUIRE(req.hasMtu());
+    BOOST_CHECK_EQUAL(req.getMtu(), 4000);
+    BOOST_CHECK(!req.hasFlags());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(4000)
+        .setFlags(0);
+    this->succeedCommand(interest, resp);
   };
 
-  this->execute("face create udp://100.77.30.65 mtu 5000");
-  BOOST_CHECK_EQUAL(exitCode, 1);
-  BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 409 when creating face: conflict-409\n"));
+  this->execute("face create udp://100.77.30.65 mtu 4000");
+  BOOST_CHECK(hasUpdateCommand);
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off congestion-marking=off mtu=4000\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(AutoMtu)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT, 5000);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(!req.hasFacePersistency());
+    BOOST_REQUIRE(req.hasMtu());
+    BOOST_CHECK_EQUAL(req.getMtu(), std::numeric_limits<uint64_t>::max());
+    BOOST_CHECK(!req.hasFlags());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(ndn::MAX_NDN_PACKET_SIZE)
+        .setFlags(0);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 mtu auto");
+  BOOST_CHECK(hasUpdateCommand);
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off congestion-marking=off mtu=8800\n"));
+  BOOST_CHECK(err.is_empty());
 }
 
 BOOST_AUTO_TEST_CASE(UpgradingPersistency)
@@ -509,6 +566,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
     ControlParameters resp;
     resp.setFaceId(1172)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(1024)
         .setFlags(0);
     this->succeedCommand(interest, resp);
   };
@@ -518,7 +576,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off congestion-marking=off\n"));
+                           "reliability=off congestion-marking=off mtu=1024\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -537,11 +595,13 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencySameMtu)
     BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
     BOOST_REQUIRE(req.hasFacePersistency());
     BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    BOOST_CHECK(!req.hasMtu());
     BOOST_CHECK(!req.hasFlags());
 
     ControlParameters resp;
     resp.setFaceId(1172)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(8800)
         .setFlags(0);
     this->succeedCommand(interest, resp);
   };
@@ -551,7 +611,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencySameMtu)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off congestion-marking=off\n"));
+                           "reliability=off congestion-marking=off mtu=8800\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -604,6 +664,7 @@ BOOST_AUTO_TEST_CASE(EnablingReliability)
     ControlParameters resp;
     resp.setFaceId(1172)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
     this->succeedCommand(interest, resp);
   };
@@ -612,7 +673,7 @@ BOOST_AUTO_TEST_CASE(EnablingReliability)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=on congestion-marking=off\n"));
+                           "reliability=on congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -635,6 +696,7 @@ BOOST_AUTO_TEST_CASE(DisablingReliability)
     ControlParameters resp;
     resp.setFaceId(1172)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false, false);
     this->succeedCommand(interest, resp);
   };
@@ -643,7 +705,7 @@ BOOST_AUTO_TEST_CASE(DisablingReliability)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off congestion-marking=off\n"));
+                           "reliability=off congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -670,6 +732,7 @@ BOOST_AUTO_TEST_CASE(EnablingCongestionMarking)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setBaseCongestionMarkingInterval(100_ms)
         .setDefaultCongestionThreshold(65536)
+        .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true, false);
     this->succeedCommand(interest, resp);
   };
@@ -679,7 +742,8 @@ BOOST_AUTO_TEST_CASE(EnablingCongestionMarking)
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=on "
-                           "congestion-marking-interval=100ms default-congestion-threshold=65536B\n"));
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B "
+                           "mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -706,6 +770,7 @@ BOOST_AUTO_TEST_CASE(DisablingCongestionMarking)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setBaseCongestionMarkingInterval(100_ms)
         .setDefaultCongestionThreshold(65536)
+        .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false, false);
     this->succeedCommand(interest, resp);
   };
@@ -715,7 +780,81 @@ BOOST_AUTO_TEST_CASE(DisablingCongestionMarking)
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off "
-                           "congestion-marking-interval=100ms default-congestion-threshold=65536B\n"));
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B "
+                           "mtu=4000\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtu)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND, 8800);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_REQUIRE(req.hasFacePersistency());
+    BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    BOOST_REQUIRE(req.hasMtu());
+    BOOST_CHECK_EQUAL(req.getMtu(), 4000);
+    BOOST_CHECK(!req.hasFlags());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(4000)
+        .setFlags(0);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 mtu 4000");
+  BOOST_CHECK(hasUpdateCommand);
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off congestion-marking=off mtu=4000\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtuAndFlags)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND, 8800);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_REQUIRE(req.hasFacePersistency());
+    BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    BOOST_REQUIRE(req.hasMtu());
+    BOOST_CHECK_EQUAL(req.getMtu(), 4000);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+    BOOST_CHECK(req.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setMtu(4000)
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 mtu 4000 reliability on");
+  BOOST_CHECK(hasUpdateCommand);
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=on congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -776,7 +915,7 @@ BOOST_AUTO_TEST_CASE(ErrorUpdate)
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when upgrading face persistency: request timed out\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when updating face: request timed out\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // CreateCommand

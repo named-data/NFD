@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,8 +54,8 @@ public:
   void
   createFace(const std::string& uri = "tcp4://127.0.0.1:26363",
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             optional<time::nanoseconds> baseCongestionMarkingInterval = {},
-             optional<uint64_t> defaultCongestionThreshold = {},
+             optional<time::nanoseconds> baseCongestionMarkingInterval = nullopt,
+             optional<uint64_t> defaultCongestionThreshold = nullopt,
              bool enableLocalFields = false,
              bool enableReliability = false,
              boost::logic::tribool enableCongestionMarking = boost::logic::indeterminate)
@@ -232,6 +232,79 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, F
       ControlParameters resp;
       resp.wireDecode(actual.getBody());
       BOOST_CHECK_EQUAL(resp.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  });
+}
+
+BOOST_AUTO_TEST_CASE(UpdateMtu)
+{
+  createFace("udp4://127.0.0.1:26363");
+
+  ControlParameters validParams;
+  validParams.setFaceId(faceId);
+  validParams.setMtu(4000);
+
+  ControlParameters mtuTooLow;
+  mtuTooLow.setFaceId(faceId);
+  mtuTooLow.setMtu(63);
+
+  updateFace(validParams, false, [] (const ControlResponse& actual) {
+    BOOST_CHECK_EQUAL(actual.getCode(), 200);
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_REQUIRE(actualParams.hasMtu());
+      // Check for changed MTU
+      BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
+    }
+    else {
+      BOOST_ERROR("Valid: Response does not contain ControlParameters");
+    }
+  });
+
+  updateFace(mtuTooLow, false, [] (const ControlResponse& actual) {
+    BOOST_CHECK_EQUAL(actual.getCode(), 409);
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(!actualParams.hasFaceId());
+      BOOST_REQUIRE(actualParams.hasMtu());
+      // Check for returned invalid parameter
+      BOOST_CHECK_EQUAL(actualParams.getMtu(), 63);
+    }
+    else {
+      BOOST_ERROR("Too low: Response does not contain ControlParameters");
+    }
+  });
+}
+
+BOOST_AUTO_TEST_CASE(UpdateMtuUnsupportedFace)
+{
+  createFace("tcp4://127.0.0.1:26363");
+
+  ControlParameters updateParams;
+  updateParams.setFaceId(faceId);
+  updateParams.setMtu(4000);
+
+  updateFace(updateParams, false, [] (const ControlResponse& actual) {
+    BOOST_CHECK_EQUAL(actual.getCode(), 409);
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(!actualParams.hasFaceId());
+      BOOST_REQUIRE(actualParams.hasMtu());
+      // Check for returned invalid parameter
+      BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
+    }
+    else {
+      BOOST_ERROR("Response does not contain ControlParameters");
+    }
   });
 }
 
