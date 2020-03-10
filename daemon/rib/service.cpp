@@ -168,7 +168,10 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
     const std::string& key = item.first;
     const ConfigSection& value = item.second;
     if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY || key == CFG_PA_VALIDATION) {
-      hasLocalhop = key == CFG_LOCALHOP_SECURITY;
+      //hasLocalhop = key == CFG_LOCALHOP_SECURITY;
+      if( key == CFG_LOCALHOP_SECURITY )
+           hasLocalhop = true;
+
       ndn::ValidatorConfig testValidator(m_face);
       testValidator.load(value, filename);
     }
