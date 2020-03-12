@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -87,14 +87,14 @@ DeadNonceList::size() const
 }
 
 bool
-DeadNonceList::has(const Name& name, uint32_t nonce) const
+DeadNonceList::has(const Name& name, Interest::Nonce nonce) const
 {
   Entry entry = DeadNonceList::makeEntry(name, nonce);
   return m_ht.find(entry) != m_ht.end();
 }
 
 void
-DeadNonceList::add(const Name& name, uint32_t nonce)
+DeadNonceList::add(const Name& name, Interest::Nonce nonce)
 {
   Entry entry = DeadNonceList::makeEntry(name, nonce);
   m_queue.push_back(entry);
@@ -103,11 +103,12 @@ DeadNonceList::add(const Name& name, uint32_t nonce)
 }
 
 DeadNonceList::Entry
-DeadNonceList::makeEntry(const Name& name, uint32_t nonce)
+DeadNonceList::makeEntry(const Name& name, Interest::Nonce nonce)
 {
   Block nameWire = name.wireEncode();
-  return CityHash64WithSeed(reinterpret_cast<const char*>(nameWire.wire()), nameWire.size(),
-                            static_cast<uint64_t>(nonce));
+  uint32_t n;
+  std::memcpy(&n, nonce.data(), sizeof(n));
+  return CityHash64WithSeed(reinterpret_cast<const char*>(nameWire.wire()), nameWire.size(), n);
 }
 
 size_t

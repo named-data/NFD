@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -67,15 +67,15 @@ public:
   ~DeadNonceList();
 
   /** \brief Determines if name+nonce exists
-   *  \return true if name+nonce exists
+   *  \return true if name+nonce exists, false otherwise
    */
   bool
-  has(const Name& name, uint32_t nonce) const;
+  has(const Name& name, Interest::Nonce nonce) const;
 
   /** \brief Records name+nonce
    */
   void
-  add(const Name& name, uint32_t nonce);
+  add(const Name& name, Interest::Nonce nonce);
 
   /** \return number of stored Nonces
    *  \note The return value does not contain non-Nonce entries in the index, if any.
@@ -95,7 +95,7 @@ private: // Entry and Index
   typedef uint64_t Entry;
 
   static Entry
-  makeEntry(const Name& name, uint32_t nonce);
+  makeEntry(const Name& name, Interest::Nonce nonce);
 
   typedef boost::multi_index_container<
     Entry,

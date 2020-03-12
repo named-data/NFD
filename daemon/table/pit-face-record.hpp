@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ public:
     return m_face;
   }
 
-  uint32_t
+  Interest::Nonce
   getLastNonce() const
   {
     return m_lastNonce;
@@ -79,7 +79,7 @@ public:
 
 private:
   Face& m_face;
-  uint32_t m_lastNonce = 0;
+  Interest::Nonce m_lastNonce{0, 0, 0, 0};
   time::steady_clock::TimePoint m_lastRenewed = time::steady_clock::TimePoint::min();
   time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
 };

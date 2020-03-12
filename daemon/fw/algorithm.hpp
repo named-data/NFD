@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,7 +70,7 @@ enum DuplicateNonceWhere {
  *  \return OR'ed DuplicateNonceWhere
  */
 int
-findDuplicateNonce(const pit::Entry& pitEntry, uint32_t nonce, const Face& face);
+findDuplicateNonce(const pit::Entry& pitEntry, Interest::Nonce nonce, const Face& face);
 
 /** \brief determine whether \p pitEntry has any pending out-records
  *  \return true if there is at least one out-record waiting for Data

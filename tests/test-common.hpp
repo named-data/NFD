@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ namespace tests {
 shared_ptr<Interest>
 makeInterest(const Name& name, bool canBePrefix = false,
              optional<time::milliseconds> lifetime = nullopt,
-             optional<uint32_t> nonce = nullopt);
+             optional<Interest::Nonce> nonce = nullopt);
 
 /** \brief create a Data with fake signature
  *  \note Data may be modified afterwards without losing the fake signature.
@@ -76,34 +76,22 @@ signData(shared_ptr<Data> data)
 }
 
 /** \brief create a Nack
- *  \param interest Interest
- *  \param reason Nack reason
  */
 lp::Nack
 makeNack(Interest interest, lp::NackReason reason);
 
-/** \brief replace a name component
- *  \param[inout] name name
- *  \param index name component index
- *  \param a arguments to name::Component constructor
+/** \brief replace a name component in a packet
+ *  \param[inout] pkt the packet
+ *  \param index the index of the name component to replace
+ *  \param args arguments to name::Component constructor
  */
-template<typename... A>
+template<typename Packet, typename ...Args>
 void
-setNameComponent(Name& name, ssize_t index, A&&... a)
+setNameComponent(Packet& pkt, ssize_t index, Args&& ...args)
 {
-  Name name2 = name.getPrefix(index);
-  name2.append(name::Component(std::forward<A>(a)...));
-  name2.append(name.getSubName(name2.size()));
-  name = std::move(name2);
-}
-
-template<typename Packet, typename... A>
-void
-setNameComponent(Packet& packet, ssize_t index, A&&... a)
-{
-  Name name = packet.getName();
-  setNameComponent(name, index, std::forward<A>(a)...);
-  packet.setName(name);
+  Name name = pkt.getName();
+  name.set(index, name::Component(std::forward<Args>(args)...));
+  pkt.setName(name);
 }
 
 /** \brief create a prefix announcement without signing

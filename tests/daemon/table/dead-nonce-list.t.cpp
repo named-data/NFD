@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,8 +39,8 @@ BOOST_AUTO_TEST_CASE(Basic)
 {
   Name nameA("ndn:/A");
   Name nameB("ndn:/B");
-  const uint32_t nonce1 = 0x53b4eaa8;
-  const uint32_t nonce2 = 0x1f46372b;
+  const Interest::Nonce nonce1(0x53b4eaa8);
+  const Interest::Nonce nonce2(0x1f46372b);
 
   DeadNonceList dnl;
   BOOST_CHECK_EQUAL(dnl.size(), 0);
@@ -64,13 +64,8 @@ class PeriodicalInsertionFixture : public GlobalIoTimeFixture
 protected:
   PeriodicalInsertionFixture()
     : dnl(LIFETIME)
-    , name("ndn:/N")
-    , lastNonce(0)
-    , addNonceBatch(0)
-    , addNonceInterval(LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT)
-    , timeUnit(addNonceInterval / 2)
   {
-    this->addNonce();
+    addNonce();
   }
 
   void
@@ -86,7 +81,7 @@ protected:
       dnl.add(name, ++lastNonce);
     }
 
-    if (addNonceInterval > time::nanoseconds::zero()) {
+    if (addNonceInterval > 0_ns) {
       addNonceEvent = getScheduler().schedule(addNonceInterval, [this] { addNonce(); });
     }
   }
@@ -96,17 +91,17 @@ protected:
   void
   advanceClocksByLifetime(float t)
   {
-    this->advanceClocks(timeUnit, time::duration_cast<time::nanoseconds>(LIFETIME * t));
+    advanceClocks(timeUnit, time::duration_cast<time::nanoseconds>(LIFETIME * t));
   }
 
 protected:
   static const time::nanoseconds LIFETIME;
   DeadNonceList dnl;
-  Name name;
-  uint32_t lastNonce;
-  size_t addNonceBatch;
-  time::nanoseconds addNonceInterval;
-  time::nanoseconds timeUnit;
+  Name name = "/N";
+  uint32_t lastNonce = 0;
+  size_t addNonceBatch = 0;
+  const time::nanoseconds addNonceInterval = LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT;
+  const time::nanoseconds timeUnit = addNonceInterval / 2;
   scheduler::ScopedEventId addNonceEvent;
 };
 
@@ -121,7 +116,7 @@ BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
   this->advanceClocksByLifetime(10.0);
 
   Name nameC("ndn:/C");
-  const uint32_t nonceC = 0x25390656;
+  const Interest::Nonce nonceC(0x25390656);
   BOOST_CHECK_EQUAL(dnl.has(nameC, nonceC), false);
   dnl.add(nameC, nonceC);
   BOOST_CHECK_EQUAL(dnl.has(nameC, nonceC), true);

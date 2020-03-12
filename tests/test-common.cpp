@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,16 +32,14 @@ namespace tests {
 
 shared_ptr<Interest>
 makeInterest(const Name& name, bool canBePrefix, optional<time::milliseconds> lifetime,
-             optional<uint32_t> nonce)
+             optional<Interest::Nonce> nonce)
 {
   auto interest = make_shared<Interest>(name);
   interest->setCanBePrefix(canBePrefix);
   if (lifetime) {
     interest->setInterestLifetime(*lifetime);
   }
-  if (nonce) {
-    interest->setNonce(*nonce);
-  }
+  interest->setNonce(nonce);
   return interest;
 }
 
@@ -59,7 +57,6 @@ signData(Data& data)
   fakeSignature.setValue(ndn::encoding::makeEmptyBlock(tlv::SignatureValue));
   data.setSignature(fakeSignature);
   data.wireEncode();
-
   return data;
 }
 
