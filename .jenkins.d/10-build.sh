@@ -6,9 +6,8 @@ source "$JDIR"/util.sh
 
 set -x
 
-git submodule init
 git submodule sync
-git submodule update
+git submodule update --init
 
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
@@ -20,26 +19,26 @@ fi
 sudo_preserve_env PATH -- ./waf --color=yes distclean
 
 if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
-  # Configure/build in optimized mode with tests
-  ./waf --color=yes configure --with-tests
-  ./waf --color=yes build -j${WAF_JOBS:-1}
+    # Build in release mode with tests and without precompiled headers
+    ./waf --color=yes configure --with-tests --without-pch
+    ./waf --color=yes build -j$WAF_JOBS
 
-  # Cleanup
-  sudo_preserve_env PATH -- ./waf --color=yes distclean
+    # Cleanup
+    sudo_preserve_env PATH -- ./waf --color=yes distclean
 
-  # Configure/build in optimized mode without tests, but with "other tests"
-  ./waf --color=yes configure --with-other-tests
-  ./waf --color=yes build -j${WAF_JOBS:-1}
+    # Build in release mode without tests, but with "other tests"
+    ./waf --color=yes configure --with-other-tests
+    ./waf --color=yes build -j$WAF_JOBS
 
-  # Cleanup
-  sudo_preserve_env PATH -- ./waf --color=yes distclean
+    # Cleanup
+    sudo_preserve_env PATH -- ./waf --color=yes distclean
 fi
 
-# Configure/build in debug mode with tests and without precompiled headers
-./waf --color=yes configure --debug --with-tests --without-pch $ASAN $COVERAGE
-./waf --color=yes build -j${WAF_JOBS:-1}
+# Build in debug mode with tests
+./waf --color=yes configure --debug --with-tests $ASAN $COVERAGE
+./waf --color=yes build -j$WAF_JOBS
 
-# (tests will be run against debug version)
+# (tests will be run against the debug version)
 
 # Install
 sudo_preserve_env PATH -- ./waf --color=yes install

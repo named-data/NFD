@@ -1,102 +1,107 @@
+version: ~> 1.0
 language: cpp
+os: linux
 dist: bionic
+
+arch:
+  - amd64
+  #- arm64   # Too slow, exceeds time limit
+  #- ppc64le # Fails transport tests
+  #- s390x   # Fails transport tests
+
 env:
-  global:
-    - JOB_NAME=limited-build
-    - WAF_JOBS=2
+  - COMPILER=g++-7
+  - COMPILER=g++-9
+  - COMPILER=clang++-6.0
+  - COMPILER=clang++-9
 
-matrix:
+jobs:
   include:
-    # Linux/gcc
-    # https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test/+packages
-    - os: linux
-      env: COMPILER=g++-5
-    - os: linux
-      env: COMPILER=g++-6
-    - os: linux
-      env: COMPILER=g++-7
-    - os: linux
-      env: COMPILER=g++-8
-    - os: linux
-      env: COMPILER=g++-9
+    # Linux
+    - env: COMPILER=g++-8
+    - env: COMPILER=clang++-5.0
+    - env: COMPILER=clang++-7
+    - env: COMPILER=clang++-8
+    - env: COMPILER=clang++-10
+    - env: COMPILER=clang++-11
 
-    # Linux/clang
-    # https://apt.llvm.org/
-    - os: linux
-      env: COMPILER=clang++-3.9
-    - os: linux
-      env: COMPILER=clang++-4.0
-    - os: linux
-      env: COMPILER=clang++-5.0
-    - os: linux
-      env: COMPILER=clang++-6.0
-    # disable AddressSanitizer with clang 7 and 8
-    # due to https://bugs.llvm.org/show_bug.cgi?id=40808
-    - os: linux
-      env: COMPILER=clang++-7 DISABLE_ASAN=yes
-    - os: linux
-      env: COMPILER=clang++-8 DISABLE_ASAN=yes
-    - os: linux
-      env: COMPILER=clang++-9
-    - os: linux
-      env: COMPILER=clang++-10
-
-    # macOS/clang
-    # https://docs.travis-ci.com/user/reference/osx/#macos-version
-    - os: osx
-      osx_image: xcode9.2
-      env: OSX_VERSION=10.12
+    # macOS
     - os: osx
       osx_image: xcode9.4
-      env: OSX_VERSION=10.13
+      env: # default compiler
     - os: osx
       osx_image: xcode10.1
-      env: OSX_VERSION=10.13
+      env: # default compiler
     - os: osx
       osx_image: xcode10.3
-      env: OSX_VERSION=10.14
+      env: # default compiler
     - os: osx
-      osx_image: xcode11
-      env: OSX_VERSION=10.14
+      osx_image: xcode11.3
+      env: # default compiler
 
   allow_failures:
-    - env: COMPILER=clang++-10
+    - env: COMPILER=clang++-11
 
   fast_finish: true
 
-before_install: |
+before_install:
+  - |
+    : Adding apt repositories
     case ${COMPILER} in
-      g++-[567]|clang++-[3456].*)
-        ;;
-      g++-*)
+      g++-9)
+        # https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test/+packages
         travis_retry sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         travis_retry sudo apt-get -qq update
         ;;
-      clang++-*)
+      clang++-1?)
+        # https://apt.llvm.org/
         LLVM_REPO=${COMPILER/clang++/llvm-toolchain-${TRAVIS_DIST}}
         travis_retry wget -nv -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-        travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/${TRAVIS_DIST}/ ${LLVM_REPO%-10} main"
+        travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/${TRAVIS_DIST}/ ${LLVM_REPO%-11} main"
         travis_retry sudo apt-get -qq update
         ;;
     esac
 
 install:
-  - if [[ -n ${COMPILER} ]]; then travis_retry sudo apt-get -qy install "${COMPILER/clang++/clang}"; fi
+  - |
+    : Installing C++ compiler
+    if [[ -n ${COMPILER} ]]; then
+      travis_retry sudo apt-get -qy install ${COMPILER/clang++/clang}
+    fi
 
 before_script:
-  - if [[ ${TRAVIS_OS_NAME} == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-18.04"; fi
-  - if [[ ${TRAVIS_OS_NAME} == linux ]]; then sudo sysctl -e -w net.ipv6.conf.all.disable_ipv6=0; fi
-  - if [[ ${TRAVIS_OS_NAME} == osx ]]; then export NODE_LABELS="OSX OSX-${OSX_VERSION}"; fi
-  # do not waste time upgrading useless packages
-  - if [[ ${TRAVIS_OS_NAME} == osx ]]; then brew pin cgal gdal numpy postgis sfcgal || true; fi
-  - if [[ ${OSX_VERSION} == 10.12 ]]; then brew update; fi
-  # workaround for https://github.com/Homebrew/homebrew-core/issues/26358
-  - if [[ ${OSX_VERSION} == 10.12 ]]; then brew outdated python || brew upgrade python; fi
-  # workaround for https://github.com/travis-ci/travis-ci/issues/6688
-  - if [[ ${OSX_VERSION} == 10.12 ]]; then /usr/bin/yes | pip2 uninstall numpy || true; fi
-  - if [[ -n ${COMPILER} ]]; then export CXX=${COMPILER}; fi
+  - |
+    : Setting environment variables
+    if [[ -n ${COMPILER} ]]; then
+      export CXX=${COMPILER}
+    fi
+    case ${TRAVIS_OS_NAME} in
+      linux)  export NODE_LABELS="Linux Ubuntu Ubuntu-18.04" ;;
+      osx)    export NODE_LABELS="OSX OSX-$(sw_vers -productVersion | cut -d . -f -2)" ;;
+    esac
+    export JOB_NAME=limited-build
+    export WAF_JOBS=2
+  - |
+    : Enabling workarounds
+    case "${TRAVIS_CPU_ARCH},${COMPILER}" in
+      ppc64le,g++-7)
+        # AddressSanitizer does not seem to be working
+        export DISABLE_ASAN=yes
+        ;;
+      *,clang++-8)
+        # https://bugs.llvm.org/show_bug.cgi?id=40808
+        export DISABLE_ASAN=yes
+        ;;
+    esac
+    if [[ ${TRAVIS_OS_NAME} == osx ]]; then
+      # Do not waste time upgrading useless packages
+      brew pin cgal gdal postgis sfcgal || true
+      # Ensure /usr/local/opt/openssl exists
+      brew reinstall openssl || true
+    elif [[ ${TRAVIS_OS_NAME} == linux ]]; then
+      sudo sysctl -e -w net.ipv6.conf.all.disable_ipv6=0
+    fi
   - ${CXX:-c++} --version
-  - python --version
 
 script:
   - ./.jenkins

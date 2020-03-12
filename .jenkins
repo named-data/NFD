@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+export WAF_JOBS=${WAF_JOBS:-1}
+
 nanos() {
     # Cannot use date(1) because macOS does not support %N format specifier
     python -c 'import time; print(int(time.time() * 1e9))'
