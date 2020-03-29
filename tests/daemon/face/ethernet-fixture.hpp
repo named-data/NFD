@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,17 +58,35 @@ protected:
       }
     }
     if (!netifs.empty()) {
-      netif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
+      defaultNetif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
     }
+  }
+
+  /** \brief returns the first running interface
+   */
+  shared_ptr<ndn::net::NetworkInterface>
+  getRunningNetif() const
+  {
+    for (const auto& netif : netifs) {
+      if (netif->getState() == ndn::net::InterfaceState::RUNNING) {
+        return const_pointer_cast<ndn::net::NetworkInterface>(netif);
+      }
+    }
+
+    return nullptr;
   }
 
   /** \brief create a UnicastEthernetTransport
    */
   void
-  initializeUnicast(ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+  initializeUnicast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
+                    ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e})
   {
-    BOOST_ASSERT(netif != nullptr);
+    if (!netif) {
+      netif = defaultNetif;
+    }
+
     localEp = netif->getName();
     remoteEp = remoteAddr;
     transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, 2_s);
@@ -77,10 +95,14 @@ protected:
   /** \brief create a MulticastEthernetTransport
    */
   void
-  initializeMulticast(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
+  initializeMulticast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
+                      ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
                       ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e})
   {
-    BOOST_ASSERT(netif != nullptr);
+    if (!netif) {
+      netif = defaultNetif;
+    }
+
     localEp = netif->getName();
     remoteEp = mcastGroup;
     transport = make_unique<MulticastEthernetTransport>(*netif, remoteEp, linkType);
@@ -93,7 +115,7 @@ protected:
    */
   std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
 
-  shared_ptr<ndn::net::NetworkInterface> netif;
+  shared_ptr<ndn::net::NetworkInterface> defaultNetif;
   unique_ptr<EthernetTransport> transport;
   std::string localEp;
   ethernet::Address remoteEp;
@@ -104,6 +126,15 @@ protected:
     if (this->netifs.size() < (n)) { \
       BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
                                 " or more EthernetTransport-capable network interfaces"); \
+      return; \
+    } \
+  } while (false)
+
+#define SKIP_IF_NO_RUNNING_ETHERNET_NETIF() \
+  do { \
+    if (!this->getRunningNetif()) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require a running " \
+                                "EthernetTransport-capable network interface"); \
       return; \
     } \
   } while (false)

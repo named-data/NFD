@@ -58,6 +58,9 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
     NDN_THROW_NESTED(Error(e.what()));
   }
 
+  // Set initial transport state based upon the state of the underlying NetworkInterface
+  handleNetifStateChange(localEndpoint.getState());
+
   m_netifStateChangedConn = localEndpoint.onStateChanged.connect(
     [this] (ndn::net::InterfaceState, ndn::net::InterfaceState newState) {
       handleNetifStateChange(newState);
