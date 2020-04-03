@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -93,6 +93,14 @@ public:
    */
   static void
   formatItemText(std::ostream& os, const FaceStatus& item, bool wantMultiLine);
+
+  /** \brief print face action success message to specified ostream
+   *  \param os output stream
+   *  \param actionSummary description of action taken
+   *  \param resp response control parameters to print
+   */
+  static void
+  printSuccess(std::ostream& os, const std::string& actionSummary, const ControlParameters& resp);
 
   /** \brief print face response parameters to specified ostream
    *  \param os output stream

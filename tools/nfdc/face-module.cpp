@@ -24,6 +24,7 @@
  */
 
 #include "face-module.hpp"
+#include "canonizer.hpp"
 #include "find-face.hpp"
 
 namespace nfd {
@@ -179,34 +180,19 @@ FaceModule::create(ExecuteContext& ctx)
     mtu = static_cast<uint64_t>(v);
   }
 
-  FaceUri canonicalRemote;
+  optional<FaceUri> canonicalRemote;
   optional<FaceUri> canonicalLocal;
 
-  auto handleCanonizeError = [&] (const FaceUri& faceUri, const std::string& error) {
-    ctx.exitCode = static_cast<int>(FindFace::Code::CANONIZE_ERROR);
-    ctx.err << "Error when canonizing '" << faceUri << "': " << error << '\n';
-  };
-
-  auto printPositiveResult = [&] (const std::string& actionSummary, const ControlParameters& resp) {
-    text::ItemAttributes ia;
-    ctx.out << actionSummary << ' '
-            << ia("id") << resp.getFaceId()
-            << ia("local") << resp.getLocalUri()
-            << ia("remote") << resp.getUri()
-            << ia("persistency") << resp.getFacePersistency();
-    printFaceParams(ctx.out, ia, resp);
-  };
-
-  auto updateFace = [&printPositiveResult] (ControlParameters respParams, ControlParameters resp) {
+  auto updateFace = [&] (ControlParameters respParams, ControlParameters resp) {
     // faces/update response does not have FaceUris, copy from faces/create response
     resp.setLocalUri(respParams.getLocalUri())
         .setUri(respParams.getUri());
-    printPositiveResult("face-updated", resp);
+    printSuccess(ctx.out, "face-updated", resp);
   };
 
   auto handle409 = [&] (const ControlResponse& resp) {
     ControlParameters respParams(resp.getBody());
-    if (respParams.getUri() != canonicalRemote.toString()) {
+    if (respParams.getUri() != canonicalRemote->toString()) {
       // we are conflicting with a different face, which is a general error
       return false;
     }
@@ -256,7 +242,7 @@ FaceModule::create(ExecuteContext& ctx)
     }
     else {
       // don't do anything
-      printPositiveResult("face-exists", respParams);
+      printSuccess(ctx.out, "face-exists", respParams);
     }
 
     return true;
@@ -264,7 +250,7 @@ FaceModule::create(ExecuteContext& ctx)
 
   auto doCreateFace = [&] {
     ControlParameters params;
-    params.setUri(canonicalRemote.toString());
+    params.setUri(canonicalRemote->toString());
     if (canonicalLocal) {
       params.setLocalUri(canonicalLocal->toString());
     }
@@ -287,7 +273,9 @@ FaceModule::create(ExecuteContext& ctx)
 
     ctx.controller.start<ndn::nfd::FaceCreateCommand>(
       params,
-      bind(printPositiveResult, "face-created", _1),
+      [&] (const ControlParameters& resp) {
+        printSuccess(ctx.out, "face-created", resp);
+      },
       [&] (const ControlResponse& resp) {
         if (resp.getCode() == 409 && handle409(resp)) {
           return;
@@ -297,24 +285,33 @@ FaceModule::create(ExecuteContext& ctx)
       ctx.makeCommandOptions());
   };
 
-  remoteUri.canonize(
-    [&] (const FaceUri& canonicalUri) {
-      canonicalRemote = canonicalUri;
-      if (localUri) {
-        localUri->canonize(
-          [&] (const FaceUri& canonicalUri) {
-            canonicalLocal = canonicalUri;
-            doCreateFace();
-          },
-          bind(handleCanonizeError, *localUri, _1),
-          ctx.face.getIoService(), ctx.getTimeout());
-      }
-      else {
+  std::string error;
+  std::tie(canonicalRemote, error) = canonize(ctx, remoteUri);
+  if (canonicalRemote) {
+    // RemoteUri canonization successful
+    if (localUri) {
+      std::tie(canonicalLocal, error) = canonize(ctx, *localUri);
+      if (canonicalLocal) {
+        // LocalUri canonization successful
         doCreateFace();
       }
-    },
-    bind(handleCanonizeError, remoteUri, _1),
-    ctx.face.getIoService(), ctx.getTimeout());
+      else {
+        // LocalUri canonization failure
+        auto canonizationError = canonizeErrorHelper(*localUri, error, "local FaceUri");
+        ctx.exitCode = static_cast<int>(canonizationError.first);
+        ctx.err << canonizationError.second << '\n';
+      }
+    }
+    else {
+      doCreateFace();
+    }
+  }
+  else {
+    // RemoteUri canonization failure
+    auto canonizationError = canonizeErrorHelper(remoteUri, error, "remote FaceUri");
+    ctx.exitCode = static_cast<int>(canonizationError.first);
+    ctx.err << canonizationError.second << '\n';
+  }
 
   ctx.face.processEvents();
 }
@@ -349,6 +346,7 @@ FaceModule::destroy(ExecuteContext& ctx)
   ctx.controller.start<ndn::nfd::FaceDestroyCommand>(
     ControlParameters().setFaceId(face.getFaceId()),
     [&] (const ControlParameters& resp) {
+      // We can't use printSuccess because some face attributes come from FaceStatus not ControlResponse
       ctx.out << "face-destroyed ";
       text::ItemAttributes ia;
       ctx.out << ia("id") << face.getFaceId()
@@ -525,6 +523,20 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
   os << '}';
 
   os << ia.end();
+}
+
+void
+FaceModule::printSuccess(std::ostream& os,
+                         const std::string& actionSummary,
+                         const ControlParameters& resp)
+{
+  text::ItemAttributes ia;
+  os << actionSummary << ' '
+     << ia("id") << resp.getFaceId()
+     << ia("local") << resp.getLocalUri()
+     << ia("remote") << resp.getUri()
+     << ia("persistency") << resp.getFacePersistency();
+  printFaceParams(os, ia, resp);
 }
 
 void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
   BOOST_CHECK(err.is_empty());
 }
 
-BOOST_AUTO_TEST_CASE(FaceNotExist)
+BOOST_AUTO_TEST_CASE(FaceNotExistFaceId)
 {
   this->processInterest = [this] (const Interest& interest) {
     BOOST_CHECK(this->respondFaceQuery(interest));
@@ -273,6 +273,76 @@ BOOST_AUTO_TEST_CASE(FaceNotExist)
   BOOST_CHECK_EQUAL(exitCode, 3);
   BOOST_CHECK(out.is_empty());
   BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
+      this->respondFaceQuery(interest);
+    }
+    else if (Name("/localhost/nfd/faces/create").isPrefixOf(interest.getName())) {
+      ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
+      ndn::nfd::FaceCreateCommand cmd;
+      cmd.validateRequest(req);
+      cmd.applyDefaultsToRequest(req);
+      BOOST_CHECK_EQUAL(req.getUri(), "udp4://202.83.168.28:6363");
+
+      ControlParameters resp = req;
+      resp.setFaceId(255);
+      resp.setLocalUri("udp4://32.121.182.82:50000");
+      resp.setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      resp.setBaseCongestionMarkingInterval(100_ms);
+      resp.setDefaultCongestionThreshold(65536);
+      resp.setMtu(8800);
+      resp.setFlags(0);
+      this->succeedCommand(interest, resp);
+    }
+    else if (Name("/localhost/nfd/rib/register").isPrefixOf(interest.getName())) {
+      ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
+      ndn::nfd::RibRegisterCommand cmd;
+      cmd.validateRequest(req);
+      cmd.applyDefaultsToRequest(req);
+      BOOST_CHECK_EQUAL(req.getName(), "/634jfAfdf");
+      BOOST_CHECK_EQUAL(req.getFaceId(), 255);
+      BOOST_CHECK_EQUAL(req.getOrigin(), 17591);
+      BOOST_CHECK_EQUAL(req.getCost(), 702);
+      BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAG_CHILD_INHERIT |
+                                        ndn::nfd::ROUTE_FLAG_CAPTURE);
+      BOOST_REQUIRE_EQUAL(req.hasExpirationPeriod(), true);
+      BOOST_REQUIRE_EQUAL(req.getExpirationPeriod(), 727411987_ms);
+
+      ControlParameters resp = req;
+      resp.setExpirationPeriod(727411154_ms); // server side may change expiration
+      this->succeedCommand(interest, resp);
+    }
+  };
+
+  this->execute("route add /634jfAfdf udp4://202.83.168.28:6363 "
+                "origin 17591 cost 702 capture expires 727411987");
+  BOOST_CHECK(out.is_equal("face-created id=255 local=udp4://32.121.182.82:50000 "
+                           "remote=udp4://202.83.168.28:6363 persistency=persistent "
+                           "reliability=off congestion-marking=off "
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B "
+                           "mtu=8800\n"
+                           "route-add-accepted prefix=/634jfAfdf nexthop=255 origin=17591 "
+                           "cost=702 flags=child-inherit|capture expires=727411154ms\n"));
+  BOOST_CHECK(err.is_empty());
+  BOOST_CHECK_EQUAL(exitCode, 0);
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExistNotCanonizable)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest));
+  };
+
+  this->execute("route add /634jfAfdf udp6://202.83.168.28:6363 "
+                "origin 17591 cost 702 capture expires 727411987");
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error during canonization of 'udp6://202.83.168.28:6363': "
+                           "IPv4/v6 mismatch\n"));
+  BOOST_CHECK_EQUAL(exitCode, 4);
 }
 
 BOOST_AUTO_TEST_CASE(Ambiguous)
@@ -295,7 +365,7 @@ BOOST_AUTO_TEST_CASE(ErrorCanonization)
   this->execute("route add /bxJfGsVtDt udp6://32.38.164.64:10445");
   BOOST_CHECK_EQUAL(exitCode, 4);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error during remote FaceUri canonization: "
+  BOOST_CHECK(err.is_equal("Error during canonization of 'udp6://32.38.164.64:10445': "
                            "IPv4/v6 mismatch\n"));
 }
 

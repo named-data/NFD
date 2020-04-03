@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,8 @@
  */
 
 #include "rib-module.hpp"
+#include "canonizer.hpp"
+#include "face-module.hpp"
 #include "find-face.hpp"
 #include "format-helpers.hpp"
 
@@ -151,18 +153,96 @@ RibModule::add(ExecuteContext& ctx)
   bool wantCapture = ctx.args.get<bool>("capture", false);
   auto expiresMillis = ctx.args.getOptional<uint64_t>("expires");
 
+  auto registerRoute = [&] (uint64_t faceId) {
+    ControlParameters registerParams;
+    registerParams
+      .setName(prefix)
+      .setFaceId(faceId)
+      .setOrigin(origin)
+      .setCost(cost)
+      .setFlags((wantChildInherit ? ndn::nfd::ROUTE_FLAG_CHILD_INHERIT : ndn::nfd::ROUTE_FLAGS_NONE) |
+                (wantCapture ? ndn::nfd::ROUTE_FLAG_CAPTURE : ndn::nfd::ROUTE_FLAGS_NONE));
+    if (expiresMillis) {
+      registerParams.setExpirationPeriod(time::milliseconds(*expiresMillis));
+    }
+
+    ctx.controller.start<ndn::nfd::RibRegisterCommand>(
+      registerParams,
+      [&] (const ControlParameters& resp) {
+        ctx.exitCode = static_cast<int>(FindFace::Code::OK);
+        ctx.out << "route-add-accepted ";
+        text::ItemAttributes ia;
+        ctx.out << ia("prefix") << resp.getName()
+                << ia("nexthop") << resp.getFaceId()
+                << ia("origin") << resp.getOrigin()
+                << ia("cost") << resp.getCost()
+                << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
+        if (resp.hasExpirationPeriod()) {
+          ctx.out << ia("expires") << text::formatDuration<time::milliseconds>(resp.getExpirationPeriod()) << "\n";
+        }
+        else {
+          ctx.out<< ia("expires") << "never\n";
+        }
+      },
+      ctx.makeCommandFailureHandler("adding route"),
+      ctx.makeCommandOptions());
+  };
+
+  auto handleFaceNotFound = [&] {
+    const FaceUri* faceUri = ndn::any_cast<FaceUri>(&nexthop);
+    if (faceUri == nullptr) {
+      ctx.err << "Face not found\n";
+      return;
+    }
+
+    if (faceUri->getScheme() == "ether") {
+      // Unicast Ethernet faces require a LocalUri, which hasn't been provided
+      // Multicast Ethernet faces cannot be created via management (already exist on each interface)
+      ctx.err << "Unable to implicitly create Ethernet faces\n";
+      ctx.err << "Please create the face with 'nfdc face create' before adding the route\n";
+      return;
+    }
+
+    optional<FaceUri> canonized;
+    std::string error;
+    std::tie(canonized, error) = canonize(ctx, *faceUri);
+    if (!canonized) {
+      // Canonization failed
+      auto canonizationError = canonizeErrorHelper(*faceUri, error);
+      ctx.exitCode = static_cast<int>(canonizationError.first);
+      ctx.err << canonizationError.second << '\n';
+      return;
+    }
+
+    ControlParameters faceCreateParams;
+    faceCreateParams.setUri(canonized->toString());
+
+    ctx.controller.start<ndn::nfd::FaceCreateCommand>(
+      faceCreateParams,
+      [&] (const ControlParameters& resp) {
+        FaceModule::printSuccess(ctx.out, "face-created", resp);
+        registerRoute(resp.getFaceId());
+      },
+      ctx.makeCommandFailureHandler("implicitly creating face"),
+      ctx.makeCommandOptions());
+  };
+
   FindFace findFace(ctx);
   FindFace::Code res = findFace.execute(nexthop);
 
   ctx.exitCode = static_cast<int>(res);
   switch (res) {
     case FindFace::Code::OK:
+      registerRoute(findFace.getFaceId());
       break;
     case FindFace::Code::ERROR:
     case FindFace::Code::CANONIZE_ERROR:
-    case FindFace::Code::NOT_FOUND:
       ctx.err << findFace.getErrorReason() << '\n';
       return;
+    case FindFace::Code::NOT_FOUND:
+      // Attempt to create face if it doesn't exist
+      handleFaceNotFound();
+      break;
     case FindFace::Code::AMBIGUOUS:
       ctx.err << "Multiple faces match specified remote FaceUri. Re-run the command with a FaceId:";
       findFace.printDisambiguation(ctx.err, FindFace::DisambiguationStyle::LOCAL_URI);
@@ -172,38 +252,6 @@ RibModule::add(ExecuteContext& ctx)
       BOOST_ASSERT_MSG(false, "unexpected FindFace result");
       return;
   }
-
-  ControlParameters registerParams;
-  registerParams
-    .setName(prefix)
-    .setFaceId(findFace.getFaceId())
-    .setOrigin(origin)
-    .setCost(cost)
-    .setFlags((wantChildInherit ? ndn::nfd::ROUTE_FLAG_CHILD_INHERIT : ndn::nfd::ROUTE_FLAGS_NONE) |
-              (wantCapture ? ndn::nfd::ROUTE_FLAG_CAPTURE : ndn::nfd::ROUTE_FLAGS_NONE));
-  if (expiresMillis) {
-    registerParams.setExpirationPeriod(time::milliseconds(*expiresMillis));
-  }
-
-  ctx.controller.start<ndn::nfd::RibRegisterCommand>(
-    registerParams,
-    [&] (const ControlParameters& resp) {
-      ctx.out << "route-add-accepted ";
-      text::ItemAttributes ia;
-      ctx.out << ia("prefix") << resp.getName()
-              << ia("nexthop") << resp.getFaceId()
-              << ia("origin") << resp.getOrigin()
-              << ia("cost") << resp.getCost()
-              << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
-      if (resp.hasExpirationPeriod()) {
-        ctx.out << ia("expires") << text::formatDuration<time::milliseconds>(resp.getExpirationPeriod()) << "\n";
-      }
-      else {
-        ctx.out<< ia("expires") << "never\n";
-      }
-    },
-    ctx.makeCommandFailureHandler("adding route"),
-    ctx.makeCommandOptions());
 
   ctx.face.processEvents();
 }

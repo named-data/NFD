@@ -26,6 +26,8 @@ The **nfdc route add** command requests to add a route.
 If a route with the same prefix, nexthop, and origin already exists,
 it is updated with the specified cost, route inheritance flags, and expiration period.
 This command returns when the request has been accepted, but does not wait for RIB update completion.
+If no face matching the specified URI is found, nfdc will attempt to implicitly create a face with
+this URI before adding the route.
 
 The **nfdc route remove** command removes a route with matching prefix, nexthop, and origin.
 

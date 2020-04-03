@@ -863,7 +863,8 @@ BOOST_AUTO_TEST_CASE(ErrorCanonizeRemote)
   this->execute("face create invalid://");
   BOOST_CHECK_EQUAL(exitCode, 4);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error when canonizing 'invalid://': scheme not supported\n"));
+  BOOST_CHECK(err.is_equal("Error during canonization of remote FaceUri 'invalid://': "
+                           "scheme not supported\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCanonizeLocal)
@@ -871,7 +872,8 @@ BOOST_AUTO_TEST_CASE(ErrorCanonizeLocal)
   this->execute("face create udp4://24.37.20.47:6363 local invalid://");
   BOOST_CHECK_EQUAL(exitCode, 4);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error when canonizing 'invalid://': scheme not supported\n"));
+  BOOST_CHECK(err.is_equal("Error during canonization of local FaceUri 'invalid://': "
+                           "scheme not supported\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCreate)
@@ -1002,7 +1004,7 @@ BOOST_AUTO_TEST_CASE(ErrorCanonization)
   this->execute("face destroy udp6://32.38.164.64:10445");
   BOOST_CHECK_EQUAL(exitCode, 4);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error during remote FaceUri canonization: "
+  BOOST_CHECK(err.is_equal("Error during canonization of 'udp6://32.38.164.64:10445': "
                            "IPv4/v6 mismatch\n"));
 }
 

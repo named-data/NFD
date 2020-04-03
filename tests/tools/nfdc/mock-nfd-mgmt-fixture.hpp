@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ using namespace nfd::tests;
 class MockNfdMgmtFixture : public nfd::tools::tests::MockNfdMgmtFixture
 {
 protected:
-  /** \brief respond to specific FaceQuery requests
+  /** \brief respond to FaceQuery requests
    *  \retval true the Interest matches one of the defined patterns and is responded
    *  \retval false the Interest is not responded
    */
@@ -54,8 +54,8 @@ protected:
     if (!Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
       return false;
     }
-    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
-    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    BOOST_REQUIRE_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName()[-1].blockFromValue());
 
     if (filter == FaceQueryFilter().setFaceId(10156)) {
       FaceStatus faceStatus;
@@ -96,6 +96,8 @@ protected:
       return true;
     }
 
+    // Return empty dataset
+    this->sendEmptyDataset(interest.getName());
     return false;
   }
 };

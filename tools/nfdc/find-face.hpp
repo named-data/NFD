@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,12 +121,8 @@ public:
   printDisambiguation(std::ostream& os, DisambiguationStyle style) const;
 
 private:
-  /** \brief canonize FaceUri
-   *  \return canonical FaceUri if canonization succeeds, input if canonization is unsupported
-   *  \retval nullopt canonization fails; m_errorReason describes the failure
-   */
   optional<FaceUri>
-  canonize(const std::string& fieldName, const FaceUri& input);
+  canonize(const std::string& fieldName, const FaceUri& uri);
 
   /** \brief retrieve FaceStatus from filter
    *  \post m_res == Code::OK and m_results is populated if retrieval succeeds

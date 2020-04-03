@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "find-face.hpp"
+#include "canonizer.hpp"
 #include "format-helpers.hpp"
 
 #include <ndn-cxx/util/logger.hpp>
@@ -75,18 +76,16 @@ FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
   m_filter = filter;
 
   if (m_filter.hasRemoteUri()) {
-    auto remoteUri = this->canonize("remote", FaceUri(m_filter.getRemoteUri()));
+    auto remoteUri = canonize("remote FaceUri", FaceUri(m_filter.getRemoteUri()));
     if (!remoteUri) {
-      m_res = Code::CANONIZE_ERROR;
       return m_res;
     }
     m_filter.setRemoteUri(remoteUri->toString());
   }
 
   if (m_filter.hasLocalUri()) {
-    auto localUri = this->canonize("local", FaceUri(m_filter.getLocalUri()));
+    auto localUri = canonize("local FaceUri", FaceUri(m_filter.getLocalUri()));
     if (!localUri) {
-      m_res = Code::CANONIZE_ERROR;
       return m_res;
     }
     m_filter.setLocalUri(localUri->toString());
@@ -107,23 +106,27 @@ FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
 }
 
 optional<FaceUri>
-FindFace::canonize(const std::string& fieldName, const FaceUri& input)
+FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
 {
-  if (!FaceUri::canCanonize(input.getScheme())) {
-    NDN_LOG_DEBUG("Using " << fieldName << '=' << input << " without canonization");
-    return input;
+  // We use a wrapper because we want to accept FaceUris that cannot be canonized
+  if (!FaceUri::canCanonize(uri.getScheme())) {
+    NDN_LOG_DEBUG("Using " << fieldName << "=" << uri << " without canonization");
+    return uri;
   }
 
   optional<FaceUri> result;
-  input.canonize(
-    [&result] (const FaceUri& canonicalUri) { result = canonicalUri; },
-    [this, fieldName] (const std::string& errorReason) {
-      m_errorReason = "Error during " + fieldName + " FaceUri canonization: " + errorReason;
-    },
-    m_ctx.face.getIoService(), m_ctx.getTimeout());
-  m_ctx.face.processEvents();
+  std::string error;
+  std::tie(result, error) = nfdc::canonize(m_ctx, uri);
 
-  return result;
+  if (result) {
+    // Canonization succeeded
+    return result;
+  }
+  else {
+    // Canonization failed
+    std::tie(m_res, m_errorReason) = canonizeErrorHelper(uri, error);
+    return nullopt;
+  }
 }
 
 void
