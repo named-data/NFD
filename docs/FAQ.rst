@@ -1,41 +1,39 @@
 FAQ
 ===
 
-How to change the default paths?
---------------------------------
+How do I change the default installation paths?
+-----------------------------------------------
 
-Paths to where NFD is installed can be configured during ``./waf
-configure``:
+Paths to where NFD is installed can be configured during ``./waf configure``:
 
-- Installation prefix (default ``/usr/local``):
+- Installation prefix (default ``/usr/local``)::
 
-    ::
+    ./waf configure --prefix=/usr
 
-        ./waf configure --prefix=/usr
+- Location of NFD configuration file (default: ``${prefix}/etc``)::
 
-- Location of NFD configuration file (default: ``${prefix}/etc``):
+    ./waf configure --prefix=/usr --sysconfdir=/etc
 
-    ::
+- Location of manpages (default: ``${prefix}/share/man``)::
 
-        ./waf configure --prefix=/usr --sysconfdir=/etc
+    ./waf configure --prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
 
-- Location of manpages (default: ``${prefix}/share/man``)
+See ``./waf configure --help`` for the full list of options.
 
-    ::
+How do I use the NDN PPA repository on Ubuntu Linux?
+----------------------------------------------------
 
-        ./waf configure --prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
+Please see :ref:`Install NFD on Ubuntu Linux using the NDN PPA repository`.
 
-How to run NFD as non-root user?
---------------------------------
+How do I run NFD as a non-root user?
+------------------------------------
 
-How to configure automatic dropping of privileges?
-++++++++++++++++++++++++++++++++++++++++++++++++++
+How do I configure automatic privilege dropping?
+++++++++++++++++++++++++++++++++++++++++++++++++
 
 NFD can be configured to drop privileges whenever possible.  You can specify a user and/or
 group for NFD to change its *effective* user/group ID to in the ``general`` section of the
-configuration file. For example:
-
-::
+configuration file. For example::
 
     general
     {
@@ -54,26 +52,21 @@ respectively.
     root). However, reducing privileges may limit any damage caused by well intentioned,
     but buggy, code.
 
-How to enable Ethernet Face Support?
-++++++++++++++++++++++++++++++++++++
+How do I enable Ethernet face support?
+++++++++++++++++++++++++++++++++++++++
 
 The ``ether`` configuration file section contains settings for Ethernet faces and
-channels. These settings will **NOT** work without root or setting the appropriate
-permissions:
-
-::
-
-    sudo setcap cap_net_raw,cap_net_admin=eip /full/path/nfd
-
-You may need to install a package to use setcap:
+channels. These settings will **NOT** work without root or without setting the
+appropriate permissions.
 
 **Ubuntu:**
 
 ::
 
-    sudo apt-get install libcap2-bin
+    sudo apt install libcap2-bin
+    sudo setcap cap_net_raw,cap_net_admin=eip /path/to/nfd
 
-**Mac OS X:**
+**macOS:**
 
 ::
 
@@ -81,44 +74,40 @@ You may need to install a package to use setcap:
     tar zxvf ChmodBPF.tar.gz
     open ChmodBPF/Install\ ChmodBPF.app
 
-or manually:
-
-::
+or manually::
 
     sudo chgrp admin /dev/bpf*
     sudo chmod g+rw /dev/bpf*
 
-How to enable UDP multicast support in multi-homed Linux machines
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+How do I enable UDP multicast support in multi-homed Linux machines?
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-The UDP configuration file section contains settings for unicast and multicast UDP
-faces. If the Linux box is equipped with multiple network interfaces with multicast
-capabilities, the settings for multicast faces will **NOT** work without root
-or setting the appropriate permissions:
+The ``udp`` configuration file section contains settings for unicast and multicast UDP
+faces. If the Linux machine is equipped with multiple network interfaces with multicast
+capabilities, the settings for multicast faces will **NOT** work without root or without
+setting the appropriate permissions::
 
-::
+    sudo setcap cap_net_raw=eip /path/to/nfd
 
-    sudo setcap cap_net_raw=eip /full/path/nfd
+.. _How do I configure NFD security:
 
-.. _How to configure NFD security:
+How do I configure NFD security?
+--------------------------------
 
-How to configure NFD security?
-------------------------------
+.. note:: The sample configuration file for NFD allows any user to manage faces, FIB, RIB,
+    CS, and strategy choices of the local NFD instance. The following procedure can be used
+    to restrict certain operations to certain users.
 
-.. note:: The sample configuration file of NFD allow any user to manage faces, FIB, RIB, and
-    StrategyChoice of the local NFD.  The following description can be used to restrict certain
-    operations to certain users.
+    More extensive documentation on the security mechanisms in NFD, as well as the available
+    options to configure its trust model, is currently in preparation.
 
-    More extensive documentation about NFD's security and options to configure trust model for
-    NFD is currently in preparation.
-
-Many NFD management protocols use commands Interests (e.g., FIB modification, Face
-creation/destructions, etc.), which require an NDN certificate (either self-signed for local
+Many management components in NFD use *Command Interests* (e.g., FIB modification, face
+creation/destruction, etc.), which require an NDN certificate (either self-signed for local
 trust or delegated from a trusted authority).
 
-If you do not already have NDN certificate, you can generate one with the following commands:
+If you do not already have an NDN certificate, you can generate one using the following procedure.
 
-**Generate and install a self-signed identity certificate**:
+**Generating and installing a self-signed identity certificate**:
 
 ::
 
@@ -128,21 +117,13 @@ Note that the argument to ndnsec-key will be the identity name of the new key (i
 ``/your-username``). Identity names are hierarchical NDN names and may have multiple components
 (e.g.  ``/ndn/ucla/edu/alice``). You may create additional keys and identities as you see fit.
 
-**Dump the NDN certificate to a file**:
+**Exporting the NDN certificate to a file**:
 
-The following commands assume that you have not modified ``PREFIX`` or ``SYSCONFDIR`` If you
-have, please substitute ``/usr/local/etc`` for the appropriate value (the overriden
-``SYSCONFDIR`` or ``PREFIX/etc`` if you changed ``PREFIX``).
+The following commands assume that you have not modified ``PREFIX`` or ``SYSCONFDIR``.
+If you have, please substitute the appropriate path in place of ``/usr/local/etc``.
 
 ::
 
     sudo mkdir -p /usr/local/etc/ndn/keys
     ndnsec-cert-dump -i /`whoami` > default.ndncert
     sudo mv default.ndncert /usr/local/etc/ndn/keys/default.ndncert
-
-.. _How to start using NDN PPA repository on Ubuntu Linux:
-
-How to start using NDN PPA repository on Ubuntu Linux?
-------------------------------------------------------
-
-Please see :ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.

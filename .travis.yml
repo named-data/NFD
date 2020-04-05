@@ -93,12 +93,7 @@ before_script:
         export DISABLE_ASAN=yes
         ;;
     esac
-    if [[ ${TRAVIS_OS_NAME} == osx ]]; then
-      # Do not waste time upgrading useless packages
-      brew pin cgal gdal postgis sfcgal || true
-      # Ensure /usr/local/opt/openssl exists
-      brew reinstall openssl || true
-    elif [[ ${TRAVIS_OS_NAME} == linux ]]; then
+    if [[ ${TRAVIS_OS_NAME} == linux ]]; then
       sudo sysctl -e -w net.ipv6.conf.all.disable_ipv6=0
     fi
   - ${CXX:-c++} --version

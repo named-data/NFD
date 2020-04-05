@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 
-JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-source "$JDIR"/util.sh
-
-set -x
-
-pushd "${CACHE_DIR:-/tmp}" >/dev/null
+pushd "$CACHE_DIR" >/dev/null
 
 INSTALLED_VERSION=
 if has OSX $NODE_LABELS; then
@@ -22,17 +17,15 @@ if [[ -z $INSTALLED_VERSION ]]; then
     INSTALLED_VERSION=$(git -C ndn-cxx rev-parse HEAD 2>/dev/null || echo NONE)
 fi
 
-sudo rm -Rf ndn-cxx-latest
-
-git clone --depth 1 git://github.com/named-data/ndn-cxx ndn-cxx-latest
-
+sudo rm -rf ndn-cxx-latest
+git clone --depth 1 https://github.com/named-data/ndn-cxx.git ndn-cxx-latest
 LATEST_VERSION=$(git -C ndn-cxx-latest rev-parse HEAD 2>/dev/null || echo UNKNOWN)
 
 if [[ $INSTALLED_VERSION != $LATEST_VERSION ]]; then
-    sudo rm -Rf ndn-cxx
+    sudo rm -rf ndn-cxx
     mv ndn-cxx-latest ndn-cxx
 else
-    sudo rm -Rf ndn-cxx-latest
+    sudo rm -rf ndn-cxx-latest
 fi
 
 sudo rm -f /usr/local/bin/ndnsec*

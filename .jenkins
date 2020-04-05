@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -e
+source .jenkins.d/util.sh
 
+export CACHE_DIR=${CACHE_DIR:-/tmp}
 export WAF_JOBS=${WAF_JOBS:-1}
+[[ $JOB_NAME == *"code-coverage" ]] && export DISABLE_ASAN=yes
 
 nanos() {
     # Cannot use date(1) because macOS does not support %N format specifier
-    python -c 'import time; print(int(time.time() * 1e9))'
+    python3 -c 'import time; print(int(time.time() * 1e9))'
 }
 
 for file in .jenkins.d/*; do

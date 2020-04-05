@@ -16,6 +16,7 @@ has() {
     set ${saved_xtrace}
     return ${ret}
 }
+export -f has
 
 sudo_preserve_env() {
     local saved_xtrace
@@ -35,3 +36,4 @@ sudo_preserve_env() {
     set ${saved_xtrace}
     sudo env "${vars[@]}" "$@"
 }
+export -f sudo_preserve_env

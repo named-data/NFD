@@ -177,7 +177,7 @@ face_system
   ;
   ; **Ubuntu:**
   ;
-  ;    sudo apt-get install libcap2-bin
+  ;    sudo apt install libcap2-bin
   ;
   ; **Mac OS X:**
   ;

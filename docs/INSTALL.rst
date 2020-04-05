@@ -1,147 +1,139 @@
 Getting Started with NFD
 ========================
 
-.. _Install NFD Using the NDN PPA Repository on Ubuntu Linux:
+Supported platforms
+-------------------
 
-Install NFD Using the NDN PPA Repository on Ubuntu Linux
+NFD is built against a continuous integration system and has been tested on the
+following platforms:
+
+-  Ubuntu 16.04 (amd64)
+-  Ubuntu 18.04 (amd64, armhf, i386)
+-  Ubuntu 19.10 (amd64)
+-  macOS 10.13
+-  macOS 10.14
+-  macOS 10.15
+
+NFD is known to work on the following platforms, although they are not officially
+supported:
+
+-  Debian >= 9
+-  Gentoo Linux
+-  Raspbian >= 2017-08-16
+
+.. _Install NFD on Ubuntu Linux using the NDN PPA repository:
+
+Install NFD on Ubuntu Linux using the NDN PPA repository
 --------------------------------------------------------
 
-NFD binaries and related tools for the latest versions of Ubuntu Linux can be installed using PPA
-packages from named-data repository.  First, you will need to add ``named-data/ppa``
-repository to binary package sources and update list of available packages.
+NFD binaries and related tools for supported versions of Ubuntu can be installed using
+PPA packages from the **named-data** repository.  First, you will need to add the
+``named-data/ppa`` repository to the binary package sources and update the list of
+available packages.
 
 Preliminary steps if you have not used PPA packages before
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To simplify adding new PPA repositories, Ubuntu provides ``add-apt-repository`` tool,
+To simplify adding new PPA repositories, Ubuntu provides the ``add-apt-repository`` tool,
 which is not installed by default on some systems.
 
 ::
 
-    sudo apt-get install software-properties-common
+    sudo apt install software-properties-common
 
-Adding NDN PPA
-~~~~~~~~~~~~~~
+Adding the NDN PPA
+~~~~~~~~~~~~~~~~~~
 
-After installing ``add-apt-repository``, run the following command to add `NDN PPA
-repository`_.
-
-::
+After installing ``add-apt-repository``, run the following commands to add the `NDN PPA
+repository`_::
 
     sudo add-apt-repository ppa:named-data/ppa
-    sudo apt-get update
+    sudo apt update
 
 Installing NFD and other NDN packages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After you have added `NDN PPA repository`_, NFD and other NDN packages can be easily
-installed in a standard way, i.e., either using ``apt-get`` as shown below or using any
-other package manager, such as Synaptic Package Manager:
+After you have added the `NDN PPA repository`_, NFD and other NDN packages can be easily
+installed either using ``apt``, as shown below, or any other compatible package manager.
 
 ::
 
-    sudo apt-get install nfd
+    sudo apt install nfd
 
-For the list of available packages, refer to `NDN PPA repository`_ homepage.
+For the list of available packages, refer to the `NDN PPA repository`_ page.
 
 .. _NDN PPA repository: https://launchpad.net/~named-data/+archive/ppa
 
-Building from Source
+Building from source
 --------------------
 
-Downloading from Git
+Downloading from git
 ~~~~~~~~~~~~~~~~~~~~
 
-The first step is to obtain the source code for ``NFD`` and, its main dependency, the
-``ndn-cxx`` library.  If you are not planning to work with the bleeding edge code, make
-sure you checkout the correct release tag (e.g., ``*-0.7.0``) for both repositories:
+The first step is to obtain the source code for NFD and its main dependency, the
+*ndn-cxx* library. If you do not want a development version of NFD, make sure you
+checkout the correct release tag (e.g., ``*-0.7.0``) from both repositories.
 
 ::
 
     # Download ndn-cxx
-    git clone https://github.com/named-data/ndn-cxx
+    git clone https://github.com/named-data/ndn-cxx.git
 
     # Download NFD
-    git clone --recursive https://github.com/named-data/NFD
+    git clone --recursive https://github.com/named-data/NFD.git
 
 .. note::
-   While we strive to ensure that the latest version (master branch) of NFD and ndn-cxx
-   always properly compiles and works, sometimes there could be problems.  In these cases, use
-   the latest released version.
+    While we strive to ensure that the latest version (git master branch) of NFD and ndn-cxx
+    always compiles and works properly, we cannot guarantee that there will be no issues.
+    If this is discovered to be the case, please use matching released versions (git tag or
+    tarball) of NFD and ndn-cxx instead.
 
 Prerequisites
 ~~~~~~~~~~~~~
 
-Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`__ and its requirements
+Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`__
+and its prerequisites.
 
--  On macOS with Homebrew:
+On Linux, NFD needs the following dependencies to enable optional features:
 
-   ::
+- On Ubuntu::
 
-      brew install boost openssl pkg-config
-
-- On Ubuntu:
-
-   ::
-
-       sudo apt-get install build-essential pkg-config libboost-all-dev \
-                            libsqlite3-dev libssl-dev libpcap-dev
-
-To build manpages and API documentation:
-
-- On macOS with Homebrew:
-
-   ::
-
-       brew install doxygen graphviz
-       sudo easy_install pip
-       sudo pip Sphinx
-
-- On Ubuntu:
-
-   ::
-
-       sudo apt-get install doxygen graphviz python-sphinx
+        sudo apt install libpcap-dev libsystemd-dev
 
 Build
 ~~~~~
 
-The following basic commands should be used to build NFD on Ubuntu and macOS with Homebrew:
-
-::
+The following commands can be used to build and install NFD from source::
 
     ./waf configure
     ./waf
     sudo ./waf install
 
-If you have installed ``ndn-cxx`` library and/or other dependencies into a non-standard path, you
-may need to modify ``PKG_CONFIG_PATH`` environment variable before running ``./waf configure``.
-For example,
+If you have installed ndn-cxx and/or any other dependencies into a non-standard path,
+you may need to modify the ``PKG_CONFIG_PATH`` environment variable before running
+``./waf configure``. For example::
 
-::
-
-    export PKG_CONFIG_PATH=/custom/lib/pkgconfig:$PKG_CONFIG_PATH
+    export PKG_CONFIG_PATH="/custom/lib/pkgconfig:$PKG_CONFIG_PATH"
     ./waf configure
     ./waf
     sudo ./waf install
 
-Refer to ``./waf --help`` for more options that can be used during ``configure`` stage and
-how to properly configure and run NFD.
+Refer to ``./waf --help`` for more options that can be used during the ``configure`` stage.
 
 .. note::
-   If you are working on a source repository that has been compiled before, and you have
-   upgraded one of the dependencies, please execute ``./waf distclean`` to clear object files
-   and start over.
+    If you are working on a source repository that has been compiled before, and you have
+    upgraded one of the dependencies, please execute ``./waf distclean`` to clear object files
+    and start over.
 
 Debug symbols
 ~~~~~~~~~~~~~
 
-The default compiler flags enable debug symbols to be included in binaries.  This
-potentially allows more meaningful debugging if NFD or other tools happen to crash.
+The default compiler flags enable debug symbols to be included in binaries. This should
+provide more meaningful debugging information if NFD or other tools happen to crash.
 
-If it is undesirable, default flags can be easily overridden.  The following example shows
-how to completely disable debug symbols and configure NFD to be installed into ``/usr``
-with configuration in ``/etc`` folder.
+If this is undesirable, the default flags can be overridden to disable debug symbols.
+The following example shows how to completely disable debug symbols and configure NFD
+to be installed into ``/usr`` with configuration in the ``/etc`` directory.
 
 ::
 
@@ -149,61 +141,52 @@ with configuration in ``/etc`` folder.
     ./waf
     sudo ./waf install
 
-.. note::
-   For Ubuntu PPA packages debug symbols are available in ``*-dbg`` packages.
+For Ubuntu PPA packages, debug symbols are available in ``*-dbg`` packages.
 
-Customize Compiler
-~~~~~~~~~~~~~~~~~~
+Customizing the compiler
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-To choose a custom C++ compiler for building NFD, set the ``CXX`` environment variable
-to point to the compiler binary. For example, to select the clang compiler on a Linux
-system, use the following:
-
-::
+To build NFD with a different compiler (rather than the platform default), set the
+``CXX`` environment variable to point to the compiler binary. For example, to build
+with clang on Linux, use the following::
 
     CXX=clang++ ./waf configure
 
-Building documentation
-~~~~~~~~~~~~~~~~~~~~~~
+Building the documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NFD tutorials and API documentation can be built using the following commands:
-
-::
+NFD tutorials and API documentation can be built using the following commands::
 
     # Full set of documentation (tutorials + API) in build/docs
     ./waf docs
 
-    # Only tutorials in `build/docs`
+    # Only tutorials in build/docs
     ./waf sphinx
 
-    # Only API docs in `build/docs/doxygen`
-    ./waf doxgyen
+    # Only API docs in build/docs/doxygen
+    ./waf doxygen
 
+If ``sphinx-build`` is detected during ``./waf configure``, manpages are automatically
+built and installed during the normal build process (i.e., during ``./waf`` and ``./waf
+install``). By default, manpages are installed into ``${PREFIX}/share/man`` (the default
+value for ``PREFIX`` is ``/usr/local``). This location can be changed during the ``./waf
+configure`` stage using the ``--prefix``, ``--datarootdir``, or ``--mandir`` options.
 
-Manpages are automatically created and installed during the normal build process (e.g.,
-during ``./waf`` and ``./waf install``), if ``python-sphinx`` module is detected during
-``./waf configure`` stage.  By default, manpages are installed into
-``${PREFIX}/share/man`` (where default value for ``PREFIX`` is ``/usr/local``). This
-location can be changed during ``./waf configure`` stage using ``--prefix``,
-``--datarootdir``, or ``--mandir`` options.
-
-For more details, refer to ``./waf --help``.
+For more details, please refer to ``./waf --help``.
 
 Initial configuration
 ---------------------
 
 .. note::
     If you have installed NFD from binary packages, the package manager has already
-    installed initial configuration and you can safely skip this section.
+    installed a working configuration and you can safely skip this section.
 
 General
 ~~~~~~~
 
-After installing NFD from source, you need to create a proper config file.  If default
-location for ``./waf configure`` was used, this can be accomplished by simply copying the
-sample configuration file:
-
-::
+After installing NFD from source, you need to create a proper configuration file.
+If the default installation directories were used with ``./waf configure``, this
+can be accomplished by simply copying the sample configuration file as follows::
 
     sudo cp /usr/local/etc/ndn/nfd.conf.sample /usr/local/etc/ndn/nfd.conf
 
@@ -211,15 +194,17 @@ NFD Security
 ~~~~~~~~~~~~
 
 NFD provides mechanisms to enable strict authorization for all management commands. In
-particular, one can authorize only specific public keys to create new Faces or change the
+particular, one can authorize only specific public keys to create new faces or change the
 forwarding strategy for specific namespaces. For more information about how to generate
-private/public key pair, generate self-signed certificate, and use this self-signed
-certificate to authorize NFD management commands, refer to :ref:`How to configure NFD
-security` FAQ question.
+public/private key pairs, generate self-signed certificates, and use them to authorize
+NFD management commands, refer to the :ref:`How do I configure NFD security` FAQ question.
 
-In the sample configuration file, all authorizations are disabled, effectively allowing
-anybody on the local machine to issue NFD management commands. **The sample file is
-intended only for demo purposes and MUST NOT be used in a production environment.**
+In the sample configuration file, all security mechanisms are disabled for local clients,
+effectively allowing anybody on the local machine to issue NFD management commands.
+
+.. note::
+    The sample configuration file is intended only for demo purposes and should NOT be
+    used in production environments.
 
 Running
 -------
@@ -227,81 +212,63 @@ Running
 Starting
 ~~~~~~~~
 
-If you have installed NFD from source code, it is recommended to start NFD with the
-``nfd-start`` script:
-
-::
+If you have installed NFD from source, it is recommended to start NFD with the
+``nfd-start`` script::
 
     nfd-start
 
-On macOS it may ask for your keychain password or ask ``nfd wants to sign using key in
-your keychain``. Enter your keychain password and click "Always Allow".
+On macOS, this command may ask for your keychain password or ask "nfd wants to sign using
+key [xyz] in your keychain". Enter your keychain password and click "Always Allow".
 
 Later, you can stop NFD with ``nfd-stop`` or by simply killing the ``nfd`` process.
 
 If you have installed NFD using a package manager, you can start and stop NFD using the
-operating system's service manager (such as systemd or launchd) or using
-"Automatically start NFD" option in NDN Control Center app.
+operating system's service manager, such as ``systemctl`` or ``launchctl``.
 
-Connecting to remote NFDs
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Connecting to remote forwarders
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a UDP tunnel to a remote NFD, execute the following command in terminal:
+To create a UDP tunnel to a remote instance of NFD, execute the following command
+in a terminal::
 
-::
+    nfdc face create udp://<other-host>
 
-    nfdc face create udp://<other host>
-
-where ``<other host>`` is the name or IP address of the other host (e.g.,
-``udp://spurs.cs.ucla.edu``). This outputs:
-
-::
+where ``<other-host>`` is the name or IP address of the other host (e.g.,
+``udp://ndn.example.net``). If successful, this will print something like::
 
     face-created id=308 local=udp4://10.0.2.15:6363 remote=udp4://131.179.196.46:6363 persistency=persistent
 
-To add a route ``/ndn`` toward the remote NFD, execute the following command in terminal:
+To add a route ``/ndn`` toward this remote forwarder, execute the following command
+in a terminal::
 
-::
+    nfdc route add /ndn udp://<other-host>
 
-    nfdc route add /ndn udp://<other host>
-
-This outputs:
-
-::
+This will print::
 
     route-add-accepted prefix=/ndn nexthop=308 origin=static cost=0 flags=child-inherit expires=never
 
-The ``/ndn`` means that NFD will forward all Interests that start with ``/ndn`` through the
-face to the other host.  If you only want to forward Interests with a certain prefix, use it
-instead of ``/ndn``.  This only forwards Interests to the other host, but there is no "back
-route" for the other host to forward Interests to you.  For that, you can rely on automatic
-prefix propagation feature of NFD or go to the other host and use ``nfdc`` to add the route.
+This indicates that NFD will forward all Interests that start with ``/ndn`` through the
+face to the other host.  This forwards Interests to the other host, but does not provide
+a "back route" for the other host to forward Interests to you.  For this, you can rely on
+the "automatic prefix propagation" feature of NFD or use the ``nfdc`` command on the other
+host to add the route.
 
 Playing with NFD
 ----------------
 
-After you haved installed, configured, and started NFD, you can try to install and play
-with the following:
+After you have installed, configured, and started NFD, you can demonstrate the features
+of NDN using the following applications and libraries.
 
 Sample applications:
 
-- `Simple examples in ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`_
-
-   If you have installed ndn-cxx from source, you already have compiled these:
-
-   +  examples/producer
-   +  examples/consumer
-   +  examples/consumer-with-timer
-
-- `Introductory examples of NDN-CCL
-  <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
+    + `Simple examples using the ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`_
+    + `Introductory examples of NDN-CCL
+      <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
 
 Real applications and libraries:
 
-   + `ndn-tools - NDN Essential Tools <https://github.com/named-data/ndn-tools>`_
-   + `ndn-traffic-generator - Traffic Generator For NDN
-     <https://github.com/named-data/ndn-traffic-generator>`_
-   + `repo-ng - Next generation of NDN repository <https://github.com/named-data/repo-ng>`_
-   + `ChronoChat - Multi-user NDN chat application <https://github.com/named-data/ChronoChat>`_
-   + `ChronoSync - Sync library for multiuser realtime applications for NDN
-     <https://github.com/named-data/ChronoSync>`_
+    + `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`_
+    + `ndn-traffic-generator - Traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`_
+    + `repo-ng - Next generation NDN repository <https://github.com/named-data/repo-ng>`_
+    + `ChronoSync - Sync library for multi-user real-time applications <https://github.com/named-data/ChronoSync>`_
+    + `PSync - Partial and full synchronization library <https://github.com/named-data/PSync>`_
