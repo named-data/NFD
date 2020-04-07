@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,8 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
 {
   // unix
   // {
-  //   path /var/run/nfd.sock
+  //   path /run/nfd.sock        ; on Linux
+  //   path /var/run/nfd.sock    ; on other platforms
   // }
 
   m_wantCongestionMarking = context.generalConfig.wantCongestionMarking;
@@ -58,7 +59,11 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
     return;
   }
 
+#ifdef __linux__
+  std::string path = "/run/nfd.sock";
+#else
   std::string path = "/var/run/nfd.sock";
+#endif // __linux__
 
   for (const auto& pair : *configSection) {
     const std::string& key = pair.first;

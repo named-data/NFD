@@ -202,7 +202,8 @@ def build(bld):
         target='nfd.conf.sample',
         install_path='${SYSCONFDIR}/ndn',
         IF_HAVE_LIBPCAP='' if bld.env.HAVE_LIBPCAP else '; ',
-        IF_HAVE_WEBSOCKET='' if bld.env.HAVE_WEBSOCKET else '; ')
+        IF_HAVE_WEBSOCKET='' if bld.env.HAVE_WEBSOCKET else '; ',
+        UNIX_SOCKET_PATH='/run/nfd.sock' if Utils.unversioned_sys_platform() == 'linux' else '/var/run/nfd.sock')
 
     bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
 

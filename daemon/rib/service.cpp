@@ -73,7 +73,11 @@ makeLocalNfdTransport(const ConfigSection& config)
 {
   if (config.get_child_optional("face_system.unix")) {
     // default socket path should be the same as in UnixStreamFactory::processConfig
+#ifdef __linux__
+    auto path = config.get<std::string>("face_system.unix.path", "/run/nfd.sock");
+#else
     auto path = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
+#endif // __linux__
     return make_shared<ndn::UnixTransport>(path);
   }
   else if (config.get_child_optional("face_system.tcp") &&
