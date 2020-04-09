@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -323,6 +323,56 @@ BOOST_AUTO_TEST_CASE(CoveredByPartialSubscribers)
 
   BOOST_CHECK(subA.allCallbacksFired());
   BOOST_CHECK(subB.allCallbacksFired());
+}
+
+BOOST_AUTO_TEST_CASE(ParseNumber)
+{
+  std::istringstream input(R"CONFIG(
+    a -125
+    b 156
+    c 100000
+    d efg
+    e 123.456e-10
+    f 123abc
+    g ""
+    h " -1"
+  )CONFIG");
+  ConfigSection section;
+  boost::property_tree::read_info(input, section);
+
+  // Read various types and ensure they return the correct value
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<short>(section.get_child("a"), "a", "section"), -125);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<int>(section.get_child("a"), "a", "section"), -125);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<long>(section.get_child("a"), "a", "section"), -125);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<double>(section.get_child("a"), "a", "section"), -125.0);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<float>(section.get_child("a"), "a", "section"), -125.0);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<short>(section.get_child("b"), "b", "section"), 156);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<int>(section.get_child("b"), "b", "section"), 156);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<long>(section.get_child("b"), "b", "section"), 156);
+  BOOST_CHECK_CLOSE(ConfigFile::parseNumber<double>(section.get_child("e"), "e", "section"), 123.456e-10, 0.0001);
+  BOOST_CHECK_CLOSE(ConfigFile::parseNumber<float>(section.get_child("e"), "e", "section"), 123.456e-10, 0.0001);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<int>(section.get_child("h"), "h", "section"), -1);
+
+  // Check throw on out of range
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<int16_t>(section.get_child("c"), "c", "section"),
+                    ConfigFile::Error);
+
+  // Check throw on non-integer for integer types
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<int>(section.get_child("d"), "d", "section"),
+                    ConfigFile::Error);
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<int>(section.get_child("e"), "e", "section"),
+                    ConfigFile::Error);
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<int>(section.get_child("f"), "f", "section"),
+                    ConfigFile::Error);
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<int>(section.get_child("g"), "g", "section"),
+                    ConfigFile::Error);
+
+  // Should throw exception if try to read unsigned from negative value
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<uint16_t>(section.get_child("a"), "a", "section"),
+                    ConfigFile::Error);
+  BOOST_CHECK_EQUAL(ConfigFile::parseNumber<uint16_t>(section.get_child("b"), "b", "section"), 156);
+  BOOST_CHECK_THROW(ConfigFile::parseNumber<uint32_t>(section.get_child("h"), "h", "section"),
+                    ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestConfigFile

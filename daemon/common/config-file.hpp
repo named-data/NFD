@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,7 +108,9 @@ public: // parse helpers
     static_assert(std::is_arithmetic<T>::value, "T must be an arithmetic type");
 
     boost::optional<T> value = node.get_value_optional<T>();
-    if (value) {
+    // Unsigned logic is workaround for https://redmine.named-data.net/issues/4489
+    if (value &&
+        (std::is_signed<T>() || node.get_value<std::string>().find("-") == std::string::npos)) {
       return *value;
     }
     NDN_THROW(Error("Invalid value '" + node.get_value<std::string>() +

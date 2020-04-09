@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -267,7 +267,6 @@ BOOST_AUTO_TEST_CASE(BadListen)
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadPort, 2) // Bug #4489
 BOOST_AUTO_TEST_CASE(BadPort)
 {
   // not a number
