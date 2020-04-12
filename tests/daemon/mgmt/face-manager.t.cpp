@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -96,6 +96,7 @@ public:
 
     advanceClocks(1_ms, 10); // wait for notification posted
     if (flags & REMOVE_LAST_NOTIFICATION) {
+      BOOST_REQUIRE(!m_responses.empty());
       m_responses.pop_back();
     }
 

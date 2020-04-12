@@ -120,14 +120,12 @@ public:
 
   /** \brief make an LpPacket with fragment of specified size
    *  \param pktNum packet identifier, which can be extracted with \p getPktNum
-   *  \param payloadSize total payload size; if this is less than 4, 4 will be used
+   *  \param payloadSize total payload size; must be >= 4 and <= 255
    */
   static lp::Packet
   makeFrag(uint32_t pktNum, size_t payloadSize = 4)
   {
-    payloadSize = std::max(payloadSize, static_cast<size_t>(4));
-    BOOST_ASSERT(payloadSize <= 255);
-
+    BOOST_ASSERT(payloadSize >= 4 && payloadSize <= 255);
     lp::Packet pkt;
     ndn::Buffer buf(payloadSize);
     std::memcpy(buf.data(), &pktNum, sizeof(pktNum));
@@ -141,8 +139,7 @@ public:
   static uint32_t
   getPktNum(const lp::Packet& pkt)
   {
-    BOOST_ASSERT(pkt.has<lp::FragmentField>());
-
+    BOOST_REQUIRE(pkt.has<lp::FragmentField>());
     ndn::Buffer::const_iterator begin, end;
     std::tie(begin, end) = pkt.get<lp::FragmentField>();
     if (std::distance(begin, end) < 4) {
@@ -621,7 +618,6 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks)
   lp::Packet sentRetxPkt(transport->sentPackets.back().packet);
   BOOST_REQUIRE(sentRetxPkt.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(sentRetxPkt.get<lp::TxSequenceField>(), 4);
-  BOOST_REQUIRE(sentRetxPkt.has<lp::FragmentField>());
   BOOST_CHECK_EQUAL(getPktNum(sentRetxPkt), 1);
   BOOST_CHECK_EQUAL(linkService->getCounters().nAcknowledged, 3);
   BOOST_CHECK_EQUAL(linkService->getCounters().nRetransmitted, 0);

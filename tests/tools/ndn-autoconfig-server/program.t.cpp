@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,22 +39,17 @@ namespace tests {
 
 class AutoconfigServerFixture : public ::nfd::tests::KeyChainFixture
 {
-public:
-  AutoconfigServerFixture()
-    : face({true, true})
-  {
-  }
-
+protected:
   void
   initialize(const Options& options)
   {
     program = make_unique<Program>(options, face, m_keyChain);
-    face.processEvents(500_ms);
+    face.processEvents(1_s);
     face.sentInterests.clear();
   }
 
 protected:
-  util::DummyClientFace face;
+  util::DummyClientFace face{{true, true}};
   unique_ptr<Program> program;
 };
 
@@ -71,7 +66,7 @@ BOOST_AUTO_TEST_CASE(HubData)
   interest.setCanBePrefix(true);
   interest.setMustBeFresh(true);
   face.receive(interest);
-  face.processEvents(500_ms);
+  face.processEvents(1_s);
 
   BOOST_REQUIRE_EQUAL(face.sentData.size(), 1);
   const Name& dataName = face.sentData[0].getName();
@@ -83,7 +78,7 @@ BOOST_AUTO_TEST_CASE(HubData)
   Interest interest2(Name(interest.getName()).appendVersion(dataName.at(-1).toVersion() - 1));
   interest2.setCanBePrefix(false);
   face.receive(interest2);
-  face.processEvents(500_ms);
+  face.processEvents(1_s);
   BOOST_CHECK_EQUAL(face.sentData.size(), 1);
 }
 
@@ -109,12 +104,11 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
     BOOST_CHECK(dataName.at(-2).isVersion());
     BOOST_CHECK(dataName.at(-1).isSegment());
   });
-  fetcher->onError.connect([] (uint32_t code, const std::string& msg) {
-    BOOST_FAIL(msg);
-  });
+  fetcher->onError.connect([] (auto, const auto& msg) { BOOST_FAIL(msg); });
+
   bool isComplete = false;
-  fetcher->onComplete.connect([&isComplete, nRoutablePrefixes, options] (ConstBufferPtr buffer) {
-    Block payload(tlv::Content, buffer);
+  fetcher->onComplete.connect([&] (auto buffer) {
+    Block payload(tlv::Content, std::move(buffer));
     payload.parse();
     BOOST_REQUIRE_EQUAL(payload.elements_size(), nRoutablePrefixes);
     for (size_t i = 0; i < nRoutablePrefixes; ++i) {
@@ -123,7 +117,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
     isComplete = true;
   });
 
-  face.processEvents(100_ms, 2000);
+  face.processEvents(1_s);
   BOOST_CHECK(isComplete);
 }
 
@@ -136,7 +130,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDisabled)
   Interest interest("/localhop/nfd/rib/routable-prefixes");
   interest.setCanBePrefix(true);
   face.receive(interest);
-  face.processEvents(500_ms);
+  face.processEvents(1_s);
   BOOST_CHECK_EQUAL(face.sentData.size(), 0);
 }
 
