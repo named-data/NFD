@@ -10,6 +10,10 @@ fi
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
 fi
+if has CentOS-8 $NODE_LABELS; then
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1721553
+    PCH="--without-pch"
+fi
 
 if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
     # Build in release mode with tests and without precompiled headers
@@ -20,7 +24,7 @@ if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
     ./waf --color=yes distclean
 
     # Build in release mode without tests, but with "other tests"
-    ./waf --color=yes configure --with-other-tests
+    ./waf --color=yes configure --with-other-tests $PCH
     ./waf --color=yes build -j$WAF_JOBS
 
     # Cleanup
@@ -28,7 +32,7 @@ if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
 fi
 
 # Build in debug mode with tests
-./waf --color=yes configure --debug --with-tests $ASAN $COVERAGE
+./waf --color=yes configure --debug --with-tests $ASAN $COVERAGE $PCH
 ./waf --color=yes build -j$WAF_JOBS
 
 # (tests will be run against the debug version)
