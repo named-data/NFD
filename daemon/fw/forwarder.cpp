@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -91,6 +91,18 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
   NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName());
   interest.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
   ++m_counters.nInInterests;
+
+  // drop if HopLimit zero, decrement otherwise (if present)
+  if (interest.getHopLimit()) {
+    if (*interest.getHopLimit() < 1) {
+      NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
+                    << " hop-limit=0");
+      ++const_cast<PacketCounter&>(ingress.face.getCounters().nInHopLimitZero);
+      return;
+    }
+
+    const_cast<Interest&>(interest).setHopLimit(*interest.getHopLimit() - 1);
+  }
 
   // /localhost scope control
   bool isViolatingLocalhost = ingress.face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
@@ -230,6 +242,14 @@ void
 Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
                               const FaceEndpoint& egress, const Interest& interest)
 {
+  // drop if HopLimit == 0 but sending on non-local face
+  if (interest.getHopLimit() == 0 && egress.face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL) {
+    NFD_LOG_DEBUG("onOutgoingInterest out=" << egress << " interest=" << pitEntry->getName()
+                  << " non-local hop-limit=0");
+    ++const_cast<PacketCounter&>(egress.face.getCounters().nOutHopLimitZero);
+    return;
+  }
+
   NFD_LOG_DEBUG("onOutgoingInterest out=" << egress << " interest=" << pitEntry->getName());
 
   // insert out-record

@@ -50,7 +50,7 @@ public:
 
   /** \brief count of Interests dropped by reliability system for exceeding allowed number of retx
    */
-  PacketCounter nDroppedInterests;
+  PacketCounter nInterestsExceededRetx;
 
   /** \brief count of incoming Data packets
    */

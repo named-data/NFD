@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -169,6 +169,72 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 0);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests.front().getName(), "/A/B");
+}
+
+BOOST_AUTO_TEST_CASE(HopLimit)
+{
+  auto faceIn = addFace();
+  auto faceRemote = addFace("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  auto faceLocal = addFace("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+  Fib& fib = forwarder.getFib();
+  fib::Entry* entryRemote = fib.insert("/remote").first;
+  fib.addOrUpdateNextHop(*entryRemote, *faceRemote, 0);
+  fib::Entry* entryLocal = fib.insert("/local").first;
+  fib.addOrUpdateNextHop(*entryLocal, *faceLocal, 0);
+
+  // Incoming interest w/o HopLimit will not be dropped on send or receive paths
+  auto interestNoHopLimit = makeInterest("/remote/abcdefgh");
+  faceIn->receiveInterest(*interestNoHopLimit, 0);
+  this->advanceClocks(100_ms, 1_s);
+  BOOST_CHECK_EQUAL(faceRemote->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nInHopLimitZero, 0);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutHopLimitZero, 0);
+  BOOST_REQUIRE_EQUAL(faceRemote->sentInterests.size(), 1);
+  BOOST_CHECK(!faceRemote->sentInterests.back().getHopLimit());
+
+  // Incoming interest w/ HopLimit > 1 will not be dropped on send/receive
+  auto interestHopLimit2 = makeInterest("/remote/ijklmnop");
+  interestHopLimit2->setHopLimit(2);
+  faceIn->receiveInterest(*interestHopLimit2, 0);
+  this->advanceClocks(100_ms, 1_s);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutInterests, 2);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nInHopLimitZero, 0);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutHopLimitZero, 0);
+  BOOST_REQUIRE_EQUAL(faceRemote->sentInterests.size(), 2);
+  BOOST_REQUIRE(faceRemote->sentInterests.back().getHopLimit());
+  BOOST_CHECK_EQUAL(*faceRemote->sentInterests.back().getHopLimit(), 1);
+
+  // Incoming interest w/ HopLimit == 1 will be dropped on send path if going out on remote face
+  auto interestHopLimit1Remote = makeInterest("/remote/qrstuvwx");
+  interestHopLimit1Remote->setHopLimit(1);
+  faceIn->receiveInterest(*interestHopLimit1Remote, 0);
+  this->advanceClocks(100_ms, 1_s);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutInterests, 2);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nInHopLimitZero, 0);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutHopLimitZero, 1);
+  BOOST_CHECK_EQUAL(faceRemote->sentInterests.size(), 2);
+
+  // Incoming interest w/ HopLimit == 1 will not be dropped on send path if going out on local face
+  auto interestHopLimit1Local = makeInterest("/local/abcdefgh");
+  interestHopLimit1Local->setHopLimit(1);
+  faceIn->receiveInterest(*interestHopLimit1Local, 0);
+  this->advanceClocks(100_ms, 1_s);
+  BOOST_CHECK_EQUAL(faceLocal->getCounters().nOutInterests, 1);
+  BOOST_CHECK_EQUAL(faceLocal->getCounters().nInHopLimitZero, 0);
+  BOOST_CHECK_EQUAL(faceLocal->getCounters().nOutHopLimitZero, 0);
+  BOOST_REQUIRE_EQUAL(faceLocal->sentInterests.size(), 1);
+  BOOST_REQUIRE(faceLocal->sentInterests.back().getHopLimit());
+  BOOST_CHECK_EQUAL(*faceLocal->sentInterests.back().getHopLimit(), 0);
+
+  // Interest w/ HopLimit == 0 will be dropped on receive path
+  auto interestHopLimit0 = makeInterest("/remote/yzabcdef");
+  interestHopLimit0->setHopLimit(0);
+  faceIn->receiveInterest(*interestHopLimit0, 0);
+  this->advanceClocks(100_ms, 1_s);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutInterests, 2);
+  BOOST_CHECK_EQUAL(faceIn->getCounters().nInHopLimitZero, 1);
+  BOOST_CHECK_EQUAL(faceRemote->getCounters().nOutHopLimitZero, 1);
+  BOOST_CHECK_EQUAL(faceRemote->sentInterests.size(), 2);
 }
 
 class ScopeLocalhostIncomingTestForwarder : public Forwarder

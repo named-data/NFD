@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,17 +70,24 @@ public:
 public:
   const PacketCounter& nInInterests;
   const PacketCounter& nOutInterests;
-  const PacketCounter& nDroppedInterests;
+  const PacketCounter& nInterestsExceededRetx;
   const PacketCounter& nInData;
   const PacketCounter& nOutData;
   const PacketCounter& nInNacks;
   const PacketCounter& nOutNacks;
-  PacketCounter nKeptInterests;
 
   const PacketCounter& nInPackets;
   const PacketCounter& nOutPackets;
   const ByteCounter& nInBytes;
   const ByteCounter& nOutBytes;
+
+  /** \brief count of incoming Interests dropped due to HopLimit == 0
+   */
+  PacketCounter nInHopLimitZero;
+
+  /** \brief count of outgoing Interests dropped due to HopLimit == 0 on non-local faces
+   */
+  PacketCounter nOutHopLimitZero;
 
 private:
   const LinkService::Counters& m_linkServiceCounters;

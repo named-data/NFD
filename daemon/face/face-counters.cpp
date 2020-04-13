@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,7 @@ FaceCounters::FaceCounters(const LinkService::Counters& linkServiceCounters,
                            const Transport::Counters& transportCounters)
   : nInInterests(linkServiceCounters.nInInterests)
   , nOutInterests(linkServiceCounters.nOutInterests)
-  , nDroppedInterests(linkServiceCounters.nDroppedInterests)
+  , nInterestsExceededRetx(linkServiceCounters.nInterestsExceededRetx)
   , nInData(linkServiceCounters.nInData)
   , nOutData(linkServiceCounters.nOutData)
   , nInNacks(linkServiceCounters.nInNacks)

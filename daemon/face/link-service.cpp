@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,7 +117,7 @@ LinkService::receiveNack(const ndn::lp::Nack& nack, const EndpointId& endpoint)
 void
 LinkService::notifyDroppedInterest(const Interest& interest)
 {
-  ++this->nDroppedInterests;
+  ++this->nInterestsExceededRetx;
   onDroppedInterest(interest);
 }
 
