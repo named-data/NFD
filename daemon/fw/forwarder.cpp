@@ -32,6 +32,7 @@
 #include "common/logger.hpp"
 #include "table/cleanup.hpp"
 
+#include <ndn-cxx/lp/pit-token.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
@@ -225,6 +226,7 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
   ++m_counters.nCsHits;
 
   data.setTag(make_shared<lp::IncomingFaceIdTag>(face::FACEID_CONTENT_STORE));
+  data.setTag(interest.getTag<lp::PitToken>());
   // FIXME Should we lookup PIT for other Interests that also match the data?
 
   pitEntry->isSatisfied = true;

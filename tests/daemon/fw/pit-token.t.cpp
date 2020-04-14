@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,26 +49,41 @@ BOOST_FIXTURE_TEST_CASE(Downstream, GlobalIoTimeFixture)
   // Client --- Router --- Server
   // Client requires PIT token; Router supports PIT token; Server disallows PIT token.
 
-  // C sends Interest /U/0 with PIT token
-  lp::Packet lppI("6414 pit-token=6206A0A1A2A3A4A5 payload=500A interest=0508 0706080155080130"_block);
-  lp::PitToken tokenI(lppI.get<lp::PitTokenField>());
-  linkC->receivePacket(lppI.wireEncode());
+  // C sends Interest /U/0 with PIT token A
+  lp::Packet lppI0("641A pit-token=6206A0A1A2A3A4A5 payload=5010 interest=050E 0706080155080130 0A0400000001"_block);
+  lp::PitToken tokenI0(lppI0.get<lp::PitTokenField>());
+  linkC->receivePacket(lppI0.wireEncode());
   advanceClocks(5_ms, 30_ms);
 
   // S should receive Interest without PIT token
   BOOST_REQUIRE_EQUAL(linkS->sentPackets.size(), 1);
-  lp::Packet lppS(linkS->sentPackets.front());
+  lp::Packet lppS(linkS->sentPackets.back());
   BOOST_CHECK_EQUAL(lppS.count<lp::PitTokenField>(), 0);
 
   // S responds Data
   linkS->receivePacket(makeData("/U/0")->wireEncode());
   advanceClocks(5_ms, 30_ms);
 
-  // C should receive Data with same PIT token
+  // C should receive Data with PIT token A
   BOOST_REQUIRE_EQUAL(linkC->sentPackets.size(), 1);
-  lp::Packet lppD(linkC->sentPackets.front());
-  lp::PitToken tokenD(lppD.get<lp::PitTokenField>());
-  BOOST_CHECK(tokenD == tokenI);
+  lp::Packet lppD0(linkC->sentPackets.back());
+  lp::PitToken tokenD0(lppD0.get<lp::PitTokenField>());
+  BOOST_CHECK(tokenD0 == tokenI0);
+
+  // C sends Interest /U/0 again with PIT token B
+  lp::Packet lppI1("641C pit-token=6208B0B1B2B3B4B5B6B7 payload=5010 interest=050E 0706080155080130 0A0400000002"_block);
+  lp::PitToken tokenI1(lppI1.get<lp::PitTokenField>());
+  linkC->receivePacket(lppI1.wireEncode());
+  advanceClocks(5_ms, 30_ms);
+
+  // S should not receive Interest, because the Interest is satisfied by CS
+  BOOST_CHECK_EQUAL(linkS->sentPackets.size(), 1);
+
+  // C should receive Data with PIT token B
+  BOOST_REQUIRE_EQUAL(linkC->sentPackets.size(), 2);
+  lp::Packet lppD1(linkC->sentPackets.back());
+  lp::PitToken tokenD1(lppD1.get<lp::PitTokenField>());
+  BOOST_CHECK(tokenD1 == tokenI1);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPitToken
