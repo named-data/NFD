@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -95,9 +95,10 @@ BOOST_AUTO_TEST_SUITE_END() // ConfigCommand
 
 BOOST_FIXTURE_TEST_SUITE(EraseCommand, ExecuteCommandFixture)
 
-BOOST_AUTO_TEST_CASE(NoCount)
+BOOST_AUTO_TEST_CASE(WithoutCount)
 {
-  this->processInterest = [this] (const Interest& interest) {
+  size_t countRequests = 0;
+  this->processInterest = [this, &countRequests] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
     BOOST_REQUIRE(req.hasName());
     BOOST_CHECK_EQUAL(req.getName(), "/S2NrUoNJcQ");
@@ -105,60 +106,127 @@ BOOST_AUTO_TEST_CASE(NoCount)
 
     ControlParameters resp;
     resp.setName("/S2NrUoNJcQ");
-    resp.setCount(152);
+
+    switch (countRequests) {
+    case 0:
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 1:
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 2:
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 3:
+      resp.setCount(500);
+      break;
+    default:
+      BOOST_FAIL("Exceeded allowed number of erase requests");
+      break;
+    }
+    countRequests++;
     this->succeedCommand(interest, resp);
   };
 
   this->execute("cs erase /S2NrUoNJcQ");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("cs-erased prefix=/S2NrUoNJcQ count=152 has-more=no\n"));
+  BOOST_CHECK_EQUAL(countRequests, 4);
+  BOOST_CHECK(out.is_equal("cs-erased prefix=/S2NrUoNJcQ count=3500\n"));
   BOOST_CHECK(err.is_empty());
 }
 
 BOOST_AUTO_TEST_CASE(WithCount)
 {
-  this->processInterest = [this] (const Interest& interest) {
+  size_t countRequests = 0;
+  this->processInterest = [this, &countRequests] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
     BOOST_REQUIRE(req.hasName());
     BOOST_CHECK_EQUAL(req.getName(), "/gr7ADmIq");
     BOOST_REQUIRE(req.hasCount());
-    BOOST_CHECK_EQUAL(req.getCount(), 7568);
 
     ControlParameters resp;
     resp.setName("/gr7ADmIq");
-    resp.setCount(141);
+
+    switch (countRequests) {
+    case 0:
+      BOOST_CHECK_EQUAL(req.getCount(), 3568);
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 1:
+      BOOST_CHECK_EQUAL(req.getCount(), 2568);
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 2:
+      BOOST_CHECK_EQUAL(req.getCount(), 1568);
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      break;
+    case 3:
+      BOOST_CHECK_EQUAL(req.getCount(), 568);
+      resp.setCount(568);
+      break;
+    default:
+      BOOST_FAIL("Exceeded allowed number of erase requests");
+      break;
+    }
+
+    countRequests++;
     this->succeedCommand(interest, resp);
   };
 
-  this->execute("cs erase /gr7ADmIq count 7568");
+  this->execute("cs erase /gr7ADmIq count 3568");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("cs-erased prefix=/gr7ADmIq count=141 has-more=no\n"));
+  BOOST_CHECK_EQUAL(countRequests, 4);
+  BOOST_CHECK(out.is_equal("cs-erased prefix=/gr7ADmIq count=3568\n"));
   BOOST_CHECK(err.is_empty());
 }
 
-BOOST_AUTO_TEST_CASE(HasMore)
+BOOST_AUTO_TEST_CASE(WithCountError)
 {
-  this->processInterest = [this] (const Interest& interest) {
+  size_t countRequests = 0;
+  this->processInterest = [this, &countRequests] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
     BOOST_REQUIRE(req.hasName());
-    BOOST_CHECK_EQUAL(req.getName(), "/8Rq1Merv");
+    BOOST_CHECK_EQUAL(req.getName(), "/gr7ADmIq");
     BOOST_REQUIRE(req.hasCount());
-    BOOST_CHECK_EQUAL(req.getCount(), 16519);
 
     ControlParameters resp;
-    resp.setName("/8Rq1Merv");
-    resp.setCount(256);
-    resp.setCapacity(256);
-    this->succeedCommand(interest, resp);
+    resp.setName("/gr7ADmIq");
+
+    switch (countRequests) {
+    case 0:
+      BOOST_CHECK_EQUAL(req.getCount(), 3568);
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      this->succeedCommand(interest, resp);
+      break;
+    case 1:
+      BOOST_CHECK_EQUAL(req.getCount(), 2568);
+      resp.setCount(1000);
+      resp.setCapacity(1000);
+      this->failCommand(interest, 500, "internal error");
+      break;
+    default:
+      BOOST_FAIL("Exceeded allowed number of erase requests");
+      break;
+    }
+
+    countRequests++;
   };
 
-  this->execute("cs erase /8Rq1Merv count 16519");
-  BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("cs-erased prefix=/8Rq1Merv count=256 has-more=yes\n"));
-  BOOST_CHECK(err.is_empty());
+  this->execute("cs erase /gr7ADmIq count 3568");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK_EQUAL(countRequests, 2);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 500 when erasing cached Data: internal error\n"));
 }
 
-BOOST_AUTO_TEST_CASE(ErrorCommand)
+BOOST_AUTO_TEST_CASE(Timeout)
 {
   this->processInterest = nullptr; // no response to command
 

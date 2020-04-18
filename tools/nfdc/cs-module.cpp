@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -92,26 +92,42 @@ CsModule::erase(ExecuteContext& ctx)
   auto prefix = ctx.args.get<Name>("prefix");
   auto count = ctx.args.getOptional<uint64_t>("count");
 
+  uint64_t numErased = 0;
+  bool wasLimited = false;
+  bool wasSuccessful = true;
+
   ControlParameters params;
   params.setName(prefix);
-  if (count) {
-    params.setCount(*count);
+
+  // The cs/erase command can have a limit on the number of CS entries erased in a single operation.
+  // Therefore, we may need to run cs/erase multiple times to achieve the desired number of erases.
+  do {
+    if (count) {
+      params.setCount(*count - numErased);
+    }
+
+    wasSuccessful = false;
+
+    ctx.controller.start<ndn::nfd::CsEraseCommand>(
+      params,
+      [&] (const ControlParameters& resp) {
+        wasSuccessful = true;
+        numErased += resp.getCount();
+        wasLimited = resp.hasCapacity();
+      },
+      ctx.makeCommandFailureHandler("erasing cached Data"),
+      ctx.makeCommandOptions());
+
+    ctx.face.processEvents();
+  } while (wasSuccessful && wasLimited);
+
+  if (wasSuccessful) {
+    text::ItemAttributes ia;
+    ctx.out << "cs-erased "
+            << ia("prefix") << prefix
+            << ia("count") << numErased
+            << '\n';
   }
-
-  ctx.controller.start<ndn::nfd::CsEraseCommand>(
-    params,
-    [&] (const ControlParameters& resp) {
-      text::ItemAttributes ia;
-      ctx.out << "cs-erased "
-              << ia("prefix") << resp.getName()
-              << ia("count") << resp.getCount()
-              << ia("has-more") << text::YesNo{resp.hasCapacity()}
-              << '\n';
-    },
-    ctx.makeCommandFailureHandler("erasing cached Data"),
-    ctx.makeCommandOptions());
-
-  ctx.face.processEvents();
 }
 
 void
