@@ -387,13 +387,14 @@ void
 Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
 {
   // accept to cache?
-  fw::UnsolicitedDataDecision decision = m_unsolicitedDataPolicy->decide(ingress.face, data);
+  auto decision = m_unsolicitedDataPolicy->decide(ingress.face, data);
   if (decision == fw::UnsolicitedDataDecision::CACHE) {
     // CS insert
     m_cs.insert(data, true);
   }
 
   NFD_LOG_DEBUG("onDataUnsolicited in=" << ingress << " data=" << data.getName() << " decision=" << decision);
+  ++m_counters.nUnsolicitedData;
 }
 
 void
