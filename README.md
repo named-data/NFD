@@ -44,11 +44,12 @@ it already contains significant contributions from people outside the project te
 since broader community support is key for NDN to succeed as a new Internet architecture.
 
 If you are new to the NDN software community, please read [`README-dev.md`](README-dev.md)
-and the [Contributor's Guide](CONTRIBUTING.md) to get started.
+and the [Contributor's Guide](https://github.com/named-data/.github/blob/master/CONTRIBUTING.md)
+to get started.
 
 ## License
 
-NFD is an open and free software package licensed under the GPL version 3 and is the
-centerpiece of our committement to making NDN's core technology open and free to all
-Internet users and developers.  For more information about the licensing details and
-limitations, refer to [`COPYING.md`](COPYING.md).
+NFD is a free and open-source software package licensed under the GPL version 3 and
+is the centerpiece of our committement to making NDN's core technology free and open
+to all Internet users and developers. For more information about licensing, refer to
+[`COPYING.md`](COPYING.md).

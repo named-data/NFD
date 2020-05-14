@@ -10,21 +10,6 @@ fi
 
 ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 
-BOOST_VERSION=$(python3 -c "import sys; sys.path.append('build/c4che'); import _cache; print(_cache.BOOST_VERSION_NUMBER);")
-
-ut_log_args() {
-    if (( BOOST_VERSION >= 106200 )); then
-        echo --logger=HRF,test_suite,stdout:XML,all,build/xunit-${1:-report}.xml
-    else
-        if [[ -n $XUNIT ]]; then
-            echo --log_level=all $( (( BOOST_VERSION >= 106000 )) && echo -- ) \
-                 --log_format2=XML --log_sink2=build/xunit-${1:-report}.xml
-        else
-            echo --log_level=test_suite
-        fi
-    fi
-}
-
 # https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
 ASAN_OPTIONS="color=always"
 ASAN_OPTIONS+=":check_initialization_order=1"
@@ -39,6 +24,11 @@ export ASAN_OPTIONS
 
 export BOOST_TEST_BUILD_INFO=1
 export BOOST_TEST_COLOR_OUTPUT=1
+export BOOST_TEST_DETECT_MEMORY_LEAK=0
+
+ut_log_args() {
+    echo --logger=HRF,test_suite,stdout:XML,all,build/xunit-log${1:+-$1}.xml
+}
 
 # First run all tests as unprivileged user
 ./build/unit-tests-core $(ut_log_args core)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,25 +63,23 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
       groupSize = FALLBACK_GROUP_BUFFER_SIZE;
 
     std::vector<char> groupBuffer(static_cast<size_t>(groupSize));
-    struct group group;
-    struct group* groupResult = nullptr;
+    group gr;
+    group* grResult = nullptr;
 
-    int errorCode = getgrnam_r(groupName.data(), &group,
-                               groupBuffer.data(), groupBuffer.size(), &groupResult);
+    int errorCode = getgrnam_r(groupName.data(), &gr, groupBuffer.data(), groupBuffer.size(), &grResult);
 
     while (errorCode == ERANGE) {
       if (groupBuffer.size() * 2 > MAX_GROUP_BUFFER_SIZE)
         throw Error("Cannot allocate large enough buffer for struct group");
 
       groupBuffer.resize(groupBuffer.size() * 2);
-      errorCode = getgrnam_r(groupName.data(), &group,
-                             groupBuffer.data(), groupBuffer.size(), &groupResult);
+      errorCode = getgrnam_r(groupName.data(), &gr, groupBuffer.data(), groupBuffer.size(), &grResult);
     }
 
-    if (errorCode != 0 || !groupResult)
+    if (errorCode != 0 || !grResult)
       throw Error("Failed to get gid for \"" + groupName + "\"");
 
-    s_normalGid = group.gr_gid;
+    s_normalGid = gr.gr_gid;
   }
 
   if (!userName.empty()) {
@@ -91,25 +89,23 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
       passwdSize = FALLBACK_PASSWD_BUFFER_SIZE;
 
     std::vector<char> passwdBuffer(static_cast<size_t>(passwdSize));
-    struct passwd passwd;
-    struct passwd* passwdResult = nullptr;
+    passwd pw;
+    passwd* pwResult = nullptr;
 
-    int errorCode = getpwnam_r(userName.data(), &passwd,
-                               passwdBuffer.data(), passwdBuffer.size(), &passwdResult);
+    int errorCode = getpwnam_r(userName.data(), &pw, passwdBuffer.data(), passwdBuffer.size(), &pwResult);
 
     while (errorCode == ERANGE) {
       if (passwdBuffer.size() * 2 > MAX_PASSWD_BUFFER_SIZE)
         throw Error("Cannot allocate large enough buffer for struct passwd");
 
       passwdBuffer.resize(passwdBuffer.size() * 2);
-      errorCode = getpwnam_r(userName.data(), &passwd,
-                             passwdBuffer.data(), passwdBuffer.size(), &passwdResult);
+      errorCode = getpwnam_r(userName.data(), &pw, passwdBuffer.data(), passwdBuffer.size(), &pwResult);
     }
 
-    if (errorCode != 0 || !passwdResult)
+    if (errorCode != 0 || !pwResult)
       throw Error("Failed to get uid for \"" + userName + "\"");
 
-    s_normalUid = passwd.pw_uid;
+    s_normalUid = pw.pw_uid;
   }
 #else
   if (!userName.empty() || !groupName.empty()) {

@@ -1,7 +1,7 @@
 # Notes for NFD developers
 
 If you are new to the NDN software community, please read the
-[Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md).
+[Contributor's Guide](https://github.com/named-data/.github/blob/master/CONTRIBUTING.md).
 
 ## Code style
 
@@ -61,12 +61,12 @@ The simplest way to run the tests is to launch the compiled binary without any p
     # Run NFD RIB management tests
     ./build/unit-tests-rib
 
-[Boost.Test framework](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
+The [Boost.Test framework](https://www.boost.org/doc/libs/1_65_1/libs/test/doc/html/index.html)
 is very flexible and allows a number of run-time customization of what tests should be run.
 For example, it is possible to choose to run only a specific test suite, only a specific
 test case within a suite, or specific test cases within specific test suites:
 
-    # Run only TCP Face test suite of NFD daemon tests (see tests/daemon/face/tcp.cpp)
+    # Run only the TCP Face test suite of NFD daemon tests
     ./build/unit-tests-daemon -t FaceTcp
 
     # Run only test case EndToEnd4 from the same test suite
@@ -93,6 +93,5 @@ or `-p` to show a progress bar:
     ./build/unit-tests-core -p
 
 There are many more command line options available, information about which can be obtained
-either from the command line using `--help` switch, or online on
-[Boost.Test library](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
-website.
+either from the command line using the `--help` switch, or online on the
+[Boost.Test website](https://www.boost.org/doc/libs/1_65_1/libs/test/doc/html/index.html).

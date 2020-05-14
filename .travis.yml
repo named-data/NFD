@@ -18,7 +18,10 @@ env:
 jobs:
   include:
     # Linux
+    - env: COMPILER=g++-5
+    - env: COMPILER=g++-6
     - env: COMPILER=g++-8
+    - env: COMPILER=clang++-4.0
     - env: COMPILER=clang++-5.0
     - env: COMPILER=clang++-7
     - env: COMPILER=clang++-8
@@ -38,8 +41,14 @@ jobs:
     - os: osx
       osx_image: xcode11.3
       env: # default compiler
+    - os: osx
+      osx_image: xcode11.5
+      env: # default compiler
 
   allow_failures:
+    - env: COMPILER=g++-5
+    - env: COMPILER=g++-6
+    - env: COMPILER=clang++-4.0
     - env: COMPILER=clang++-11
 
   fast_finish: true

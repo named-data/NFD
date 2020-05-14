@@ -1,10 +1,11 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
+import platform
 from waflib import Configure, Logs, Utils
 
 def options(opt):
     opt.add_option('--debug', '--with-debug', action='store_true', default=False,
-                   help='Compile in debugging mode with minimal optimizations (-O0 or -Og)')
+                   help='Compile in debugging mode with minimal optimizations (-Og)')
 
 def configure(conf):
     conf.start_msg('Checking C++ compiler version')
@@ -17,15 +18,21 @@ def configure(conf):
     if cxx == 'gcc':
         if ccver < (5, 3, 0):
             errmsg = ('The version of gcc you are using is too old.\n'
-                      'The minimum supported gcc version is 5.3.0.')
+                      'The minimum supported gcc version is 7.4.0.')
+        elif ccver < (7, 4, 0):
+            warnmsg = ('Using a version of gcc older than 7.4.0 is not '
+                       'officially supported and may result in build failures.')
         conf.flags = GccFlags()
     elif cxx == 'clang':
-        if ccver < (3, 6, 0):
+        if Utils.unversioned_sys_platform() == 'darwin' and ccver < (9, 0, 0):
+            errmsg = ('The version of Xcode you are using is too old.\n'
+                      'The minimum supported Xcode version is 9.0.')
+        elif ccver < (4, 0, 0):
             errmsg = ('The version of clang you are using is too old.\n'
-                      'The minimum supported clang version is 3.6.0.')
+                      'The minimum supported clang version is 4.0.')
         conf.flags = ClangFlags()
     else:
-        warnmsg = 'Note: %s compiler is unsupported' % cxx
+        warnmsg = '%s compiler is unsupported' % cxx
         conf.flags = CompilerFlags()
 
     if errmsg:
@@ -33,7 +40,7 @@ def configure(conf):
         conf.fatal(errmsg)
     elif warnmsg:
         conf.end_msg(ccverstr, color='YELLOW')
-        Logs.warn(warnmsg)
+        Logs.warn('WARNING: ' + warnmsg)
     else:
         conf.end_msg(ccverstr)
 
@@ -137,13 +144,14 @@ class GccBasicFlags(CompilerFlags):
 
     def getDebugFlags(self, conf):
         flags = super(GccBasicFlags, self).getDebugFlags(conf)
-        flags['CXXFLAGS'] += ['-O0',
-                              '-Og', # gcc >= 4.8, clang >= 4.0
+        flags['CXXFLAGS'] += ['-Og',
                               '-g3',
                               '-pedantic',
                               '-Wall',
                               '-Wextra',
                               '-Werror',
+                              '-Wcatch-value=2',
+                              '-Wextra-semi',
                               '-Wnon-virtual-dtor',
                               '-Wno-error=deprecated-declarations', # Bug #3795
                               '-Wno-error=maybe-uninitialized', # Bug #1615
@@ -159,6 +167,8 @@ class GccBasicFlags(CompilerFlags):
                               '-pedantic',
                               '-Wall',
                               '-Wextra',
+                              '-Wcatch-value=2',
+                              '-Wextra-semi',
                               '-Wnon-virtual-dtor',
                               '-Wno-unused-parameter',
                               ]
@@ -168,49 +178,50 @@ class GccBasicFlags(CompilerFlags):
 class GccFlags(GccBasicFlags):
     def getDebugFlags(self, conf):
         flags = super(GccFlags, self).getDebugFlags(conf)
-        flags['CXXFLAGS'] += ['-fdiagnostics-color']
+        flags['CXXFLAGS'] += ['-fdiagnostics-color',
+                              '-Wredundant-tags',
+                              ]
+        if platform.machine() == 'armv7l' and self.getCompilerVersion(conf) >= (7, 1, 0):
+            flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
     def getOptimizedFlags(self, conf):
         flags = super(GccFlags, self).getOptimizedFlags(conf)
-        flags['CXXFLAGS'] += ['-fdiagnostics-color']
+        flags['CXXFLAGS'] += ['-fdiagnostics-color',
+                              '-Wredundant-tags',
+                              ]
+        if platform.machine() == 'armv7l' and self.getCompilerVersion(conf) >= (7, 1, 0):
+            flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
 class ClangFlags(GccBasicFlags):
     def getGeneralFlags(self, conf):
         flags = super(ClangFlags, self).getGeneralFlags(conf)
-        if Utils.unversioned_sys_platform() == 'darwin' and self.getCompilerVersion(conf) >= (9, 0, 0):
+        if Utils.unversioned_sys_platform() == 'darwin':
             # Bug #4296
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
                                   ['-isystem', '/opt/local/include']] # for MacPorts
-        if Utils.unversioned_sys_platform() == 'freebsd':
-            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']] # Bug #4790
+        elif Utils.unversioned_sys_platform() == 'freebsd':
+            # Bug #4790
+            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
         return flags
 
     def getDebugFlags(self, conf):
         flags = super(ClangFlags, self).getDebugFlags(conf)
         flags['CXXFLAGS'] += ['-fcolor-diagnostics',
-                              '-Wextra-semi',
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = self.getCompilerVersion(conf)
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
-            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
-        if version < (6, 0, 0):
+        if self.getCompilerVersion(conf) < (6, 0, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags
 
     def getOptimizedFlags(self, conf):
         flags = super(ClangFlags, self).getOptimizedFlags(conf)
         flags['CXXFLAGS'] += ['-fcolor-diagnostics',
-                              '-Wextra-semi',
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = self.getCompilerVersion(conf)
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
-            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
-        if version < (6, 0, 0):
+        if self.getCompilerVersion(conf) < (6, 0, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags

@@ -1,4 +1,4 @@
-Getting Started with NFD
+Getting started with NFD
 ========================
 
 Supported platforms
@@ -7,19 +7,20 @@ Supported platforms
 NFD is built against a continuous integration system and has been tested on the
 following platforms:
 
--  Ubuntu 16.04 (amd64)
 -  Ubuntu 18.04 (amd64, armhf, i386)
--  Ubuntu 19.10 (amd64)
+-  Ubuntu 20.04 (amd64)
 -  macOS 10.13
 -  macOS 10.14
 -  macOS 10.15
+-  CentOS 8
 
 NFD is known to work on the following platforms, although they are not officially
 supported:
 
--  Debian >= 9
+-  Debian 10 (Buster)
+-  Fedora >= 29
 -  Gentoo Linux
--  Raspbian >= 2017-08-16
+-  Raspbian >= 2019-06-20 (Buster)
 
 .. _Install NFD on Ubuntu Linux using the NDN PPA repository:
 
@@ -98,14 +99,19 @@ On Linux, NFD needs the following dependencies to enable optional features:
 
 - On Ubuntu::
 
-        sudo apt install libpcap-dev libsystemd-dev
+    sudo apt install libpcap-dev libsystemd-dev
+
+- On CentOS and Fedora::
+
+    sudo dnf config-manager --enable PowerTools  # on CentOS only
+    sudo dnf install libpcap-devel systemd-devel
 
 Build
 ~~~~~
 
 The following commands can be used to build and install NFD from source::
 
-    ./waf configure
+    ./waf configure  # on CentOS, add --without-pch
     ./waf
     sudo ./waf install
 
@@ -128,12 +134,12 @@ Refer to ``./waf --help`` for more options that can be used during the ``configu
 Debug symbols
 ~~~~~~~~~~~~~
 
-The default compiler flags enable debug symbols to be included in binaries. This should
-provide more meaningful debugging information if NFD or other tools happen to crash.
+The default compiler flags include debug symbols in binaries. This should provide
+more meaningful debugging information if NFD or other tools happen to crash.
 
-If this is undesirable, the default flags can be overridden to disable debug symbols.
-The following example shows how to completely disable debug symbols and configure NFD
-to be installed into ``/usr`` with configuration in the ``/etc`` directory.
+If this is not desired, the default flags can be overridden to disable debug symbols.
+The following example shows how to completely disable debug symbols and configure
+NFD to be installed into ``/usr`` with configuration in the ``/etc`` directory.
 
 ::
 
@@ -155,7 +161,7 @@ with clang on Linux, use the following::
 Building the documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NFD tutorials and API documentation can be built using the following commands::
+Tutorials and API documentation can be built using the following commands::
 
     # Full set of documentation (tutorials + API) in build/docs
     ./waf docs
@@ -166,13 +172,14 @@ NFD tutorials and API documentation can be built using the following commands::
     # Only API docs in build/docs/doxygen
     ./waf doxygen
 
-If ``sphinx-build`` is detected during ``./waf configure``, manpages are automatically
-built and installed during the normal build process (i.e., during ``./waf`` and ``./waf
-install``). By default, manpages are installed into ``${PREFIX}/share/man`` (the default
-value for ``PREFIX`` is ``/usr/local``). This location can be changed during the ``./waf
-configure`` stage using the ``--prefix``, ``--datarootdir``, or ``--mandir`` options.
+If ``sphinx-build`` is detected during ``./waf configure``, manpages will automatically
+be built and installed during the normal build process (i.e., during ``./waf`` and
+``./waf install``). By default, manpages will be installed into ``${PREFIX}/share/man``
+(the default value for ``PREFIX`` is ``/usr/local``). This location can be changed
+during the ``./waf configure`` stage using the ``--prefix``, ``--datarootdir``, or
+``--mandir`` options.
 
-For more details, please refer to ``./waf --help``.
+For further details, please refer to ``./waf --help``.
 
 Initial configuration
 ---------------------
@@ -261,14 +268,13 @@ of NDN using the following applications and libraries.
 
 Sample applications:
 
-    + `Simple examples using the ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`_
+    + `Simple examples using the ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`__
     + `Introductory examples of NDN-CCL
-      <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
+      <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`__
 
 Real applications and libraries:
 
-    + `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`_
-    + `ndn-traffic-generator - Traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`_
-    + `repo-ng - Next generation NDN repository <https://github.com/named-data/repo-ng>`_
-    + `ChronoSync - Sync library for multi-user real-time applications <https://github.com/named-data/ChronoSync>`_
-    + `PSync - Partial and full synchronization library <https://github.com/named-data/PSync>`_
+    + `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`__
+    + `ndn-traffic-generator - Traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`__
+    + `ChronoSync - Sync library for multi-user real-time applications <https://github.com/named-data/ChronoSync>`__
+    + `PSync - Partial and full synchronization library <https://github.com/named-data/PSync>`__

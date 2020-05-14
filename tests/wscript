@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2019,  Regents of the University of California,
+Copyright (c) 2014-2020,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,15 +39,12 @@ def build(bld):
             headers='../core/common.hpp boost-test.hpp',
             defines=[config_path])
 
-        for module, name in {'core': 'Core Tests',
-                             'daemon': 'Daemon Tests',
-                             'rib': 'RIB Tests',
-                             'tools': 'Tools Tests'}.items():
+        for module in ['core', 'daemon', 'rib', 'tools']:
             # main() for the module
             bld.objects(target='unit-tests-%s-main' % module,
                         source='main.cpp',
                         use='BOOST',
-                        defines=['BOOST_TEST_MODULE=%s' % name])
+                        defines=['BOOST_TEST_MODULE=NFD %s' % module.capitalize()])
 
             subdir = 'daemon/rib' if module == 'rib' else module
             node = bld.path.find_dir(subdir)
