@@ -362,6 +362,13 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   m_mcastFaces[localEp] = face;
   connectFaceClosedSignal(*face, [this, localEp] { m_mcastFaces.erase(localEp); });
 
+  // Associate with the first available channel of the same protocol family
+  auto channelIt = std::find_if(m_channels.begin(), m_channels.end(),
+                                [isV4 = localEp.address().is_v4()] (const auto& it) {
+                                  return it.first.address().is_v4() == isV4;
+                                });
+  face->setChannel(channelIt != m_channels.end() ? channelIt->second : nullptr);
+
   return face;
 }
 

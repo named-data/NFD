@@ -257,6 +257,9 @@ EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
   m_mcastFaces[key] = face;
   connectFaceClosedSignal(*face, [this, key] { m_mcastFaces.erase(key); });
 
+  auto channelIt = m_channels.find(netif.getName());
+  face->setChannel(channelIt != m_channels.end() ? channelIt->second : nullptr);
+
   return face;
 }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@ namespace face {
  *  A channel can listen on a local endpoint and initiate outgoing connection from a local endpoint.
  *  A channel creates Face objects and retains shared ownership of them.
  */
-class Channel : noncopyable
+class Channel : public std::enable_shared_from_this<Channel>, noncopyable
 {
 public:
   virtual

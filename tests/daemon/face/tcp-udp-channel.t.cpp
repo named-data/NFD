@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -136,6 +136,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceClosure, T, FixtureAndAddressList, T::Fixtu
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 1);
   BOOST_CHECK_EQUAL(clientChannel->size(), 1);
+
+  BOOST_CHECK_EQUAL(this->clientFaces.at(0)->getChannel().lock(), clientChannel);
 
   this->clientFaces.at(0)->close();
 

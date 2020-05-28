@@ -151,6 +151,11 @@ BOOST_AUTO_TEST_CASE(McastNormal)
   parseConfig(CONFIG, false);
 
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
+  for (const auto& face : this->listEtherMcastFaces()) {
+    BOOST_REQUIRE(face->getChannel().lock());
+    // not universal, but for Ethernet, local URI of a mcast face matches URI of the associated channel
+    BOOST_CHECK_EQUAL(face->getLocalUri(), face->getChannel().lock()->getUri());
+  }
 }
 
 BOOST_AUTO_TEST_CASE(EnableDisableMcast)

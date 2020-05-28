@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,14 +43,14 @@ protected:
     local.assign({{"subnet", "127.0.0.0/8"}, {"subnet", "::1/128"}}, {});
   }
 
-  unique_ptr<TcpChannel>
+  shared_ptr<TcpChannel>
   makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
       port = getNextPort();
 
-    return make_unique<TcpChannel>(tcp::Endpoint(addr, port), false,
-                                   std::bind(&TcpChannelFixture::determineFaceScope, this, _1, _2));
+    return std::make_shared<TcpChannel>(tcp::Endpoint(addr, port), false,
+                                        std::bind(&TcpChannelFixture::determineFaceScope, this, _1, _2));
   }
 
   void

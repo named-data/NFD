@@ -34,6 +34,8 @@
 namespace nfd {
 namespace face {
 
+class Channel;
+
 /** \brief indicates the state of a face
  */
 typedef TransportState FaceState;
@@ -171,11 +173,30 @@ public: // properties
   const FaceCounters&
   getCounters() const;
 
+  /**
+   * \brief Get channel on which face was created (unicast) or the associated channel (multicast)
+   */
+  weak_ptr<Channel>
+  getChannel() const
+  {
+    return m_channel;
+  }
+
+  /**
+   * \brief Set channel on which face was created (unicast) or the associated channel (multicast)
+   */
+  void
+  setChannel(weak_ptr<Channel> channel)
+  {
+    m_channel = std::move(channel);
+  }
+
 private:
   FaceId m_id;
   unique_ptr<LinkService> m_service;
   unique_ptr<Transport> m_transport;
   FaceCounters m_counters;
+  weak_ptr<Channel> m_channel;
 };
 
 inline LinkService*

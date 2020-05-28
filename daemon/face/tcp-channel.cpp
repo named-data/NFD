@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -129,6 +129,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
                                           socket.remote_endpoint().address());
     auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency, faceScope);
     face = make_shared<Face>(std::move(linkService), std::move(transport));
+    face->setChannel(shared_from_this()); // use weak_from_this() in C++17
 
     m_channelFaces[remoteEndpoint] = face;
     connectFaceClosedSignal(*face, [this, remoteEndpoint] { m_channelFaces.erase(remoteEndpoint); });

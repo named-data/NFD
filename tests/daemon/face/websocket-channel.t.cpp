@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -88,9 +88,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, F, AddressFamilies)
                                   2_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 3);
 
-  // check face persistency
+  // check face persistency and channel association
   for (const auto& face : listenerFaces) {
     BOOST_CHECK_EQUAL(face->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+    BOOST_CHECK_EQUAL(face->getChannel().lock(), listenerChannel);
   }
 }
 
@@ -151,6 +152,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceClosure, F, AddressFamilies)
   auto address = getTestIp(F::value, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
+
+  BOOST_CHECK_EQUAL(listenerFaces.at(0)->getChannel().lock(), listenerChannel);
 
   listenerFaces.at(0)->close();
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);

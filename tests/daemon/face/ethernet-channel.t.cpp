@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,11 +36,11 @@ namespace tests {
 class EthernetChannelFixture : public EthernetFixture
 {
 protected:
-  unique_ptr<EthernetChannel>
+  shared_ptr<EthernetChannel>
   makeChannel()
   {
     BOOST_ASSERT(netifs.size() > 0);
-    return make_unique<EthernetChannel>(netifs.front(), 2_s);
+    return std::make_shared<EthernetChannel>(netifs.front(), 2_s);
   }
 };
 
@@ -88,6 +88,8 @@ BOOST_AUTO_TEST_CASE(FaceClosure)
                    });
   BOOST_CHECK_EQUAL(channel->size(), 1);
   BOOST_REQUIRE(face != nullptr);
+
+  BOOST_CHECK_EQUAL(face->getChannel().lock(), channel);
 
   face->close();
   g_io.poll();

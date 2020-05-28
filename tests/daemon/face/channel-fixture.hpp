@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,14 +63,14 @@ protected:
     return m_nextPort++;
   }
 
-  virtual unique_ptr<ChannelT>
+  virtual shared_ptr<ChannelT>
   makeChannel()
   {
     BOOST_FAIL("Unimplemented");
     return nullptr;
   }
 
-  virtual unique_ptr<ChannelT>
+  virtual shared_ptr<ChannelT>
   makeChannel(const boost::asio::ip::address&, uint16_t port = 0)
   {
     BOOST_FAIL("Unimplemented");
@@ -101,7 +101,7 @@ protected:
 protected:
   LimitedIo limitedIo;
   EndpointT listenerEp;
-  unique_ptr<ChannelT> listenerChannel;
+  shared_ptr<ChannelT> listenerChannel;
   std::vector<shared_ptr<Face>> listenerFaces;
 
 private:

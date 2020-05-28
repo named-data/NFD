@@ -209,6 +209,7 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
                                                          params.persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
+  face->setChannel(shared_from_this()); // use weak_from_this() in C++17
 
   m_channelFaces[remoteEndpoint] = face;
   connectFaceClosedSignal(*face, [this, remoteEndpoint] {

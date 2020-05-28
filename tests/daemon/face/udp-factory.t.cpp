@@ -300,6 +300,17 @@ BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpFactoryMcastFixture)
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), netifsV4.size());
   BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), netifsV6.size());
 
+  BOOST_REQUIRE_EQUAL(factory.getChannels().size(), 2);
+  for (const auto& face : this->listUdp4McastFaces()) {
+    BOOST_REQUIRE(face->getChannel().lock());
+    BOOST_CHECK_EQUAL(face->getChannel().lock()->getUri().getScheme(), "udp4");
+  }
+
+  for (const auto& face : this->listUdp6McastFaces()) {
+    BOOST_REQUIRE(face->getChannel().lock());
+    BOOST_CHECK_EQUAL(face->getChannel().lock()->getUri().getScheme(), "udp6");
+  }
+
   parseConfig(CONFIG_WITHOUT_MCAST, false);
   g_io.poll();
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,13 +38,13 @@ namespace tests {
 class UdpChannelFixture : public ChannelFixture<UdpChannel, udp::Endpoint>
 {
 protected:
-  unique_ptr<UdpChannel>
+  shared_ptr<UdpChannel>
   makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
       port = getNextPort();
 
-    return make_unique<UdpChannel>(udp::Endpoint(addr, port), 2_s, false);
+    return std::make_shared<UdpChannel>(udp::Endpoint(addr, port), 2_s, false);
   }
 
   void

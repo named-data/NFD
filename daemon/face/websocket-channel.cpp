@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -126,6 +126,7 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
   auto linkService = make_unique<GenericLinkService>();
   auto transport = make_unique<WebSocketTransport>(hdl, m_server, m_pingInterval);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
+  face->setChannel(shared_from_this()); // use weak_from_this() in C++17
 
   BOOST_ASSERT(m_channelFaces.count(hdl) == 0);
   m_channelFaces[hdl] = face;

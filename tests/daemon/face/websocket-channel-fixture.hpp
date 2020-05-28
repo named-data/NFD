@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,13 +37,13 @@ namespace tests {
 class WebSocketChannelFixture : public ChannelFixture<WebSocketChannel, websocket::Endpoint>
 {
 protected:
-  unique_ptr<WebSocketChannel>
+  shared_ptr<WebSocketChannel>
   makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
       port = getNextPort();
 
-    return make_unique<WebSocketChannel>(websocket::Endpoint(addr, port));
+    return std::make_shared<WebSocketChannel>(websocket::Endpoint(addr, port));
   }
 
   void
