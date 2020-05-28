@@ -113,7 +113,7 @@ makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
  */
 ndn::PrefixAnnouncement
 signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
-              const ndn::security::SigningInfo& si = ndn::KeyChain::getDefaultSigningInfo(),
+              const ndn::security::SigningInfo& si = ndn::security::SigningInfo(),
               optional<uint64_t> version = nullopt);
 
 } // namespace tests
