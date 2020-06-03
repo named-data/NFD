@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,14 +29,7 @@
 #include "common/config-file.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
-
-namespace ndn {
-namespace security {
-namespace v2 {
-class Validator;
-} // namespace v2
-} // namespace security
-} // namespace ndn
+#include <ndn-cxx/security/validator.hpp>
 
 namespace nfd {
 
@@ -70,7 +63,7 @@ private:
 
 private:
   /// module => validator
-  std::unordered_map<std::string, shared_ptr<ndn::security::v2::Validator>> m_validators;
+  std::unordered_map<std::string, shared_ptr<ndn::security::Validator>> m_validators;
 };
 
 } // namespace nfd

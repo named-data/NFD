@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
-#include <ndn-cxx/security/v2/certificate-fetcher-direct-fetch.hpp>
+#include <ndn-cxx/security/certificate-fetcher-direct-fetch.hpp>
 
 namespace nfd {
 
@@ -57,8 +57,8 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_dispatcher(dispatcher)
   , m_faceMonitor(face)
   , m_localhostValidator(face)
-  , m_localhopValidator(make_unique<ndn::security::v2::CertificateFetcherDirectFetch>(face))
-  , m_paValidator(make_unique<ndn::security::v2::CertificateFetcherDirectFetch>(face))
+  , m_localhopValidator(make_unique<ndn::security::CertificateFetcherDirectFetch>(face))
+  , m_paValidator(make_unique<ndn::security::CertificateFetcherDirectFetch>(face))
   , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
@@ -370,7 +370,7 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
           cb(res);
         });
     },
-    [=] (const Data&, ndn::security::v2::ValidationError err) {
+    [=] (const Data&, ndn::security::ValidationError err) {
       NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
                    " validation error: " << err);
       cb(SlAnnounceResult::VALIDATION_FAILURE);

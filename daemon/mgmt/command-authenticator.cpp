@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,17 +27,17 @@
 #include "common/logger.hpp"
 
 #include <ndn-cxx/tag.hpp>
-#include <ndn-cxx/security/v2/certificate-fetcher-offline.hpp>
-#include <ndn-cxx/security/v2/certificate-request.hpp>
-#include <ndn-cxx/security/v2/validation-policy.hpp>
-#include <ndn-cxx/security/v2/validation-policy-accept-all.hpp>
-#include <ndn-cxx/security/v2/validation-policy-command-interest.hpp>
-#include <ndn-cxx/security/v2/validator.hpp>
+#include <ndn-cxx/security/certificate-fetcher-offline.hpp>
+#include <ndn-cxx/security/certificate-request.hpp>
+#include <ndn-cxx/security/validation-policy.hpp>
+#include <ndn-cxx/security/validation-policy-accept-all.hpp>
+#include <ndn-cxx/security/validation-policy-command-interest.hpp>
+#include <ndn-cxx/security/validator.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 #include <boost/filesystem.hpp>
 
-namespace sec2 = ndn::security::v2;
+namespace security = ndn::security;
 
 namespace nfd {
 
@@ -65,11 +65,11 @@ getSignerFromTag(const Interest& interest)
 
 /** \brief a validation policy that only permits Interest signed by a trust anchor
  */
-class CommandAuthenticatorValidationPolicy : public sec2::ValidationPolicy
+class CommandAuthenticatorValidationPolicy : public security::ValidationPolicy
 {
 public:
   void
-  checkPolicy(const Interest& interest, const shared_ptr<sec2::ValidationState>& state,
+  checkPolicy(const Interest& interest, const shared_ptr<security::ValidationState>& state,
               const ValidationContinuation& continueValidation) final
   {
     Name klName = getKeyLocatorName(interest, *state);
@@ -80,14 +80,14 @@ public:
     // SignerTag must be placed on the 'original Interest' in ValidationState to be available for
     // InterestValidationSuccessCallback. The 'interest' parameter refers to a different instance
     // which is copied into 'original Interest'.
-    auto state1 = dynamic_pointer_cast<sec2::InterestValidationState>(state);
+    auto state1 = dynamic_pointer_cast<security::InterestValidationState>(state);
     state1->getOriginalInterest().setTag(make_shared<SignerTag>(klName));
 
-    continueValidation(make_shared<sec2::CertificateRequest>(Interest(klName)), state);
+    continueValidation(make_shared<security::CertificateRequest>(Interest(klName)), state);
   }
 
   void
-  checkPolicy(const Data& data, const shared_ptr<sec2::ValidationState>& state,
+  checkPolicy(const Data& data, const shared_ptr<security::ValidationState>& state,
               const ValidationContinuation& continueValidation) final
   {
     // Non-certificate Data are not handled by CommandAuthenticator.
@@ -117,9 +117,9 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
   if (!isDryRun) {
     NFD_LOG_INFO("clear-authorizations");
     for (auto& kv : m_validators) {
-      kv.second = make_shared<sec2::Validator>(
-        make_unique<sec2::ValidationPolicyCommandInterest>(make_unique<CommandAuthenticatorValidationPolicy>()),
-        make_unique<sec2::CertificateFetcherOffline>());
+      kv.second = make_shared<security::Validator>(
+        make_unique<security::ValidationPolicyCommandInterest>(make_unique<CommandAuthenticatorValidationPolicy>()),
+        make_unique<security::CertificateFetcherOffline>());
     }
   }
 
@@ -144,7 +144,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
 
     bool isAny = false;
-    shared_ptr<sec2::Certificate> cert;
+    shared_ptr<security::Certificate> cert;
     if (certfile == "any") {
       isAny = true;
       NFD_LOG_WARN("'certfile any' is intended for demo purposes only and "
@@ -153,7 +153,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     else {
       using namespace boost::filesystem;
       path certfilePath = absolute(certfile, path(filename).parent_path());
-      cert = ndn::io::load<sec2::Certificate>(certfilePath.string());
+      cert = ndn::io::load<security::Certificate>(certfilePath.string());
       if (cert == nullptr) {
         NDN_THROW(ConfigFile::Error("cannot load certfile " + certfilePath.string() +
                                     " for authorize[" + to_string(authSectionIndex) + "]"));
@@ -185,13 +185,13 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       }
 
       if (isAny) {
-        found->second = make_shared<sec2::Validator>(make_unique<sec2::ValidationPolicyAcceptAll>(),
-                                                     make_unique<sec2::CertificateFetcherOffline>());
+        found->second = make_shared<security::Validator>(make_unique<security::ValidationPolicyAcceptAll>(),
+                                                         make_unique<security::CertificateFetcherOffline>());
         NFD_LOG_INFO("authorize module=" << module << " signer=any");
       }
       else {
         const Name& keyName = cert->getKeyName();
-        sec2::Certificate certCopy = *cert;
+        security::Certificate certCopy = *cert;
         found->second->loadAnchor(certfile, std::move(certCopy));
         NFD_LOG_INFO("authorize module=" << module << " signer=" << keyName << " certfile=" << certfile);
       }
@@ -215,20 +215,20 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
     auto successCb = [accept, validator] (const Interest& interest1) {
       auto signer1 = getSignerFromTag(interest1);
       BOOST_ASSERT(signer1 || // signer must be available unless 'certfile any'
-                   dynamic_cast<sec2::ValidationPolicyAcceptAll*>(&validator->getPolicy()) != nullptr);
+                   dynamic_cast<security::ValidationPolicyAcceptAll*>(&validator->getPolicy()) != nullptr);
       std::string signer = signer1.value_or("*");
       NFD_LOG_DEBUG("accept " << interest1.getName() << " signer=" << signer);
       accept(signer);
     };
-    auto failureCb = [reject] (const Interest& interest1, const sec2::ValidationError& err) {
+    auto failureCb = [reject] (const Interest& interest1, const security::ValidationError& err) {
       using ndn::mgmt::RejectReply;
       RejectReply reply = RejectReply::STATUS403;
       switch (err.getCode()) {
-      case sec2::ValidationError::NO_SIGNATURE:
-      case sec2::ValidationError::INVALID_KEY_LOCATOR:
+      case security::ValidationError::NO_SIGNATURE:
+      case security::ValidationError::INVALID_KEY_LOCATOR:
         reply = RejectReply::SILENT;
         break;
-      case sec2::ValidationError::POLICY_ERROR:
+      case security::ValidationError::POLICY_ERROR:
         if (interest1.getName().size() < ndn::command_interest::MIN_SIZE) { // "name too short"
           reply = RejectReply::SILENT;
         }

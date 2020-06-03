@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -235,7 +235,7 @@ protected:
   ConfigurationStatus m_status;
   Name m_anchorId;
   Name m_derivedId;
-  ndn::security::v2::Certificate m_derivedCert;
+  ndn::security::Certificate m_derivedCert;
 
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;

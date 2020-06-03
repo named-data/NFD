@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
 
   Name baseName("/localhop/nfd/rib/routable-prefixes");
   auto fetcher = util::SegmentFetcher::start(clientFace, Interest(baseName),
-                                             security::v2::getAcceptAllValidator());
+                                             security::getAcceptAllValidator());
   fetcher->afterSegmentReceived.connect([baseName] (const Data& data) {
     const Name& dataName = data.getName();
     BOOST_CHECK_EQUAL(dataName.size(), baseName.size() + 2);

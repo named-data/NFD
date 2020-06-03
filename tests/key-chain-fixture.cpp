@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,11 +25,11 @@
 
 #include "tests/key-chain-fixture.hpp"
 
+#include <ndn-cxx/security/certificate.hpp>
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/key.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/security/transform.hpp>
-#include <ndn-cxx/security/v2/certificate.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -66,7 +66,7 @@ KeyChainFixture::addIdentity(const Name& identity, const ndn::KeyParams& params)
 bool
 KeyChainFixture::saveIdentityCertificate(const Name& identity, const std::string& filename, bool allowAdd)
 {
-  ndn::security::v2::Certificate cert;
+  ndn::security::Certificate cert;
   try {
     cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
@@ -90,7 +90,7 @@ KeyChainFixture::saveIdentityCertificate(const Name& identity, const std::string
 std::string
 KeyChainFixture::getIdentityCertificateBase64(const Name& identity, bool allowAdd)
 {
-  ndn::security::v2::Certificate cert;
+  ndn::security::Certificate cert;
   try {
     cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
