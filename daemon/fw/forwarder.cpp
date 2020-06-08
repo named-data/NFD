@@ -175,7 +175,7 @@ Forwarder::onInterestLoop(const FaceEndpoint& ingress, const Interest& interest)
   // note: Don't enter outgoing Nack pipeline because it needs an in-record.
   lp::Nack nack(interest);
   nack.setReason(lp::NackReason::DUPLICATE);
-  ingress.face.sendNack(nack, ingress.endpoint);
+  ingress.face.sendNack(nack);
 }
 
 void
@@ -258,7 +258,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
   pitEntry->insertOrUpdateOutRecord(egress.face, interest);
 
   // send Interest
-  egress.face.sendInterest(interest, egress.endpoint);
+  egress.face.sendInterest(interest);
   ++m_counters.nOutInterests;
 }
 
@@ -417,7 +417,7 @@ Forwarder::onOutgoingData(const Data& data, const FaceEndpoint& egress)
   // TODO traffic manager
 
   // send Data
-  egress.face.sendData(data, egress.endpoint);
+  egress.face.sendData(data);
   ++m_counters.nOutData;
 }
 
@@ -519,7 +519,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   pitEntry->deleteInRecord(egress.face);
 
   // send Nack on face
-  egress.face.sendNack(nackPkt, egress.endpoint);
+  egress.face.sendNack(nackPkt);
   ++m_counters.nOutNacks;
 }
 

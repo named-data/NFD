@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -149,13 +149,13 @@ private:
   tieFaces(const shared_ptr<Face>& face1, const shared_ptr<Face>& face2)
   {
     face1->afterReceiveInterest.connect([face2] (const Interest& interest, const EndpointId&) {
-      face2->sendInterest(interest, 0);
+      face2->sendInterest(interest);
     });
     face1->afterReceiveData.connect([face2] (const Data& data, const EndpointId&) {
-      face2->sendData(data, 0);
+      face2->sendData(data);
     });
     face1->afterReceiveNack.connect([face2] (const ndn::lp::Nack& nack, const EndpointId&) {
-      face2->sendNack(nack, 0);
+      face2->sendNack(nack);
     });
   }
 

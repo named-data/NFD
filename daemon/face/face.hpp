@@ -75,20 +75,20 @@ public:
   close();
 
 public: // upper interface connected to forwarding
-  /** \brief send Interest to \p endpointId
+  /** \brief send Interest
    */
   void
-  sendInterest(const Interest& interest, const EndpointId& endpointId);
+  sendInterest(const Interest& interest);
 
-  /** \brief send Data to \p endpointId
+  /** \brief send Data
    */
   void
-  sendData(const Data& data, const EndpointId& endpointId);
+  sendData(const Data& data);
 
-  /** \brief send Nack to \p endpointId
+  /** \brief send Nack
    */
   void
-  sendNack(const lp::Nack& nack, const EndpointId& endpointId);
+  sendNack(const lp::Nack& nack);
 
   /** \brief signals on Interest received
    */
@@ -218,21 +218,21 @@ Face::close()
 }
 
 inline void
-Face::sendInterest(const Interest& interest, const EndpointId& endpointId)
+Face::sendInterest(const Interest& interest)
 {
-  m_service->sendInterest(interest, endpointId);
+  m_service->sendInterest(interest);
 }
 
 inline void
-Face::sendData(const Data& data, const EndpointId& endpointId)
+Face::sendData(const Data& data)
 {
-  m_service->sendData(data, endpointId);
+  m_service->sendData(data);
 }
 
 inline void
-Face::sendNack(const lp::Nack& nack, const EndpointId& endpointId)
+Face::sendNack(const lp::Nack& nack)
 {
-  m_service->sendNack(nack, endpointId);
+  m_service->sendNack(nack);
 }
 
 inline FaceId

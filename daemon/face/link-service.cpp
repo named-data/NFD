@@ -52,36 +52,36 @@ LinkService::setFaceAndTransport(Face& face, Transport& transport)
 }
 
 void
-LinkService::sendInterest(const Interest& interest, const EndpointId& endpoint)
+LinkService::sendInterest(const Interest& interest)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutInterests;
 
-  doSendInterest(interest, endpoint);
+  doSendInterest(interest);
 }
 
 void
-LinkService::sendData(const Data& data, const EndpointId& endpoint)
+LinkService::sendData(const Data& data)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutData;
 
-  doSendData(data, endpoint);
+  doSendData(data);
 }
 
 void
-LinkService::sendNack(const ndn::lp::Nack& nack, const EndpointId& endpoint)
+LinkService::sendNack(const ndn::lp::Nack& nack)
 {
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutNacks;
 
-  doSendNack(nack, endpoint);
+  doSendNack(nack);
 }
 
 void

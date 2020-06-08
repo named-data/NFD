@@ -242,7 +242,7 @@ LpReliability::startIdleAckTimer()
 
   m_idleAckTimer = getScheduler().schedule(m_options.idleAckTimerPeriod, [this] {
     while (!m_ackQueue.empty()) {
-      m_linkService->requestIdlePacket(0);
+      m_linkService->requestIdlePacket();
     }
   });
 }
@@ -346,7 +346,7 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq, bool isTimeout)
     deleteUnackedFrag(txSeqIt);
 
     // Retransmit fragment
-    m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt), 0);
+    m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt));
 
     auto rto = m_rttEst.getEstimatedRto();
     NFD_LOG_FACE_TRACE("retransmitting seq=" << seq << ", txseq=" << newTxSeq << ", retx=" <<

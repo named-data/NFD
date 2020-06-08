@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,7 @@ namespace face {
 namespace tests {
 
 void
-DummyLinkService::doSendInterest(const Interest& interest, const EndpointId&)
+DummyLinkService::doSendInterest(const Interest& interest)
 {
   if (m_loggingFlags & LogSentInterests)
     sentInterests.push_back(interest);
@@ -39,7 +39,7 @@ DummyLinkService::doSendInterest(const Interest& interest, const EndpointId&)
 }
 
 void
-DummyLinkService::doSendData(const Data& data, const EndpointId&)
+DummyLinkService::doSendData(const Data& data)
 {
   if (m_loggingFlags & LogSentData)
     sentData.push_back(data);
@@ -48,7 +48,7 @@ DummyLinkService::doSendData(const Data& data, const EndpointId&)
 }
 
 void
-DummyLinkService::doSendNack(const lp::Nack& nack, const EndpointId&)
+DummyLinkService::doSendNack(const lp::Nack& nack)
 {
   if (m_loggingFlags & LogSentNacks)
     sentNacks.push_back(nack);

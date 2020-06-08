@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,17 +37,17 @@ class NullLinkService final : public LinkService
 {
 private:
   void
-  doSendInterest(const Interest&, const EndpointId&) final
+  doSendInterest(const Interest&) final
   {
   }
 
   void
-  doSendData(const Data&, const EndpointId&) final
+  doSendData(const Data&) final
   {
   }
 
   void
-  doSendNack(const lp::Nack&, const EndpointId&) final
+  doSendNack(const lp::Nack&) final
   {
   }
 

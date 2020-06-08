@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -169,27 +169,27 @@ private:
   ///\todo #3941 call GenericLinkServiceCounters constructor in TopologyPcapLinkService constructor
 
   void
-  doSendInterest(const Interest& interest, const EndpointId& endpointId) override
+  doSendInterest(const Interest& interest) override
   {
     this->sentInterests.push_back(interest);
     this->sentInterests.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendInterest(interest, endpointId);
+    this->GenericLinkService::doSendInterest(interest);
   }
 
   void
-  doSendData(const Data& data, const EndpointId& endpointId) override
+  doSendData(const Data& data) override
   {
     this->sentData.push_back(data);
     this->sentData.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendData(data, endpointId);
+    this->GenericLinkService::doSendData(data);
   }
 
   void
-  doSendNack(const lp::Nack& nack, const EndpointId& endpointId) override
+  doSendNack(const lp::Nack& nack) override
   {
     this->sentNacks.push_back(nack);
     this->sentNacks.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendNack(nack, endpointId);
+    this->GenericLinkService::doSendNack(nack);
   }
 };
 

@@ -62,25 +62,25 @@ public:
     }
 
     for (auto frag : frags) {
-      this->sendLpPacket(std::move(frag), 0);
+      this->sendLpPacket(std::move(frag));
     }
   }
 
 private:
   void
-  doSendInterest(const Interest&, const EndpointId&) final
+  doSendInterest(const Interest&) final
   {
     BOOST_FAIL("unexpected doSendInterest");
   }
 
   void
-  doSendData(const Data&, const EndpointId&) final
+  doSendData(const Data&) final
   {
     BOOST_FAIL("unexpected doSendData");
   }
 
   void
-  doSendNack(const lp::Nack&, const EndpointId&) final
+  doSendNack(const lp::Nack&) final
   {
     BOOST_FAIL("unexpected doSendNack");
   }

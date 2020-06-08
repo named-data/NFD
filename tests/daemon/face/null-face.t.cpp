@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,10 +74,10 @@ BOOST_AUTO_TEST_CASE(Send)
   auto face = makeNullFace();
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 
-  face->sendInterest(*makeInterest("/A"), 0);
+  face->sendInterest(*makeInterest("/A"));
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 
-  face->sendData(*makeData("/B"), 0);
+  face->sendData(*makeData("/B"));
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 }
 

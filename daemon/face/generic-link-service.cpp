@@ -82,16 +82,16 @@ GenericLinkService::canOverrideMtuTo(ssize_t mtu) const
 }
 
 void
-GenericLinkService::requestIdlePacket(const EndpointId& endpointId)
+GenericLinkService::requestIdlePacket()
 {
   // No need to request Acks to attach to this packet from LpReliability, as they are already
   // attached in sendLpPacket
   NFD_LOG_FACE_TRACE("IDLE packet requested");
-  this->sendLpPacket({}, endpointId);
+  this->sendLpPacket({});
 }
 
 void
-GenericLinkService::sendLpPacket(lp::Packet&& pkt, const EndpointId& endpointId)
+GenericLinkService::sendLpPacket(lp::Packet&& pkt)
 {
   const ssize_t mtu = getEffectiveMtu();
 
@@ -109,38 +109,38 @@ GenericLinkService::sendLpPacket(lp::Packet&& pkt, const EndpointId& endpointId)
     NFD_LOG_FACE_WARN("attempted to send packet over MTU limit");
     return;
   }
-  this->sendPacket(block, endpointId);
+  this->sendPacket(block);
 }
 
 void
-GenericLinkService::doSendInterest(const Interest& interest, const EndpointId& endpointId)
+GenericLinkService::doSendInterest(const Interest& interest)
 {
   lp::Packet lpPacket(interest.wireEncode());
 
   encodeLpFields(interest, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), endpointId, true);
+  this->sendNetPacket(std::move(lpPacket), true);
 }
 
 void
-GenericLinkService::doSendData(const Data& data, const EndpointId& endpointId)
+GenericLinkService::doSendData(const Data& data)
 {
   lp::Packet lpPacket(data.wireEncode());
 
   encodeLpFields(data, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), endpointId, false);
+  this->sendNetPacket(std::move(lpPacket), false);
 }
 
 void
-GenericLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointId)
+GenericLinkService::doSendNack(const lp::Nack& nack)
 {
   lp::Packet lpPacket(nack.getInterest().wireEncode());
   lpPacket.add<lp::NackField>(nack.getHeader());
 
   encodeLpFields(nack, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), endpointId, false);
+  this->sendNetPacket(std::move(lpPacket), false);
 }
 
 void
@@ -185,7 +185,7 @@ GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lp
 }
 
 void
-GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId, bool isInterest)
+GenericLinkService::sendNetPacket(lp::Packet&& pkt, bool isInterest)
 {
   std::vector<lp::Packet> frags;
   ssize_t mtu = getEffectiveMtu();
@@ -238,7 +238,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId
   }
 
   for (lp::Packet& frag : frags) {
-    this->sendLpPacket(std::move(frag), endpointId);
+    this->sendLpPacket(std::move(frag));
   }
 }
 

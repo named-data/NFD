@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -73,13 +73,13 @@ public:
 
 private:
   void
-  doSendInterest(const Interest& interest, const EndpointId& endpoint) final;
+  doSendInterest(const Interest& interest) final;
 
   void
-  doSendData(const Data& data, const EndpointId& endpoint) final;
+  doSendData(const Data& data) final;
 
   void
-  doSendNack(const lp::Nack& nack, const EndpointId& endpoint) final;
+  doSendNack(const lp::Nack& nack) final;
 
   void
   doReceivePacket(const Block& packet, const EndpointId& endpoint) final;
