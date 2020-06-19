@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,10 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+
+#include <boost/test/data/test_case.hpp>
+
+namespace bdata = boost::unit_test::data;
 
 namespace nfd {
 namespace pit {
@@ -166,17 +170,42 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   BOOST_CHECK(entry.getOutRecord(*face2) == entry.out_end());
 }
 
-BOOST_AUTO_TEST_CASE(Lifetime)
+const time::milliseconds lifetimes[] = {
+  -1_ms, // unset
+  1_ms,
+  ndn::DEFAULT_INTEREST_LIFETIME,
+  8624_ms,
+  86400_s,
+  time::milliseconds(std::numeric_limits<time::milliseconds::rep>::max()),
+};
+
+BOOST_DATA_TEST_CASE(Lifetime, bdata::make(lifetimes), lifetime)
 {
   auto interest = makeInterest("/7oIEurbgy6");
+  if (lifetime >= 0_ms) {
+    interest->setInterestLifetime(lifetime);
+  }
+
+  auto expectedLifetime = lifetime;
+  if (lifetime < 0_ms) {
+    expectedLifetime = ndn::DEFAULT_INTEREST_LIFETIME;
+  }
+  else if (lifetime > 10_days) {
+    expectedLifetime = 10_days;
+  }
+
   auto face = make_shared<DummyFace>();
   Entry entry(*interest);
 
   auto inIt = entry.insertOrUpdateInRecord(*face, *interest);
-  BOOST_CHECK_GT(inIt->getExpiry(), time::steady_clock::now());
+  auto expiryFromNow = inIt->getExpiry() - time::steady_clock::now();
+  BOOST_CHECK_GT(expiryFromNow, 0_ms);
+  BOOST_CHECK_LT(time::abs(expiryFromNow - expectedLifetime), 100_ms);
 
   auto outIt = entry.insertOrUpdateOutRecord(*face, *interest);
-  BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
+  expiryFromNow = outIt->getExpiry() - time::steady_clock::now();
+  BOOST_CHECK_GT(expiryFromNow, 0_ms);
+  BOOST_CHECK_LT(time::abs(expiryFromNow - expectedLifetime), 100_ms);
 }
 
 BOOST_AUTO_TEST_CASE(OutRecordNack)

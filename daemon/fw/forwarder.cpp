@@ -574,7 +574,7 @@ void
 Forwarder::setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::milliseconds duration)
 {
   BOOST_ASSERT(pitEntry);
-  BOOST_ASSERT(duration >= 0_ms);
+  duration = std::max(duration, 0_ms);
 
   pitEntry->expiryTimer.cancel();
   pitEntry->expiryTimer = getScheduler().schedule(duration, [=] { onInterestFinalize(pitEntry); });
