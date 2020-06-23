@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -80,7 +80,7 @@ SelfLearningStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const In
       NFD_LOG_DEBUG("NACK non-discovery Interest=" << interest << " from=" << ingress << " noNextHop");
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
-      this->sendNack(pitEntry, ingress, nackHeader);
+      this->sendNack(pitEntry, ingress.face, nackHeader);
       this->rejectPendingInterest(pitEntry);
     }
     else { // multicast it if matching FIB entry exists
@@ -112,7 +112,7 @@ SelfLearningStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
   OutRecordInfo* outRecordInfo = outRecord->getStrategyInfo<OutRecordInfo>();
   if (outRecordInfo && outRecordInfo->isNonDiscoveryInterest) { // outgoing Interest was non-discovery
     if (!needPrefixAnn(pitEntry)) { // no need to attach a PA (common cases)
-      sendDataToAll(pitEntry, ingress, data);
+      sendDataToAll(pitEntry, ingress.face, data);
     }
     else { // needs a PA (to respond discovery Interest)
       asyncProcessData(pitEntry, ingress.face, data);
@@ -125,7 +125,7 @@ SelfLearningStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
     }
     else { // Data contains no PrefixAnnouncement, upstreams do not support self-learning
     }
-    sendDataToAll(pitEntry, ingress, data);
+    sendDataToAll(pitEntry, ingress.face, data);
   }
 }
 
@@ -152,7 +152,7 @@ SelfLearningStrategy::broadcastInterest(const Interest& interest, const Face& in
         wouldViolateScope(inFace, interest, outFace) || outFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
       continue;
     }
-    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
+    this->sendInterest(pitEntry, outFace, interest);
     pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
     NFD_LOG_DEBUG("send discovery Interest=" << interest << " from="
                   << inFace.getId() << " to=" << outFace.getId());
@@ -170,7 +170,7 @@ SelfLearningStrategy::multicastInterest(const Interest& interest, const Face& in
         wouldViolateScope(inFace, interest, outFace)) {
       continue;
     }
-    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
+    this->sendInterest(pitEntry, outFace, interest);
     pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
     NFD_LOG_DEBUG("send non-discovery Interest=" << interest << " from="
                   << inFace.getId() << " to=" << outFace.getId());
@@ -195,7 +195,7 @@ SelfLearningStrategy::asyncProcessData(const shared_ptr<pit::Entry>& pitEntry, c
             if (pitEntry && inFace) {
               NFD_LOG_DEBUG("found PrefixAnnouncement=" << pa.getAnnouncedName());
               data.setTag(make_shared<lp::PrefixAnnouncementTag>(lp::PrefixAnnouncementHeader(pa)));
-              this->sendDataToAll(pitEntry, FaceEndpoint(*inFace, 0), data);
+              this->sendDataToAll(pitEntry, *inFace, data);
               this->setExpiryTimer(pitEntry, 0_ms);
             }
             else {

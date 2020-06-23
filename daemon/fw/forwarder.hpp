@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -192,7 +192,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
    */
   VIRTUAL_WITH_TESTS void
   onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
-                     const FaceEndpoint& egress, const Interest& interest);
+                     Face& egress, const Interest& interest);
 
   /** \brief Interest finalize pipeline
    */
@@ -212,7 +212,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief outgoing Data pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingData(const Data& data, const FaceEndpoint& egress);
+  onOutgoingData(const Data& data, Face& egress);
 
   /** \brief incoming Nack pipeline
    */
@@ -223,10 +223,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
    */
   VIRTUAL_WITH_TESTS void
   onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
-                 const FaceEndpoint& egress, const lp::NackHeader& nack);
+                 Face& egress, const lp::NackHeader& nack);
 
   VIRTUAL_WITH_TESTS void
-  onDroppedInterest(const FaceEndpoint& egress, const Interest& interest);
+  onDroppedInterest(const Face& egress, const Interest& interest);
 
   VIRTUAL_WITH_TESTS void
   onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -90,7 +90,7 @@ NccStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
     deferFirst = meInfo.prediction;
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
-    this->sendInterest(pitEntry, FaceEndpoint(*bestFace, 0), interest);
+    this->sendInterest(pitEntry, *bestFace, interest);
     pitEntryInfo->bestFaceTimeout = getScheduler().schedule(meInfo.prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
   }
@@ -103,7 +103,7 @@ NccStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
                  canForwardToLegacy(*pitEntry, outFace);
         });
     if (firstEligibleNexthop != nexthops.end()) {
-      this->sendInterest(pitEntry, FaceEndpoint(firstEligibleNexthop->getFace(), 0), interest);
+      this->sendInterest(pitEntry, firstEligibleNexthop->getFace(), interest);
     }
     else {
       this->rejectPendingInterest(pitEntry);
@@ -161,7 +161,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
   if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
       !wouldViolateScope(*inFace, interest, *previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
-    this->sendInterest(pitEntry, FaceEndpoint(*previousFace, 0), interest);
+    this->sendInterest(pitEntry, *previousFace, interest);
   }
 
   bool isForwarded = false;
@@ -170,7 +170,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
     if (!wouldViolateScope(*inFace, interest, face) &&
         canForwardToLegacy(*pitEntry, face)) {
       isForwarded = true;
-      this->sendInterest(pitEntry, FaceEndpoint(face, 0), interest);
+      this->sendInterest(pitEntry, face, interest);
       break;
     }
   }

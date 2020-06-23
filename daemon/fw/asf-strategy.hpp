@@ -40,8 +40,6 @@ namespace asf {
  *  \see Vince Lehman, Ashlesh Gawande, Rodrigo Aldecoa, Dmitri Krioukov, Beichuan Zhang, Lixia Zhang, and Lan Wang,
  *       "An Experimental Investigation of Hyperbolic Routing with a Smart Forwarding Plane in NDN,"
  *       NDN Technical Report NDN-0042, 2016. http://named-data.net/techreports.html
- *
- *  \note This strategy is not EndpointId-aware.
  */
 class AsfStrategy : public Strategy
 {
@@ -86,7 +84,7 @@ private:
   onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNack);
 
   void
-  sendNoRouteNack(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry);
+  sendNoRouteNack(Face& face, const shared_ptr<pit::Entry>& pitEntry);
 
 private:
   AsfMeasurements m_measurements;

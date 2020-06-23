@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,8 +39,6 @@ namespace fw {
  *  The value of the added CongestionMark can be specified through a strategy parameter (defaults
  *  to 1). In addition, an optional boolean parameter specifies whether the strategy will preserve
  *  existing CongestionMarks (default) or replace them.
- *
- *  \note This strategy is not EndpointId-aware.
  */
 class CongestionMarkStrategy : public BestRouteStrategy2
 {

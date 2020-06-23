@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -86,27 +86,28 @@ BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Inte
 
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
-      this->sendNack(pitEntry, ingress, nackHeader);
+      this->sendNack(pitEntry, ingress.face, nackHeader);
 
       this->rejectPendingInterest(pitEntry);
       return;
     }
 
-    auto egress = FaceEndpoint(it->getFace(), 0);
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << egress);
-    this->sendInterest(pitEntry, egress, interest);
+    Face& outFace = it->getFace();
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << outFace.getId());
+    this->sendInterest(pitEntry, outFace, interest);
     return;
   }
 
   // find an unused upstream with lowest cost except downstream
-  it = std::find_if(nexthops.begin(), nexthops.end(), [&] (const auto& nexthop) {
-    return isNextHopEligible(ingress.face, interest, nexthop, pitEntry, true, time::steady_clock::now());
-  });
+  it = std::find_if(nexthops.begin(), nexthops.end(),
+                    [&, now = time::steady_clock::now()] (const auto& nexthop) {
+                      return isNextHopEligible(ingress.face, interest, nexthop, pitEntry, true, now);
+                    });
 
   if (it != nexthops.end()) {
-    auto egress = FaceEndpoint(it->getFace(), 0);
-    this->sendInterest(pitEntry, egress, interest);
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-unused-to=" << egress);
+    Face& outFace = it->getFace();
+    this->sendInterest(pitEntry, outFace, interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-unused-to=" << outFace.getId());
     return;
   }
 
@@ -116,9 +117,9 @@ BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Inte
     NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmitNoNextHop");
   }
   else {
-    auto egress = FaceEndpoint(it->getFace(), 0);
-    this->sendInterest(pitEntry, egress, interest);
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << egress);
+    Face& outFace = it->getFace();
+    this->sendInterest(pitEntry, outFace, interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << outFace.getId());
   }
 }
 

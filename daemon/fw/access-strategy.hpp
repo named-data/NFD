@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,8 +44,6 @@ namespace fw {
  *     the granularity of this knowledge is the parent of Data Name.
  *  3. Forward subsequent Interests to the last working nexthop.
  *     If it doesn't respond, multicast again.
- *
- *  \note This strategy is not EndpointId-aware.
  */
 class AccessStrategy : public Strategy
 {
@@ -152,7 +150,7 @@ private: // forwarding procedures
 
   void
   afterRtoTimeout(const weak_ptr<pit::Entry>& pitWeak,
-                  FaceId inFaceId, EndpointId inEndpointId, FaceId firstOutFaceId);
+                  FaceId inFaceId, FaceId firstOutFaceId);
 
   /** \brief multicast to all nexthops
    *  \param exceptFace don't forward to this face; also, \p inFace is always excluded

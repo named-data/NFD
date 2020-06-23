@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,7 +58,7 @@ protected:
 
 private:
   virtual void
-  sendNackForProcessNackTraits(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
+  sendNackForProcessNackTraits(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
                                const lp::NackHeader& header) = 0;
 
   virtual void
@@ -78,10 +78,10 @@ protected:
 
 private:
   void
-  sendNackForProcessNackTraits(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
+  sendNackForProcessNackTraits(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
                                const lp::NackHeader& header) override
   {
-    m_strategy->sendNack(pitEntry, FaceEndpoint(outFace, 0), header);
+    m_strategy->sendNack(pitEntry, outFace, header);
   }
 
   void

@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   pitA->insertOrUpdateInRecord(*face1, *interestA1);
 
   auto interestA2 = makeInterest("/A", false, nullopt, 1698);
-  forwarder.onOutgoingInterest(pitA, FaceEndpoint(*face2, 0), *interestA2);
+  forwarder.onOutgoingInterest(pitA, *face2, *interestA2);
 
   auto outA2 = pitA->getOutRecord(*face2);
   BOOST_REQUIRE(outA2 != pitA->out_end());
@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   pit1->insertOrUpdateInRecord(*face1, *interest1);
 
   face2->sentNacks.clear();
-  forwarder.onOutgoingNack(pit1, FaceEndpoint(*face2, 0), nackHeader);
+  forwarder.onOutgoingNack(pit1, *face2, nackHeader);
   BOOST_CHECK_EQUAL(face2->sentNacks.size(), 0);
 
   // send Nack with correct Nonce
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   pit2->insertOrUpdateInRecord(*face2, *interest2b);
 
   face1->sentNacks.clear();
-  forwarder.onOutgoingNack(pit2, FaceEndpoint(*face1, 0), nackHeader);
+  forwarder.onOutgoingNack(pit2, *face1, nackHeader);
   BOOST_REQUIRE_EQUAL(face1->sentNacks.size(), 1);
   BOOST_CHECK_EQUAL(face1->sentNacks.back().getReason(), lp::NackReason::CONGESTION);
   BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest().getNonce(), 152);
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
 
   // send Nack with correct Nonce
   face2->sentNacks.clear();
-  forwarder.onOutgoingNack(pit2, FaceEndpoint(*face2, 0), nackHeader);
+  forwarder.onOutgoingNack(pit2, *face2, nackHeader);
   BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getReason(), lp::NackReason::CONGESTION);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().getNonce(), 808);
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   pit2->insertOrUpdateInRecord(*face3, *interest2c);
 
   face3->sentNacks.clear();
-  forwarder.onOutgoingNack(pit1, FaceEndpoint(*face3, 0), nackHeader);
+  forwarder.onOutgoingNack(pit1, *face3, nackHeader);
   BOOST_CHECK_EQUAL(face3->sentNacks.size(), 0);
 }
 

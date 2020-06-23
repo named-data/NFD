@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(Retransmission)
   nfd::pit::Pit& pit = topo.getForwarder(nodeB).getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
-  topo.getForwarder(nodeB).onOutgoingInterest(pitEntry, FaceEndpoint(linkBC->getFace(nodeB), 0), *interest);
+  topo.getForwarder(nodeB).onOutgoingInterest(pitEntry, linkBC->getFace(nodeB), *interest);
   this->advanceClocks(time::milliseconds(100));
 
   interest->refreshNonce();

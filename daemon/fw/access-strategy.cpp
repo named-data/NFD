@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -144,14 +144,13 @@ AccessStrategy::sendToLastNexthop(const FaceEndpoint& ingress, const Interest& i
   NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop
                 << " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
 
-  this->sendInterest(pitEntry, FaceEndpoint(*outFace, 0), interest);
+  this->sendInterest(pitEntry, *outFace, interest);
 
   // schedule RTO timeout
   PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
   pi->rtoTimer = getScheduler().schedule(rto,
-    [this, pitWeak = weak_ptr<pit::Entry>(pitEntry), face = ingress.face.getId(),
-     endpoint = ingress.endpoint, lastNexthop = mi.lastNexthop] {
-      afterRtoTimeout(pitWeak, face, endpoint, lastNexthop);
+    [this, pitWeak = weak_ptr<pit::Entry>(pitEntry), face = ingress.face.getId(), nh = mi.lastNexthop] {
+      afterRtoTimeout(pitWeak, face, nh);
     });
 
   return true;
@@ -159,7 +158,7 @@ AccessStrategy::sendToLastNexthop(const FaceEndpoint& ingress, const Interest& i
 
 void
 AccessStrategy::afterRtoTimeout(const weak_ptr<pit::Entry>& pitWeak,
-                                FaceId inFaceId, EndpointId inEndpointId, FaceId firstOutFaceId)
+                                FaceId inFaceId, FaceId firstOutFaceId)
 {
   shared_ptr<pit::Entry> pitEntry = pitWeak.lock();
   // if PIT entry is gone, RTO timer should have been cancelled
@@ -199,7 +198,7 @@ AccessStrategy::multicast(const Face& inFace, const Interest& interest,
       continue;
     }
     NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << outFace.getId() << " multicast");
-    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
+    this->sendInterest(pitEntry, outFace, interest);
     ++nSent;
   }
   return nSent;

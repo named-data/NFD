@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -89,7 +89,7 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
       continue;
     }
 
-    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
+    this->sendInterest(pitEntry, outFace, interest);
     NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
 
     if (suppressResult == RetxSuppressionResult::FORWARD) {
@@ -103,7 +103,7 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
 
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);
-    this->sendNack(pitEntry, ingress, nackHeader);
+    this->sendNack(pitEntry, ingress.face, nackHeader);
 
     this->rejectPendingInterest(pitEntry);
   }

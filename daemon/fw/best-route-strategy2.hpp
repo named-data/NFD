@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,8 +49,6 @@ namespace fw {
  *
  *  This strategy returns Nack to all downstreams if all upstreams have returned Nacks.
  *  The reason of the sent Nack equals the least severe reason among received Nacks.
- *
- *  \note This strategy is not EndpointId-aware.
  */
 class BestRouteStrategy2 : public Strategy
                          , public ProcessNackTraits<BestRouteStrategy2>

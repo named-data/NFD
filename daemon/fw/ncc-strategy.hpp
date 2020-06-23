@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 namespace nfd {
 namespace fw {
 
-/** \brief a forwarding strategy similar to CCNx 0.7.2
- *
- *  \note This strategy is not EndpointId-aware.
+/** \brief A forwarding strategy similar to CCNx 0.7.2
  */
 class NccStrategy : public Strategy
 {
