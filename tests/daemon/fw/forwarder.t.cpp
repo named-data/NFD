@@ -135,6 +135,25 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(InterestWithoutNonce)
+{
+  auto face1 = addFace();
+  auto face2 = addFace();
+
+  Fib& fib = forwarder.getFib();
+  fib::Entry* entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 0);
+
+  auto interest = makeInterest("/A");
+  BOOST_CHECK_EQUAL(interest->hasNonce(), false);
+  face1->receiveInterest(*interest, 0);
+
+  // Ensure Nonce added if incoming packet did not have Nonce
+  BOOST_REQUIRE_EQUAL(face2->getCounters().nOutInterests, 1);
+  BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(face2->sentInterests.back().hasNonce(), true);
+}
+
 BOOST_AUTO_TEST_CASE(OutgoingInterest)
 {
   auto face1 = addFace();
