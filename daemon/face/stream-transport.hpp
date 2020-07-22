@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,7 +63,7 @@ protected:
   deferredClose();
 
   void
-  doSend(const Block& packet, const EndpointId& endpoint) override;
+  doSend(const Block& packet) override;
 
   void
   sendFromQueue();
@@ -180,7 +180,7 @@ StreamTransport<T>::deferredClose()
 
 template<class T>
 void
-StreamTransport<T>::doSend(const Block& packet, const EndpointId&)
+StreamTransport<T>::doSend(const Block& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);
 

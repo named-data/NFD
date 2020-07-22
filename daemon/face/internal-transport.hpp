@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,7 +71,7 @@ protected:
 
 private:
   void
-  doSend(const Block& packet, const EndpointId& endpoint) final;
+  doSend(const Block& packet) final;
 
 private:
   NFD_LOG_MEMBER_DECL();

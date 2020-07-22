@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -193,7 +193,7 @@ protected:
 protected:
   unique_ptr<nfd::Face> face;
   DummyTransport* transport = nullptr;
-  const std::vector<TxPacket>* sentPackets = nullptr;
+  const std::vector<Block>* sentPackets = nullptr;
   const std::vector<RxPacket>* receivedPackets = nullptr;
 };
 
@@ -218,9 +218,9 @@ BOOST_FIXTURE_TEST_CASE(Send, DummyTransportFixture)
   BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 2);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, pkt1.size() + pkt2.size());
   BOOST_REQUIRE_EQUAL(sentPackets->size(), 3);
-  BOOST_CHECK(sentPackets->at(0).packet == pkt1);
-  BOOST_CHECK(sentPackets->at(1).packet == pkt2);
-  BOOST_CHECK(sentPackets->at(2).packet == pkt3);
+  BOOST_CHECK(sentPackets->at(0) == pkt1);
+  BOOST_CHECK(sentPackets->at(1) == pkt2);
+  BOOST_CHECK(sentPackets->at(2) == pkt3);
 }
 
 BOOST_FIXTURE_TEST_CASE(Receive, DummyTransportFixture)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,7 +69,7 @@ protected:
   doClose() override;
 
   void
-  doSend(const Block& packet, const EndpointId& endpoint) override;
+  doSend(const Block& packet) override;
 
   void
   handleSend(const boost::system::error_code& error, size_t nBytesSent);
@@ -157,7 +157,7 @@ DatagramTransport<T, U>::doClose()
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::doSend(const Block& packet, const EndpointId&)
+DatagramTransport<T, U>::doSend(const Block& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);
 

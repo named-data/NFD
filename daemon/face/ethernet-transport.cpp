@@ -110,7 +110,7 @@ EthernetTransport::handleNetifStateChange(ndn::net::InterfaceState netifState)
 }
 
 void
-EthernetTransport::doSend(const Block& packet, const EndpointId&)
+EthernetTransport::doSend(const Block& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);
 

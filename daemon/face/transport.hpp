@@ -165,12 +165,11 @@ public: // upper interface
 
   /** \brief Send a link-layer packet
    *  \param packet the packet to be sent, must be a valid and well-formed TLV block
-   *  \param endpoint the destination endpoint
    *  \note This operation has no effect if getState() is neither UP nor DOWN
    *  \warning Behavior is undefined if packet size exceeds the MTU limit
    */
   void
-  send(const Block& packet, const EndpointId& endpoint = 0);
+  send(const Block& packet);
 
 public: // static properties
   /** \return a FaceUri representing local endpoint
@@ -333,11 +332,10 @@ protected: // to be overridden by subclass
 private: // to be overridden by subclass
   /** \brief performs Transport specific operations to send a packet
    *  \param packet the packet to be sent, can be assumed to be valid and well-formed
-   *  \param endpoint the destination endpoint
    *  \pre transport state is either UP or DOWN
    */
   virtual void
-  doSend(const Block& packet, const EndpointId& endpoint) = 0;
+  doSend(const Block& packet) = 0;
 
 private:
   Face* m_face;

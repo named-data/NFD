@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,12 +33,6 @@
 namespace nfd {
 namespace face {
 namespace tests {
-
-struct TxPacket
-{
-  Block packet;
-  EndpointId endpoint;
-};
 
 /** \brief Dummy Transport type used in unit tests.
  *
@@ -101,14 +95,14 @@ protected:
 
 private:
   void
-  doSend(const Block& packet, const EndpointId& endpoint) override
+  doSend(const Block& packet) override
   {
-    sentPackets.push_back({packet, endpoint});
+    sentPackets.push_back(packet);
   }
 
 public:
   std::vector<ndn::nfd::FacePersistency> persistencyHistory;
-  std::vector<TxPacket> sentPackets;
+  std::vector<Block> sentPackets;
 
 private:
   ssize_t m_sendQueueLength = 0;

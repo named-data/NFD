@@ -81,7 +81,7 @@ private:
   handleNetifStateChange(ndn::net::InterfaceState netifState);
 
   void
-  doSend(const Block& packet, const EndpointId& endpoint) final;
+  doSend(const Block& packet) final;
 
   /**
    * @brief Sends the specified TLV block on the network wrapped in an Ethernet frame

@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
 
   linkService->sendLpPackets({pkt1});
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
-  lp::Packet cached1(transport->sentPackets.front().packet);
+  lp::Packet cached1(transport->sentPackets.front());
   BOOST_REQUIRE(cached1.has<lp::TxSequenceField>());
   BOOST_CHECK(cached1.has<lp::SequenceField>());
   lp::Sequence firstTxSeq = cached1.get<lp::TxSequenceField>();
@@ -311,17 +311,17 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   linkService->sendLpPackets({pkt1, pkt2, pkt3});
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 3);
 
-  lp::Packet cached1(transport->sentPackets.at(0).packet);
+  lp::Packet cached1(transport->sentPackets.at(0));
   BOOST_REQUIRE(cached1.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(cached1.get<lp::TxSequenceField>(), 2);
   BOOST_CHECK(cached1.has<lp::SequenceField>());
   BOOST_CHECK_EQUAL(getPktNum(cached1), 2048);
-  lp::Packet cached2(transport->sentPackets.at(1).packet);
+  lp::Packet cached2(transport->sentPackets.at(1));
   BOOST_REQUIRE(cached2.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(cached2.get<lp::TxSequenceField>(), 3);
   BOOST_CHECK(cached2.has<lp::SequenceField>());
   BOOST_CHECK_EQUAL(getPktNum(cached2), 2049);
-  lp::Packet cached3(transport->sentPackets.at(2).packet);
+  lp::Packet cached3(transport->sentPackets.at(2));
   BOOST_REQUIRE(cached3.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(cached3.get<lp::TxSequenceField>(), 4);
   BOOST_CHECK(cached3.has<lp::SequenceField>());
@@ -615,7 +615,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(4).nGreaterSeqAcks, 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 3);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 6);
-  lp::Packet sentRetxPkt(transport->sentPackets.back().packet);
+  lp::Packet sentRetxPkt(transport->sentPackets.back());
   BOOST_REQUIRE(sentRetxPkt.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(sentRetxPkt.get<lp::TxSequenceField>(), 4);
   BOOST_CHECK_EQUAL(getPktNum(sentRetxPkt), 1);
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(PiggybackAcks)
   linkService->sendLpPackets({pkt});
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
-  lp::Packet sentPkt(transport->sentPackets.front().packet);
+  lp::Packet sentPkt(transport->sentPackets.front());
 
   BOOST_REQUIRE_EQUAL(sentPkt.count<lp::AckField>(), 3);
   BOOST_CHECK_EQUAL(sentPkt.get<lp::AckField>(0), 256);
@@ -786,7 +786,7 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtu)
     linkService->sendLpPackets({pkt});
 
     BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), i);
-    lp::Packet sentPkt(transport->sentPackets.back().packet);
+    lp::Packet sentPkt(transport->sentPackets.back());
     BOOST_CHECK_EQUAL(getPktNum(sentPkt), i);
     BOOST_CHECK(sentPkt.has<lp::AckField>());
 
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtuNoSpace)
   linkService->sendLpPackets({pkt});
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
-  lp::Packet sentPkt(transport->sentPackets.back().packet);
+  lp::Packet sentPkt(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(getPktNum(sentPkt), 1);
   BOOST_CHECK(!sentPkt.has<lp::AckField>());
 
@@ -887,7 +887,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimer)
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
 
-  lp::Packet sentPkt(transport->sentPackets.back().packet);
+  lp::Packet sentPkt(transport->sentPackets.back());
   BOOST_CHECK(!sentPkt.has<lp::TxSequenceField>());
   for (lp::Sequence ack : sentPkt.list<lp::AckField>()) {
     BOOST_CHECK_EQUAL(expectedAcks.erase(ack), 1);
@@ -926,7 +926,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
   // 124 Acks per LpPacket, and it takes 5 LpPackets to carry 500 Acks.
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 5);
   for (size_t i = 0; i < 5; i++) {
-    lp::Packet sentPkt(transport->sentPackets[i].packet);
+    lp::Packet sentPkt(transport->sentPackets[i]);
     BOOST_CHECK(!sentPkt.has<lp::TxSequenceField>());
     BOOST_CHECK_EQUAL(sentPkt.count<lp::AckField>(), i == 4 ? 4 : 124);
     for (lp::Sequence ack : sentPkt.list<lp::AckField>()) {
