@@ -51,10 +51,9 @@ BOOST_AUTO_TEST_CASE(FragmentSingleFragment)
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
 
-  shared_ptr<Data> data = makeData("/test/data1");
+  auto data = makeData("/test/data123");
   BOOST_REQUIRE_EQUAL(data->wireEncode().size(), 30);
-  packet.add<lp::FragmentField>(std::make_pair(data->wireEncode().begin(),
-                                               data->wireEncode().end()));
+  packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
   bool isOk = false;
   std::vector<lp::Packet> frags;
@@ -81,10 +80,9 @@ BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
 
-  shared_ptr<Data> data = makeData("/test/data1/123456789/987654321/123456789");
+  auto data = makeData("/test/data123/123456789/987654321/123456789");
   BOOST_REQUIRE_EQUAL(data->wireEncode().size(), 63);
-  packet.add<lp::FragmentField>(std::make_pair(data->wireEncode().begin(),
-                                               data->wireEncode().end()));
+  packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
   bool isOk = false;
   std::vector<lp::Packet> frags;
@@ -161,13 +159,12 @@ BOOST_AUTO_TEST_CASE(FragmentMtuTooSmall)
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
 
-  shared_ptr<Data> data = makeData("/test/data1/123456789/987654321/123456789");
-  packet.add<lp::FragmentField>(std::make_pair(data->wireEncode().begin(),
-                                               data->wireEncode().end()));
+  auto data = makeData("/test/data123/123456789/987654321/123456789");
+  packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
   bool isOk = false;
   std::tie(isOk, std::ignore) = fragmenter.fragmentPacket(packet, mtu);
-  BOOST_REQUIRE(!isOk);
+  BOOST_CHECK_EQUAL(isOk, false);
 }
 
 BOOST_AUTO_TEST_CASE(FragmentOverFragCount)
@@ -181,13 +178,12 @@ BOOST_AUTO_TEST_CASE(FragmentOverFragCount)
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
 
-  shared_ptr<Data> data = makeData("/test/data1/123456789/987654321/123456789");
-  packet.add<lp::FragmentField>(std::make_pair(data->wireEncode().begin(),
-                                               data->wireEncode().end()));
+  auto data = makeData("/test/data123/123456789/987654321/123456789");
+  packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
   bool isOk = false;
   std::tie(isOk, std::ignore) = fragmenter.fragmentPacket(packet, mtu);
-  BOOST_REQUIRE(!isOk);
+  BOOST_CHECK_EQUAL(isOk, false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestLpFragmentation
