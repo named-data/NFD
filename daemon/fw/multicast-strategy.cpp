@@ -69,10 +69,6 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
-  int nEligibleNextHops = 0;
-
-  bool isSuppressed = false;
-
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
@@ -80,12 +76,10 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
 
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
       NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
-      isSuppressed = true;
       continue;
     }
 
-    if ((outFace.getId() == ingress.face.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
-        wouldViolateScope(ingress.face, interest, outFace)) {
+    if (!isNextHopEligible(ingress.face, interest, nexthop, pitEntry)) {
       continue;
     }
 
@@ -95,11 +89,10 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
     if (suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace));
     }
-    ++nEligibleNextHops;
   }
 
-  if (nEligibleNextHops == 0 && !isSuppressed) {
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop");
+  if (!hasPendingOutRecords(*pitEntry)) {
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop (removing pitEntry)");
 
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);

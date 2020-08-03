@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
+#include "topology-tester.hpp"
 
 namespace nfd {
 namespace fw {
@@ -64,6 +65,81 @@ protected:
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, MulticastStrategyFixture)
+
+BOOST_AUTO_TEST_CASE(Bug5123)
+{
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fib.addOrUpdateNextHop(fibEntry, *face2, 0);
+
+  // Send an Interest from face 1 to face 2
+  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
+
+  strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+
+  // Advance more than default suppression
+  this->advanceClocks(15_ms);
+
+  // Get same interest from face 2 which does not have anywhere to go
+  pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(*face2, *interest);
+
+  strategy.afterReceiveInterest(FaceEndpoint(*face2, 0), *interest, pitEntry);
+  // Since the interest is same as the one sent out by face 1 pit should not be rejected
+  // as any data coming back should be able to satisfy original interest from face 1
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+
+  /*
+   *      +---------+            +---------+          +---------+
+   *      |  nodeA  |------------|  nodeB  |----------|  nodeC  |
+   *      +---------+    10ms    +---------+   100ms  +---------+
+   */
+
+  const Name PRODUCER_PREFIX = "/ndn/edu/nodeC/ping";
+
+  TopologyTester topo;
+  TopologyNode nodeA = topo.addForwarder("A"),
+               nodeB = topo.addForwarder("B"),
+               nodeC = topo.addForwarder("C");
+
+  for (TopologyNode node : {nodeA, nodeB, nodeC}) {
+    topo.setStrategy<MulticastStrategy>(node);
+  }
+
+  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", 10_ms,  {nodeA, nodeB}),
+                           linkBC = topo.addLink("BC", 100_ms, {nodeB, nodeC});
+
+  shared_ptr<TopologyAppLink> appA = topo.addAppFace("cA", nodeA),
+                              appB = topo.addAppFace("cB", nodeB),
+                        pingServer = topo.addAppFace("p",  nodeC, PRODUCER_PREFIX);
+  topo.addEchoProducer(pingServer->getClientFace());
+  topo.registerPrefix(nodeA, linkAB->getFace(nodeA), PRODUCER_PREFIX, 10);
+  topo.registerPrefix(nodeB, linkAB->getFace(nodeB), PRODUCER_PREFIX, 10);
+  topo.registerPrefix(nodeB, linkBC->getFace(nodeB), PRODUCER_PREFIX, 100);
+
+  Name name(PRODUCER_PREFIX);
+  name.appendTimestamp();
+  interest = makeInterest(name);
+  appA->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+
+  this->advanceClocks(10_ms, 20_ms);
+
+  // AppB expresses the same interest
+  interest->refreshNonce();
+  appB->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+  this->advanceClocks(10_ms, 200_ms);
+
+  // Data should have made to appB
+  BOOST_CHECK_EQUAL(linkBC->getFace(nodeB).getCounters().nInData, 1);
+  BOOST_CHECK_EQUAL(linkAB->getFace(nodeA).getCounters().nInData, 0);
+
+  this->advanceClocks(10_ms, 10_ms);
+  // nodeA should have gotten the data successfully
+  BOOST_CHECK_EQUAL(linkAB->getFace(nodeA).getCounters().nInData, 1);
+  BOOST_CHECK_EQUAL(topo.getForwarder(nodeA).getCounters().nUnsolicitedData, 0);
+}
 
 BOOST_AUTO_TEST_CASE(Forward2)
 {
