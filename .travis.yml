@@ -27,6 +27,7 @@ jobs:
     - env: COMPILER=clang++-8
     - env: COMPILER=clang++-10
     - env: COMPILER=clang++-11
+    - env: COMPILER=clang++-12
 
     # macOS
     - os: osx
@@ -42,9 +43,6 @@ jobs:
       osx_image: xcode11.3
       env: # default compiler
     - os: osx
-      osx_image: xcode11.4
-      env: # default compiler
-    - os: osx
       osx_image: xcode11.6
       env: # default compiler
     - os: osx
@@ -55,7 +53,7 @@ jobs:
     - env: COMPILER=g++-5
     - env: COMPILER=g++-6
     - env: COMPILER=clang++-4.0
-    - env: COMPILER=clang++-11
+    - env: COMPILER=clang++-12
 
   fast_finish: true
 
@@ -72,7 +70,7 @@ before_install:
         # https://apt.llvm.org/
         LLVM_REPO=${COMPILER/clang++/llvm-toolchain-${TRAVIS_DIST}}
         travis_retry wget -nv -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-        travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/${TRAVIS_DIST}/ ${LLVM_REPO%-11} main"
+        travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/${TRAVIS_DIST}/ ${LLVM_REPO%-12} main"
         travis_retry sudo apt-get -qq update
         ;;
     esac
