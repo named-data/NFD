@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestStrategy, GlobalIoFixture)
 
-// Strategy registry is tested in table/strategy-choice.t.cpp and strategy-instantiation.t.cpp
+// Strategy registry is tested in strategy-choice.t.cpp and strategy-instantiation.t.cpp
 
 class FaceTableAccessTestStrategy : public DummyStrategy
 {
@@ -102,8 +102,6 @@ BOOST_AUTO_TEST_CASE(FaceTableAccess)
   BOOST_CHECK((strategy.addedFaces   == std::vector<FaceId>{id1, id2}));
   BOOST_CHECK((strategy.removedFaces == std::vector<FaceId>{id2, id1}));
 }
-
-// LookupFib is tested in Fw/TestLinkForwarding test suite.
 
 BOOST_AUTO_TEST_SUITE_END() // TestStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw

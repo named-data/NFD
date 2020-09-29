@@ -189,8 +189,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
                     const Interest& interest, const Data& data);
 
   /** \brief outgoing Interest pipeline
+   *  \return A pointer to the out-record created or nullptr if the Interest was dropped
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS pit::OutRecord*
   onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
                      Face& egress, const Interest& interest);
 
@@ -210,8 +211,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   onDataUnsolicited(const FaceEndpoint& ingress, const Data& data);
 
   /** \brief outgoing Data pipeline
+   *  \return Whether the Data was transmitted (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS bool
   onOutgoingData(const Data& data, Face& egress);
 
   /** \brief incoming Nack pipeline
@@ -220,8 +222,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack);
 
   /** \brief outgoing Nack pipeline
+   *  \return Whether the Nack was transmitted (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS bool
   onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
                  Face& egress, const lp::NackHeader& nack);
 

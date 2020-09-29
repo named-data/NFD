@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_PIT_ALGORITHM_HPP
-#define NFD_DAEMON_FW_PIT_ALGORITHM_HPP
+#ifndef NFD_DAEMON_FW_ALGORITHM_HPP
+#define NFD_DAEMON_FW_ALGORITHM_HPP
 
 #include "fw/scope-prefix.hpp"
 #include "table/fib.hpp"
@@ -110,4 +110,4 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_PIT_ALGORITHM_HPP
+#endif // NFD_DAEMON_FW_ALGORITHM_HPP

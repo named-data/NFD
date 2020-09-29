@@ -149,13 +149,17 @@ SelfLearningStrategy::broadcastInterest(const Interest& interest, const Face& in
 {
   for (auto& outFace : this->getFaceTable() | boost::adaptors::reversed) {
     if ((outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
-        wouldViolateScope(inFace, interest, outFace) || outFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+        wouldViolateScope(inFace, interest, outFace) ||
+        outFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
       continue;
     }
-    this->sendInterest(pitEntry, outFace, interest);
-    pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
-    NFD_LOG_DEBUG("send discovery Interest=" << interest << " from="
-                  << inFace.getId() << " to=" << outFace.getId());
+
+    NFD_LOG_DEBUG("send discovery Interest=" << interest << " from=" << inFace.getId() <<
+                  " to=" << outFace.getId());
+    auto outRecord = this->sendInterest(pitEntry, outFace, interest);
+    if (outRecord != nullptr) {
+      outRecord->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
+    }
   }
 }
 
@@ -165,15 +169,17 @@ SelfLearningStrategy::multicastInterest(const Interest& interest, const Face& in
                                         const fib::NextHopList& nexthops)
 {
   for (const auto& nexthop : nexthops) {
-    Face& outFace = nexthop.getFace();
-    if ((outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
-        wouldViolateScope(inFace, interest, outFace)) {
+    if (!isNextHopEligible(inFace, interest, nexthop, pitEntry)) {
       continue;
     }
-    this->sendInterest(pitEntry, outFace, interest);
-    pitEntry->getOutRecord(outFace)->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
-    NFD_LOG_DEBUG("send non-discovery Interest=" << interest << " from="
-                  << inFace.getId() << " to=" << outFace.getId());
+
+    Face& outFace = nexthop.getFace();
+    NFD_LOG_DEBUG("send non-discovery Interest=" << interest << " from=" << inFace.getId() <<
+                  " to=" << outFace.getId());
+    auto outRecord = this->sendInterest(pitEntry, outFace, interest);
+    if (outRecord != nullptr) {
+      outRecord->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
+    }
   }
 }
 

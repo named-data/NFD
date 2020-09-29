@@ -107,13 +107,15 @@ public:
   }
 
 protected:
-  void
+  pit::OutRecord*
   sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
                const Interest& interest) override
   {
     sendInterestHistory.push_back({pitEntry->getInterest(), egress.getId(), interest});
-    pitEntry->insertOrUpdateOutRecord(egress, interest);
+    auto it = pitEntry->insertOrUpdateOutRecord(egress, interest);
+    BOOST_ASSERT(it != pitEntry->out_end());
     afterAction();
+    return &*it;
   }
 
   void
@@ -123,13 +125,14 @@ protected:
     afterAction();
   }
 
-  void
+  bool
   sendNack(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
            const lp::NackHeader& header) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), egress.getId(), header});
     pitEntry->deleteInRecord(egress);
     afterAction();
+    return true;
   }
 
 public:

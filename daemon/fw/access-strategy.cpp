@@ -144,7 +144,9 @@ AccessStrategy::sendToLastNexthop(const FaceEndpoint& ingress, const Interest& i
   NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop
                 << " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
 
-  this->sendInterest(pitEntry, *outFace, interest);
+  if (!this->sendInterest(pitEntry, *outFace, interest)) {
+    return false;
+  }
 
   // schedule RTO timeout
   PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
@@ -198,8 +200,9 @@ AccessStrategy::multicast(const Face& inFace, const Interest& interest,
       continue;
     }
     NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << outFace.getId() << " multicast");
-    this->sendInterest(pitEntry, outFace, interest);
-    ++nSent;
+    if (this->sendInterest(pitEntry, outFace, interest)) {
+      ++nSent;
+    }
   }
   return nSent;
 }

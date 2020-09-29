@@ -255,8 +255,9 @@ protected: // actions
    *  \param pitEntry the PIT entry
    *  \param egress face through which to send out the Interest
    *  \param interest the Interest packet
+   *  \return A pointer to the out-record created or nullptr if the Interest was dropped
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS pit::OutRecord*
   sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
                const Interest& interest);
 
@@ -264,8 +265,9 @@ protected: // actions
    *  \param pitEntry the PIT entry
    *  \param data the Data packet
    *  \param egress face through which to send out the Data
+   *  \return Whether the Data was sent (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS bool
   sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, Face& egress);
 
   /** \brief Send a Data packet to all matched and qualified faces.
@@ -298,12 +300,13 @@ protected: // actions
    *  \param pitEntry the PIT entry
    *  \param egress face through which to send out the Nack
    *  \param header the Nack header
+   *  \return Whether the Nack was sent (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS void
+  VIRTUAL_WITH_TESTS bool
   sendNack(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
            const lp::NackHeader& header)
   {
-    m_forwarder.onOutgoingNack(pitEntry, egress, header);
+    return m_forwarder.onOutgoingNack(pitEntry, egress, header);
   }
 
   /** \brief Send Nack to every face that has an in-record, except those in \p exceptFaces

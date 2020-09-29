@@ -193,16 +193,15 @@ Strategy::onDroppedInterest(const Face& egress, const Interest& interest)
   NFD_LOG_DEBUG("onDroppedInterest out=" << egress.getId() << " name=" << interest.getName());
 }
 
-void
+pit::OutRecord*
 Strategy::sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& egress, const Interest& interest)
 {
   if (interest.getTag<lp::PitToken>() != nullptr) {
     Interest interest2 = interest; // make a copy to preserve tag on original packet
     interest2.removeTag<lp::PitToken>();
-    m_forwarder.onOutgoingInterest(pitEntry, egress, interest2);
-    return;
+    return m_forwarder.onOutgoingInterest(pitEntry, egress, interest2);
   }
-  m_forwarder.onOutgoingInterest(pitEntry, egress, interest);
+  return m_forwarder.onOutgoingInterest(pitEntry, egress, interest);
 }
 
 void
@@ -212,7 +211,7 @@ Strategy::afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Ent
                 << " nexthop=" << nextHop.getFace().getId());
 }
 
-void
+bool
 Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, Face& egress)
 {
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
@@ -230,10 +229,9 @@ Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, Fac
   if (pitToken != nullptr) {
     Data data2 = data; // make a copy so each downstream can get a different PIT token
     data2.setTag(pitToken);
-    m_forwarder.onOutgoingData(data2, egress);
-    return;
+    return m_forwarder.onOutgoingData(data2, egress);
   }
-  m_forwarder.onOutgoingData(data, egress);
+  return m_forwarder.onOutgoingData(data, egress);
 }
 
 void

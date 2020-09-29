@@ -240,7 +240,7 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
     [&] (fw::Strategy& strategy) { strategy.afterContentStoreHit(pitEntry, ingress, data); });
 }
 
-void
+pit::OutRecord*
 Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
                               Face& egress, const Interest& interest)
 {
@@ -249,17 +249,19 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
     NFD_LOG_DEBUG("onOutgoingInterest out=" << egress.getId() << " interest=" << pitEntry->getName()
                   << " non-local hop-limit=0");
     ++const_cast<PacketCounter&>(egress.getCounters().nOutHopLimitZero);
-    return;
+    return nullptr;
   }
 
   NFD_LOG_DEBUG("onOutgoingInterest out=" << egress.getId() << " interest=" << pitEntry->getName());
 
   // insert out-record
-  pitEntry->insertOrUpdateOutRecord(egress, interest);
+  auto it = pitEntry->insertOrUpdateOutRecord(egress, interest);
+  BOOST_ASSERT(it != pitEntry->out_end());
 
   // send Interest
   egress.sendInterest(interest);
   ++m_counters.nOutInterests;
+  return &*it;
 }
 
 void
@@ -397,12 +399,12 @@ Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
   ++m_counters.nUnsolicitedData;
 }
 
-void
+bool
 Forwarder::onOutgoingData(const Data& data, Face& egress)
 {
   if (egress.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingData out=(invalid) data=" << data.getName());
-    return;
+    return false;
   }
   NFD_LOG_DEBUG("onOutgoingData out=" << egress.getId() << " data=" << data.getName());
 
@@ -413,7 +415,7 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
     NFD_LOG_DEBUG("onOutgoingData out=" << egress.getId() << " data=" << data.getName()
                   << " violates /localhost");
     // (drop)
-    return;
+    return false;
   }
 
   // TODO traffic manager
@@ -421,6 +423,8 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
   // send Data
   egress.sendData(data);
   ++m_counters.nOutData;
+
+  return true;
 }
 
 void
@@ -480,14 +484,14 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
     [&] (fw::Strategy& strategy) { strategy.afterReceiveNack(ingress, nack, pitEntry); });
 }
 
-void
+bool
 Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
                           Face& egress, const lp::NackHeader& nack)
 {
   if (egress.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingNack out=(invalid)"
                  << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason());
-    return;
+    return false;
   }
 
   // has in-record?
@@ -498,7 +502,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
     NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
                   << " nack=" << pitEntry->getInterest().getName()
                   << "~" << nack.getReason() << " no-in-record");
-    return;
+    return false;
   }
 
   // if multi-access or ad hoc face, drop
@@ -506,7 +510,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
     NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
                   << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason()
                   << " link-type=" << egress.getLinkType());
-    return;
+    return false;
   }
 
   NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
@@ -523,6 +527,8 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   // send Nack on face
   egress.sendNack(nackPkt);
   ++m_counters.nOutNacks;
+
+  return true;
 }
 
 void
