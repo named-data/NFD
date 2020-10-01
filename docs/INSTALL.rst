@@ -73,7 +73,7 @@ Downloading from git
 
 The first step is to obtain the source code for NFD and its main dependency, the
 *ndn-cxx* library. If you do not want a development version of NFD, make sure you
-checkout the correct release tag (e.g., ``*-0.7.0``) from both repositories.
+checkout the correct release tag (e.g., ``*-0.7.1``) from both repositories.
 
 .. code-block:: sh
 

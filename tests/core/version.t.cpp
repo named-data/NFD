@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,9 +55,6 @@ BOOST_AUTO_TEST_CASE(VersionString)
   ::snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
 
   BOOST_CHECK_EQUAL(NFD_VERSION_STRING, buf);
-
-  std::string build(NFD_VERSION_BUILD_STRING);
-  BOOST_CHECK_EQUAL(build.substr(0, build.find_first_of('-')), NFD_VERSION_STRING);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestVersion
