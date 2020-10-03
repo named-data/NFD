@@ -25,7 +25,7 @@ if has OSX $NODE_LABELS; then
 
 elif has Ubuntu $NODE_LABELS; then
     sudo apt-get -qq update
-    sudo apt-get -qy install g++ pkg-config python3-minimal \
+    sudo apt-get -qy install build-essential pkg-config python3-minimal \
                              libboost-all-dev libssl-dev libsqlite3-dev \
                              libpcap-dev libsystemd-dev
 

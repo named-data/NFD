@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,10 +70,9 @@ protected:
   static shared_ptr<Data>
   makeData(const Name& name)
   {
-    auto data = make_shared<Data>(name);
-    ndn::SignatureSha256WithRsa fakeSignature;
-    fakeSignature.setValue(ndn::encoding::makeEmptyBlock(tlv::SignatureValue));
-    data->setSignature(fakeSignature);
+    auto data = std::make_shared<Data>(name);
+    data->setSignatureInfo(ndn::SignatureInfo(tlv::NullSignature));
+    data->setSignatureValue(std::make_shared<ndn::Buffer>());
     data->wireEncode();
     return data;
   }
@@ -115,7 +114,7 @@ protected:
     std::vector<shared_ptr<Interest>> workload(count);
     for (size_t i = 0; i < count; ++i) {
       Name name = genName(i);
-      auto interest = make_shared<Interest>(name);
+      auto interest = std::make_shared<Interest>(name);
       interest->setCanBePrefix(false);
       workload[i] = interest;
     }
