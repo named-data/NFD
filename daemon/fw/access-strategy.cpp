@@ -255,15 +255,15 @@ AccessStrategy::updateMeasurements(const Face& inFace, const Data& data, time::n
 std::tuple<Name, AccessStrategy::MtInfo*>
 AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
 {
-  measurements::Entry* me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
+  auto me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
   if (me == nullptr) {
     return std::make_tuple(Name(), nullptr);
   }
 
-  MtInfo* mi = me->getStrategyInfo<MtInfo>();
-  BOOST_ASSERT(mi != nullptr);
-  // XXX after runtime strategy change, it's possible that me exists but mi doesn't exist;
-  // this case needs another longest prefix match until mi is found
+  auto mi = me->getStrategyInfo<MtInfo>();
+  // TODO: after a runtime strategy change, it's possible that a measurements::Entry exists but
+  //       the corresponding MtInfo doesn't exist (mi == nullptr); this case needs another longest
+  //       prefix match until an MtInfo is found.
   return std::make_tuple(me->getName(), mi);
 }
 
