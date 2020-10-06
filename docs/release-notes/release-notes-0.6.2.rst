@@ -3,13 +3,8 @@ NFD version 0.6.2
 
 Release date: May 4, 2018
 
-Note that this is the last release that process packets with [NDN packet format version
-0.2.1](https://named-data.net/doc/NDN-packet-spec/0.2.1/) semantics. A future release will
-continue to decode v0.2.1 format, but will process packets with
-[v0.3](https://named-data.net/doc/NDN-packet-spec/0.3/) semantics.
-
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - ``afterContentStoreHit``, ``afterReceiveData`` strategy trigger (:issue:`4290`)
 
@@ -41,7 +36,7 @@ Improvements and bug fixes
 
 - Upgrade build environment to latest version of ``waf`` and other improvements
 
-Removals:
-~~~~~~~~~
+Removals
+^^^^^^^^
 
 - ``onInterestUnsatisfied`` pipeline stage (:issue:`4290`)

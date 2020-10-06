@@ -5,8 +5,8 @@ Release date: March 3, 2015
 
 Changes since version 0.3.0:
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - ``nfd`` and ``nrd`` daemons are now merged into a single process using separate threads
   (:issue:`2489`)
@@ -32,16 +32,16 @@ New features:
 
   - ContentStore now recognizes CachingPolicy-NoCache from LocalControlHeader (:issue:`2185`)
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Faces**
 
-  - Remove Tcp|UdpChannel::connect overloads that perform DNS resolution (:issue:`2422`)
+  - Remove ``Tcp|UdpChannel::connect`` overloads that perform DNS resolution (:issue:`2422`)
 
-  - Properly handle error conditions in UdpChannel::newPeer (:issue:`2516`)
+  - Properly handle error conditions in ``UdpChannel::newPeer`` (:issue:`2516`)
 
-  - Fix inconsistency of UDP face timeouts in sample `nfd.conf` and actual defaults
+  - Fix inconsistency between UDP face timeouts in sample ``nfd.conf`` and actual defaults
     (:issue:`2473`)
 
   - Introduce Face-specific logging macros (:issue:`2450`)

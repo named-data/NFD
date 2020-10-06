@@ -59,22 +59,18 @@ The ``ether`` configuration file section contains settings for Ethernet faces an
 channels. These settings will **NOT** work without root or without setting the
 appropriate permissions.
 
-**Ubuntu:**
-
-::
+- On **Ubuntu**::
 
     sudo apt install libcap2-bin
     sudo setcap cap_net_raw,cap_net_admin=eip /path/to/nfd
 
-**macOS:**
-
-::
+- On **macOS**::
 
     curl https://bugs.wireshark.org/bugzilla/attachment.cgi?id=3373 -o ChmodBPF.tar.gz
     tar zxvf ChmodBPF.tar.gz
     open ChmodBPF/Install\ ChmodBPF.app
 
-or manually::
+  or manually::
 
     sudo chgrp admin /dev/bpf*
     sudo chmod g+rw /dev/bpf*

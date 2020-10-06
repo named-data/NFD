@@ -7,8 +7,8 @@ Changes since version 0.1.0:
 
 - **Documentation**
 
-  + `"NFD Developer's Guide" by NFD authors
-    <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_ that
+  + `"NFD Developer's Guide" by the NFD authors
+    <https://named-data.net/wp-content/uploads/2019/05/ndn-0023-2-nfd-developer-guide.pdf>`_ that
     explains NFD's internals including the overall design, major modules, their
     implementation, and their interactions
 
@@ -29,9 +29,9 @@ Changes since version 0.1.0:
 
 - **Faces**
 
-  + `WebSocket <http://tools.ietf.org/html/rfc6455>`_ Face support (:issue:`1468`)
+  + `WebSocket <https://tools.ietf.org/html/rfc6455>`_ Face support (:issue:`1468`)
 
-  + Fix Ethernet Face support on Linux with ``libpcap`` version >=1.5.0 (:issue:`1511`)
+  + Fix Ethernet Face support on Linux with ``libpcap`` version >= 1.5.0 (:issue:`1511`)
 
   + Fix to recognize IPv4-mapped IPv6 addresses in ``FaceUri`` (:issue:`1635`)
 

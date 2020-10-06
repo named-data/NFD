@@ -5,8 +5,8 @@ Release date: February 2, 2015
 
 Changes since version 0.2.0:
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - **Build**
 
@@ -89,11 +89,11 @@ New features:
 
 - **Core**
 
-  + New scheduler::ScopedEventId class to automatically handle scheduled event lifetime
+  + New ``scheduler::ScopedEventId`` class to automatically handle scheduled event lifetime
     (:issue:`2295`)
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Documentation**
 
@@ -107,23 +107,23 @@ Updates and bug fixes:
 
   + Use implementations moved to ndn-cxx library
 
-     + Use Signal from ndn-cxx (:issue:`2272`, :issue:`2300`)
+     + Use ``Signal`` from ndn-cxx (:issue:`2272`, :issue:`2300`)
 
-     + use ethernet::Address from ndn-cxx (:issue:`2142`)
+     + use ``ethernet::Address`` from ndn-cxx (:issue:`2142`)
 
      + Use MAX_NDN_PACKET_SIZE constant from ndn-cxx (:issue:`2099`)
 
      + Use DEFAULT_INTEREST_LIFETIME from ndn-cxx (:issue:`2202`)
 
-     + Use FaceUri from ndn-cxx (:issue:`2143`)
+     + Use ``FaceUri`` from ndn-cxx (:issue:`2143`)
 
-     + Use DummyClientFace from ndn-cxx (:issue:`2186`)
+     + Use ``DummyClientFace`` from ndn-cxx (:issue:`2186`)
 
-     + Use ndn::dns from ndn-cxx (:issue:`2207`)
+     + Use ``ndn::dns`` from ndn-cxx (:issue:`2207`)
 
-  + Move Network class implementation from ``tools/`` to ``core/``
+  + Move ``Network`` class implementation from ``tools/`` to ``core/``
 
-  + Ignore non-Ethernet ``AF_LINK`` addresses when enumerating NICs on OSX and other BSD systems
+  + Ignore non-Ethernet ``AF_LINK`` addresses when enumerating NICs on OS X and other BSD systems
 
   + Fix bug on not properly setting FreshnessPeriod inside SegmentPublisher (:issue:`2438`)
 
@@ -217,9 +217,10 @@ Updates and bug fixes:
   + Ensure that ``ndn-autoconfig`` canonizes FaceUri before sending commands to NFD
     (:issue:`2387`)
 
-  + Refactored ndn-autoconfig implementation (:issue:`2421`)
+  + Refactored ``ndn-autoconfig`` implementation (:issue:`2421`)
 
-  + ndn-autoconfig will now register also ``/localhop/nfd`` prefix towards the hub (:issue:`2416`)
+  + ``ndn-autoconfig`` will now register also ``/localhop/nfd`` prefix towards the hub
+    (:issue:`2416`)
 
 - **Tests**
 

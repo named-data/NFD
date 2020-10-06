@@ -1,12 +1,10 @@
 nfd-autoreg
 ===========
 
-Usage
------
+Synopsis
+--------
 
-::
-
-    nfd-autoreg --prefix=</autoreg/prefix> [--prefix=</another/prefix>] ...
+**nfd-autoreg** --prefix=</autoreg/prefix> [--prefix=</another/prefix>]...
 
 Description
 -----------

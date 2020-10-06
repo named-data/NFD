@@ -75,7 +75,7 @@ The first step is to obtain the source code for NFD and its main dependency, the
 *ndn-cxx* library. If you do not want a development version of NFD, make sure you
 checkout the correct release tag (e.g., ``*-0.7.0``) from both repositories.
 
-::
+.. code-block:: sh
 
     # Download ndn-cxx
     git clone https://github.com/named-data/ndn-cxx.git
@@ -97,11 +97,15 @@ and its prerequisites.
 
 On Linux, NFD needs the following dependencies to enable optional features:
 
-- On Ubuntu::
+- On **Ubuntu**:
+
+  .. code-block:: sh
 
     sudo apt install libpcap-dev libsystemd-dev
 
-- On CentOS and Fedora::
+- On **CentOS** and **Fedora**:
+
+  .. code-block:: sh
 
     sudo dnf config-manager --enable PowerTools  # on CentOS only
     sudo dnf install libpcap-devel systemd-devel
@@ -109,7 +113,9 @@ On Linux, NFD needs the following dependencies to enable optional features:
 Build
 ~~~~~
 
-The following commands can be used to build and install NFD from source::
+The following commands can be used to build and install NFD from source:
+
+.. code-block:: sh
 
     ./waf configure  # on CentOS, add --without-pch
     ./waf
@@ -117,7 +123,9 @@ The following commands can be used to build and install NFD from source::
 
 If you have installed ndn-cxx and/or any other dependencies into a non-standard path,
 you may need to modify the ``PKG_CONFIG_PATH`` environment variable before running
-``./waf configure``. For example::
+``./waf configure``. For example:
+
+.. code-block:: sh
 
     export PKG_CONFIG_PATH="/custom/lib/pkgconfig:$PKG_CONFIG_PATH"
     ./waf configure
@@ -141,7 +149,7 @@ If this is not desired, the default flags can be overridden to disable debug sym
 The following example shows how to completely disable debug symbols and configure
 NFD to be installed into ``/usr`` with configuration in the ``/etc`` directory.
 
-::
+.. code-block:: sh
 
     CXXFLAGS="-O2" ./waf configure --prefix=/usr --sysconfdir=/etc
     ./waf
@@ -154,14 +162,18 @@ Customizing the compiler
 
 To build NFD with a different compiler (rather than the platform default), set the
 ``CXX`` environment variable to point to the compiler binary. For example, to build
-with clang on Linux, use the following::
+with clang on Linux, use the following:
+
+.. code-block:: sh
 
     CXX=clang++ ./waf configure
 
 Building the documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Tutorials and API documentation can be built using the following commands::
+Tutorials and API documentation can be built using the following commands:
+
+.. code-block:: sh
 
     # Full set of documentation (tutorials + API) in build/docs
     ./waf docs

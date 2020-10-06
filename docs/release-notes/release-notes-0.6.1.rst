@@ -3,8 +3,8 @@ NFD version 0.6.1
 
 Release date: February 19, 2018
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - (potentially breaking change) ``nfd-status-http-server`` now requires Python 3
 

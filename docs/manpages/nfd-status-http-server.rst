@@ -1,12 +1,10 @@
 nfd-status-http-server
 ======================
 
-Usage
------
+Synopsis
+--------
 
-::
-
-    nfd-status-http-server [-h] [-p <PORT>] [-a <IPADDR>] [-r] [-v]
+**nfd-status-http-server** [**-h**] [**-a** *IPADDR*] [**-p** *PORT*] [**-r**] [**-v**]
 
 Description
 -----------
@@ -17,13 +15,13 @@ Options
 -------
 
 ``-h``
-  Show this help message and exit.
-
-``-p <PORT>``
-  HTTP server port number (default is 8080).
+  Show help message and exit.
 
 ``-a <IPADDR>``
   HTTP server IP address (default is 127.0.0.1).
+
+``-p <PORT>``
+  HTTP server port number (default is 8080).
 
 ``-r``
   Enable HTTP robots to crawl (disabled by default).

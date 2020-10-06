@@ -14,7 +14,7 @@ Release date: October 4, 2016
    compiled on such systems, but requires separate installation of a newer version of the compiler
    (e.g., clang-3.4) and dependencies.
 
-Changes since version 0.4.1
+Changes since version 0.4.1:
 
 New features
 ^^^^^^^^^^^^
@@ -105,8 +105,8 @@ Deprecations
 - ``StrategyInfoHost::getOrCreateStrategyInfo``, which is renamed to
   ``StrategyInfoHost::insertStrategyInfo`` (:issue:`3205`)
 
-Deletions
-^^^^^^^^^
+Removals
+^^^^^^^^
 
 - Previously deprecated BroadcastStrategy (:issue:`3206`)
 

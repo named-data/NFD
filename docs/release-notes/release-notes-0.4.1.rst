@@ -5,8 +5,8 @@ Release date: March 25, 2016
 
 Changes since version 0.4.0:
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fix retrieval of data using full names, i.e., names with the implicit digest (:issue:`3363`)
 
@@ -23,9 +23,9 @@ Updates and bug fixes:
 - Remove assumption from the management test suites that data packets are always published
   in NFD's content store (:issue:`2182`)
 
-Deleted:
+Removals
 ^^^^^^^^
 
 - ``ndn-tlv-peek`` and ``ndn-tlv-poke`` command-line tools: use ``ndnpeek`` and ``ndnpoke``
-  programs from `NDN Essential Tools repository <https://github.com/named-data/ndn-tools>`__
+  programs from the `NDN Essential Tools repository <https://github.com/named-data/ndn-tools>`__
   (:issue:`2819`)

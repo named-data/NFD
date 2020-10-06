@@ -3,10 +3,10 @@ NFD version 0.6.6
 
 Release date: April 29, 2019
 
-Note that this is the last release that encodes to `NDN packet format version 0.2.1
-<https://named-data.net/doc/NDN-packet-spec/0.2.1/>`__. A future release will continue to
-decode v0.2.1 format, but will encode to `v0.3 format
-<https://named-data.net/doc/NDN-packet-spec/0.3/>`__.
+.. note::
+   This is the last release to support the `NDN packet format version 0.2.1
+   <https://named-data.net/doc/NDN-packet-spec/0.2.1/>`__. The next release will support
+   only the `v0.3 packet format <https://named-data.net/doc/NDN-packet-spec/0.3/>`__.
 
 New features
 ^^^^^^^^^^^^

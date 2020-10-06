@@ -3,7 +3,7 @@ NFD version 0.5.1
 
 Release date: January 25, 2017
 
-Changes since version 0.5.0
+Changes since version 0.5.0:
 
 New features
 ^^^^^^^^^^^^
@@ -98,8 +98,8 @@ Deprecations
   list`` and ``nfdc status report xml``. The argument-less ``nfd-status`` is retained as an
   alias of ``nfdc status report`` (:issue:`3780`)
 
-Deletions
-^^^^^^^^^
+Removals
+^^^^^^^^
 
 - Delete deprecated ``Strategy::sendInterest`` overload and ``violatesScope`` (:issue:`1756`,
   :issue:`3841`)

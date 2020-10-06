@@ -8,8 +8,8 @@ Release date: December 31, 2015
 
 Changes since version 0.3.4:
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - **(breaking change)** Refactored implementation of face system (:issue:`3088`, :issue:`3104`,
   :issue:`3165`, :issue:`3168`, :issue:`3225`, :issue:`3226`, :issue:`3253`, :issue:`3259`,
@@ -40,8 +40,8 @@ New features:
      LocalControlHeader features, it must be updated to use the new protocol (e.g., update
      to use ndn-cxx >= 0.4.0)
 
-- Support for NDNLPv2 (http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2,
-  :issue:`2520`, :issue:`2763`, :issue:`2841`)
+- Support for the following `NDNLPv2 <https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2>`__
+  features (:issue:`2520`, :issue:`2763`, :issue:`2841`):
 
   * Network NACK (:issue:`2883`)
   * Fragmentation and reassembly  (:issue:`3171`)
@@ -61,8 +61,8 @@ New features:
 - Automatic start of NDN auto-configuration client (``ndn-autoconfig``) when starting NFD
   using ``nfd-start``, when enabled in ``autoconfig.conf`` (:issue:`2716`)
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **(breaking change)** Redesign of automatic prefix propagation, formerly known as remote
   prefix registration (:issue:`3211`, :issue:`2413`)
@@ -90,8 +90,8 @@ Updates and bug fixes:
 - Multiple test suite improvements (:issue:`3322`, :issue:`3306`, :issue:`3305`, :issue:`3307`,
   :issue:`3346`, :issue:`3327`)
 
-Deprecated:
-^^^^^^^^^^^
+Deprecations
+^^^^^^^^^^^^
 
 - BroadcastStrategy (``/localhost/nfd/strategy/broadcast``) renamed as MulticastStrategy
   (``/localhost/nfd/strategy/multicast``) (:issue:`3011`)
@@ -99,13 +99,13 @@ Deprecated:
 - ForwarderStatus dataset retrievable using ``/localhost/nfd/status`` name, use
   ``/localhost/nfd/status/general`` instead.
 
-Deleted:
+Removals
 ^^^^^^^^
 
-- NotificationStream, replaced by the version in ndn-cxx library (:issue:`2144`)
+- ``NotificationStream``, replaced by the version in ndn-cxx library (:issue:`2144`)
 
-Known issues:
-^^^^^^^^^^^^^
+Known issues
+^^^^^^^^^^^^
 
 - NFD currently has a known limitation in supporting the retrieval of data using full names,
   i.e., names with the implicit digest (:issue:`3363`).  This limitation will be addressed

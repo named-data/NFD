@@ -2,10 +2,9 @@ NFD Overview
 ============
 
 NDN Forwarding Daemon (NFD) is a network forwarder that implements and evolves together
-with the Named Data Networking (NDN) `protocol
-<https://named-data.net/doc/ndn-tlv/>`__. After the initial release, NFD will become a core
-component of the `NDN Platform <https://named-data.net/codebase/platform/>`__ and will
-follow the same release cycle.
+with the Named Data Networking (NDN) `protocol <https://named-data.net/doc/NDN-packet-spec/current/>`__.
+Since the initial public release in 2014, NFD has been a core component of the
+`NDN Platform <https://named-data.net/codebase/platform/>`__.
 
 NFD is developed by a community effort. Although the first release was mostly done by the
 members of `NSF-sponsored NDN project team
@@ -25,7 +24,7 @@ performance.  The intention is that performance optimizations are one type of ex
 that developers can conduct by trying out different data structures and different
 algorithms; over time, better implementations may emerge within the same design framework.
 To facilitate such experimentation with the forwarder, the NFD team has also written a
-`developer's guide <https://named-data.net/wp-content/uploads/2016/10/ndn-0021-7-nfd-developer-guide.pdf>`_,
+`developer's guide <https://named-data.net/publications/techreports/ndn-0021-10-nfd-developer-guide/>`__,
 which details the current implementation and provides tips for extending all aspects of
 NFD.
 

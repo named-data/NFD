@@ -5,14 +5,14 @@ Release date: July 1, 2015
 
 Changes since version 0.3.2:
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - Content Store replacement policy interface (:issue:`1207`)
 
 - Add unit file and instructions for systemd (:issue:`1586`)
 
-- NDN Essential Tools version 0.1 `<https://github.com/named-data/ndn-tools>`__ featuring:
+- NDN Essential Tools version 0.1 (https://github.com/named-data/ndn-tools) featuring:
 
   * ``ndnpeek``, ``ndnpoke``: a pair of programs to request and make available for retrieval of
     a single Data packet
@@ -22,23 +22,23 @@ New features:
     either an input file or the standard input, and displays the Type-Length-Value (TLV)
     structure of those packets on the standard output.
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Avoid loopback new Interest in AccessStrategy (:issue:`2831`)
 
 - Simplified implementation of ``nfd-status`` using SegmentFetcher utility class (:issue:`2456`)
 
-Deprecated:
-^^^^^^^^^^^
+Deprecations
+^^^^^^^^^^^^
 
 - ``ndn-tlv-peek`` and ``ndn-tlv-poke`` command-line tools: use ``ndnpeek`` and ``ndnpoke``
-  programs from NDN Essential Tools repository `<https://github.com/named-data/ndn-tools>`__.
+  programs from the `NDN Essential Tools repository <https://github.com/named-data/ndn-tools>`__.
 
-Upcoming features:
-^^^^^^^^^^^^^^^^^^
+Upcoming features
+^^^^^^^^^^^^^^^^^
 
-- NDNLPv2 (http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2, :issue:`2520`,
+- `NDNLPv2 <https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2>`__ (:issue:`2520`,
   :issue:`2879`, :issue:`2763`, :issue:`2883`, :issue:`2841`, :issue:`2866`)
 
 - Refactored implementation of NFD management (:issue:`2200`, :issue:`2107`)

@@ -7,8 +7,8 @@ This is an incomplete list of features that are implemented in NFD version 0.1.0
 
 - **Packet Format**
 
-  + `NDN-TLV <http://named-data.net/doc/ndn-tlv/>`_
-  + LocalControlHeader, to allow apps to set outgoing face and learn incoming face.
+  + `NDN-TLV <https://named-data.net/doc/NDN-packet-spec/0.1/>`__
+  + LocalControlHeader, to allow apps to set outgoing face and learn incoming face
 
 - **Faces**
 
@@ -21,8 +21,7 @@ This is an incomplete list of features that are implemented in NFD version 0.1.0
     .. note::
          Ethernet support will not work properly on Linux kernels with TPACKET_V3 flexible
          buffer implementation (>= 3.2.0) and libpcap >= 1.5.0 (e.g., Ubuntu Linux 14.04).
-         Refer to `Issue 1551 <http://redmine.named-data.net/issues/1511>`_ for more
-         detail and implementation progress.
+         Refer to :issue:`1551` for more details and implementation progress.
 
 - **Management**
 
@@ -63,7 +62,6 @@ This is an incomplete list of features that are implemented in NFD version 0.1.0
   + ``nfdc``, a command-line tool to configure NFD.
   + ``nfd-status``, a command-line tool to query NFD status.
   + ``nfd-status-http-server``, which reads the NFD status and publishes over HTTP.
-
 
 Planned Functions and Features for Next Releases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

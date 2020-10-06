@@ -5,8 +5,8 @@ Release date: May 12, 2015
 
 Changes since version 0.3.1:
 
-New features:
-^^^^^^^^^^^^^
+New features
+^^^^^^^^^^^^
 
 - **Tables**
 
@@ -16,8 +16,8 @@ New features:
 
   * Perform FIB updates before modifying RIB (:issue:`1941`)
 
-Updates and bug fixes:
-^^^^^^^^^^^^^^^^^^^^^^
+Improvements and bug fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Documentation**
 
@@ -30,7 +30,7 @@ Updates and bug fixes:
 
   * Refactor channel acceptors to avoid use of shared pointers (:issue:`2613`)
 
-  * Refactor code to avoid deprecated `Block::fromBuffer` overloads (:issue:`2553`)
+  * Refactor code to avoid deprecated ``Block::fromBuffer`` overloads (:issue:`2553`)
 
   * Refactor code to use move semantics for sockets where possible (:issue:`2613`)
 
@@ -48,7 +48,7 @@ Updates and bug fixes:
 
 - **Tools**
 
-  * Fix hanging of `nfdc` on wrong input (:issue:`2690`)
+  * Fix hanging of ``nfdc`` on wrong input (:issue:`2690`)
 
 - **Build**
 
@@ -62,7 +62,7 @@ Updates and bug fixes:
 
   * Use C version of snprintf (:issue:`2299`)
 
-  * Emulate `std::to_string` when it is missing (:issue:`2299`)
+  * Emulate ``std::to_string`` when it is missing (:issue:`2299`)
 
   * Fix several "defined but not used" warnings with gcc-5 (:issue:`2767`)
 
