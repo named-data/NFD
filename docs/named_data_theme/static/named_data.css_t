@@ -1,0 +1,75 @@
+@import "agogo.css";
+@import "foundation.css";
+@import "named_data_style.css";
+
+body, h1, h2, h3, h4, p {
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+}
+
+h1 { font-size: 26px; }
+h2 { font-size: 20px; }
+h3 { font-size: 17px; }
+h4 { font-size: 15px; }
+
+h1, h2, h3, h4 {
+    font-weight: bold;
+}
+
+h2, h3, h4 {
+    line-height: 1.2;
+}
+
+blockquote {
+    border-left: none;
+    font-style: normal;
+}
+
+blockquote p {
+    color: #222;
+}
+
+p.logo {
+    float: left;
+    margin: 1px 0 0 0;
+    padding: 0;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #666;
+    padding: 5px;
+}
+
+div.document p {
+    margin: 0.5em 0;
+    padding: 0;
+}
+
+div.document ol,
+div.document ul {
+    margin: 0 0 0 2em;
+}
+
+div.document pre {
+    font-size: 13px;
+    line-height: 1.3;
+    margin: 0;
+    padding: 10px 20px;
+}
+
+div.document table p {
+    margin: 0;
+}
+
+div.document th p {
+    font-weight: bold;
+}
+
+div.bodywrapper a,
+div.header a:hover,
+div.sidebar a:hover {
+    text-decoration: none;
+}
