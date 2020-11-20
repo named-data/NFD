@@ -31,7 +31,6 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
-#include <ndn-cxx/security/signing-helpers.hpp>
 
 #include <boost/property_tree/info_parser.hpp>
 
@@ -129,8 +128,8 @@ public:
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
   {
-    addIdentity(m_anchorId);
-    addIdentity(m_derivedId);
+    m_keyChain.createIdentity(m_anchorId);
+    m_keyChain.createIdentity(m_derivedId);
 
     m_derivedCert = m_keyChain.getPib().getIdentity(m_derivedId).getDefaultKey().getDefaultCertificate();
     ndn::SignatureInfo signatureInfo;
@@ -138,7 +137,7 @@ public:
     ndn::security::SigningInfo signingInfo(ndn::security::SigningInfo::SIGNER_TYPE_ID,
                                            m_anchorId, signatureInfo);
     m_keyChain.sign(m_derivedCert, signingInfo);
-    saveIdentityCertificate(m_anchorId, "signer.ndncert", true);
+    saveIdentityCert(m_anchorId, "signer.ndncert", true);
 
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");

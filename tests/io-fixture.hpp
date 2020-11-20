@@ -23,38 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef NFD_TESTS_IO_FIXTURE_HPP
+#define NFD_TESTS_IO_FIXTURE_HPP
+
 #include "tests/clock-fixture.hpp"
+
+#include <boost/asio/io_service.hpp>
 
 namespace nfd {
 namespace tests {
 
-ClockFixture::ClockFixture()
-  : m_steadyClock(make_shared<time::UnitTestSteadyClock>())
-  , m_systemClock(make_shared<time::UnitTestSystemClock>())
+class IoFixture : public ClockFixture
 {
-  time::setCustomClocks(m_steadyClock, m_systemClock);
-}
-
-ClockFixture::~ClockFixture()
-{
-  time::setCustomClocks(nullptr, nullptr);
-}
-
-void
-ClockFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
-{
-  BOOST_ASSERT(tick > time::nanoseconds::zero());
-  BOOST_ASSERT(total >= time::nanoseconds::zero());
-
-  while (total > time::nanoseconds::zero()) {
-    auto t = std::min(tick, total);
-    m_steadyClock->advance(t);
-    m_systemClock->advance(t);
-    total -= t;
-
-    afterTick();
+private:
+  void
+  afterTick() final
+  {
+    if (m_io.stopped()) {
+#if BOOST_VERSION >= 106600
+      m_io.restart();
+#else
+      m_io.reset();
+#endif
+    }
+    m_io.poll();
   }
-}
+
+protected:
+  boost::asio::io_service m_io;
+};
 
 } // namespace tests
 } // namespace nfd
+
+#endif // NFD_TESTS_IO_FIXTURE_HPP

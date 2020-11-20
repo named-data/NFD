@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,9 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib/fib-updates-common.hpp"
 
+#include <ndn-cxx/security/transform/base64-encode.hpp>
+#include <ndn-cxx/security/transform/buffer-source.hpp>
+#include <ndn-cxx/security/transform/stream-sink.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 #include <boost/property_tree/info_parser.hpp>
@@ -137,12 +140,27 @@ public:
   /** \brief Lookup a route with PREFIXANN origin.
    */
   Route*
-  findAnnRoute(const Name& name, uint64_t faceId)
+  findAnnRoute(const Name& name, uint64_t faceId) const
   {
     Route routeQuery;
     routeQuery.faceId = faceId;
     routeQuery.origin = ndn::nfd::ROUTE_ORIGIN_PREFIXANN;
     return rib.find(name, routeQuery);
+  }
+
+  /** \brief Retrieve an identity certificate as a base64 string.
+   */
+  std::string
+  getIdentityCertificateBase64(const Name& identity) const
+  {
+    auto cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
+    const auto& block = cert.wireEncode();
+
+    namespace tr = ndn::security::transform;
+    std::ostringstream oss;
+    tr::bufferSource(block.wire(), block.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
+
+    return oss.str();
   }
 
 private:
@@ -158,7 +176,7 @@ private:
     manager->applyPaConfig(makeSection(CONFIG), "default");
   }
 
-public:
+protected:
   rib::Rib rib;
   unique_ptr<RibManager> manager;
 

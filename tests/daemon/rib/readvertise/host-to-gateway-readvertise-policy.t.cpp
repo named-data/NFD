@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,6 @@
 #include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
-
-#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace rib {
@@ -63,9 +61,9 @@ BOOST_FIXTURE_TEST_SUITE(TestHostToGatewayReadvertisePolicy, HostToGatewayReadve
 
 BOOST_AUTO_TEST_CASE(PrefixToAdvertise)
 {
-  BOOST_REQUIRE(addIdentity("/A"));
-  BOOST_REQUIRE(addIdentity("/A/B"));
-  BOOST_REQUIRE(addIdentity("/C/nrd"));
+  BOOST_REQUIRE(m_keyChain.createIdentity("/A"));
+  BOOST_REQUIRE(m_keyChain.createIdentity("/A/B"));
+  BOOST_REQUIRE(m_keyChain.createIdentity("/C/nrd"));
 
   auto test = [this] (Name routeName, optional<ReadvertiseAction> expectedAction) {
     auto policy = makePolicy();

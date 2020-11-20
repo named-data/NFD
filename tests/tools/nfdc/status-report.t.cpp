@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -120,12 +120,11 @@ public:
   std::function<void()> processEventsFunc;
 };
 
-class StatusReportModulesFixture : public ClockFixture, public KeyChainFixture
+class StatusReportModulesFixture : public IoFixture, public KeyChainFixture
 {
 protected:
   StatusReportModulesFixture()
-    : ClockFixture(m_io)
-    , face(m_io, m_keyChain)
+    : face(m_io, m_keyChain)
     , controller(face, m_keyChain, validator)
     , res(0)
   {
@@ -141,9 +140,7 @@ protected:
   void
   collect(time::nanoseconds tick, size_t nTicks)
   {
-    report.processEventsFunc = [=] {
-      this->advanceClocks(tick, nTicks);
-    };
+    report.processEventsFunc = [=] { advanceClocks(tick, nTicks); };
     res = report.collect(face, m_keyChain, validator, CommandOptions());
 
     if (res == 0) {
@@ -153,9 +150,6 @@ protected:
       report.formatText(statusText);
     }
   }
-
-private:
-  boost::asio::io_service m_io;
 
 protected:
   ndn::util::DummyClientFace face;

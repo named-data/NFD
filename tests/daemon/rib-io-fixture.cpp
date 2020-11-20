@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,8 +24,8 @@
  */
 
 #include "tests/daemon/rib-io-fixture.hpp"
-#include "tests/test-common.hpp"
 #include "common/global.hpp"
+#include "tests/boost-test.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 
@@ -122,13 +122,8 @@ RibIoFixture::poll()
   } while (nHandlersRun > 0);
 }
 
-RibIoTimeFixture::RibIoTimeFixture()
-  : ClockFixture(g_io)
-{
-}
-
 void
-RibIoTimeFixture::pollAfterClockTick()
+RibIoTimeFixture::afterTick()
 {
   poll();
 }

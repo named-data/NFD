@@ -34,7 +34,6 @@
 #include <ndn-cxx/lp/empty-value.hpp>
 #include <ndn-cxx/lp/prefix-announcement-header.hpp>
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace face {

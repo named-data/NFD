@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,13 @@
  */
 
 /** \file
- *  \brief provides unit testing tools to validate runtime type information
+ *  \brief Provides unit testing tools to validate runtime type information.
  */
 
 #ifndef NFD_TESTS_CHECK_TYPEID_HPP
 #define NFD_TESTS_CHECK_TYPEID_HPP
 
-#include "boost-test.hpp"
+#include "tests/boost-test.hpp"
 
 #include <boost/core/demangle.hpp>
 #include <typeinfo>

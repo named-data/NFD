@@ -25,11 +25,6 @@
 
 #include "tests/key-chain-fixture.hpp"
 
-#include <ndn-cxx/security/certificate.hpp>
-#include <ndn-cxx/security/pib/identity.hpp>
-#include <ndn-cxx/security/pib/key.hpp>
-#include <ndn-cxx/security/pib/pib.hpp>
-#include <ndn-cxx/security/transform.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -37,10 +32,11 @@
 namespace nfd {
 namespace tests {
 
+using namespace ndn::security;
+
 KeyChainFixture::KeyChainFixture()
   : m_keyChain("pib-memory:", "tpm-memory:")
 {
-  m_keyChain.createIdentity("/DEFAULT");
 }
 
 KeyChainFixture::~KeyChainFixture()
@@ -51,32 +47,33 @@ KeyChainFixture::~KeyChainFixture()
   }
 }
 
-bool
-KeyChainFixture::addIdentity(const Name& identity, const ndn::KeyParams& params)
+Certificate
+KeyChainFixture::makeCert(const Key& key, const std::string& issuer, const Key& signingKey)
 {
-  try {
-    m_keyChain.createIdentity(identity, params);
-    return true;
-  }
-  catch (const std::runtime_error&) {
-    return false;
-  }
+  Certificate cert;
+  cert.setName(Name(key.getName())
+               .append(issuer)
+               .appendVersion());
+
+  // set metainfo
+  cert.setContentType(tlv::ContentType_Key);
+  cert.setFreshnessPeriod(1_h);
+
+  // set content
+  cert.setContent(key.getPublicKey().data(), key.getPublicKey().size());
+
+  // set signature info
+  ndn::SignatureInfo info;
+  auto now = time::system_clock::now();
+  info.setValidityPeriod(ValidityPeriod(now - 30_days, now + 30_days));
+
+  m_keyChain.sign(cert, signingByKey(signingKey ? signingKey : key).setSignatureInfo(info));
+  return cert;
 }
 
 bool
-KeyChainFixture::saveIdentityCertificate(const Name& identity, const std::string& filename, bool allowAdd)
+KeyChainFixture::saveCert(const Data& cert, const std::string& filename)
 {
-  ndn::security::Certificate cert;
-  try {
-    cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
-  }
-  catch (const ndn::security::Pib::Error&) {
-    if (allowAdd && addIdentity(identity)) {
-      return saveIdentityCertificate(identity, filename, false);
-    }
-    return false;
-  }
-
   m_certFiles.push_back(filename);
   try {
     ndn::io::save(cert, filename);
@@ -87,26 +84,39 @@ KeyChainFixture::saveIdentityCertificate(const Name& identity, const std::string
   }
 }
 
-std::string
-KeyChainFixture::getIdentityCertificateBase64(const Name& identity, bool allowAdd)
+bool
+KeyChainFixture::saveIdentityCert(const Identity& identity, const std::string& filename)
 {
-  ndn::security::Certificate cert;
+  Certificate cert;
   try {
-    cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
+    cert = identity.getDefaultKey().getDefaultCertificate();
   }
-  catch (const ndn::security::Pib::Error&) {
-    if (!allowAdd) {
-      NDN_THROW_NESTED(std::runtime_error("Identity does not exist"));
+  catch (const Pib::Error&) {
+    return false;
+  }
+
+  return saveCert(cert, filename);
+}
+
+bool
+KeyChainFixture::saveIdentityCert(const Name& identityName, const std::string& filename,
+                                  bool allowCreate)
+{
+  Identity id;
+  try {
+    id = m_keyChain.getPib().getIdentity(identityName);
+  }
+  catch (const Pib::Error&) {
+    if (allowCreate) {
+      id = m_keyChain.createIdentity(identityName);
     }
-    cert = m_keyChain.createIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
 
-  const auto& block = cert.wireEncode();
+  if (!id) {
+    return false;
+  }
 
-  namespace tr = ndn::security::transform;
-  std::ostringstream oss;
-  tr::bufferSource(block.wire(), block.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
-  return oss.str();
+  return saveIdentityCert(id, filename);
 }
 
 } // namespace tests

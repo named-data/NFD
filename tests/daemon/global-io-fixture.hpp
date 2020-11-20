@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,10 +56,11 @@ protected:
 
 /** \brief GlobalIoFixture that also overrides steady clock and system clock.
  */
-class GlobalIoTimeFixture : public GlobalIoFixture, public ClockFixture
+class GlobalIoTimeFixture : public ClockFixture, public GlobalIoFixture
 {
-protected:
-  GlobalIoTimeFixture();
+private:
+  void
+  afterTick() final;
 };
 
 } // namespace tests

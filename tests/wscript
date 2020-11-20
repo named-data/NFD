@@ -28,7 +28,7 @@ top = '..'
 def build(bld):
     # Unit tests
     if bld.env.WITH_TESTS:
-        config_path = 'UNIT_TEST_CONFIG_PATH="%s"' % bld.bldnode.make_node('tmp-files')
+        tmpdir = 'UNIT_TESTS_TMPDIR="%s"' % bld.bldnode.make_node('tmp-files')
 
         # common test objects
         bld.objects(
@@ -37,7 +37,7 @@ def build(bld):
             source=bld.path.ant_glob('*.cpp', excl='main.cpp'),
             use='core-objects',
             headers='../core/common.hpp boost-test.hpp',
-            defines=[config_path])
+            defines=[tmpdir])
 
         for module in ['core', 'daemon', 'rib', 'tools']:
             # main() for the module
@@ -70,7 +70,7 @@ def build(bld):
                         target='../unit-tests-%s' % module,
                         source=src,
                         use='%s-objects tests-common unit-tests-%s-main' % (objmod, module),
-                        defines=[config_path],
+                        defines=[tmpdir],
                         install_path=None)
 
     # Other tests (e.g., stress tests and benchmarks that can be enabled even if unit tests are disabled)

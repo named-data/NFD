@@ -58,7 +58,7 @@ makeInterest(const Name& name, bool canBePrefix = false,
 /**
  * \brief Create a Data with a null (i.e., empty) signature
  *
- * If a real signature is desired, use KeyChainFixture and sign again with `m_keyChain`.
+ * If a "real" signature is desired, use KeyChainFixture and sign again with `m_keyChain`.
  */
 shared_ptr<Data>
 makeData(const Name& name);

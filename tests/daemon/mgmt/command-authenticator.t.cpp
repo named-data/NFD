@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -106,9 +106,9 @@ BOOST_AUTO_TEST_CASE(Certs)
   Name id0("/localhost/CommandAuthenticator/0");
   Name id1("/localhost/CommandAuthenticator/1");
   Name id2("/localhost/CommandAuthenticator/2");
-  BOOST_REQUIRE(addIdentity(id0));
-  BOOST_REQUIRE(saveIdentityCertificate(id1, "1.ndncert", true));
-  BOOST_REQUIRE(saveIdentityCertificate(id2, "2.ndncert", true));
+  BOOST_REQUIRE(m_keyChain.createIdentity(id0));
+  BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
+  BOOST_REQUIRE(saveIdentityCert(id2, "2.ndncert", true));
 
   makeModules({"module0", "module1", "module2", "module3", "module4", "module5", "module6", "module7"});
   const std::string& config = R"CONFIG(
@@ -196,8 +196,8 @@ BOOST_AUTO_TEST_CASE(Requester)
 {
   Name id0("/localhost/CommandAuthenticator/0");
   Name id1("/localhost/CommandAuthenticator/1");
-  BOOST_REQUIRE(addIdentity(id0));
-  BOOST_REQUIRE(saveIdentityCertificate(id1, "1.ndncert", true));
+  BOOST_REQUIRE(m_keyChain.createIdentity(id0));
+  BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
 
   makeModules({"module0", "module1"});
   const std::string& config = R"CONFIG(
@@ -241,7 +241,7 @@ protected:
   IdentityAuthorizedFixture()
     : id1("/localhost/CommandAuthenticator/1")
   {
-    BOOST_REQUIRE(saveIdentityCertificate(id1, "1.ndncert", true));
+    BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
 
     makeModules({"module1"});
     const std::string& config = R"CONFIG(
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_BadKeyLocatorType)
 BOOST_AUTO_TEST_CASE(NotAuthorized)
 {
   Name id0("/localhost/CommandAuthenticator/0");
-  BOOST_REQUIRE(addIdentity(id0));
+  BOOST_REQUIRE(m_keyChain.createIdentity(id0));
 
   BOOST_CHECK_EQUAL(authorize("module1", id0), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(InvalidTimestamp)
 BOOST_FIXTURE_TEST_CASE(MissingAuthorizationsSection, CommandAuthenticatorFixture)
 {
   Name id0("/localhost/CommandAuthenticator/0");
-  BOOST_REQUIRE(addIdentity(id0));
+  BOOST_REQUIRE(m_keyChain.createIdentity(id0));
 
   makeModules({"module42"});
   loadConfig("");
