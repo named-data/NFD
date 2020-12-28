@@ -107,7 +107,7 @@ On Linux, NFD needs the following dependencies to enable optional features:
 
   .. code-block:: sh
 
-    sudo dnf config-manager --enable PowerTools  # on CentOS only
+    sudo dnf config-manager --enable powertools  # on CentOS only
     sudo dnf install libpcap-devel systemd-devel
 
 Build

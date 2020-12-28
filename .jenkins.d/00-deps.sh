@@ -34,7 +34,7 @@ elif has Ubuntu $NODE_LABELS; then
     fi
 
 elif has CentOS-8 $NODE_LABELS; then
-    sudo dnf config-manager --enable PowerTools
+    sudo dnf config-manager --enable powertools
     sudo dnf -y install gcc-c++ libasan pkgconf-pkg-config python3 \
                         boost-devel openssl-devel sqlite-devel \
                         libpcap-devel systemd-devel

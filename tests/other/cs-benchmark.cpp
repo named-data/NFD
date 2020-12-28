@@ -26,8 +26,6 @@
 #include "benchmark-helpers.hpp"
 #include "table/cs.hpp"
 
-#include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
-
 #include <iostream>
 
 #ifdef HAVE_VALGRIND
