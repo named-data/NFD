@@ -192,16 +192,16 @@ public:
   AsfMeasurements(MeasurementsAccessor& measurements);
 
   FaceInfo*
-  getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, FaceId faceId);
+  getFaceInfo(const fib::Entry& fibEntry, const Name& interestName, FaceId faceId);
 
   FaceInfo&
-  getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest, FaceId faceId);
+  getOrCreateFaceInfo(const fib::Entry& fibEntry, const Name& interestName, FaceId faceId);
 
   NamespaceInfo*
   getNamespaceInfo(const Name& prefix);
 
   NamespaceInfo&
-  getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Interest& interest);
+  getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Name& prefix);
 
 private:
   void

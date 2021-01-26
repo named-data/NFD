@@ -73,7 +73,7 @@ public:
 
 using Tests = boost::mpl::vector<
   Test<AccessStrategy, false, 1>,
-  Test<AsfStrategy, true, 3>,
+  Test<AsfStrategy, true, 4>,
   Test<BestRouteStrategy, false, 5>,
   Test<MulticastStrategy, false, 4>,
   Test<SelfLearningStrategy, false, 1>,

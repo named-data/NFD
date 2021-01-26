@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -81,7 +81,7 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
       continue;
     }
 
-    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace.getId());
+    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest.getName(), hopFace.getId());
     // If no RTT has been recorded, probe this face
     if (info == nullptr || info->getLastRtt() == FaceInfo::RTT_NO_MEASUREMENT) {
       return &hopFace;
@@ -100,10 +100,10 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
 }
 
 bool
-ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Interest& interest)
+ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Name& interestName)
 {
   // Return the probing status flag for a namespace
-  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
+  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interestName);
 
   // If a first probe has not been scheduled for a namespace
   if (!info.isFirstProbeScheduled()) {
@@ -118,11 +118,11 @@ ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Interest& inter
 }
 
 void
-ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const Interest& interest)
+ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const Name& interestName)
 {
   // After probing is done, need to set probing flag to false and
   // schedule another future probe
-  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
+  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interestName);
   info.setIsProbingDue(false);
 
   scheduleProbe(fibEntry, m_probingInterval);
