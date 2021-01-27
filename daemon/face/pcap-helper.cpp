@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,8 @@
 
 #include "pcap-helper.hpp"
 #include "ethernet-protocol.hpp"
+
+#include "common/privilege-helper.hpp"
 
 #include <pcap/pcap.h>
 #include <unistd.h>
@@ -63,9 +65,11 @@ PcapHelper::~PcapHelper()
 void
 PcapHelper::activate(int dlt)
 {
-  int ret = pcap_activate(m_pcap);
-  if (ret < 0)
-    NDN_THROW(Error("pcap_activate: " + std::string(pcap_statustostr(ret))));
+  PrivilegeHelper::runElevated([this] {
+    int ret = pcap_activate(m_pcap);
+    if (ret < 0)
+      NDN_THROW(Error("pcap_activate: " + std::string(pcap_statustostr(ret))));
+  });
 
   if (pcap_set_datalink(m_pcap, dlt) < 0)
     NDN_THROW(Error("pcap_set_datalink: " + getLastError()));
