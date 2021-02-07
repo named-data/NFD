@@ -355,52 +355,64 @@ rib
   ;
   ;   rule
   ;   {
-  ;     id "RIB Registration Command Rule"
-  ;     for interest                         ; rule for Interests (to validate CommandInterests)
+  ;     id "RIB Command Interest"
+  ;     for interest
+  ;     ; match Commmand Interest name
+  ;     ; last three components are ControlParameters, timestamp, and random-value
+  ;     ; SignatureInfo and SignatureValue are stripped before passing to the filter
   ;     filter
   ;     {
-  ;       type name                          ; condition on interest name (w/o SignatureInfo/SignatureValue)
-  ;       regex ^[<localhop><localhost>]<nfd><rib>[<register><unregister>]<><><>$
+  ;       type name
+  ;       regex ^<localhop><nfd><rib>[<register><unregister>]<>{3}$
   ;     }
   ;     checker
   ;     {
   ;       type customized
-  ;       sig-type rsa-sha256                ; interest must have a rsa-sha256 signature
+  ;       sig-type ecdsa-sha256
+  ;       ; KeyLocator must be either a key name or a certificate name
   ;       key-locator
   ;       {
-  ;         type name                        ; key locator must be the certificate name of the
-  ;                                          ; signing key
-  ;         regex ^<>*<KEY><>$
+  ;         type name
+  ;         regex ^<>*<KEY><>{1,3}$
   ;       }
   ;     }
   ;   }
   ;   rule
   ;   {
-  ;     id "NDN Testbed Hierarchy Rule"
-  ;     for data                             ; rule for Data (to validate NDN certificates)
+  ;     id "NDN Testbed Certificate Hierarchy"
+  ;     for data
+  ;     ; match certificate name only
   ;     filter
   ;     {
-  ;       type name                          ; condition on data name
-  ;       regex ^<>*<KEY><><><>$
+  ;       type name
+  ;       regex ^<>*<KEY><>{3}$
   ;     }
   ;     checker
   ;     {
-  ;       type hierarchical                  ; the certificate name of the signing key and
-  ;                                          ; the data name must follow the hierarchical model
-  ;       sig-type rsa-sha256                ; data must have a rsa-sha256 signature
+  ;       type customized
+  ;       sig-type ecdsa-sha256
+  ;       key-locator
+  ;       {
+  ;         type name
+  ;         ; issuer subject name must be a prefix of issued certificate name
+  ;         hyper-relation
+  ;         {
+  ;           k-regex ^(<>*)<KEY><>{1,3}$
+  ;           k-expand \\1
+  ;           h-relation is-prefix-of
+  ;           p-regex ^(<>*)$
+  ;           p-expand \\1
+  ;         }
+  ;       }
   ;     }
   ;   }
   ;   trust-anchor
   ;   {
   ;     type file
-  ;     file-name keys/default.ndncert ; the file name, by default this file should be placed in the
-  ;                                    ; same folder as this config file.
+  ;     ; certificate path, relative to this config file
+  ;     file-name keys/default.ndncert
   ;   }
-  ;   ; trust-anchor ; Can be repeated multiple times to specify multiple trust anchors
-  ;   ; {
-  ;   ;   type file
-  ;   ;   file-name keys/ndn-testbed.ndncert
-  ;   ; }
+  ;   ; trust-anchor entry may be repeated to specify multiple trust anchors
   ; }
 
   ; The following localhop_security should be enabled when NFD runs on a hub,
