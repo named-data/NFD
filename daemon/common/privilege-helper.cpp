@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,18 +33,18 @@ namespace nfd {
 
 NFD_LOG_INIT(PrivilegeHelper);
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 uid_t PrivilegeHelper::s_normalUid = ::geteuid();
 gid_t PrivilegeHelper::s_normalGid = ::getegid();
 
 uid_t PrivilegeHelper::s_privilegedUid = ::geteuid();
 gid_t PrivilegeHelper::s_privilegedGid = ::getegid();
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 void
 PrivilegeHelper::initialize(const std::string& userName, const std::string& groupName)
 {
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   static const size_t MAX_GROUP_BUFFER_SIZE = 16384; // 16 KiB
   static const size_t MAX_PASSWD_BUFFER_SIZE = 16384;
 
@@ -111,13 +111,13 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
   if (!userName.empty() || !groupName.empty()) {
     throw Error("Dropping and raising privileges is not supported on this platform");
   }
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void
 PrivilegeHelper::drop()
 {
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   if (::geteuid() == s_normalUid && ::getegid() == s_normalGid)
     return;
 
@@ -132,13 +132,13 @@ PrivilegeHelper::drop()
   NFD_LOG_INFO("dropped to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
   NFD_LOG_WARN("Dropping privileges is not supported on this platform");
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void
 PrivilegeHelper::raise()
 {
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   if (::geteuid() == s_privilegedUid && ::getegid() == s_privilegedGid)
     return;
 
@@ -153,7 +153,7 @@ PrivilegeHelper::raise()
   NFD_LOG_INFO("elevated to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
   NFD_LOG_WARN("Elevating privileges is not supported on this platform");
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 } // namespace nfd

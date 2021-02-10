@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,14 +46,14 @@ public:
     setConfigFile(configFile);
   }
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   ~GeneralConfigSectionFixture()
   {
     // revert changes to s_normalUid/s_normalGid, if any
     PrivilegeHelper::s_normalUid = ::geteuid();
     PrivilegeHelper::s_normalGid = ::getegid();
   }
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 protected:
   ConfigFile configFile;
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(EmptyConfig)
   BOOST_CHECK_EQUAL(PrivilegeHelper::s_normalGid, PrivilegeHelper::s_privilegedGid);
 }
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 BOOST_AUTO_TEST_CASE(UserConfig)
 {
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(UserAndGroupConfig)
   BOOST_CHECK_NE(PrivilegeHelper::s_normalGid, PrivilegeHelper::s_privilegedGid);
 }
 
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 BOOST_AUTO_TEST_CASE(InvalidUserConfig)
 {

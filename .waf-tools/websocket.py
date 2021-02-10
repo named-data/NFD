@@ -53,10 +53,10 @@ def checkWebsocket(self, **kw):
 
         self.end_msg('.'.join(self.env.WEBSOCKET_VERSION))
 
+        self.env.append_unique('DEFINES', ['_WEBSOCKETPP_CPP11_STL_'])
         self.env.INCLUDES_WEBSOCKET = websocketDir.parent.abspath()
         self.env.HAVE_WEBSOCKET = True
         self.define('HAVE_WEBSOCKET', 1)
-        self.define('_WEBSOCKETPP_CPP11_STL_', 1)
 
     except Errors.WafError as error:
         if isMandatory:

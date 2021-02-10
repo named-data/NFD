@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -257,7 +257,7 @@ protected: // actions
    *  \param interest the Interest packet
    *  \return A pointer to the out-record created or nullptr if the Interest was dropped
    */
-  VIRTUAL_WITH_TESTS pit::OutRecord*
+  NFD_VIRTUAL_WITH_TESTS pit::OutRecord*
   sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
                const Interest& interest);
 
@@ -267,7 +267,7 @@ protected: // actions
    *  \param egress face through which to send out the Data
    *  \return Whether the Data was sent (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS bool
+  NFD_VIRTUAL_WITH_TESTS bool
   sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, Face& egress);
 
   /** \brief Send a Data packet to all matched and qualified faces.
@@ -278,7 +278,7 @@ protected: // actions
    *  \param inFace face on which the Data arrived
    *  \param data the Data packet
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   sendDataToAll(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data);
 
   /** \brief Schedule the PIT entry for immediate deletion.
@@ -287,7 +287,7 @@ protected: // actions
    *  The strategy should invoke this function when it concludes that the Interest cannot
    *  be forwarded and it does not want to wait for responses from existing upstream nodes.
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry)
   {
     this->setExpiryTimer(pitEntry, 0_ms);
@@ -302,7 +302,7 @@ protected: // actions
    *  \param header the Nack header
    *  \return Whether the Nack was sent (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS bool
+  NFD_VIRTUAL_WITH_TESTS bool
   sendNack(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
            const lp::NackHeader& header)
   {
@@ -388,7 +388,7 @@ protected: // instance name
     m_name = name;
   }
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED: // setter
+NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // setter
   /** \brief Set whether the afterNewNextHop trigger should be invoked for this strategy
    */
   void

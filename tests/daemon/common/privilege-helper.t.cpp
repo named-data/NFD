@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(TestPrivilegeHelper)
 
 BOOST_AUTO_TEST_CASE(DropRaise)
 {
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   SKIP_IF_NOT_SUPERUSER();
 
   // The following assumes that daemon:daemon is present on the test system
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(DropRaise)
 
 #else
   BOOST_TEST_MESSAGE("Dropping/raising privileges not supported on this platform, skipping");
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPrivilegeHelper

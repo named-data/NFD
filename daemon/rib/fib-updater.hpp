@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,7 +54,7 @@ public:
 
   FibUpdater(Rib& rib, ndn::nfd::Controller& controller);
 
-  VIRTUAL_WITH_TESTS
+  NFD_VIRTUAL_WITH_TESTS
   ~FibUpdater() = default;
 
   /** \brief computes FibUpdates using the provided RibUpdateBatch and then sends the
@@ -102,13 +102,13 @@ private:
   sendUpdatesForNonBatchFaceId(const FibUpdateSuccessCallback& onSuccess,
                                const FibUpdateFailureCallback& onFailure);
 
-PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief sends a FibAddNextHopCommand to NFD using the parameters supplied by
   *          the passed update
   *
   *   \param nTimeouts the number of times this FibUpdate has failed due to timeout
   */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   sendAddNextHopUpdate(const FibUpdate& update,
                        const FibUpdateSuccessCallback& onSuccess,
                        const FibUpdateFailureCallback& onFailure,
@@ -119,7 +119,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   *
   *   \param nTimeouts the number of times this FibUpdate has failed due to timeout
   */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   sendRemoveNextHopUpdate(const FibUpdate& update,
                           const FibUpdateSuccessCallback& onSuccess,
                           const FibUpdateFailureCallback& onFailure,
@@ -136,7 +136,7 @@ private:
   void
   computeUpdatesForUnregistration(const RibUpdate& update);
 
-PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief callback used by NfdController when a FibAddNextHopCommand or FibRemoveNextHopCommand
   *          is successful.
   *
@@ -257,7 +257,7 @@ private:
   ndn::nfd::Controller& m_controller;
   uint64_t m_batchFaceId;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   FibUpdateList m_updatesForBatchFaceId;
   FibUpdateList m_updatesForNonBatchFaceId;
 

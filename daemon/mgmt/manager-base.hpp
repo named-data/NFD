@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,7 +71,7 @@ protected:
   ManagerBase(const std::string& module, Dispatcher& dispatcher,
               CommandAuthenticator& authenticator);
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
+NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   // difference from mgmt::ControlCommand: accepts nfd::ControlParameters
   using ControlCommandHandler = std::function<void(const ControlCommand& command,
                                                    const Name& prefix, const Interest& interest,
@@ -90,7 +90,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   ndn::mgmt::PostNotification
   registerNotificationStream(const std::string& verb);
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED: // helpers
+NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // helpers
   /**
    * @brief Extracts the requester from a ControlCommand request.
    *
@@ -102,7 +102,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // helpers
   void
   extractRequester(const Interest& interest, ndn::mgmt::AcceptContinuation accept);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
    * @brief Returns an authorization function for a specific management module and verb.
    */

@@ -2057,12 +2057,12 @@ PREDEFINED             = DOXYGEN \
                          NFD_LOG_MEMBER_DECL_SPECIALIZED(x)= \
                          NFD_LOG_MEMBER_INIT(x,y)= \
                          NFD_LOG_MEMBER_INIT_SPECIALIZED(x,y)= \
-                         VIRTUAL_WITH_TESTS= \
-                         PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
-                         PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \
-                         PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
-                         OVERRIDE_WITH_TESTS_ELSE_FINAL=final \
-                         FINAL_UNLESS_WITH_TESTS=final
+                         NFD_VIRTUAL_WITH_TESTS= \
+                         NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
+                         NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \
+                         NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
+                         NFD_OVERRIDE_WITH_TESTS_ELSE_FINAL=final \
+                         NFD_FINAL_UNLESS_WITH_TESTS=final
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,7 +71,7 @@ public:
   {
     raise();
     try {
-      f();
+      std::forward<F>(f)();
     }
     catch (...) {
       drop();
@@ -80,18 +80,18 @@ public:
     drop();
   }
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   static void
   raise();
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+#ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
   static uid_t s_normalUid;
   static gid_t s_normalGid;
 
   static uid_t s_privilegedUid;
   static gid_t s_privilegedGid;
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 };
 
 } // namespace nfd

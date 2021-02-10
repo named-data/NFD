@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 #include <iostream>
 
-#ifdef HAVE_VALGRIND
+#ifdef NFD_HAVE_VALGRIND
 #include <valgrind/callgrind.h>
 #endif
 
@@ -50,7 +50,7 @@ protected:
   static time::microseconds
   timedRun(const std::function<void()>& f)
   {
-#ifdef HAVE_VALGRIND
+#ifdef NFD_HAVE_VALGRIND
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
@@ -58,7 +58,7 @@ protected:
     f();
     auto t2 = time::steady_clock::now();
 
-#ifdef HAVE_VALGRIND
+#ifdef NFD_HAVE_VALGRIND
     CALLGRIND_STOP_INSTRUMENTATION;
 #endif
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -61,7 +61,7 @@ public:
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   struct Rule
   {
     std::vector<FaceUri> remotes;
@@ -71,7 +71,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Rule
   parseRule(int index, const ConfigSection& confRule) const;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   const FaceSystem& m_faceSystem;
   FaceCreatedCallback m_addFace;
   shared_ptr<ndn::net::NetworkMonitor> m_netmon;

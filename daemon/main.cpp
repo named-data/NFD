@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,13 +50,13 @@
 #include <ndn-cxx/util/ostream-joiner.hpp>
 #include <ndn-cxx/version.hpp>
 
-#ifdef HAVE_LIBPCAP
+#ifdef NFD_HAVE_LIBPCAP
 #include <pcap/pcap.h>
 #endif
-#ifdef HAVE_SYSTEMD
+#ifdef NFD_HAVE_SYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
-#ifdef HAVE_WEBSOCKET
+#ifdef NFD_HAVE_WEBSOCKET
 #include <websocketpp/version.hpp>
 #endif
 
@@ -180,7 +180,7 @@ public:
   static void
   systemdNotify(const char* state)
   {
-#ifdef HAVE_SYSTEMD
+#ifdef NFD_HAVE_SYSTEMD
     sd_notify(0, state);
 #endif
   }
@@ -247,14 +247,14 @@ main(int argc, char** argv)
 {
   using namespace nfd;
 
-  std::string configFile = DEFAULT_CONFIG_FILE;
+  std::string configFile = NFD_DEFAULT_CONFIG_FILE;
 
   po::options_description description("Options");
   description.add_options()
     ("help,h",    "print this message and exit")
     ("version,V", "show version information and exit")
     ("config,c",  po::value<std::string>(&configFile),
-                  "path to configuration file (default: " DEFAULT_CONFIG_FILE ")")
+                  "path to configuration file (default: " NFD_DEFAULT_CONFIG_FILE ")")
     ("modules,m", "list available logging modules")
     ;
 
@@ -292,13 +292,13 @@ main(int argc, char** argv)
       "." + to_string(BOOST_VERSION / 100 % 1000) +
       "." + to_string(BOOST_VERSION % 100);
   const std::string pcapBuildInfo =
-#ifdef HAVE_LIBPCAP
+#ifdef NFD_HAVE_LIBPCAP
       "with " + std::string(pcap_lib_version());
 #else
       "without libpcap";
 #endif
   const std::string wsBuildInfo =
-#ifdef HAVE_WEBSOCKET
+#ifdef NFD_HAVE_WEBSOCKET
       "with WebSocket++ version " + to_string(websocketpp::major_version) +
       "." + to_string(websocketpp::minor_version) +
       "." + to_string(websocketpp::patch_version);

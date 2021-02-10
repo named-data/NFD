@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ public:
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const FaceEndpoint& ingress, const Data& data) override;
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED:
+NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   /// StrategyInfo on measurements::Entry
   class MeasurementsEntryInfo : public StrategyInfo
   {

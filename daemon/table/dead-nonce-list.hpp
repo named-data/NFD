@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -146,7 +146,7 @@ private:
   Queue& m_queue;
   Hashtable& m_ht;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity control
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity control
 
   // ---- current capacity and hard limits
 

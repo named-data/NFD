@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,7 +54,7 @@ public:
   explicit
   Forwarder(FaceTable& faceTable);
 
-  VIRTUAL_WITH_TESTS
+  NFD_VIRTUAL_WITH_TESTS
   ~Forwarder();
 
   const ForwarderCounters&
@@ -165,76 +165,76 @@ public: // forwarding entrypoints and tables
     return m_networkRegionTable;
   }
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onIncomingInterest(const FaceEndpoint& ingress, const Interest& interest);
 
   /** \brief Interest loop pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onInterestLoop(const FaceEndpoint& ingress, const Interest& interest);
 
   /** \brief Content Store miss pipeline
   */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onContentStoreMiss(const FaceEndpoint& ingress,
                      const shared_ptr<pit::Entry>& pitEntry, const Interest& interest);
 
   /** \brief Content Store hit pipeline
   */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry,
                     const Interest& interest, const Data& data);
 
   /** \brief outgoing Interest pipeline
    *  \return A pointer to the out-record created or nullptr if the Interest was dropped
    */
-  VIRTUAL_WITH_TESTS pit::OutRecord*
+  NFD_VIRTUAL_WITH_TESTS pit::OutRecord*
   onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
                      Face& egress, const Interest& interest);
 
   /** \brief Interest finalize pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief incoming Data pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onIncomingData(const FaceEndpoint& ingress, const Data& data);
 
   /** \brief Data unsolicited pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onDataUnsolicited(const FaceEndpoint& ingress, const Data& data);
 
   /** \brief outgoing Data pipeline
    *  \return Whether the Data was transmitted (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS bool
+  NFD_VIRTUAL_WITH_TESTS bool
   onOutgoingData(const Data& data, Face& egress);
 
   /** \brief incoming Nack pipeline
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack);
 
   /** \brief outgoing Nack pipeline
    *  \return Whether the Nack was transmitted (true) or dropped (false)
    */
-  VIRTUAL_WITH_TESTS bool
+  NFD_VIRTUAL_WITH_TESTS bool
   onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
                  Face& egress, const lp::NackHeader& nack);
 
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onDroppedInterest(const Face& egress, const Interest& interest);
 
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);
 
-PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief set a new expiry timer (now + \p duration) on a PIT entry
    */
   void
@@ -244,18 +244,18 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
    *  \param upstream if null, insert Nonces from all out-records;
    *                  if not null, insert Nonce only on the out-records of this face
    */
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   insertDeadNonceList(pit::Entry& pitEntry, Face* upstream);
 
   /** \brief call trigger (method) on the effective strategy of pitEntry
    */
-#ifdef WITH_TESTS
+#ifdef NFD_WITH_TESTS
   virtual void
   dispatchToStrategy(pit::Entry& pitEntry, std::function<void(fw::Strategy&)> trigger)
 #else
   template<class Function>
   void
-  dispatchToStrategy(pit::Entry& pitEntry, Function trigger)
+  dispatchToStrategy(pit::Entry& pitEntry, Function&& trigger)
 #endif
   {
     trigger(m_strategyChoice.findEffectiveStrategy(pitEntry));

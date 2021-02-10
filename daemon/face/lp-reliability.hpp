@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -105,12 +105,12 @@ public:
   void
   piggyback(lp::Packet& pkt, ssize_t mtu);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   class UnackedFrag;
   class NetPkt;
   using UnackedFrags = std::map<lp::Sequence, UnackedFrag>;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief assign TxSequence number to a fragment
    *  \param frag fragment to assign TxSequence to
    *  \return assigned TxSequence number
@@ -162,7 +162,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   deleteUnackedFrag(UnackedFrags::iterator fragIt);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief contains a sent fragment that has not been acknowledged and associated data
    */
   class UnackedFrag
@@ -200,7 +200,7 @@ public:
                                                   tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
                                                   sizeof(lp::Sequence);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Options m_options;
   GenericLinkService* m_linkService;
   UnackedFrags m_unackedFrags;

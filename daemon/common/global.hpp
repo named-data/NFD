@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019  Regents of the University of California,
+ * Copyright (c) 2014-2021  Regents of the University of California,
  *                          Arizona Board of Regents,
  *                          Colorado State University,
  *                          University Pierre & Marie Curie, Sorbonne University,
@@ -61,7 +61,7 @@ runOnMainIoService(const std::function<void()>& f);
 void
 runOnRibIoService(const std::function<void()>& f);
 
-#ifdef WITH_TESTS
+#ifdef NFD_WITH_TESTS
 /** \brief Destroy the global io_service instance.
  *
  *  It will be recreated at the next invocation of getGlobalIoService().

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@ namespace face {
 
 /** \brief A Transport that drops every packet.
  */
-class NullTransport FINAL_UNLESS_WITH_TESTS : public Transport
+class NullTransport NFD_FINAL_UNLESS_WITH_TESTS : public Transport
 {
 public:
   explicit
@@ -44,14 +44,14 @@ public:
 
 protected:
   void
-  doClose() OVERRIDE_WITH_TESTS_ELSE_FINAL
+  doClose() NFD_OVERRIDE_WITH_TESTS_ELSE_FINAL
   {
     setState(TransportState::CLOSED);
   }
 
 private:
   void
-  doSend(const Block&) OVERRIDE_WITH_TESTS_ELSE_FINAL
+  doSend(const Block&) NFD_OVERRIDE_WITH_TESTS_ELSE_FINAL
   {
   }
 };

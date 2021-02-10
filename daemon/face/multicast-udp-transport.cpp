@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -150,7 +150,7 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
   else {
     BOOST_ASSERT(localAddress.is_v6());
     sock.set_option(boost::asio::ip::v6_only(true));
-#ifdef WITH_TESTS
+#ifdef NFD_WITH_TESTS
     // To simplify unit tests, we bind to the "any" IPv6 address if the supplied multicast
     // address lacks a scope id. Calling bind() without a scope id would otherwise fail.
     if (multicastGroup.address().to_v6().scope_id() == 0)

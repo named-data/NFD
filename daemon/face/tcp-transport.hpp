@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);
  * state is set to DOWN, and the connection is retried periodically with exponential backoff
  * until it is reestablished
  */
-class TcpTransport FINAL_UNLESS_WITH_TESTS : public StreamTransport<boost::asio::ip::tcp>
+class TcpTransport NFD_FINAL_UNLESS_WITH_TESTS : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
   TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope);
@@ -61,17 +61,17 @@ protected:
   void
   handleError(const boost::system::error_code& error) final;
 
-PROTECTED_WITH_TESTS_ELSE_PRIVATE:
-  VIRTUAL_WITH_TESTS void
+NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+  NFD_VIRTUAL_WITH_TESTS void
   reconnect();
 
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   handleReconnect(const boost::system::error_code& error);
 
-  VIRTUAL_WITH_TESTS void
+  NFD_VIRTUAL_WITH_TESTS void
   handleReconnectTimeout();
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief how long to wait before the first reconnection attempt after the TCP connection has been severed
    */
   static time::milliseconds s_initialReconnectWait;
