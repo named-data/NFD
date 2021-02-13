@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,8 +76,8 @@ Forwarder::Forwarder(FaceTable& faceTable)
     cleanupOnFaceRemoval(m_nameTree, m_fib, m_pit, face);
   });
 
-  m_fib.afterNewNextHop.connect([&] (const Name& prefix, const fib::NextHop& nextHop) {
-    this->startProcessNewNextHop(prefix, nextHop);
+  m_fib.afterNewNextHop.connect([this] (const Name& prefix, const fib::NextHop& nextHop) {
+    this->onNewNextHop(prefix, nextHop);
   });
 
   m_strategyChoice.setDefaultStrategy(getDefaultStrategyName());
@@ -213,7 +213,7 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
 
   // dispatch to strategy: after incoming Interest
   this->dispatchToStrategy(*pitEntry,
-    [&] (fw::Strategy& strategy) {
+    [&] (auto& strategy) {
       strategy.afterReceiveInterest(FaceEndpoint(ingress.face, 0), interest, pitEntry);
     });
 }
@@ -237,7 +237,7 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
 
   // dispatch to strategy: after Content Store hit
   this->dispatchToStrategy(*pitEntry,
-    [&] (fw::Strategy& strategy) { strategy.afterContentStoreHit(pitEntry, ingress, data); });
+    [&] (auto& strategy) { strategy.afterContentStoreHit(pitEntry, ingress, data); });
 }
 
 pit::OutRecord*
@@ -325,7 +325,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
 
     // trigger strategy: after receive Data
     this->dispatchToStrategy(*pitEntry,
-      [&] (fw::Strategy& strategy) { strategy.afterReceiveData(pitEntry, ingress, data); });
+      [&] (auto& strategy) { strategy.afterReceiveData(pitEntry, ingress, data); });
 
     // mark PIT satisfied
     pitEntry->isSatisfied = true;
@@ -358,7 +358,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
 
       // invoke PIT satisfy callback
       this->dispatchToStrategy(*pitEntry,
-        [&] (fw::Strategy& strategy) { strategy.beforeSatisfyInterest(pitEntry, ingress, data); });
+        [&] (auto& strategy) { strategy.beforeSatisfyInterest(pitEntry, ingress, data); });
 
       // mark PIT satisfied
       pitEntry->isSatisfied = true;
@@ -481,7 +481,7 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
 
   // trigger strategy: after receive NACK
   this->dispatchToStrategy(*pitEntry,
-    [&] (fw::Strategy& strategy) { strategy.afterReceiveNack(ingress, nack, pitEntry); });
+    [&] (auto& strategy) { strategy.afterReceiveNack(ingress, nack, pitEntry); });
 }
 
 bool
@@ -542,37 +542,21 @@ Forwarder::onNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
 {
   const auto affectedEntries = this->getNameTree().partialEnumerate(prefix,
     [&] (const name_tree::Entry& nte) -> std::pair<bool, bool> {
-      const fib::Entry* fibEntry = nte.getFibEntry();
-      const fw::Strategy* strategy = nullptr;
-      if (nte.getStrategyChoiceEntry() != nullptr) {
-        strategy = &nte.getStrategyChoiceEntry()->getStrategy();
-      }
-      // current nte has buffered Interests but no fibEntry (except for the root nte) and the strategy
-      // enables new nexthop behavior, we enumerate the current nte and keep visiting its children.
-      if (nte.getName().size() == 0 ||
-          (strategy != nullptr && strategy->wantNewNextHopTrigger() &&
-          fibEntry == nullptr && nte.hasPitEntries())) {
-        return {true, true};
-      }
-      // we don't need the current nte (no pitEntry or strategy doesn't support new nexthop), but
-      // if the current nte has no fibEntry, it's still possible that its children are affected by
-      // the new nexthop.
-      else if (fibEntry == nullptr) {
-        return {false, true};
-      }
-      // if the current nte has a fibEntry, we ignore the current nte and don't visit its
-      // children because they are already covered by the current nte's fibEntry.
-      else {
+      // we ignore an NTE and skip visiting its descendants if that NTE has an
+      // associated FIB entry (1st condition), since in that case the new nexthop
+      // won't affect any PIT entries anywhere in that subtree, *unless* this is
+      // the initial NTE from which the enumeration started (2nd condition), which
+      // must always be considered
+      if (nte.getFibEntry() != nullptr && nte.getName().size() > prefix.size()) {
         return {false, false};
       }
+      return {nte.hasPitEntries(), true};
     });
 
   for (const auto& nte : affectedEntries) {
     for (const auto& pitEntry : nte.getPitEntries()) {
       this->dispatchToStrategy(*pitEntry,
-        [&] (fw::Strategy& strategy) {
-          strategy.afterNewNextHop(nextHop, pitEntry);
-        });
+        [&] (auto& strategy) { strategy.afterNewNextHop(nextHop, pitEntry); });
     }
   }
 }

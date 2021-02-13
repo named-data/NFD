@@ -107,16 +107,6 @@ public: // forwarding entrypoints and tables
     this->onIncomingNack(ingress, nack);
   }
 
-  /** \brief start new nexthop processing
-   *  \param prefix the prefix of the FibEntry containing the new nexthop
-   *  \param nextHop the new NextHop
-   */
-  void
-  startProcessNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
-  {
-    this->onNewNextHop(prefix, nextHop);
-  }
-
   NameTree&
   getNameTree()
   {

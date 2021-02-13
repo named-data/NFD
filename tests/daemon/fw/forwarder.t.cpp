@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -696,6 +696,96 @@ BOOST_AUTO_TEST_CASE(UnsolicitedData)
   forwarder.onIncomingData(FaceEndpoint(*face1, 0), *data);
   this->advanceClocks(1_ms, 10_ms);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nUnsolicitedData, 1);
+}
+
+BOOST_AUTO_TEST_CASE(NewNextHop)
+{
+  auto face1 = addFace();
+  auto face2 = addFace();
+  auto face3 = addFace();
+  auto face4 = addFace();
+
+  auto& strategy = choose<DummyStrategy>(forwarder, "/A", DummyStrategy::getStrategyName());
+
+  Fib& fib = forwarder.getFib();
+  Pit& pit = forwarder.getPit();
+
+  // fib: "/", "/A/B", "/A/B/C/D/E"
+  fib::Entry* entry = fib.insert("/").first;
+  fib.addOrUpdateNextHop(*entry, *face1, 100);
+  entry = fib.insert("/A/B").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 0);
+  entry = fib.insert("/A/B/C/D/E").first;
+  fib.addOrUpdateNextHop(*entry, *face3, 0);
+
+  // pit: "/A", "/A/B/C", "/A/B/Z"
+  auto interest1 = makeInterest("/A");
+  auto pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateInRecord(*face3, *interest1);
+  auto interest2 = makeInterest("/A/B/C");
+  auto pit2 = pit.insert(*interest2).first;
+  pit2->insertOrUpdateInRecord(*face3, *interest2);
+  auto interest3 = makeInterest("/A/B/Z");
+  auto pit3 = pit.insert(*interest3).first;
+  pit3->insertOrUpdateInRecord(*face3, *interest3);
+
+  // new nexthop for "/"
+  entry = fib.insert("/").first;
+  fib.addOrUpdateNextHop(*entry, *face2, 50);
+
+  // /A     --> triggered
+  // /A/B/C --> not triggered
+  // /A/B/Z --> not triggered
+  BOOST_TEST_REQUIRE(strategy.afterNewNextHopCalls.size() == 1);
+  BOOST_TEST(strategy.afterNewNextHopCalls[0] == "/A");
+  strategy.afterNewNextHopCalls.clear();
+
+  // new nexthop for "/A"
+  entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face4, 50);
+
+  // /A     --> triggered
+  // /A/B/C --> not triggered
+  // /A/B/Z --> not triggered
+  BOOST_TEST_REQUIRE(strategy.afterNewNextHopCalls.size() == 1);
+  BOOST_TEST(strategy.afterNewNextHopCalls[0] == "/A");
+  strategy.afterNewNextHopCalls.clear();
+
+  // new nexthop for "/A/B"
+  entry = fib.insert("/A/B").first;
+  fib.addOrUpdateNextHop(*entry, *face4, 0);
+
+  // /A     --> not triggered
+  // /A/B/C --> triggered
+  // /A/B/Z --> triggered
+  BOOST_TEST_REQUIRE(strategy.afterNewNextHopCalls.size() == 2);
+  BOOST_TEST(strategy.afterNewNextHopCalls[0] == "/A/B/C");
+  BOOST_TEST(strategy.afterNewNextHopCalls[1] == "/A/B/Z");
+  strategy.afterNewNextHopCalls.clear();
+
+  // new nexthop for "/A/B/C/D"
+  entry = fib.insert("/A/B/C/D").first;
+  fib.addOrUpdateNextHop(*entry, *face1, 0);
+
+  // nothing triggered
+  BOOST_TEST(strategy.afterNewNextHopCalls.size() == 0);
+
+  // create a second pit entry for /A
+  auto interest4 = makeInterest("/A");
+  interest4->setMustBeFresh(true);
+  auto pit4 = pit.insert(*interest4).first;
+  pit4->insertOrUpdateInRecord(*face3, *interest4);
+
+  // new nexthop for "/A"
+  entry = fib.insert("/A").first;
+  fib.addOrUpdateNextHop(*entry, *face1, 0);
+
+  // /A     --> triggered twice
+  // /A/B/C --> not triggered
+  // /A/B/Z --> not triggered
+  BOOST_TEST_REQUIRE(strategy.afterNewNextHopCalls.size() == 2);
+  BOOST_TEST(strategy.afterNewNextHopCalls[0] == "/A");
+  BOOST_TEST(strategy.afterNewNextHopCalls[1] == "/A");
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarder

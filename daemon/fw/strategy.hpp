@@ -114,14 +114,6 @@ public: // constructor, destructor, strategy info
     return m_name;
   }
 
-  /** \return Whether the afterNewNextHop trigger should be invoked for this strategy.
-   */
-  bool
-  wantNewNextHopTrigger() const
-  {
-    return m_wantNewNextHopTrigger;
-  }
-
 public: // triggers
   /** \brief Trigger after Interest is received
    *
@@ -388,15 +380,6 @@ protected: // instance name
     m_name = name;
   }
 
-NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // setter
-  /** \brief Set whether the afterNewNextHop trigger should be invoked for this strategy
-   */
-  void
-  enableNewNextHopTrigger(bool enabled)
-  {
-    m_wantNewNextHopTrigger = enabled;
-  }
-
 private: // registry
   typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
   typedef std::map<Name, CreateFunc> Registry; // indexed by strategy name
@@ -421,8 +404,6 @@ private: // instance fields
   Forwarder& m_forwarder;
 
   MeasurementsAccessor m_measurements;
-
-  bool m_wantNewNextHopTrigger = false;
 };
 
 } // namespace fw
