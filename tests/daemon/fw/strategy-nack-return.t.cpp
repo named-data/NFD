@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,6 @@
 
 // Strategies implementing recommended Nack processing procedure, sorted alphabetically.
 #include "fw/best-route-strategy2.hpp"
-#include "fw/multicast-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
 #include "choose-strategy.hpp"
@@ -88,7 +87,6 @@ BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
 using Strategies = boost::mpl::vector<
   BestRouteStrategy2,
-  MulticastStrategy,
   RandomStrategy
 >;
 

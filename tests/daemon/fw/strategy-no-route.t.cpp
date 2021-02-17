@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,6 @@
 // sorted alphabetically.
 #include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
-#include "fw/multicast-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
@@ -150,10 +149,6 @@ using Tests = boost::mpl::vector<
   Test<BestRouteStrategy2, EmptyNextHopList<BestRouteStrategy2>>,
   Test<BestRouteStrategy2, NextHopIsDownstream<BestRouteStrategy2>>,
   Test<BestRouteStrategy2, NextHopViolatesScope<BestRouteStrategy2>>,
-
-  Test<MulticastStrategy, EmptyNextHopList<MulticastStrategy>>,
-  Test<MulticastStrategy, NextHopIsDownstream<MulticastStrategy>>,
-  Test<MulticastStrategy, NextHopViolatesScope<MulticastStrategy>>,
 
   Test<RandomStrategy, EmptyNextHopList<RandomStrategy>>,
   Test<RandomStrategy, NextHopIsDownstream<RandomStrategy>>,

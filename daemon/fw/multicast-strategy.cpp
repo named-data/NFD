@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,6 @@ const time::milliseconds MulticastStrategy::RETX_SUPPRESSION_MAX(250);
 
 MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
-  , ProcessNackTraits(this)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
@@ -58,7 +57,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%03");
+  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%04");
   return strategyName;
 }
 
@@ -89,23 +88,6 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
       m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace));
     }
   }
-
-  if (!hasPendingOutRecords(*pitEntry)) {
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop (removing pitEntry)");
-
-    lp::NackHeader nackHeader;
-    nackHeader.setReason(lp::NackReason::NO_ROUTE);
-    this->sendNack(pitEntry, ingress.face, nackHeader);
-
-    this->rejectPendingInterest(pitEntry);
-  }
-}
-
-void
-MulticastStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
-                                    const shared_ptr<pit::Entry>& pitEntry)
-{
-  this->processNack(ingress.face, nack, pitEntry);
 }
 
 } // namespace fw

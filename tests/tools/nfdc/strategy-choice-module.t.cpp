@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -231,7 +231,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
     <strategyChoice>
       <namespace>/localhost</namespace>
       <strategy>
-        <name>/localhost/nfd/strategy/multicast/%FD%01</name>
+        <name>/localhost/nfd/strategy/multicast/%FD%04</name>
       </strategy>
     </strategyChoice>
   </strategyChoices>
@@ -240,7 +240,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 const std::string STATUS_TEXT = std::string(R"TEXT(
 Strategy choices:
   prefix=/ strategy=/localhost/nfd/strategy/best-route/%FD%04
-  prefix=/localhost strategy=/localhost/nfd/strategy/multicast/%FD%01
+  prefix=/localhost strategy=/localhost/nfd/strategy/multicast/%FD%04
 )TEXT").substr(1);
 
 BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<StrategyChoiceModule>)
@@ -251,7 +251,7 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<StrategyChoiceModule>)
           .setStrategy("/localhost/nfd/strategy/best-route/%FD%04");
   StrategyChoice payload2;
   payload2.setName("/localhost")
-          .setStrategy("/localhost/nfd/strategy/multicast/%FD%01");
+          .setStrategy("/localhost/nfd/strategy/multicast/%FD%04");
   this->sendDataset("/localhost/nfd/strategy-choice/list", payload1, payload2);
   this->prepareStatusOutput();
 

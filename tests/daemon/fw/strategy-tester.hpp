@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -98,9 +98,8 @@ public:
     f();
 
     if (nActions < nExpectedActions) {
-      // A correctly implemented strategy is required to invoke reject pending Interest action if it
-      // decides to not forward an Interest. If a test case is stuck in the call below, check that
-      // rejectPendingInterest is invoked under proper condition.
+      // If strategy doesn't forward anything (e.g., decides not to forward an Interest), the number
+      // of expected actions should be 0; otherwise the test will stuck.
       return limitedIo.run(nExpectedActions - nActions, LimitedIo::UNLIMITED_TIME) == LimitedIo::EXCEED_OPS;
     }
     return nActions == nExpectedActions;

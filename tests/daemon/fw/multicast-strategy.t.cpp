@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   retxFrom4Evt.cancel();
 }
 
-BOOST_AUTO_TEST_CASE(RejectLoopback)
+BOOST_AUTO_TEST_CASE(LoopingInterest)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
   fib.addOrUpdateNextHop(fibEntry, *face1, 0);
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
 

@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
 
 #include "strategy.hpp"
-#include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 
 namespace nfd {
@@ -36,7 +35,6 @@ namespace fw {
 /** \brief A forwarding strategy that forwards Interests to all FIB nexthops
  */
 class MulticastStrategy : public Strategy
-                        , public ProcessNackTraits<MulticastStrategy>
 {
 public:
   explicit
@@ -49,12 +47,7 @@ public:
   afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
-  void
-  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
-                   const shared_ptr<pit::Entry>& pitEntry) override;
-
 private:
-  friend ProcessNackTraits<MulticastStrategy>;
   RetxSuppressionExponential m_retxSuppression;
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
