@@ -211,11 +211,9 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
     return;
   }
 
-  // dispatch to strategy: after incoming Interest
-  this->dispatchToStrategy(*pitEntry,
-    [&] (auto& strategy) {
-      strategy.afterReceiveInterest(FaceEndpoint(ingress.face, 0), interest, pitEntry);
-    });
+  // dispatch to strategy: after receive Interest
+  m_strategyChoice.findEffectiveStrategy(*pitEntry)
+    .afterReceiveInterest(FaceEndpoint(ingress.face, 0), interest, pitEntry);
 }
 
 void
@@ -236,8 +234,7 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
   this->setExpiryTimer(pitEntry, 0_ms);
 
   // dispatch to strategy: after Content Store hit
-  this->dispatchToStrategy(*pitEntry,
-    [&] (auto& strategy) { strategy.afterContentStoreHit(pitEntry, ingress, data); });
+  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterContentStoreHit(pitEntry, ingress, data);
 }
 
 pit::OutRecord*
@@ -324,8 +321,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     this->setExpiryTimer(pitEntry, 0_ms);
 
     // trigger strategy: after receive Data
-    this->dispatchToStrategy(*pitEntry,
-      [&] (auto& strategy) { strategy.afterReceiveData(pitEntry, ingress, data); });
+    m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveData(pitEntry, ingress, data);
 
     // mark PIT satisfied
     pitEntry->isSatisfied = true;
@@ -357,8 +353,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
       this->setExpiryTimer(pitEntry, 0_ms);
 
       // invoke PIT satisfy callback
-      this->dispatchToStrategy(*pitEntry,
-        [&] (auto& strategy) { strategy.beforeSatisfyInterest(pitEntry, ingress, data); });
+      m_strategyChoice.findEffectiveStrategy(*pitEntry).beforeSatisfyInterest(pitEntry, ingress, data);
 
       // mark PIT satisfied
       pitEntry->isSatisfied = true;
@@ -480,8 +475,7 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
   }
 
   // trigger strategy: after receive NACK
-  this->dispatchToStrategy(*pitEntry,
-    [&] (auto& strategy) { strategy.afterReceiveNack(ingress, nack, pitEntry); });
+  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveNack(ingress, nack, pitEntry);
 }
 
 bool
@@ -555,8 +549,7 @@ Forwarder::onNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
 
   for (const auto& nte : affectedEntries) {
     for (const auto& pitEntry : nte.getPitEntries()) {
-      this->dispatchToStrategy(*pitEntry,
-        [&] (auto& strategy) { strategy.afterNewNextHop(nextHop, pitEntry); });
+      m_strategyChoice.findEffectiveStrategy(*pitEntry).afterNewNextHop(nextHop, pitEntry);
     }
   }
 }

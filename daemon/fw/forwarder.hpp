@@ -237,20 +237,6 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   NFD_VIRTUAL_WITH_TESTS void
   insertDeadNonceList(pit::Entry& pitEntry, Face* upstream);
 
-  /** \brief call trigger (method) on the effective strategy of pitEntry
-   */
-#ifdef NFD_WITH_TESTS
-  virtual void
-  dispatchToStrategy(pit::Entry& pitEntry, std::function<void(fw::Strategy&)> trigger)
-#else
-  template<class Function>
-  void
-  dispatchToStrategy(pit::Entry& pitEntry, Function&& trigger)
-#endif
-  {
-    trigger(m_strategyChoice.findEffectiveStrategy(pitEntry));
-  }
-
 private:
   ForwarderCounters m_counters;
 

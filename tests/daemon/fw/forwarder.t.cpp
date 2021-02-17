@@ -265,55 +265,36 @@ BOOST_AUTO_TEST_CASE(HopLimit)
   BOOST_CHECK_EQUAL(faceRemote->sentInterests.size(), 2);
 }
 
-class ScopeLocalhostIncomingTestForwarder : public Forwarder
+BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 {
-public:
-  using Forwarder::Forwarder;
+  auto face1 = addFace("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+  auto face2 = addFace(); // default is non-local
 
-protected:
-  void
-  dispatchToStrategy(pit::Entry&, std::function<void(fw::Strategy&)>) final
-  {
-    ++dispatchToStrategy_count;
-  }
-
-public:
-  int dispatchToStrategy_count = 0;
-};
-
-BOOST_FIXTURE_TEST_CASE(ScopeLocalhostIncoming, GlobalIoTimeFixture)
-{
-  FaceTable faceTable;
-  ScopeLocalhostIncomingTestForwarder forwarder(faceTable);
-
-  auto face1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
-  auto face2 = make_shared<DummyFace>();
-  faceTable.add(face1);
-  faceTable.add(face2);
+  auto& strategy = choose<DummyStrategy>(forwarder, "/", DummyStrategy::getStrategyName());
 
   // local face, /localhost: OK
-  forwarder.dispatchToStrategy_count = 0;
+  strategy.afterReceiveInterest_count = 0;
   auto i1 = makeInterest("/localhost/A1");
   forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *i1);
-  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(strategy.afterReceiveInterest_count, 1);
 
   // non-local face, /localhost: violate
-  forwarder.dispatchToStrategy_count = 0;
+  strategy.afterReceiveInterest_count = 0;
   auto i2 = makeInterest("/localhost/A2");
   forwarder.onIncomingInterest(FaceEndpoint(*face2, 0), *i2);
-  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 0);
+  BOOST_CHECK_EQUAL(strategy.afterReceiveInterest_count, 0);
 
   // local face, non-/localhost: OK
-  forwarder.dispatchToStrategy_count = 0;
+  strategy.afterReceiveInterest_count = 0;
   auto i3 = makeInterest("/A3");
   forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *i3);
-  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(strategy.afterReceiveInterest_count, 1);
 
   // non-local face, non-/localhost: OK
-  forwarder.dispatchToStrategy_count = 0;
+  strategy.afterReceiveInterest_count = 0;
   auto i4 = makeInterest("/A4");
   forwarder.onIncomingInterest(FaceEndpoint(*face2, 0), *i4);
-  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(strategy.afterReceiveInterest_count, 1);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nUnsolicitedData, 0);
 
@@ -322,7 +303,7 @@ BOOST_FIXTURE_TEST_CASE(ScopeLocalhostIncoming, GlobalIoTimeFixture)
   forwarder.onIncomingData(FaceEndpoint(*face1, 0), *d1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nUnsolicitedData, 1);
 
-  // non-local face, /localhost: OK
+  // non-local face, /localhost: violate
   auto d2 = makeData("/localhost/B2");
   forwarder.onIncomingData(FaceEndpoint(*face2, 0), *d2);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nUnsolicitedData, 1);
@@ -349,31 +330,31 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   auto interest1 = makeInterest("/A/1");
   strategyA.afterReceiveInterest_count = 0;
   strategyA.interestOutFace = face2;
-  forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest1);
+  forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *interest1);
   BOOST_CHECK_EQUAL(strategyA.afterReceiveInterest_count, 1);
 
   auto interest2 = makeInterest("/B/2", true);
   strategyB.afterReceiveInterest_count = 0;
   strategyB.interestOutFace = face2;
-  forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest2);
+  forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *interest2);
   BOOST_CHECK_EQUAL(strategyB.afterReceiveInterest_count, 1);
 
   this->advanceClocks(1_ms, 5_ms);
 
   auto data1 = makeData("/A/1");
   strategyA.beforeSatisfyInterest_count = 0;
-  forwarder.startProcessData(FaceEndpoint(*face2, 0), *data1);
+  forwarder.onIncomingData(FaceEndpoint(*face2, 0), *data1);
   BOOST_CHECK_EQUAL(strategyA.beforeSatisfyInterest_count, 1);
 
   auto data2 = makeData("/B/2/b");
   strategyB.beforeSatisfyInterest_count = 0;
-  forwarder.startProcessData(FaceEndpoint(*face2, 0), *data2);
+  forwarder.onIncomingData(FaceEndpoint(*face2, 0), *data2);
   BOOST_CHECK_EQUAL(strategyB.beforeSatisfyInterest_count, 1);
 
   auto interest3 = makeInterest("/A/3", false, 30_ms);
-  forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest3);
+  forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *interest3);
   auto interest4 = makeInterest("/B/4", false, 5_s);
-  forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest4);
+  forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *interest4);
 }
 
 BOOST_AUTO_TEST_CASE(IncomingData)
@@ -682,7 +663,7 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
   Pit& pit = forwarder.getPit();
   BOOST_REQUIRE_EQUAL(pit.size(), 0);
 
-  forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest);
+  forwarder.onIncomingInterest(FaceEndpoint(*face1, 0), *interest);
   this->advanceClocks(100_ms, 20_s);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
