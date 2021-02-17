@@ -47,6 +47,9 @@ public:
   afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
+  void
+  afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry) override;
+
 private:
   RetxSuppressionExponential m_retxSuppression;
 

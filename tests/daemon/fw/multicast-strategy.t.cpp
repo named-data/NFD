@@ -28,6 +28,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+#include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
@@ -42,7 +43,8 @@ class MulticastStrategyFixture : public GlobalIoTimeFixture
 {
 protected:
   MulticastStrategyFixture()
-    : face1(make_shared<DummyFace>())
+    : strategy(choose<MulticastStrategyTester>(forwarder))
+    , face1(make_shared<DummyFace>())
     , face2(make_shared<DummyFace>())
     , face3(make_shared<DummyFace>())
   {
@@ -54,7 +56,7 @@ protected:
 protected:
   FaceTable faceTable;
   Forwarder forwarder{faceTable};
-  MulticastStrategyTester strategy{forwarder};
+  MulticastStrategyTester& strategy;
   Fib& fib{forwarder.getFib()};
   Pit& pit{forwarder.getPit()};
 
@@ -209,6 +211,218 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(ForwardAsync)
+{
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fib.addOrUpdateNextHop(fibEntry, *face1, 0);
+  fib.addOrUpdateNextHop(fibEntry, *face2, 0);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
+
+  strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 1);
+
+  fib.addOrUpdateNextHop(fibEntry, *face3, 0);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
+}
+
+BOOST_AUTO_TEST_SUITE(LocalhopScope)
+
+class ForwardAsyncFixture : public MulticastStrategyFixture
+{
+protected:
+  shared_ptr<Face> inFace1;
+  shared_ptr<Face> inFace2;
+  shared_ptr<Face> fibFace1;
+  shared_ptr<Face> fibFace2;
+  shared_ptr<Face> newFibFace;
+
+  size_t expectedInterests = 0;
+};
+
+class BasicNonLocal : public ForwardAsyncFixture
+{
+protected:
+  BasicNonLocal()
+  {
+    inFace1 = face1;
+    // inFace2 = nullptr;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = face3;
+    expectedInterests = 0; // anything received on non-local face can only be sent to local face
+  }
+};
+
+class NewFibLocal : public ForwardAsyncFixture
+{
+protected:
+  NewFibLocal()
+  {
+    inFace1 = face1;
+    // inFace2 = nullptr;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+    expectedInterests = 1;
+
+    faceTable.add(newFibFace);
+  }
+};
+
+class InFaceLocal : public ForwardAsyncFixture
+{
+protected:
+  InFaceLocal()
+  {
+    inFace1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+    // inFace2 = nullptr;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = face3;
+    expectedInterests = 1;
+
+    faceTable.add(inFace1);
+  }
+};
+
+class InFaceLocalSameNewFace : public ForwardAsyncFixture
+{
+protected:
+  InFaceLocalSameNewFace()
+  {
+    inFace1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+    // inFace2 = nullptr;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = inFace1;
+    expectedInterests = 0;
+
+    faceTable.add(inFace1);
+  }
+};
+
+class InFaceLocalAdHocSameNewFace : public ForwardAsyncFixture
+{
+protected:
+  InFaceLocalAdHocSameNewFace()
+  {
+    inFace1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL,
+                                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                     ndn::nfd::LINK_TYPE_AD_HOC);
+    // inFace2 = nullptr;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = inFace1;
+    expectedInterests = 1;
+
+    faceTable.add(inFace1);
+  }
+};
+
+class InFaceLocalAndNonLocal1 : public ForwardAsyncFixture
+{
+protected:
+  InFaceLocalAndNonLocal1()
+  {
+    inFace1 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+    inFace2 = face1;
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = face3;
+    expectedInterests = 1;
+
+    faceTable.add(inFace1);
+  }
+};
+
+class InFaceLocalAndNonLocal2 : public ForwardAsyncFixture
+{
+protected:
+  InFaceLocalAndNonLocal2()
+  {
+    inFace1 = face1;
+    inFace2 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
+    fibFace1 = face1;
+    fibFace2 = face2;
+    newFibFace = face3;
+    expectedInterests = 1;
+
+    faceTable.add(inFace2);
+  }
+};
+
+class InFaceSelection1 : public ForwardAsyncFixture
+{
+protected:
+  InFaceSelection1()
+  {
+    inFace1 = face1;
+    // inFace2 = nullptr;
+    fibFace1 = face3;
+    fibFace2 = face2;
+    newFibFace = face1;
+
+    expectedInterests = 0;
+  }
+};
+
+class InFaceSelection2 : public ForwardAsyncFixture
+{
+protected:
+  InFaceSelection2()
+  {
+    inFace1 = face2;
+    inFace2 = face1;
+    fibFace1 = face2;
+    fibFace2 = face3;
+    newFibFace = face1;
+
+    // this test will trigger the check for additional branch, but it
+    // still is not going to pass the localhop check
+    expectedInterests = 0;
+  }
+};
+
+using Tests = boost::mpl::vector<
+  BasicNonLocal,
+  NewFibLocal,
+  InFaceLocal,
+  InFaceLocalSameNewFace,
+  InFaceLocalAdHocSameNewFace,
+  InFaceLocalAndNonLocal1,
+  InFaceLocalAndNonLocal2,
+  InFaceSelection1,
+  InFaceSelection2
+>;
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(ForwardAsync, T, Tests, T)
+{
+  fib::Entry& fibEntry = *this->fib.insert(Name("/localhop")).first;
+  this->fib.addOrUpdateNextHop(fibEntry, *this->fibFace1, 0);
+  this->fib.addOrUpdateNextHop(fibEntry, *this->fibFace2, 0);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/H0D6i5fc");
+  shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(*this->inFace1, *interest);
+  this->strategy.afterReceiveInterest(FaceEndpoint(*this->inFace1, 0), *interest, pitEntry);
+
+  if (this->inFace2 != nullptr) {
+    shared_ptr<Interest> interest2 = makeInterest("ndn:/localhop/H0D6i5fc");
+    pitEntry->insertOrUpdateInRecord(*this->inFace2, *interest2);
+    this->strategy.afterReceiveInterest(FaceEndpoint(*this->inFace2, 0), *interest2, pitEntry);
+  }
+
+  this->strategy.sendInterestHistory.clear();
+  this->fib.addOrUpdateNextHop(fibEntry, *this->newFibFace, 0);
+  BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), this->expectedInterests);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // LocalhopScope
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 

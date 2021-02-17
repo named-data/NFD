@@ -83,11 +83,35 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
     }
 
     NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
-    bool wasSent = this->sendInterest(pitEntry, outFace, interest) != nullptr;
-    if (wasSent && suppressResult == RetxSuppressionResult::FORWARD) {
-      m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace));
+    auto* sentOutRecord = this->sendInterest(pitEntry, outFace, interest);
+    if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
+      m_retxSuppression.incrementIntervalForOutRecord(*sentOutRecord);
     }
   }
+}
+
+void
+MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
+                                   const shared_ptr<pit::Entry>& pitEntry)
+{
+  // no need to check for suppression, as it is a new next hop
+
+  auto nextHopFaceId = nextHop.getFace().getId();
+  auto& interest = pitEntry->getInterest();
+
+  // try to find an incoming face record that doesn't violate scope restrictions
+  for (const auto& r : pitEntry->getInRecords()) {
+    auto& inFace = r.getFace();
+    if (isNextHopEligible(inFace, interest, nextHop, pitEntry)) {
+
+      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " pitEntry-to=" << nextHopFaceId);
+      this->sendInterest(pitEntry, nextHop.getFace(), interest);
+
+      break; // just one eligible incoming face record is enough
+    }
+  }
+
+  // if nothing found, the interest will not be forwarded
 }
 
 } // namespace fw
