@@ -23,52 +23,47 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_UDP_CHANNEL_FIXTURE_HPP
-#define NFD_TESTS_DAEMON_FACE_UDP_CHANNEL_FIXTURE_HPP
+#include "udp-channel-fixture.hpp"
 
-#include "face/udp-channel.hpp"
-#include "face/transport.hpp"
-
-#include "channel-fixture.hpp"
+#include "test-ip.hpp"
+#include <boost/mpl/vector.hpp>
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-class UdpChannelFixture : public ChannelFixture<UdpChannel, udp::Endpoint>
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestUdpChannel, UdpChannelFixture)
+
+using AddressFamilies = boost::mpl::vector<
+  std::integral_constant<AddressFamily, AddressFamily::V4>,
+  std::integral_constant<AddressFamily, AddressFamily::V6>>;
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(DefaultMtu, F, AddressFamilies)
 {
-protected:
-  shared_ptr<UdpChannel>
-  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0, optional<size_t> mtu = nullopt) final
-  {
-    if (port == 0)
-      port = getNextPort();
+  auto address = getTestIp(F::value, AddressScope::Loopback);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address,1452);
 
-    return std::make_shared<UdpChannel>(udp::Endpoint(addr, port), 2_s, false, mtu.value_or(ndn::MAX_NDN_PACKET_SIZE));
+  auto ch1 = this->makeChannel(typename IpAddressFromFamily<F::value>::type(), 0, 1232);
+  connect(*ch1);
+
+  BOOST_CHECK_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->listenerChannel->size(), 1);
+  BOOST_CHECK_EQUAL(ch1->size(), 1);
+  BOOST_CHECK_EQUAL(ch1->isListening(), false);
+
+  for (const auto& face : this->listenerFaces) {
+    BOOST_CHECK_EQUAL(face->getMtu(), 1452);
   }
-
-  void
-  connect(UdpChannel& channel) final
-  {
-    g_io.post([&] {
-      channel.connect(listenerEp, {},
-        [this] (const shared_ptr<Face>& newFace) {
-          BOOST_REQUIRE(newFace != nullptr);
-          connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
-          clientFaces.push_back(newFace);
-          newFace->getTransport()->send(ndn::encoding::makeStringBlock(300, "hello"));
-          limitedIo.afterOp();
-        },
-        ChannelFixture::unexpectedFailure);
-    });
+  for (const auto& face : this->clientFaces) {
+    BOOST_CHECK_EQUAL(face->getMtu(), 1232);
   }
+}
 
-protected:
-  std::vector<shared_ptr<Face>> clientFaces;
-};
+BOOST_AUTO_TEST_SUITE_END() // TestUdpChannel
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace face
 } // namespace nfd
-
-#endif // NFD_TESTS_DAEMON_FACE_UDP_CHANNEL_FIXTURE_HPP

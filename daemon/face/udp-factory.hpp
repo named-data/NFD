@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -123,6 +123,7 @@ private:
 
 private:
   bool m_wantCongestionMarking = false;
+  size_t m_defaultUnicastMtu = ndn::MAX_NDN_PACKET_SIZE;
   std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
 
   struct MulticastConfig

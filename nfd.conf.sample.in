@@ -135,6 +135,14 @@ face_system
     ; The default is 600 (10 minutes).
     idle_timeout 600
 
+    ; Maximum payload size for outgoing packets on unicast faces, used in NDNLPv2 fragmentation.
+    ; This must be between 64 and 8800. The default is 8800.
+    ; This value excludes IPv4/IPv6/UDP headers. On an Ethernet link of MTU=1500, setting this
+    ; to 1452 would leave enough room for IP+UDP headers and prevent IP fragmentation.
+    ; This option is not changable during runtime configuration reload, but the MTU of an
+    ; individual face can be updated via NFD Management Protocol or the 'nfdc' tool.
+    unicast_mtu 8800
+
     ; UDP multicast settings.
     ; By default, NFD creates one UDP multicast face per NIC.
     ;

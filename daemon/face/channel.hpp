@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,6 +50,14 @@ public:
     return m_uri;
   }
 
+  /** \brief Returns the default MTU for all faces created by this channel
+   */
+  size_t
+  getDefaultMtu() const
+  {
+    return m_defaultMtu;
+  }
+
   /** \brief Returns whether the channel is listening
    */
   virtual bool
@@ -64,8 +72,12 @@ protected:
   void
   setUri(const FaceUri& uri);
 
+  void
+  setDefaultMtu(size_t mtu);
+
 private:
   FaceUri m_uri;
+  size_t m_defaultMtu = ndn::MAX_NDN_PACKET_SIZE;
 };
 
 /** \brief Prototype for the callback that is invoked when a face is created

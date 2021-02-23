@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -373,6 +373,58 @@ BOOST_AUTO_TEST_CASE(ParseNumber)
   BOOST_CHECK_EQUAL(ConfigFile::parseNumber<uint16_t>(section.get_child("b"), "b", "section"), 156);
   BOOST_CHECK_THROW(ConfigFile::parseNumber<uint32_t>(section.get_child("h"), "h", "section"),
                     ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(CheckRange)
+{
+  {
+    uint32_t value = 8000;
+    uint32_t min = 8000;
+    uint32_t max = 8999;
+    ConfigFile::checkRange(value, min, max, "key", "section");
+  }
+
+  {
+    size_t value = 8999;
+    size_t min = 8000;
+    size_t max = 8999;
+    ConfigFile::checkRange(value, min, max, "key", "section");
+  }
+
+  {
+    int64_t value = -7000;
+    int64_t min = -7999;
+    int64_t max = 1000;
+    ConfigFile::checkRange(value, min, max, "key", "section");
+  }
+
+  {
+    uint32_t value = 7999;
+    uint32_t min = 8000;
+    uint32_t max = 8999;
+    BOOST_CHECK_THROW(ConfigFile::checkRange(value, min, max, "key", "section"), ConfigFile::Error);
+  }
+
+  {
+    int16_t value = 9000;
+    int16_t min = 8000;
+    int16_t max = 8999;
+    BOOST_CHECK_THROW(ConfigFile::checkRange(value, min, max, "key", "section"), ConfigFile::Error);
+  }
+
+  {
+    int32_t value = -8000;
+    int32_t min = -7999;
+    int32_t max = 1000;
+    BOOST_CHECK_THROW(ConfigFile::checkRange(value, min, max, "key", "section"), ConfigFile::Error);
+  }
+
+  {
+    int64_t value = 0x1001;
+    int64_t min = -0x7fff;
+    int64_t max = 0x1000;
+    BOOST_CHECK_THROW(ConfigFile::checkRange(value, min, max, "key", "section"), ConfigFile::Error);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestConfigFile

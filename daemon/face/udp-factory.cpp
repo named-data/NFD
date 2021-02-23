@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,6 +66,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
   //   enable_v4 yes
   //   enable_v6 yes
   //   idle_timeout 600
+  //   unicast_mtu 8800
   //   mcast yes
   //   mcast_group 224.0.23.170
   //   mcast_port 56363
@@ -88,6 +89,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
   bool enableV4 = false;
   bool enableV6 = false;
   uint32_t idleTimeout = 600;
+  size_t unicastMtu = ndn::MAX_NDN_PACKET_SIZE;
   MulticastConfig mcastConfig;
 
   if (configSection) {
@@ -112,6 +114,11 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
       }
       else if (key == "idle_timeout") {
         idleTimeout = ConfigFile::parseNumber<uint32_t>(pair, "face_system.udp");
+      }
+      else if (key == "unicast_mtu") {
+        unicastMtu = ConfigFile::parseNumber<size_t>(pair, "face_system.udp");
+        ConfigFile::checkRange(unicastMtu, static_cast<size_t>(MIN_MTU), ndn::MAX_NDN_PACKET_SIZE,
+                               "unicast_mtu", "face_system.udp");
       }
       else if (key == "keep_alive_interval") {
         // ignored
@@ -176,6 +183,8 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
   if (context.isDryRun) {
     return;
   }
+
+  m_defaultUnicastMtu = unicastMtu;
 
   if (enableV4) {
     udp::Endpoint endpoint(ip::udp::v4(), port);
@@ -302,7 +311,8 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
                     ", endpoint already allocated to a UDP multicast face"));
   }
 
-  auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout, m_wantCongestionMarking);
+  auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout,
+                                              m_wantCongestionMarking, m_defaultUnicastMtu);
   m_channels[localEndpoint] = channel;
   return channel;
 }

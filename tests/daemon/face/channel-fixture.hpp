@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,17 +71,17 @@ protected:
   }
 
   virtual shared_ptr<ChannelT>
-  makeChannel(const boost::asio::ip::address&, uint16_t port = 0)
+  makeChannel(const boost::asio::ip::address&, uint16_t port = 0, optional<size_t> mtu = nullopt)
   {
     BOOST_FAIL("Unimplemented");
     return nullptr;
   }
 
   void
-  listen(const boost::asio::ip::address& addr)
+  listen(const boost::asio::ip::address& addr, optional<size_t> mtu = nullopt)
   {
     listenerEp = EndpointT{addr, 7030};
-    listenerChannel = makeChannel(addr, 7030);
+    listenerChannel = makeChannel(addr, 7030, mtu);
     listenerChannel->listen(
       [this] (const shared_ptr<Face>& newFace) {
         BOOST_REQUIRE(newFace != nullptr);

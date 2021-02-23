@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,7 +44,7 @@ protected:
   }
 
   shared_ptr<TcpChannel>
-  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
+  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0, optional<size_t> mtu = nullopt) final
   {
     if (port == 0)
       port = getNextPort();

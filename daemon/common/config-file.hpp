@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,11 +117,28 @@ public: // parse helpers
                     "' for option '" + key + "' in section '" + sectionName + "'"));
   }
 
-  template <typename T>
+  template<typename T>
   static T
   parseNumber(const ConfigSection::value_type& option, const std::string& sectionName)
   {
     return parseNumber<T>(option.second, option.first, sectionName);
+  }
+
+  /**
+   * \brief check that a value is within the inclusive range [min, max]
+   * \throw Error the value is out of the acceptable range
+   */
+  template<typename T>
+  static void
+  checkRange(T value, T min, T max, const std::string& key, const std::string& sectionName)
+  {
+    static_assert(std::is_integral<T>::value, "T must be an integral type");
+
+    if (value < min || value > max) {
+      NDN_THROW(Error("Invalid value '" + to_string(value) + "' for option '" + key +
+                      "' in section '" + sectionName + "': out of acceptable range [" +
+                      to_string(min) + ", " + to_string(max) + "]"));
+    }
   }
 
 public: // setup and parsing

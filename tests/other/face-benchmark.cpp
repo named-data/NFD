@@ -47,7 +47,7 @@ public:
     : m_terminationSignalSet{getGlobalIoService()}
     , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false,
                    bind([] { return ndn::nfd::FACE_SCOPE_NON_LOCAL; })}
-    , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, 10_min, false}
+    , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, 10_min, false, ndn::MAX_NDN_PACKET_SIZE}
   {
     m_terminationSignalSet.add(SIGINT);
     m_terminationSignalSet.add(SIGTERM);
