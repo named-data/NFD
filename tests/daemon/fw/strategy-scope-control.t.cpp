@@ -33,7 +33,6 @@
 #include "fw/best-route-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
-#include "fw/ncc-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
@@ -41,7 +40,6 @@
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 
-#include <boost/mpl/copy_if.hpp>
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -87,7 +85,7 @@ public:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyScopeControl)
 
-template<typename S, bool WillSendNackNoRoute, bool CanProcessNack, bool WillRejectPitEntry = true>
+template<typename S, bool WillSendNackNoRoute, bool CanProcessNack, bool WillRejectPitEntry>
 class Test
 {
 public:
@@ -113,13 +111,12 @@ public:
 };
 
 using Tests = boost::mpl::vector<
-  Test<AccessStrategy, false, false>,
-  Test<AsfStrategy, true, false>,
-  Test<BestRouteStrategy, false, false>,
-  Test<BestRouteStrategy2, true, true>,
+  Test<AccessStrategy, false, false, true>,
+  Test<AsfStrategy, true, false, true>,
+  Test<BestRouteStrategy, false, false, true>,
+  Test<BestRouteStrategy2, true, true, true>,
   Test<MulticastStrategy, false, false, false>,
-  Test<NccStrategy, false, false>,
-  Test<RandomStrategy, true, true>
+  Test<RandomStrategy, true, true, true>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
@@ -259,7 +256,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
   this->fib.addOrUpdateNextHop(*fibEntry, *this->localFace4, 10);
   this->fib.addOrUpdateNextHop(*fibEntry, *this->nonLocalFace2, 20);
 
-  auto interest = makeInterest("/localhop/A/1", 1377);
+  auto interest = makeInterest("/localhop/A/1", false, nullopt, 1377);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, *interest);
   lp::Nack nack = makeNack(*interest, lp::NackReason::NO_ROUTE);
