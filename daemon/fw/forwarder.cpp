@@ -26,7 +26,7 @@
 #include "forwarder.hpp"
 
 #include "algorithm.hpp"
-#include "best-route-strategy2.hpp"
+#include "best-route-strategy.hpp"
 #include "scope-prefix.hpp"
 #include "strategy.hpp"
 #include "common/global.hpp"
@@ -43,7 +43,7 @@ NFD_LOG_INIT(Forwarder);
 static Name
 getDefaultStrategyName()
 {
-  return fw::BestRouteStrategy2::getStrategyName();
+  return fw::BestRouteStrategy::getStrategyName();
 }
 
 Forwarder::Forwarder(FaceTable& faceTable)

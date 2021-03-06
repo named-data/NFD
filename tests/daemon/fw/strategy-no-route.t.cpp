@@ -31,7 +31,7 @@
 // Strategies returning Nack-NoRoute when there are no usable FIB nexthops,
 // sorted alphabetically.
 #include "fw/asf-strategy.hpp"
-#include "fw/best-route-strategy2.hpp"
+#include "fw/best-route-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
 #include "tests/test-common.hpp"
@@ -145,9 +145,9 @@ using Tests = boost::mpl::vector<
   Test<AsfStrategy, NextHopIsDownstream<AsfStrategy>>,
   Test<AsfStrategy, NextHopViolatesScope<AsfStrategy>>,
 
-  Test<BestRouteStrategy2, EmptyNextHopList<BestRouteStrategy2>>,
-  Test<BestRouteStrategy2, NextHopIsDownstream<BestRouteStrategy2>>,
-  Test<BestRouteStrategy2, NextHopViolatesScope<BestRouteStrategy2>>,
+  Test<BestRouteStrategy, EmptyNextHopList<BestRouteStrategy>>,
+  Test<BestRouteStrategy, NextHopIsDownstream<BestRouteStrategy>>,
+  Test<BestRouteStrategy, NextHopViolatesScope<BestRouteStrategy>>,
 
   Test<RandomStrategy, EmptyNextHopList<RandomStrategy>>,
   Test<RandomStrategy, NextHopIsDownstream<RandomStrategy>>,

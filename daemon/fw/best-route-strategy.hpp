@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
-#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
+#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
 
 #include "strategy.hpp"
 #include "process-nack-traits.hpp"
@@ -50,12 +50,12 @@ namespace fw {
  *  This strategy returns Nack to all downstreams if all upstreams have returned Nacks.
  *  The reason of the sent Nack equals the least severe reason among received Nacks.
  */
-class BestRouteStrategy2 : public Strategy
-                         , public ProcessNackTraits<BestRouteStrategy2>
+class BestRouteStrategy : public Strategy
+                        , public ProcessNackTraits<BestRouteStrategy>
 {
 public:
   explicit
-  BestRouteStrategy2(Forwarder& forwarder, const Name& name = getStrategyName());
+  BestRouteStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
 
   static const Name&
   getStrategyName();
@@ -73,10 +73,10 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   static const time::milliseconds RETX_SUPPRESSION_MAX;
   RetxSuppressionExponential m_retxSuppression;
 
-  friend ProcessNackTraits<BestRouteStrategy2>;
+  friend ProcessNackTraits<BestRouteStrategy>;
 };
 
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP

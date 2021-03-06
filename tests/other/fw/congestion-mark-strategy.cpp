@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,11 +31,9 @@ namespace fw {
 NFD_REGISTER_STRATEGY(CongestionMarkStrategy);
 
 CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name& name)
-  // Specifying BestRouteStrategy2's own name in its constructor prevents an exception from occuring
+  // Specifying BestRouteStrategy's own name in its constructor prevents an exception from occuring
   // when specifying parameters to CongestionMarkStrategy
-  : BestRouteStrategy2(forwarder, BestRouteStrategy2::getStrategyName())
-  , m_congestionMark(1)
-  , m_shouldPreserveMark(true)
+  : BestRouteStrategy(forwarder, BestRouteStrategy::getStrategyName())
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   switch (parsed.parameters.size()) {
@@ -86,10 +84,10 @@ CongestionMarkStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const 
   if (mark != m_congestionMark && (!m_shouldPreserveMark || mark == 0)) {
     Interest markedInterest(interest);
     markedInterest.setCongestionMark(m_congestionMark);
-    BestRouteStrategy2::afterReceiveInterest(ingress, markedInterest, pitEntry);
+    BestRouteStrategy::afterReceiveInterest(ingress, markedInterest, pitEntry);
   }
   else {
-    BestRouteStrategy2::afterReceiveInterest(ingress, interest, pitEntry);
+    BestRouteStrategy::afterReceiveInterest(ingress, interest, pitEntry);
   }
 }
 

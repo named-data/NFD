@@ -28,10 +28,9 @@
  */
 
 // Strategies implementing recommended Nack processing procedure, sorted alphabetically.
-#include "fw/best-route-strategy2.hpp"
+#include "fw/best-route-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
-#include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -41,8 +40,6 @@
 namespace nfd {
 namespace fw {
 namespace tests {
-
-BOOST_AUTO_TEST_SUITE(Fw)
 
 template<typename S>
 class StrategyNackReturnFixture : public GlobalIoTimeFixture
@@ -83,10 +80,11 @@ public:
   shared_ptr<Face> face5;
 };
 
+BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
 using Strategies = boost::mpl::vector<
-  BestRouteStrategy2,
+  BestRouteStrategy,
   RandomStrategy
 >;
 
@@ -138,7 +136,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
   this->fib.addOrUpdateNextHop(fibEntry, *this->face4, 20);
   this->fib.addOrUpdateNextHop(fibEntry, *this->face5, 30);
 
-  auto interest1 = makeInterest("/aS9FAyUV19", 286);
+  auto interest1 = makeInterest("/aS9FAyUV19", false, nullopt, 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
@@ -317,9 +315,10 @@ using NackReasonCombinations = boost::mpl::vector<
   NackReasonCombination<lp::NackReason::NONE, lp::NackReason::NONE, lp::NackReason::NONE>
 >;
 
-// use BestRouteStrategy2 as a representative to test Nack reason combination
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinations,
-                                 StrategyNackReturnFixture<BestRouteStrategy2>)
+// use BestRouteStrategy as a representative to test Nack reason combination
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
+                                 Combination, NackReasonCombinations,
+                                 StrategyNackReturnFixture<BestRouteStrategy>)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
   fib.addOrUpdateNextHop(fibEntry, *face3, 10);

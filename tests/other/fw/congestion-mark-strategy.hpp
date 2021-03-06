@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,21 +26,21 @@
 #ifndef NFD_TESTS_OTHER_FW_CONGESTION_MARK_STRATEGY_HPP
 #define NFD_TESTS_OTHER_FW_CONGESTION_MARK_STRATEGY_HPP
 
-#include "daemon/fw/best-route-strategy2.hpp"
+#include "daemon/fw/best-route-strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \brief Congestion Mark integration testing strategy version 1
+/** \brief Congestion Mark integration testing strategy
  *
  *  This strategy adds a CongestionMark to each Interest it forwards. Otherwise, behaves like
- *  BestRouteStrategy2.
+ *  BestRouteStrategy.
  *
  *  The value of the added CongestionMark can be specified through a strategy parameter (defaults
  *  to 1). In addition, an optional boolean parameter specifies whether the strategy will preserve
  *  existing CongestionMarks (default) or replace them.
  */
-class CongestionMarkStrategy : public BestRouteStrategy2
+class CongestionMarkStrategy : public BestRouteStrategy
 {
 public:
   explicit
@@ -54,8 +54,8 @@ public:
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
 private:
-  uint64_t m_congestionMark;
-  bool m_shouldPreserveMark;
+  uint64_t m_congestionMark = 1;
+  bool m_shouldPreserveMark = true;
 };
 
 } // namespace fw

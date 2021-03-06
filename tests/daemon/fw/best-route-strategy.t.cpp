@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fw/best-route-strategy2.hpp"
+#include "fw/best-route-strategy.hpp"
 #include "common/global.hpp"
 
 #include "tests/test-common.hpp"
@@ -34,15 +34,15 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using BestRouteStrategy2Tester = StrategyTester<BestRouteStrategy2>;
-NFD_REGISTER_STRATEGY(BestRouteStrategy2Tester);
+using BestRouteStrategyTester = StrategyTester<BestRouteStrategy>;
+NFD_REGISTER_STRATEGY(BestRouteStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
 
-class BestRouteStrategy2Fixture : public GlobalIoTimeFixture
+class BestRouteStrategyFixture : public GlobalIoTimeFixture
 {
 protected:
-  BestRouteStrategy2Fixture()
+  BestRouteStrategyFixture()
     : face1(make_shared<DummyFace>())
     , face2(make_shared<DummyFace>())
     , face3(make_shared<DummyFace>())
@@ -59,7 +59,7 @@ protected:
 protected:
   FaceTable faceTable;
   Forwarder forwarder{faceTable};
-  BestRouteStrategy2Tester strategy{forwarder};
+  BestRouteStrategyTester strategy{forwarder};
   Fib& fib{forwarder.getFib()};
   Pit& pit{forwarder.getPit()};
 
@@ -70,7 +70,7 @@ protected:
   shared_ptr<DummyFace> face5;
 };
 
-BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
+BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy, BestRouteStrategyFixture)
 
 BOOST_AUTO_TEST_CASE(Forward)
 {
@@ -82,8 +82,8 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
-  const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
-    BestRouteStrategy2::RETX_SUPPRESSION_INITIAL * 0.1);
+  const auto TICK = time::duration_cast<time::nanoseconds>(
+                      BestRouteStrategy::RETX_SUPPRESSION_INITIAL * 0.1);
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 16);
+  this->advanceClocks(TICK, BestRouteStrategy::RETX_SUPPRESSION_MAX * 16);
   retxFrom4Evt.cancel();
 
   // nexthops for accepted retransmissions: follow FIB cost,
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
-    this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 2);
+    this->advanceClocks(TICK, BestRouteStrategy::RETX_SUPPRESSION_MAX * 2);
     pitEntry->insertOrUpdateInRecord(*face5, *interest);
     strategy.afterReceiveInterest(FaceEndpoint(*face5, 0), *interest, pitEntry);
   }
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   // face1 cannot be used because it's gone from FIB entry
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestBestRouteStrategy2
+BOOST_AUTO_TEST_SUITE_END() // TestBestRouteStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests

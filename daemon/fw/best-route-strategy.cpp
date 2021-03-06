@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,20 +23,20 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "best-route-strategy2.hpp"
+#include "best-route-strategy.hpp"
 #include "algorithm.hpp"
 #include "common/logger.hpp"
 
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT(BestRouteStrategy2);
-NFD_REGISTER_STRATEGY(BestRouteStrategy2);
+NFD_LOG_INIT(BestRouteStrategy);
+NFD_REGISTER_STRATEGY(BestRouteStrategy);
 
-const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_INITIAL(10);
-const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_MAX(250);
+const time::milliseconds BestRouteStrategy::RETX_SUPPRESSION_INITIAL(10);
+const time::milliseconds BestRouteStrategy::RETX_SUPPRESSION_MAX(250);
 
-BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
+BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , ProcessNackTraits(this)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
@@ -45,25 +45,25 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (!parsed.parameters.empty()) {
-    NDN_THROW(std::invalid_argument("BestRouteStrategy2 does not accept parameters"));
+    NDN_THROW(std::invalid_argument("BestRouteStrategy does not accept parameters"));
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     NDN_THROW(std::invalid_argument(
-      "BestRouteStrategy2 does not support version " + to_string(*parsed.version)));
+      "BestRouteStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&
-BestRouteStrategy2::getStrategyName()
+BestRouteStrategy::getStrategyName()
 {
   static Name strategyName("/localhost/nfd/strategy/best-route/%FD%05");
   return strategyName;
 }
 
 void
-BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
-                                         const shared_ptr<pit::Entry>& pitEntry)
+BestRouteStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
+                                        const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppressionResult suppression = m_retxSuppression.decidePerPitEntry(*pitEntry);
   if (suppression == RetxSuppressionResult::SUPPRESS) {
@@ -124,8 +124,8 @@ BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Inte
 }
 
 void
-BestRouteStrategy2::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
-                                     const shared_ptr<pit::Entry>& pitEntry)
+BestRouteStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
+                                    const shared_ptr<pit::Entry>& pitEntry)
 {
   this->processNack(ingress.face, nack, pitEntry);
 }

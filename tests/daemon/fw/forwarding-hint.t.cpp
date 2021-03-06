@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fw/best-route-strategy2.hpp"
+#include "fw/best-route-strategy.hpp"
 
 #include "tests/daemon/global-io-fixture.hpp"
 #include "topology-tester.hpp"
@@ -67,8 +67,8 @@ public:
     nodeC = topo.addForwarder("click");
     nodeS = topo.addForwarder("spurs");
     nodeQ = topo.addForwarder("serverQ");
-    for (TopologyNode node : {nodeA, nodeH, nodeT, nodeP, nodeC, nodeS, nodeQ}) {
-      topo.setStrategy<BestRouteStrategy2>(node);
+    for (auto node : {nodeA, nodeH, nodeT, nodeP, nodeC, nodeS, nodeQ}) {
+      topo.setStrategy<BestRouteStrategy>(node);
     }
 
     topo.getForwarder(nodeH).getNetworkRegionTable().insert("/arizona/cs/hobo");

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,15 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/** \file
+ *  This test suite checks that a strategy can correctly handle a multi-access face
+ *  on a broadcast medium.
+ */
+
 // Strategies that can correctly handle multi-access faces on a broadcast medium,
 // sorted alphabetically.
 #include "fw/asf-strategy.hpp"
-#include "fw/best-route-strategy2.hpp"
+#include "fw/best-route-strategy.hpp"
 #include "fw/multicast-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
@@ -82,16 +87,17 @@ protected:
 };
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_AUTO_TEST_SUITE(TestBroadcastMedium)
+BOOST_AUTO_TEST_SUITE(TestStrategyBroadcastMedium)
 
 using Strategies = boost::mpl::vector<
   AsfStrategy,
-  BestRouteStrategy2,
+  BestRouteStrategy,
   MulticastStrategy,
   RandomStrategy
 >;
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(SameFaceDifferentEndpoint, S, Strategies, BroadcastMediumFixture<S>)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(SameFaceDifferentEndpoint,
+                                 S, Strategies, BroadcastMediumFixture<S>)
 {
   //   C   D   P
   //   |   |   |
@@ -116,7 +122,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SameFaceDifferentEndpoint, S, Strategies, Broad
   BOOST_CHECK_EQUAL(this->faceP->getCounters().nOutData, 1);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestBroadcastMedium
+BOOST_AUTO_TEST_SUITE_END() // TestStrategyBroadcastMedium
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
