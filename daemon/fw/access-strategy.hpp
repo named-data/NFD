@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@
 namespace nfd {
 namespace fw {
 
-/** \brief Access Router Strategy version 1
+/** \brief Access Router strategy
  *
  *  This strategy is designed for the last hop on the NDN testbed,
  *  where each nexthop connects to a laptop, links are lossy, and FIB is mostly correct.

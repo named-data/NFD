@@ -30,7 +30,6 @@
 // All strategies, sorted alphabetically.
 #include "fw/access-strategy.hpp"
 #include "fw/asf-strategy.hpp"
-#include "fw/best-route-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 #include "fw/self-learning-strategy.hpp"
@@ -75,7 +74,6 @@ public:
 using Tests = boost::mpl::vector<
   Test<AccessStrategy, false, 1>,
   Test<AsfStrategy, true, 3>,
-  Test<BestRouteStrategy, false, 1>,
   Test<BestRouteStrategy2, false, 5>,
   Test<MulticastStrategy, false, 4>,
   Test<SelfLearningStrategy, false, 1>,

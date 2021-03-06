@@ -33,7 +33,7 @@
 namespace nfd {
 namespace fw {
 
-/** \brief Best Route strategy version 4
+/** \brief Best Route strategy
  *
  *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
  *  After that, if consumer retransmits the Interest (and is not suppressed according to

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #ifndef NFD_DAEMON_FW_ALGORITHM_HPP
 #define NFD_DAEMON_FW_ALGORITHM_HPP
 
-#include "fw/scope-prefix.hpp"
-#include "table/fib.hpp"
+#include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 
 /** \file
@@ -43,19 +42,6 @@ namespace fw {
 bool
 wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace);
 
-/** \brief decide whether Interest can be forwarded to face
- *
- *  \return true if out-record of this face does not exist or has expired,
- *          and there is an in-record not of this face
- *
- *  \note This algorithm has a weakness that it does not permit consumer retransmissions
- *        before out-record expires. Therefore, it's not recommended to use this function
- *        in new strategies.
- *  \todo find a better name for this function
- */
-bool
-canForwardToLegacy(const pit::Entry& pitEntry, const Face& face);
-
 /** \brief indicates where duplicate Nonces are found
  */
 enum DuplicateNonceWhere {
@@ -63,7 +49,7 @@ enum DuplicateNonceWhere {
   DUPLICATE_NONCE_IN_SAME   = (1 << 0), ///< in-record of same face
   DUPLICATE_NONCE_IN_OTHER  = (1 << 1), ///< in-record of other face
   DUPLICATE_NONCE_OUT_SAME  = (1 << 2), ///< out-record of same face
-  DUPLICATE_NONCE_OUT_OTHER = (1 << 3)  ///< out-record of other face
+  DUPLICATE_NONCE_OUT_OTHER = (1 << 3), ///< out-record of other face
 };
 
 /** \brief determine whether \p pitEntry has duplicate Nonce \p nonce

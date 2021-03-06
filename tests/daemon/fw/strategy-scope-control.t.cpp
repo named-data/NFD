@@ -30,7 +30,6 @@
 // Strategies implementing namespace-based scope control, sorted alphabetically.
 #include "fw/access-strategy.hpp"
 #include "fw/asf-strategy.hpp"
-#include "fw/best-route-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 #include "fw/random-strategy.hpp"
@@ -113,7 +112,6 @@ public:
 using Tests = boost::mpl::vector<
   Test<AccessStrategy, false, false, true>,
   Test<AsfStrategy, true, false, true>,
-  Test<BestRouteStrategy, false, false, true>,
   Test<BestRouteStrategy2, true, true, true>,
   Test<MulticastStrategy, false, false, false>,
   Test<RandomStrategy, true, true, true>

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -89,27 +89,6 @@ BOOST_AUTO_TEST_CASE(Localhop)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // WouldViolateScope
-
-BOOST_AUTO_TEST_CASE(CanForwardToLegacy)
-{
-  auto interest = makeInterest("ndn:/WDsuBLIMG");
-  pit::Entry entry(*interest);
-
-  auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyFace>();
-
-  entry.insertOrUpdateInRecord(*face1, *interest);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), false);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
-
-  entry.insertOrUpdateInRecord(*face2, *interest);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), true);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
-
-  entry.insertOrUpdateOutRecord(*face1, *interest);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face1), false);
-  BOOST_CHECK_EQUAL(canForwardToLegacy(entry, *face2), true);
-}
 
 BOOST_AUTO_TEST_CASE(Nonce)
 {

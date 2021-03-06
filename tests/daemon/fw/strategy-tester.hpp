@@ -53,11 +53,7 @@ template<typename S>
 class StrategyTester : public S
 {
 public:
-  explicit
-  StrategyTester(Forwarder& forwarder, const Name& name = getStrategyName())
-    : S(forwarder, name)
-  {
-  }
+  using S::S;
 
   static Name
   getStrategyName()
@@ -76,7 +72,7 @@ public:
     return name;
   }
 
-  /** \brief signal emitted after each Action
+  /** \brief Signal emitted after each action
    */
   signal::Signal<StrategyTester<S>> afterAction;
 
@@ -95,11 +91,11 @@ public:
       ++nActions;
     });
 
-    f();
+    std::forward<F>(f)();
 
     if (nActions < nExpectedActions) {
       // If strategy doesn't forward anything (e.g., decides not to forward an Interest), the number
-      // of expected actions should be 0; otherwise the test will stuck.
+      // of expected actions should be 0; otherwise the test will get stuck.
       return limitedIo.run(nExpectedActions - nActions, LimitedIo::UNLIMITED_TIME) == LimitedIo::EXCEED_OPS;
     }
     return nActions == nExpectedActions;

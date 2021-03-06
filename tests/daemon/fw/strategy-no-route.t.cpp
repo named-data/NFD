@@ -24,11 +24,11 @@
  */
 
 /** \file
- *  This test suite checks that a strategy returns Nack-NoRoute
- *  when there is no usable FIB nexthop.
+ *  This test suite checks that a strategy returns Nack-NoRoute when there are
+ *  no usable FIB nexthops.
  */
 
-// Strategies returning Nack-NoRoute when there is no usable FIB nexthop,
+// Strategies returning Nack-NoRoute when there are no usable FIB nexthops,
 // sorted alphabetically.
 #include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
@@ -39,7 +39,6 @@
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 
-#include <boost/mpl/copy_if.hpp>
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -155,8 +154,8 @@ using Tests = boost::mpl::vector<
   Test<RandomStrategy, NextHopViolatesScope<RandomStrategy>>
 >;
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,
-                                 StrategyNoRouteFixture<typename T::Strategy>)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest,
+                                 T, Tests, StrategyNoRouteFixture<typename T::Strategy>)
 {
   typename T::Case scenario;
   scenario.insertFibEntry(this);

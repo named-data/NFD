@@ -27,6 +27,7 @@
 
 #include "algorithm.hpp"
 #include "best-route-strategy2.hpp"
+#include "scope-prefix.hpp"
 #include "strategy.hpp"
 #include "common/global.hpp"
 #include "common/logger.hpp"
