@@ -37,7 +37,7 @@ namespace face {
 /**
  * \brief Class implementing UDP-based channel to create faces
  */
-class UdpChannel : public Channel
+class UdpChannel final : public Channel
 {
 public:
   /**
@@ -53,13 +53,13 @@ public:
              size_t defaultMtu);
 
   bool
-  isListening() const override
+  isListening() const final
   {
     return m_socket.is_open();
   }
 
   size_t
-  size() const override
+  size() const final
   {
     return m_channelFaces.size();
   }

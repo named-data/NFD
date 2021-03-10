@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,7 +65,7 @@ getSignerFromTag(const Interest& interest)
 
 /** \brief a validation policy that only permits Interest signed by a trust anchor
  */
-class CommandAuthenticatorValidationPolicy : public security::ValidationPolicy
+class CommandAuthenticatorValidationPolicy final : public security::ValidationPolicy
 {
 public:
   void
@@ -87,8 +87,8 @@ public:
   }
 
   void
-  checkPolicy(const Data& data, const shared_ptr<security::ValidationState>& state,
-              const ValidationContinuation& continueValidation) final
+  checkPolicy(const Data&, const shared_ptr<security::ValidationState>&,
+              const ValidationContinuation&) final
   {
     // Non-certificate Data are not handled by CommandAuthenticator.
     // Non-anchor certificates cannot be retrieved by offline fetcher.

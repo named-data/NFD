@@ -40,7 +40,7 @@ namespace face {
 /**
  * \brief Class implementing WebSocket-based channel to create faces
  */
-class WebSocketChannel : public Channel
+class WebSocketChannel final : public Channel
 {
 public:
   /**
@@ -54,13 +54,13 @@ public:
   WebSocketChannel(const websocket::Endpoint& localEndpoint);
 
   bool
-  isListening() const override
+  isListening() const final
   {
     return m_server.is_listening();
   }
 
   size_t
-  size() const override
+  size() const final
   {
     return m_channelFaces.size();
   }

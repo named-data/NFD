@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ using DetermineFaceScopeFromAddress = std::function<ndn::nfd::FaceScope(const bo
  * connections (TcpChannel::listen needs to be called for that
  * to work) or explicitly after using TcpChannel::connect method.
  */
-class TcpChannel : public Channel
+class TcpChannel final : public Channel
 {
 public:
   /**
@@ -59,13 +59,13 @@ public:
              DetermineFaceScopeFromAddress determineFaceScope);
 
   bool
-  isListening() const override
+  isListening() const final
   {
     return m_acceptor.is_open();
   }
 
   size_t
-  size() const override
+  size() const final
   {
     return m_channelFaces.size();
   }

@@ -36,7 +36,7 @@ namespace nfd {
  * @brief Implements the Face Management of NFD Management Protocol.
  * @sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
  */
-class FaceManager : public ManagerBase
+class FaceManager final : public ManagerBase
 {
 public:
   FaceManager(FaceSystem& faceSystem,

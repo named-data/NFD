@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,7 @@ const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_I
 const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_MAX_INTERVAL = 250_ms;
 const float RetxSuppressionExponential::DEFAULT_MULTIPLIER = 2.0f;
 
-class RetxSuppressionExponential::PitInfo : public StrategyInfo
+class RetxSuppressionExponential::PitInfo final : public StrategyInfo
 {
 public:
   static constexpr int

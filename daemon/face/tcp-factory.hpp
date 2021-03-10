@@ -34,7 +34,7 @@ namespace face {
 
 /** \brief Protocol factory for TCP over IPv4 and IPv6
  */
-class TcpFactory : public ProtocolFactory
+class TcpFactory final : public ProtocolFactory
 {
 public:
   static const std::string&
@@ -61,15 +61,15 @@ private:
    */
   void
   doProcessConfig(OptionalConfigSection configSection,
-                  FaceSystem::ConfigContext& context) override;
+                  FaceSystem::ConfigContext& context) final;
 
   void
   doCreateFace(const CreateFaceRequest& req,
                const FaceCreatedCallback& onCreated,
-               const FaceCreationFailedCallback& onFailure) override;
+               const FaceCreationFailedCallback& onFailure) final;
 
   std::vector<shared_ptr<const Channel>>
-  doGetChannels() const override;
+  doGetChannels() const final;
 
   ndn::nfd::FaceScope
   determineFaceScopeFromAddresses(const boost::asio::ip::address& local,

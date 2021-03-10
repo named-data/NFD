@@ -68,7 +68,7 @@ private: // StrategyInfo
 
   /** \brief StrategyInfo on PIT entry
    */
-  class PitInfo : public StrategyInfo
+  class PitInfo final : public StrategyInfo
   {
   public:
     static constexpr int
@@ -83,7 +83,7 @@ private: // StrategyInfo
 
   /** \brief StrategyInfo in measurements table
    */
-  class MtInfo : public StrategyInfo
+  class MtInfo final : public StrategyInfo
   {
   public:
     static constexpr int

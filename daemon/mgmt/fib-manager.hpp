@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ class FaceTable;
  * @brief Implements the FIB Management of NFD Management Protocol.
  * @sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
-class FibManager : public ManagerBase
+class FibManager final : public ManagerBase
 {
 public:
   FibManager(fib::Fib& fib, const FaceTable& faceTable,

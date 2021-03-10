@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@ class StrategyChoice;
  * @brief Implements the Strategy Choice Management of NFD Management Protocol.
  * @sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
  */
-class StrategyChoiceManager : public ManagerBase
+class StrategyChoiceManager final : public ManagerBase
 {
 public:
   StrategyChoiceManager(strategy_choice::StrategyChoice& table,

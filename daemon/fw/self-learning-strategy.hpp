@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ public:
   getStrategyName();
 
   /// StrategyInfo on pit::InRecord
-  class InRecordInfo : public StrategyInfo
+  class InRecordInfo final : public StrategyInfo
   {
   public:
     static constexpr int
@@ -64,7 +64,7 @@ public:
   };
 
   /// StrategyInfo on pit::OutRecord
-  class OutRecordInfo : public StrategyInfo
+  class OutRecordInfo final : public StrategyInfo
   {
   public:
     static constexpr int

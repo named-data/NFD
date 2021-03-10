@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@ namespace face {
 
 /** \brief Protocol factory for stream-oriented Unix sockets
  */
-class UnixStreamFactory : public ProtocolFactory
+class UnixStreamFactory final : public ProtocolFactory
 {
 public:
   static const std::string&
@@ -60,10 +60,10 @@ private:
    */
   void
   doProcessConfig(OptionalConfigSection configSection,
-                  FaceSystem::ConfigContext& context) override;
+                  FaceSystem::ConfigContext& context) final;
 
   std::vector<shared_ptr<const Channel>>
-  doGetChannels() const override;
+  doGetChannels() const final;
 
 private:
   bool m_wantCongestionMarking = false;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ class ForwarderCounters;
  * \brief Implements the CS Management of NFD Management Protocol.
  * \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
-class CsManager : public ManagerBase
+class CsManager final : public ManagerBase
 {
 public:
   CsManager(cs::Cs& cs, const ForwarderCounters& fwCounters,

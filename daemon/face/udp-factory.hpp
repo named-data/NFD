@@ -34,7 +34,7 @@ namespace face {
 
 /** \brief Protocol factory for UDP over IPv4 and IPv6
  */
-class UdpFactory : public ProtocolFactory
+class UdpFactory final : public ProtocolFactory
 {
 public:
   class Error : public ProtocolFactory::Error
@@ -100,15 +100,15 @@ private:
    */
   void
   doProcessConfig(OptionalConfigSection configSection,
-                  FaceSystem::ConfigContext& context) override;
+                  FaceSystem::ConfigContext& context) final;
 
   void
   doCreateFace(const CreateFaceRequest& req,
                const FaceCreatedCallback& onCreated,
-               const FaceCreationFailedCallback& onFailure) override;
+               const FaceCreationFailedCallback& onFailure) final;
 
   std::vector<shared_ptr<const Channel>>
-  doGetChannels() const override;
+  doGetChannels() const final;
 
   /** \brief Create UDP multicast faces on \p netif if needed by \p m_mcastConfig
    *  \return list of faces (just created or already existing) on \p netif

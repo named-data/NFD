@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "channel.hpp"
 #include "ethernet-protocol.hpp"
 #include "pcap-helper.hpp"
+
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
@@ -37,7 +38,7 @@ namespace face {
 /**
  * \brief Class implementing Ethernet-based channel to create faces
  */
-class EthernetChannel : public Channel
+class EthernetChannel final : public Channel
 {
 public:
   /**
@@ -63,13 +64,13 @@ public:
                   time::nanoseconds idleTimeout);
 
   bool
-  isListening() const override
+  isListening() const final
   {
     return m_isListening;
   }
 
   size_t
-  size() const override
+  size() const final
   {
     return m_channelFaces.size();
   }

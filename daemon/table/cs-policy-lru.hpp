@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ using Queue = boost::multi_index_container<
 
 /** \brief Least-Recently-Used (LRU) replacement policy
  */
-class LruPolicy : public Policy
+class LruPolicy final : public Policy
 {
 public:
   LruPolicy();
@@ -56,19 +56,19 @@ public:
 
 private:
   void
-  doAfterInsert(EntryRef i) override;
+  doAfterInsert(EntryRef i) final;
 
   void
-  doAfterRefresh(EntryRef i) override;
+  doAfterRefresh(EntryRef i) final;
 
   void
-  doBeforeErase(EntryRef i) override;
+  doBeforeErase(EntryRef i) final;
 
   void
-  doBeforeUse(EntryRef i) override;
+  doBeforeUse(EntryRef i) final;
 
   void
-  evictEntries() override;
+  evictEntries() final;
 
 private:
   /** \brief moves an entry to the end of queue

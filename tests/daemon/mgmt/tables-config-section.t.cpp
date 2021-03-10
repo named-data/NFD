@@ -206,13 +206,9 @@ BOOST_AUTO_TEST_SUITE_END() // CsPolicy
 class CsUnsolicitedPolicyFixture : public TablesConfigSectionFixture
 {
 protected:
-  class DummyUnsolicitedDataPolicy : public fw::AdmitNetworkUnsolicitedDataPolicy
-  {
-  };
-
   CsUnsolicitedPolicyFixture()
   {
-    forwarder.setUnsolicitedDataPolicy(make_unique<DummyUnsolicitedDataPolicy>());
+    forwarder.setUnsolicitedDataPolicy(make_unique<fw::AdmitNetworkUnsolicitedDataPolicy>());
   }
 };
 
@@ -222,7 +218,7 @@ BOOST_AUTO_TEST_CASE(NoSection)
 {
   tablesConfig.ensureConfigured();
 
-  fw::UnsolicitedDataPolicy* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
+  auto* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
   NFD_CHECK_TYPEID_EQUAL(*currentPolicy, fw::DefaultUnsolicitedDataPolicy);
 }
 
@@ -235,7 +231,7 @@ BOOST_AUTO_TEST_CASE(Default)
   )CONFIG";
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
-  fw::UnsolicitedDataPolicy* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
+  auto* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
   NFD_CHECK_TYPEID_NE(*currentPolicy, fw::DefaultUnsolicitedDataPolicy);
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
@@ -253,7 +249,7 @@ BOOST_AUTO_TEST_CASE(Known)
   )CONFIG";
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
-  fw::UnsolicitedDataPolicy* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
+  auto* currentPolicy = &forwarder.getUnsolicitedDataPolicy();
   NFD_CHECK_TYPEID_NE(*currentPolicy, fw::AdmitAllUnsolicitedDataPolicy);
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
