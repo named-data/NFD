@@ -83,7 +83,7 @@ public:
     auto state1 = dynamic_pointer_cast<security::InterestValidationState>(state);
     state1->getOriginalInterest().setTag(make_shared<SignerTag>(klName));
 
-    continueValidation(make_shared<security::CertificateRequest>(Interest(klName)), state);
+    continueValidation(make_shared<security::CertificateRequest>(klName), state);
   }
 
   void
@@ -115,7 +115,7 @@ void
 CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename)
 {
   if (!isDryRun) {
-    NFD_LOG_INFO("clear-authorizations");
+    NFD_LOG_DEBUG("resetting authorizations");
     for (auto& kv : m_validators) {
       kv.second = make_shared<security::Validator>(
         make_unique<security::ValidationPolicyCommandInterest>(make_unique<CommandAuthenticatorValidationPolicy>()),
@@ -212,6 +212,7 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
               const ndn::mgmt::AcceptContinuation& accept,
               const ndn::mgmt::RejectContinuation& reject) {
     auto validator = self->m_validators.at(module);
+
     auto successCb = [accept, validator] (const Interest& interest1) {
       auto signer1 = getSignerFromTag(interest1);
       BOOST_ASSERT(signer1 || // signer must be available unless 'certfile any'
@@ -220,6 +221,7 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
       NFD_LOG_DEBUG("accept " << interest1.getName() << " signer=" << signer);
       accept(signer);
     };
+
     auto failureCb = [reject] (const Interest& interest1, const security::ValidationError& err) {
       using ndn::mgmt::RejectReply;
       RejectReply reply = RejectReply::STATUS403;

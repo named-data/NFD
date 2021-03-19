@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ namespace mpl = boost::mpl;
 class FaceManagerUpdateFixture : public FaceManagerCommandFixture
 {
 public:
-  ~FaceManagerUpdateFixture()
+  ~FaceManagerUpdateFixture() override
   {
     destroyFace();
   }
@@ -110,7 +110,7 @@ public:
         if (isForOnDemandFace) {
           auto face = target.faceTable.get(static_cast<FaceId>(this->faceId));
           // to force creation of on-demand face
-          face->sendInterest(*make_shared<Interest>("/hello/world"));
+          face->sendInterest(*makeInterest("/hello/world"));
         }
       });
 
