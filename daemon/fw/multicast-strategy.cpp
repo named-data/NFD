@@ -57,7 +57,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%04");
+  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(4);
   return strategyName;
 }
 

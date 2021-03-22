@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ RandomStrategy::RandomStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 RandomStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/random/%FD%01");
+  static const auto strategyName = Name("/localhost/nfd/strategy/random").appendVersion(1);
   return strategyName;
 }
 

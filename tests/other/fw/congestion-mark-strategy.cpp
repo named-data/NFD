@@ -72,7 +72,7 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
 const Name&
 CongestionMarkStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/congestion-mark/%FD%01");
+  static const auto strategyName = Name("/localhost/nfd/strategy/congestion-mark").appendVersion(1);
   return strategyName;
 }
 

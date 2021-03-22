@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,8 +63,8 @@ class MeasurementsAccessorFixture : public GlobalIoFixture
 protected:
   MeasurementsAccessorFixture()
   {
-    const Name strategyP("/measurements-accessor-test-strategy-P/%FD%01");
-    const Name strategyQ("/measurements-accessor-test-strategy-Q/%FD%01");
+    const auto strategyP = Name("/measurements-accessor-test-strategy-P").appendVersion(1);
+    const auto strategyQ = Name("/measurements-accessor-test-strategy-Q").appendVersion(1);
     MeasurementsAccessorTestStrategy::registerAs(strategyP);
     MeasurementsAccessorTestStrategy::registerAs(strategyQ);
 

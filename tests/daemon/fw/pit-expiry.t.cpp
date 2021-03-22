@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(CsHit)
   faceTable.add(face1);
   faceTable.add(face2);
 
-  Name strategyA("/strategyA/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
   faceTable.add(face2);
   faceTable.add(face3);
 
-  Name strategyA("/strategyA/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveInterest)
   auto face = make_shared<DummyFace>();
   faceTable.add(face);
 
-  Name strategyA("/strategyA/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
@@ -281,8 +281,8 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
   faceTable.add(face2);
   faceTable.add(face3);
 
-  Name strategyA("/strategyA/%FD%01");
-  Name strategyB("/strategyB/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
+  auto strategyB = Name("/strategyB").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   PitExpiryTestStrategy::registerAs(strategyB);
   auto& sA = choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
   faceTable.add(face1);
   faceTable.add(face2);
 
-  Name strategyA("/strategyA/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   auto& sA = choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
   faceTable.add(face2);
   faceTable.add(face3);
 
-  Name strategyA("/strategyA/%FD%01");
+  auto strategyA = Name("/strategyA").appendVersion(1);
   PitExpiryTestStrategy::registerAs(strategyA);
   choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 

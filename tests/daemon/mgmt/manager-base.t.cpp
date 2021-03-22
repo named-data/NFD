@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
   BOOST_CHECK_EQUAL(m_responses[0].getName(),
-                    Name("/localhost/nfd/test-module/test-notification/%FE%00"));
+                    Name("/localhost/nfd/test-module/test-notification").appendSequenceNumber(0));
 }
 
 BOOST_AUTO_TEST_CASE(ExtractRequester)

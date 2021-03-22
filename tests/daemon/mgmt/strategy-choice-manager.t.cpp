@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ public:
   StrategyChoiceManagerFixture()
     : sc(m_forwarder.getStrategyChoice())
     , manager(sc, m_dispatcher, *m_authenticator)
-    , strategyNameP("/strategy-choice-manager-P/%FD%02")
+    , strategyNameP(Name("/strategy-choice-manager-P").appendVersion(2))
   {
     VersionedDummyStrategy<2>::registerAs(strategyNameP);
 

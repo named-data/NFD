@@ -57,7 +57,7 @@ BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 BestRouteStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%05");
+  static const auto strategyName = Name("/localhost/nfd/strategy/best-route").appendVersion(5);
   return strategyName;
 }
 

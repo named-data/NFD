@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 AccessStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/access/%FD%01");
+  static const auto strategyName = Name("/localhost/nfd/strategy/access").appendVersion(1);
   return strategyName;
 }
 

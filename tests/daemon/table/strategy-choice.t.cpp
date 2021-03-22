@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,8 +78,8 @@ protected:
   Forwarder forwarder{faceTable};
   StrategyChoice& sc{forwarder.getStrategyChoice()};
 
-  const Name strategyNameP = "/strategy-choice-P/%FD%00";
-  const Name strategyNameQ = "/strategy-choice-Q/%FD%00";
+  const Name strategyNameP = Name("/strategy-choice-P").appendVersion(0);
+  const Name strategyNameQ = Name("/strategy-choice-Q").appendVersion(0);
 };
 
 BOOST_AUTO_TEST_SUITE(Table)
@@ -87,13 +87,13 @@ BOOST_FIXTURE_TEST_SUITE(TestStrategyChoice, StrategyChoiceFixture)
 
 BOOST_AUTO_TEST_CASE(Versioning)
 {
-  const Name strategyNameV("/strategy-choice-V");
-  const Name strategyNameV0("/strategy-choice-V/%FD%00");
-  const Name strategyNameV1("/strategy-choice-V/%FD%01");
-  const Name strategyNameV2("/strategy-choice-V/%FD%02");
-  const Name strategyNameV3("/strategy-choice-V/%FD%03");
-  const Name strategyNameV4("/strategy-choice-V/%FD%04");
-  const Name strategyNameV5("/strategy-choice-V/%FD%05");
+  const auto strategyNameV = Name("/strategy-choice-V");
+  const auto strategyNameV0 = Name("/strategy-choice-V").appendVersion(0);
+  const auto strategyNameV1 = Name("/strategy-choice-V").appendVersion(1);
+  const auto strategyNameV2 = Name("/strategy-choice-V").appendVersion(2);
+  const auto strategyNameV3 = Name("/strategy-choice-V").appendVersion(3);
+  const auto strategyNameV4 = Name("/strategy-choice-V").appendVersion(4);
+  const auto strategyNameV5 = Name("/strategy-choice-V").appendVersion(5);
 
   VersionedDummyStrategy<1>::registerAs(strategyNameV1);
   VersionedDummyStrategy<3>::registerAs(strategyNameV3);
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(Get)
 
 BOOST_AUTO_TEST_CASE(FindEffectiveStrategy)
 {
-  const Name strategyNameZ("/strategy-choice-Z/%FD%00"); // unregistered strategyName
+  const auto strategyNameZ = Name("/strategy-choice-Z").appendVersion(0); // unregistered strategyName
 
   BOOST_CHECK(sc.insert("/", strategyNameP));
   // { '/'=>P }

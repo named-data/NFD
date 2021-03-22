@@ -45,9 +45,9 @@ protected:
     , strategyChoice(forwarder.getStrategyChoice())
     , networkRegionTable(forwarder.getNetworkRegionTable())
     , tablesConfig(forwarder)
-    , strategyP("/tables-config-section-strategy-P/%FD%02")
-    , strategyP1("/tables-config-section-strategy-P/%FD%01")
-    , strategyQ("/tables-config-section-strategy-Q/%FD%02")
+    , strategyP(Name("/tables-config-section-strategy-P").appendVersion(2))
+    , strategyP1(Name("/tables-config-section-strategy-P").appendVersion(1))
+    , strategyQ(Name("/tables-config-section-strategy-Q").appendVersion(2))
   {
     DummyStrategy::registerAs(strategyP);
     DummyStrategy::registerAs(strategyP1);

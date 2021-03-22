@@ -48,11 +48,11 @@ protected:
 
     StrategyChoice entry1;
     entry1.setName("/");
-    entry1.setStrategy("/strategyP/%FD%01");
+    entry1.setStrategy(Name("/strategyP").appendVersion(1));
 
     StrategyChoice entry2;
     entry2.setName("/52VRvpL9/Yqfut4TNHv");
-    entry2.setStrategy("/strategyQ/%FD%02");
+    entry2.setStrategy(Name("/strategyQ").appendVersion(2));
 
     this->sendDataset(interest.getName(), entry1, entry2);
     return true;
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(Normal)
 
     ControlParameters resp;
     resp.setName("/VBXSJg3m/XYs81ARNhx");
-    resp.setStrategy("/strategyP/%FD%05");
+    resp.setStrategy(Name("/strategyP").appendVersion(5));
     this->succeedCommand(interest, resp);
   };
 
@@ -248,10 +248,10 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<StrategyChoiceModule>)
   this->fetchStatus();
   StrategyChoice payload1;
   payload1.setName("/")
-          .setStrategy("/localhost/nfd/strategy/best-route/%FD%04");
+          .setStrategy(Name("/localhost/nfd/strategy/best-route").appendVersion(4));
   StrategyChoice payload2;
   payload2.setName("/localhost")
-          .setStrategy("/localhost/nfd/strategy/multicast/%FD%04");
+          .setStrategy(Name("/localhost/nfd/strategy/multicast").appendVersion(4));
   this->sendDataset("/localhost/nfd/strategy-choice/list", payload1, payload2);
   this->prepareStatusOutput();
 
