@@ -63,8 +63,8 @@ nfdc strategy show prefix /localhost/ping/1
 nfdc strategy set prefix / strategy /localhost/nfd/strategy/best-route
     Set the default strategy to best-route, latest version.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/multicast/%FD%04
-    Set the strategy of the "/ndn" prefix to multicast, version 4.
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/multicast/v=4
+    Set the strategy for the "/ndn" prefix to multicast, version 4.
 
 nfdc strategy unset prefix /ndn
     Clear the strategy choice for the "/ndn" prefix.

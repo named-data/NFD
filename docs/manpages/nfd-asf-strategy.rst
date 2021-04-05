@@ -3,7 +3,7 @@ nfd-asf-strategy
 
 SYNOPSIS
 --------
-| nfdc strategy set prefix <PREFIX> strategy /localhost/nfd/strategy/asf/%FD%02[/probing-interval~<PROBING-INTERVAL>][/n-silent-timeouts~<N-SILENT-TIMEOUTS>]
+| nfdc strategy set prefix <PREFIX> strategy /localhost/nfd/strategy/asf[/v=4][/probing-interval~<PROBING-INTERVAL>][/n-silent-timeouts~<N-SILENT-TIMEOUTS>]
 
 DESCRIPTION
 -----------
@@ -24,7 +24,7 @@ OPTIONS
     This behavior may be too sensitive for application use and appropriate only for link
     failures and not transient timeouts. So this parameter makes ASF switch paths
     only after it has encountered the specified number of timeouts (non-negative integer).
-    Default and minimum value is 0 i.e. switch immediately.
+    Default and minimum value is 0, i.e., switch immediately.
     It is optional to specify n-silent-timeouts.
 
 EXAMPLES
@@ -32,13 +32,13 @@ EXAMPLES
 nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf
     Use the default values.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/%FD%03/probing-interval~30000
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000
     Set probing interval as 30 seconds.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/%FD%03/n-silent-timeouts~5
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/n-silent-timeouts~5
     Set n-silent-timeouts as 5.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/%FD%03/probing-interval~30000/n-silent-timeouts~5
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000/n-silent-timeouts~5
     Set probing interval as 30 seconds and n-silent-timeouts as 5.
 
 SEE ALSO

@@ -24,6 +24,8 @@
  */
 
 #include "mgmt/tables-config-section.hpp"
+
+#include "fw/best-route-strategy.hpp"
 #include "fw/forwarder.hpp"
 #include "table/cs-policy-lru.hpp"
 #include "table/cs-policy-priority-fifo.hpp"
@@ -40,17 +42,10 @@ class TablesConfigSectionFixture : public GlobalIoFixture
 {
 protected:
   TablesConfigSectionFixture()
-    : forwarder(faceTable)
-    , cs(forwarder.getCs())
-    , strategyChoice(forwarder.getStrategyChoice())
-    , networkRegionTable(forwarder.getNetworkRegionTable())
-    , tablesConfig(forwarder)
-    , strategyP(Name("/tables-config-section-strategy-P").appendVersion(2))
-    , strategyP1(Name("/tables-config-section-strategy-P").appendVersion(1))
-    , strategyQ(Name("/tables-config-section-strategy-Q").appendVersion(2))
   {
     DummyStrategy::registerAs(strategyP);
     DummyStrategy::registerAs(strategyP1);
+    // strategyP1Marker is NOT registered
     DummyStrategy::registerAs(strategyQ);
   }
 
@@ -64,16 +59,18 @@ protected:
 
 protected:
   FaceTable faceTable;
-  Forwarder forwarder;
-  Cs& cs;
-  StrategyChoice& strategyChoice;
-  NetworkRegionTable& networkRegionTable;
+  Forwarder forwarder{faceTable};
+  Cs& cs{forwarder.getCs()};
+  StrategyChoice& strategyChoice{forwarder.getStrategyChoice()};
+  NetworkRegionTable& networkRegionTable{forwarder.getNetworkRegionTable()};
 
-  TablesConfigSection tablesConfig;
+  TablesConfigSection tablesConfig{forwarder};
 
-  const Name strategyP;
-  const Name strategyP1;
-  const Name strategyQ;
+  const Name defaultStrategy = fw::BestRouteStrategy::getStrategyName();
+  const Name strategyP = Name("/tables-config-section-strategy-P").appendVersion(2);
+  const Name strategyP1 = "/tables-config-section-strategy-P/v=1";
+  const Name strategyP1Marker = "/tables-config-section-strategy-P/%FD%01";
+  const Name strategyQ = Name("/tables-config-section-strategy-Q").appendVersion(2);
 };
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
@@ -290,21 +287,21 @@ BOOST_AUTO_TEST_CASE(Unversioned)
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& rootStrategy = strategyChoice.findEffectiveStrategy("/");
-    BOOST_CHECK_NE(rootStrategy.getInstanceName(), strategyP.getPrefix(-1));
-    BOOST_CHECK_NE(rootStrategy.getInstanceName(), strategyQ.getPrefix(-1));
+    BOOST_CHECK_EQUAL(rootStrategy.getInstanceName(), defaultStrategy);
 
     fw::Strategy& aStrategy = strategyChoice.findEffectiveStrategy("/a");
-    BOOST_CHECK_NE(aStrategy.getInstanceName(), strategyP.getPrefix(-1));
-    BOOST_CHECK_NE(aStrategy.getInstanceName(), strategyQ.getPrefix(-1));
+    BOOST_CHECK_EQUAL(aStrategy.getInstanceName(), defaultStrategy);
   }
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& rootStrategy = strategyChoice.findEffectiveStrategy("/");
     BOOST_CHECK_EQUAL(rootStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    NFD_CHECK_TYPEID_EQUAL(rootStrategy, DummyStrategy);
 
     fw::Strategy& aStrategy = strategyChoice.findEffectiveStrategy("/a");
     BOOST_CHECK_EQUAL(aStrategy.getInstanceName(), strategyQ.getPrefix(-1));
+    NFD_CHECK_TYPEID_EQUAL(aStrategy, DummyStrategy);
   }
 }
 
@@ -316,7 +313,8 @@ BOOST_AUTO_TEST_CASE(Versioned)
       strategy_choice
       {
         /test/latest /tables-config-section-strategy-P
-        /test/old /tables-config-section-strategy-P/%FD%01
+        /test/old /tables-config-section-strategy-P/v=1
+        /test/marker /tables-config-section-strategy-P/%FD%01
       }
     }
   )CONFIG";
@@ -324,21 +322,28 @@ BOOST_AUTO_TEST_CASE(Versioned)
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& testLatestStrategy = strategyChoice.findEffectiveStrategy("/test/latest");
-    BOOST_CHECK_NE(testLatestStrategy.getInstanceName(), strategyP.getPrefix(-1));
-    BOOST_CHECK_NE(testLatestStrategy.getInstanceName(), strategyP1);
+    BOOST_CHECK_EQUAL(testLatestStrategy.getInstanceName(), defaultStrategy);
 
     fw::Strategy& testOldStrategy = strategyChoice.findEffectiveStrategy("/test/old");
-    BOOST_CHECK_NE(testOldStrategy.getInstanceName(), strategyP.getPrefix(-1));
-    BOOST_CHECK_NE(testOldStrategy.getInstanceName(), strategyP1);
+    BOOST_CHECK_EQUAL(testOldStrategy.getInstanceName(), defaultStrategy);
+
+    fw::Strategy& testMarkerStrategy = strategyChoice.findEffectiveStrategy("/test/marker");
+    BOOST_CHECK_EQUAL(testMarkerStrategy.getInstanceName(), defaultStrategy);
   }
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& testLatestStrategy = strategyChoice.findEffectiveStrategy("/test/latest");
     BOOST_CHECK_EQUAL(testLatestStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    NFD_CHECK_TYPEID_EQUAL(testLatestStrategy, DummyStrategy);
 
     fw::Strategy& testOldStrategy = strategyChoice.findEffectiveStrategy("/test/old");
     BOOST_CHECK_EQUAL(testOldStrategy.getInstanceName(), strategyP1);
+    NFD_CHECK_TYPEID_EQUAL(testOldStrategy, DummyStrategy);
+
+    fw::Strategy& testMarkerStrategy = strategyChoice.findEffectiveStrategy("/test/marker");
+    BOOST_CHECK_EQUAL(testMarkerStrategy.getInstanceName(), strategyP1Marker);
+    NFD_CHECK_TYPEID_EQUAL(testMarkerStrategy, DummyStrategy);
   }
 }
 
@@ -399,7 +404,7 @@ BOOST_AUTO_TEST_CASE(UnacceptableParameters)
     {
       strategy_choice
       {
-        / /localhost/nfd/strategy/best-route/%FD%05/param
+        / /localhost/nfd/strategy/best-route/v=5/param
       }
     }
   )CONFIG";

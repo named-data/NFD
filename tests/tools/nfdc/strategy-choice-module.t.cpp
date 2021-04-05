@@ -69,8 +69,8 @@ BOOST_AUTO_TEST_CASE(Normal)
 
   this->execute("strategy list");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("prefix=/ strategy=/strategyP/%FD%01\n"
-                           "prefix=/52VRvpL9/Yqfut4TNHv strategy=/strategyQ/%FD%02\n"));
+  BOOST_CHECK(out.is_equal("prefix=/ strategy=/strategyP/v=1\n"
+                           "prefix=/52VRvpL9/Yqfut4TNHv strategy=/strategyQ/v=2\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(NormalDefaultStrategy)
   this->execute("strategy show /I1Ixgg0X");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("  prefix=/\n"
-                           "strategy=/strategyP/%FD%01\n"));
+                           "strategy=/strategyP/v=1\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(NormalNonDefaultStrategy)
   this->execute("strategy show /52VRvpL9/Yqfut4TNHv/Y5gY7gom");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("  prefix=/52VRvpL9/Yqfut4TNHv\n"
-                           "strategy=/strategyQ/%FD%02\n"));
+                           "strategy=/strategyQ/v=2\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(Normal)
 
   this->execute("strategy set /VBXSJg3m/XYs81ARNhx /strategyP");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("strategy-set prefix=/VBXSJg3m/XYs81ARNhx strategy=/strategyP/%FD%05\n"));
+  BOOST_CHECK(out.is_equal("strategy-set prefix=/VBXSJg3m/XYs81ARNhx strategy=/strategyP/v=5\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -225,13 +225,13 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
     <strategyChoice>
       <namespace>/</namespace>
       <strategy>
-        <name>/localhost/nfd/strategy/best-route/%FD%04</name>
+        <name>/localhost/nfd/strategy/best-route/v=4</name>
       </strategy>
     </strategyChoice>
     <strategyChoice>
       <namespace>/localhost</namespace>
       <strategy>
-        <name>/localhost/nfd/strategy/multicast/%FD%04</name>
+        <name>/localhost/nfd/strategy/multicast/v=4</name>
       </strategy>
     </strategyChoice>
   </strategyChoices>
@@ -239,8 +239,8 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 Strategy choices:
-  prefix=/ strategy=/localhost/nfd/strategy/best-route/%FD%04
-  prefix=/localhost strategy=/localhost/nfd/strategy/multicast/%FD%04
+  prefix=/ strategy=/localhost/nfd/strategy/best-route/v=4
+  prefix=/localhost strategy=/localhost/nfd/strategy/multicast/v=4
 )TEXT").substr(1);
 
 BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<StrategyChoiceModule>)
