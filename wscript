@@ -92,6 +92,7 @@ def configure(conf):
     conf.env.WITH_OTHER_TESTS = conf.options.with_other_tests
 
     conf.find_program('bash', var='BASH')
+    conf.find_program('dot', var='DOT', mandatory=False)
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
                    pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
@@ -267,6 +268,7 @@ def doxygen(bld):
         target=['docs/doxygen.conf',
                 'docs/named_data_theme/named_data_footer-with-analytics.html'],
         VERSION=VERSION,
+        HAVE_DOT='YES' if bld.env.DOT else 'NO',
         HTML_FOOTER='../build/docs/named_data_theme/named_data_footer-with-analytics.html' \
                         if os.getenv('GOOGLE_ANALYTICS', None) \
                         else '../docs/named_data_theme/named_data_footer.html',
