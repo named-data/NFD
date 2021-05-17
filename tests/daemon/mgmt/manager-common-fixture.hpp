@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,13 +33,13 @@
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-#include <ndn-cxx/security/command-interest-signer.hpp>
+#include <ndn-cxx/security/interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
 
-/** \brief A fixture that provides a CommandInterestSigner.
+/** \brief A fixture that wraps an InterestSigner.
  */
 class CommandInterestSignerFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
@@ -55,7 +55,7 @@ protected:
   makeCommandInterest(const Name& name, const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
   /** \brief create a ControlCommand request
-   *  \param commandName command name including prefix, such as "/localhost/nfd/fib/add-nexthop"
+   *  \param commandName command name including prefix, such as `/localhost/nfd/fib/add-nexthop`
    *  \param params command parameters
    *  \param identity signing identity
    *  \return a command Interest
@@ -68,7 +68,7 @@ protected:
   static const Name DEFAULT_COMMAND_SIGNER_IDENTITY;
 
 private:
-  ndn::security::CommandInterestSigner m_commandInterestSigner;
+  ndn::security::InterestSigner m_signer;
 };
 
 /**

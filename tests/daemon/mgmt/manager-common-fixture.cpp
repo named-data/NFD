@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,7 @@ namespace tests {
 const Name CommandInterestSignerFixture::DEFAULT_COMMAND_SIGNER_IDENTITY("/CommandInterestSignerFixture-identity");
 
 CommandInterestSignerFixture::CommandInterestSignerFixture()
-  : m_commandInterestSigner(m_keyChain)
+  : m_signer(m_keyChain)
 {
   BOOST_REQUIRE(m_keyChain.createIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY));
 }
@@ -39,7 +39,7 @@ CommandInterestSignerFixture::CommandInterestSignerFixture()
 Interest
 CommandInterestSignerFixture::makeCommandInterest(const Name& name, const Name& identity)
 {
-  return m_commandInterestSigner.makeCommandInterest(name, ndn::security::signingByIdentity(identity));
+  return m_signer.makeCommandInterest(name, ndn::security::signingByIdentity(identity));
 }
 
 Interest
