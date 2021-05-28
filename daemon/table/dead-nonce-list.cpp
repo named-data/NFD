@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,16 +32,16 @@ namespace nfd {
 
 NFD_LOG_INIT(DeadNonceList);
 
-const time::nanoseconds DeadNonceList::DEFAULT_LIFETIME = 6_s;
-const time::nanoseconds DeadNonceList::MIN_LIFETIME = 1_ms;
-const size_t DeadNonceList::INITIAL_CAPACITY = 1 << 7;
-const size_t DeadNonceList::MIN_CAPACITY = 1 << 3;
-const size_t DeadNonceList::MAX_CAPACITY = 1 << 24;
-const DeadNonceList::Entry DeadNonceList::MARK = 0;
-const size_t DeadNonceList::EXPECTED_MARK_COUNT = 5;
-const double DeadNonceList::CAPACITY_UP = 1.2;
-const double DeadNonceList::CAPACITY_DOWN = 0.9;
-const size_t DeadNonceList::EVICT_LIMIT = 1 << 6;
+const time::nanoseconds DeadNonceList::DEFAULT_LIFETIME;
+const time::nanoseconds DeadNonceList::MIN_LIFETIME;
+const size_t DeadNonceList::INITIAL_CAPACITY;
+const size_t DeadNonceList::MIN_CAPACITY;
+const size_t DeadNonceList::MAX_CAPACITY;
+const DeadNonceList::Entry DeadNonceList::MARK;
+const size_t DeadNonceList::EXPECTED_MARK_COUNT;
+const double DeadNonceList::CAPACITY_UP;
+const double DeadNonceList::CAPACITY_DOWN;
+const size_t DeadNonceList::EVICT_LIMIT;
 
 DeadNonceList::DeadNonceList(time::nanoseconds lifetime)
   : m_lifetime(lifetime)
@@ -61,12 +61,6 @@ DeadNonceList::DeadNonceList(time::nanoseconds lifetime)
 
   m_markEvent = getScheduler().schedule(m_markInterval, [this] { mark(); });
   m_adjustCapacityEvent = getScheduler().schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
-}
-
-DeadNonceList::~DeadNonceList()
-{
-  m_markEvent.cancel();
-  m_adjustCapacityEvent.cancel();
 
   BOOST_ASSERT_MSG(DEFAULT_LIFETIME >= MIN_LIFETIME, "DEFAULT_LIFETIME is too small");
   static_assert(INITIAL_CAPACITY >= MIN_CAPACITY, "INITIAL_CAPACITY is too small");
@@ -83,7 +77,7 @@ DeadNonceList::~DeadNonceList()
 size_t
 DeadNonceList::size() const
 {
-  return m_queue.size() - this->countMarks();
+  return m_queue.size() - countMarks();
 }
 
 bool
@@ -99,13 +93,13 @@ DeadNonceList::add(const Name& name, Interest::Nonce nonce)
   Entry entry = DeadNonceList::makeEntry(name, nonce);
   m_queue.push_back(entry);
 
-  this->evictEntries();
+  evictEntries();
 }
 
 DeadNonceList::Entry
 DeadNonceList::makeEntry(const Name& name, Interest::Nonce nonce)
 {
-  Block nameWire = name.wireEncode();
+  const auto& nameWire = name.wireEncode();
   uint32_t n;
   std::memcpy(&n, nonce.data(), sizeof(n));
   return CityHash64WithSeed(reinterpret_cast<const char*>(nameWire.wire()), nameWire.size(), n);
@@ -121,7 +115,7 @@ void
 DeadNonceList::mark()
 {
   m_queue.push_back(MARK);
-  size_t nMarks = this->countMarks();
+  size_t nMarks = countMarks();
   m_actualMarkCounts.insert(nMarks);
 
   NFD_LOG_TRACE("mark nMarks=" << nMarks);
@@ -145,7 +139,7 @@ DeadNonceList::adjustCapacity()
   }
 
   m_actualMarkCounts.clear();
-  this->evictEntries();
+  evictEntries();
 
   m_adjustCapacityEvent = getScheduler().schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
 }
@@ -153,11 +147,11 @@ DeadNonceList::adjustCapacity()
 void
 DeadNonceList::evictEntries()
 {
-  ssize_t nOverCapacity = m_queue.size() - m_capacity;
-  if (nOverCapacity <= 0) // not over capacity
+  if (m_queue.size() <= m_capacity) // not over capacity
     return;
 
-  for (ssize_t nEvict = std::min<ssize_t>(nOverCapacity, EVICT_LIMIT); nEvict > 0; --nEvict) {
+  auto nEvict = std::min(m_queue.size() - m_capacity, EVICT_LIMIT);
+  for (; nEvict > 0; --nEvict) {
     m_queue.erase(m_queue.begin());
   }
   BOOST_ASSERT(m_queue.size() >= m_capacity);

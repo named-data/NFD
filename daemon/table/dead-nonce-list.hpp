@@ -34,56 +34,58 @@
 
 namespace nfd {
 
-/** \brief Represents the Dead Nonce List
+/**
+ * \brief Represents the Dead Nonce List.
  *
- *  The Dead Nonce List is a global table that supplements PIT for loop detection.
- *  When a Nonce is erased (dead) from PIT entry, the Nonce and the Interest Name is added to
- *  Dead Nonce List, and kept for a duration in which most loops are expected to have occured.
+ * The Dead Nonce List is a global table that supplements the PIT for loop detection.
+ * When a Nonce is erased (dead) from a PIT entry, the Nonce and the Interest Name are added to
+ * the Dead Nonce List and kept for a duration in which most loops are expected to have occured.
  *
- *  To reduce memory usage, the Interest Name and Nonce are stored as a 64-bit hash.
- *  There could be false positives (non-looping Interest could be considered looping),
- *  but the probability is small, and the error is recoverable when consumer retransmits
- *  with a different Nonce.
+ * To reduce memory usage, the Interest Name and Nonce are stored as a 64-bit hash.
+ * The probability of false positives (a non-looping Interest considered as looping) is small
+ * and a collision is recoverable when the consumer retransmits with a different Nonce.
  *
- *  To reduce memory usage, entries do not have associated timestamps. Instead,
- *  lifetime of entries is controlled by dynamically adjusting the capacity of the container.
- *  At fixed intervals, the MARK, an entry with a special value, is inserted into the container.
- *  The number of MARKs stored in the container reflects the lifetime of entries,
- *  because MARKs are inserted at fixed intervals.
+ * To reduce memory usage, entries do not have associated timestamps. Instead, the lifetime
+ * of the entries is controlled by dynamically adjusting the capacity of the container.
+ * At fixed intervals, a MARK (an entry with a special value) is inserted into the container.
+ * The number of MARKs stored in the container reflects the lifetime of the entries,
+ * because MARKs are inserted at fixed intervals.
  */
 class DeadNonceList : noncopyable
 {
 public:
-  /** \brief Constructs the Dead Nonce List
-   *  \param lifetime duration of the expected lifetime of each nonce,
-   *         must be no less than MIN_LIFETIME.
-   *         This should be set to the duration in which most loops would have occured.
-   *         A loop cannot be detected if delay of the cycle is greater than lifetime.
-   *  \throw std::invalid_argument if lifetime is less than MIN_LIFETIME
+  /**
+   * \brief Constructs the Dead Nonce List
+   * \param lifetime expected lifetime of each nonce, must be no less than #MIN_LIFETIME.
+   *        This should be set to a duration over which most loops would have occured.
+   *        A loop cannot be detected if the total delay of the cycle is greater than lifetime.
+   * \throw std::invalid_argument if lifetime is less than #MIN_LIFETIME
    */
   explicit
   DeadNonceList(time::nanoseconds lifetime = DEFAULT_LIFETIME);
 
-  ~DeadNonceList();
-
-  /** \brief Determines if name+nonce exists
-   *  \return true if name+nonce exists, false otherwise
+  /**
+   * \brief Determines if name+nonce is in the list
+   * \return true if name+nonce exists, false otherwise
    */
   bool
   has(const Name& name, Interest::Nonce nonce) const;
 
-  /** \brief Records name+nonce
+  /**
+   * \brief Adds name+nonce to the list
    */
   void
   add(const Name& name, Interest::Nonce nonce);
 
-  /** \return number of stored Nonces
-   *  \note The return value does not contain non-Nonce entries in the index, if any.
+  /**
+   * \brief Returns the number of stored nonces
+   * \note The return value does not contain non-Nonce entries in the index, if any.
    */
   size_t
   size() const;
 
-  /** \return expected lifetime
+  /**
+   * \brief Returns the expected nonce lifetime
    */
   time::nanoseconds
   getLifetime() const
@@ -91,26 +93,12 @@ public:
     return m_lifetime;
   }
 
-private: // Entry and Index
-  typedef uint64_t Entry;
+private:
+  using Entry = uint64_t;
 
   static Entry
   makeEntry(const Name& name, Interest::Nonce nonce);
 
-  typedef boost::multi_index_container<
-    Entry,
-    boost::multi_index::indexed_by<
-      boost::multi_index::sequenced<>,
-      boost::multi_index::hashed_non_unique<
-        boost::multi_index::identity<Entry>
-      >
-    >
-  > Index;
-
-  typedef Index::nth_index<0>::type Queue;
-  typedef Index::nth_index<1>::type Hashtable;
-
-private: // actual lifetime estimation and capacity control
   /** \brief Return the number of MARKs in the index
    */
   size_t
@@ -136,17 +124,28 @@ private: // actual lifetime estimation and capacity control
 
 public:
   /// Default entry lifetime
-  static const time::nanoseconds DEFAULT_LIFETIME;
+  static constexpr time::nanoseconds DEFAULT_LIFETIME = 6_s;
   /// Minimum entry lifetime
-  static const time::nanoseconds MIN_LIFETIME;
+  static constexpr time::nanoseconds MIN_LIFETIME = 1_ms;
 
 private:
-  time::nanoseconds m_lifetime;
+  const time::nanoseconds m_lifetime;
+
+  using Index = boost::multi_index_container<
+    Entry,
+    boost::multi_index::indexed_by<
+      boost::multi_index::sequenced<>,
+      boost::multi_index::hashed_non_unique<boost::multi_index::identity<Entry>>
+    >
+  >;
+  using Queue = Index::nth_index<0>::type;
+  using Hashtable = Index::nth_index<1>::type;
+
   Index m_index;
   Queue& m_queue;
   Hashtable& m_ht;
 
-NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity control
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   // ---- current capacity and hard limits
 
@@ -159,33 +158,32 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity c
    */
   size_t m_capacity;
 
-  static const size_t INITIAL_CAPACITY;
+  static constexpr size_t INITIAL_CAPACITY = 1 << 7;
 
   /** \brief Minimum capacity
    *
    *  This is to ensure correct algorithm operations.
    */
-  static const size_t MIN_CAPACITY;
+  static constexpr size_t MIN_CAPACITY = 1 << 3;
 
   /** \brief Maximum capacity
    *
    *  This is to limit memory usage.
    */
-  static const size_t MAX_CAPACITY;
+  static constexpr size_t MAX_CAPACITY = 1 << 24;
 
   // ---- actual entry lifetime estimation
 
   /** \brief The MARK for capacity
    *
    *  The MARK doesn't have a distinct type.
-   *  Entry is a hash. The hash function should have non-invertible property,
-   *  so it's unlikely for a usual Entry to have collision with the MARK.
+   *  Entry is a hash. The hash function should be non-invertible, so that
+   *  it's infeasible to craft a "normal" Entry that collides with the MARK.
    */
-  static const Entry MARK;
+  static constexpr Entry MARK = 0;
 
-  /** \brief Expected number of MARKs in the index
-   */
-  static const size_t EXPECTED_MARK_COUNT;
+  /// Expected number of MARKs in the index
+  static constexpr size_t EXPECTED_MARK_COUNT = 5;
 
   /** \brief Number of MARKs in the index after each MARK insertion
    *
@@ -194,18 +192,18 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity c
    */
   std::multiset<size_t> m_actualMarkCounts;
 
-  time::nanoseconds m_markInterval;
-  scheduler::EventId m_markEvent;
+  const time::nanoseconds m_markInterval;
+  scheduler::ScopedEventId m_markEvent;
 
   // ---- capacity adjustments
 
-  static const double CAPACITY_UP;
-  static const double CAPACITY_DOWN;
-  time::nanoseconds m_adjustCapacityInterval;
-  scheduler::EventId m_adjustCapacityEvent;
+  static constexpr double CAPACITY_UP = 1.2;
+  static constexpr double CAPACITY_DOWN = 0.9;
+  const time::nanoseconds m_adjustCapacityInterval;
+  scheduler::ScopedEventId m_adjustCapacityEvent;
 
-  /// Maximum number of entries to evict at each operation if index is over capacity
-  static const size_t EVICT_LIMIT;
+  /// Maximum number of entries to evict at each operation if the index is over capacity
+  static constexpr size_t EVICT_LIMIT = 64;
 };
 
 } // namespace nfd

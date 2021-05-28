@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,15 +55,14 @@ BOOST_AUTO_TEST_CASE(Basic)
 
 BOOST_AUTO_TEST_CASE(MinLifetime)
 {
-  BOOST_CHECK_THROW(DeadNonceList dnl(time::milliseconds::zero()), std::invalid_argument);
+  BOOST_CHECK_THROW(DeadNonceList(0_ms), std::invalid_argument);
 }
 
-/// A Fixture that periodically inserts Nonces
+/// A fixture that periodically inserts Nonces
 class PeriodicalInsertionFixture : public GlobalIoTimeFixture
 {
 protected:
   PeriodicalInsertionFixture()
-    : dnl(LIFETIME)
   {
     addNonce();
   }
@@ -81,31 +80,30 @@ protected:
       dnl.add(name, ++lastNonce);
     }
 
-    if (addNonceInterval > 0_ns) {
-      addNonceEvent = getScheduler().schedule(addNonceInterval, [this] { addNonce(); });
-    }
+    addNonceEvent = getScheduler().schedule(ADD_INTERVAL, [this] { addNonce(); });
   }
 
   /** \brief advance clocks by LIFETIME*t
    */
   void
-  advanceClocksByLifetime(float t)
+  advanceClocksByLifetime(double t)
   {
-    advanceClocks(timeUnit, time::duration_cast<time::nanoseconds>(LIFETIME * t));
+    advanceClocks(ADD_INTERVAL / 2, time::duration_cast<time::nanoseconds>(LIFETIME * t));
   }
 
 protected:
-  static const time::nanoseconds LIFETIME;
-  DeadNonceList dnl;
+  static constexpr time::nanoseconds LIFETIME = 200_ms;
+  static constexpr time::nanoseconds ADD_INTERVAL = LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT;
+
+  DeadNonceList dnl{LIFETIME};
   Name name = "/N";
   uint32_t lastNonce = 0;
   size_t addNonceBatch = 0;
-  const time::nanoseconds addNonceInterval = LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT;
-  const time::nanoseconds timeUnit = addNonceInterval / 2;
   scheduler::ScopedEventId addNonceEvent;
 };
 
-const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = 200_ms;
+const time::nanoseconds PeriodicalInsertionFixture::LIFETIME;
+const time::nanoseconds PeriodicalInsertionFixture::ADD_INTERVAL;
 
 BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
 {
