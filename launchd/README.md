@@ -66,7 +66,7 @@ and file-based private key storage needs to be used:
       mkdir -p /usr/local/var/lib/ndn/nfd/.ndn; \
       export HOME=/usr/local/var/lib/ndn/nfd; \
       echo tpm=tpm-file > /usr/local/var/lib/ndn/nfd/.ndn/client.conf; \
-      ndnsec-keygen /localhost/daemons/nfd | ndnsec-install-cert -; \
+      ndnsec key-gen /localhost/daemons/nfd | ndnsec cert-install -; \
     '
 
 ### Configuring NFD's security
@@ -111,7 +111,7 @@ be exported into `localhost_daemons_nfd.ndncert` file:
     sudo -s -- '\
       mkdir -p /usr/local/etc/ndn/certs || true; \
       export HOME=/usr/local/var/lib/ndn/nfd; \
-      ndnsec-dump-certificate -i /localhost/daemons/nfd > \
+      ndnsec cert-dump -i /localhost/daemons/nfd > \
         /usr/local/etc/ndn/certs/localhost_daemons_nfd.ndncert; \
       '
 

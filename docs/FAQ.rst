@@ -107,11 +107,12 @@ If you do not already have an NDN certificate, you can generate one using the fo
 
 ::
 
-    ndnsec-keygen /`whoami` | ndnsec-install-cert -
+    ndnsec key-gen /$(whoami) | ndnsec cert-install -
 
-Note that the argument to ndnsec-key will be the identity name of the new key (in this case,
-``/your-username``). Identity names are hierarchical NDN names and may have multiple components
-(e.g.  ``/ndn/ucla/edu/alice``). You may create additional keys and identities as you see fit.
+Note that the argument to ``ndnsec key-gen`` will be the identity name of the new key (in this
+case, ``/your-username``). Identity names are hierarchical NDN names and may have multiple
+components (e.g.  ``/ndn/ucla/edu/alice``). You may create additional keys and identities as
+needed.
 
 **Exporting the NDN certificate to a file**:
 
@@ -121,5 +122,5 @@ If you have, please substitute the appropriate path in place of ``/usr/local/etc
 ::
 
     sudo mkdir -p /usr/local/etc/ndn/keys
-    ndnsec-cert-dump -i /`whoami` > default.ndncert
+    ndnsec cert-dump -i /$(whoami) > default.ndncert
     sudo mv default.ndncert /usr/local/etc/ndn/keys/default.ndncert

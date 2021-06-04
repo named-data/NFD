@@ -281,17 +281,17 @@ authorizations
     ;
     ; 1. Generate and install a self-signed identity certificate:
     ;
-    ;      ndnsec-keygen /`whoami` | ndnsec-install-cert -
+    ;      ndnsec key-gen /$(whoami) | ndnsec cert-install -
     ;
-    ; Note that the argument to ndnsec-key will be the identity name of the
-    ; new key (in this case, /your-username). Identities are hierarchical NDN
-    ; names and may have multiple components (e.g. `/ndn/ucla/edu/alice`).
-    ; You may create additional keys and identities as you see fit.
+    ; Note that the argument to 'ndnsec key-gen' will be the identity name of
+    ; the new key (in this case, /your-username). Identities are hierarchical
+    ; NDN names and may have multiple components (e.g., /ndn/ucla/edu/alice).
+    ; You may create additional keys and identities as needed.
     ;
-    ; 2. Dump the NDN certificate to a file:
+    ; 2. Export the certificate to a file:
     ;
-    ;      sudo mkdir -p @SYSCONFDIR@/ndn/keys/
-    ;      ndnsec-cert-dump -i /`whoami` >  default.ndncert
+    ;      ndnsec cert-dump -i /$(whoami) > default.ndncert
+    ;      sudo mkdir -p @SYSCONFDIR@/ndn/keys
     ;      sudo mv default.ndncert @SYSCONFDIR@/ndn/keys/default.ndncert
     ;
     ; The "certfile" field below specifies the default key directory for

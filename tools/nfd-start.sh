@@ -37,9 +37,9 @@ then
   exit 1
 fi
 
-if ! ndnsec-get-default &>/dev/null
+if ! ndnsec get-default &>/dev/null
 then
-  ndnsec-keygen /localhost/operator | ndnsec-install-cert -
+  ndnsec key-gen /localhost/operator | ndnsec cert-install -
 fi
 
 if ! sudo true
