@@ -53,6 +53,49 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(dnl.has(nameB, nonce1), false);
 }
 
+BOOST_AUTO_TEST_CASE(NoDuplicates)
+{
+  Name nameA("ndn:/A");
+  const Interest::Nonce nonce1(0x53b4eaa8);
+  const Interest::Nonce nonce2(0x63b4eaa8);
+  const Interest::Nonce nonce3(0x73b4eaa8);
+  const Interest::Nonce nonce4(0x83b4eaa8);
+  const Interest::Nonce nonce5(0x93b4eaa8);
+
+  DeadNonceList dnl;
+  BOOST_CHECK_EQUAL(dnl.size(), 0);
+
+  dnl.m_capacity = 4;
+  dnl.add(nameA, nonce1);
+  dnl.add(nameA, nonce2);
+  dnl.add(nameA, nonce3);
+  dnl.add(nameA, nonce4);
+  BOOST_CHECK_EQUAL(dnl.size(), 4);
+
+  dnl.add(nameA, nonce1);
+  BOOST_CHECK_EQUAL(dnl.size(), 4);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce1), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce2), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce3), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce4), true);
+
+  dnl.add(nameA, nonce5);
+  BOOST_CHECK_EQUAL(dnl.size(), 4);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce1), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce2), false);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce3), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce4), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce5), true);
+
+  dnl.add(nameA, nonce5);
+  BOOST_CHECK_EQUAL(dnl.size(), 4);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce1), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce2), false);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce3), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce4), true);
+  BOOST_CHECK_EQUAL(dnl.has(nameA, nonce5), true);
+}
+
 BOOST_AUTO_TEST_CASE(MinLifetime)
 {
   BOOST_CHECK_THROW(DeadNonceList(0_ms), std::invalid_argument);

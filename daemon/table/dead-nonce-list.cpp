@@ -91,9 +91,15 @@ void
 DeadNonceList::add(const Name& name, Interest::Nonce nonce)
 {
   Entry entry = DeadNonceList::makeEntry(name, nonce);
-  m_queue.push_back(entry);
 
-  evictEntries();
+  const auto iter = m_ht.find(entry);
+  if (iter != m_ht.end()) {
+    m_queue.relocate(m_queue.end(), m_index.project<0>(iter));
+  }
+  else {
+    m_queue.push_back(entry);
+    evictEntries();
+  }
 }
 
 DeadNonceList::Entry
