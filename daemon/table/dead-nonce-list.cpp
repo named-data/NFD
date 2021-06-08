@@ -45,8 +45,6 @@ const size_t DeadNonceList::EVICT_LIMIT;
 
 DeadNonceList::DeadNonceList(time::nanoseconds lifetime)
   : m_lifetime(lifetime)
-  , m_queue(m_index.get<0>())
-  , m_ht(m_index.get<1>())
   , m_capacity(INITIAL_CAPACITY)
   , m_markInterval(m_lifetime / EXPECTED_MARK_COUNT)
   , m_adjustCapacityInterval(m_lifetime)
@@ -91,10 +89,13 @@ void
 DeadNonceList::add(const Name& name, Interest::Nonce nonce)
 {
   Entry entry = DeadNonceList::makeEntry(name, nonce);
-
   const auto iter = m_ht.find(entry);
-  if (iter != m_ht.end()) {
-    m_queue.relocate(m_queue.end(), m_index.project<0>(iter));
+  bool isDuplicate = iter != m_ht.end();
+
+  NFD_LOG_TRACE("adding " << (isDuplicate ? "duplicate " : "") << name << " nonce=" << nonce);
+
+  if (isDuplicate) {
+    m_queue.relocate(m_queue.end(), m_index.project<Queue>(iter));
   }
   else {
     m_queue.push_back(entry);
@@ -132,16 +133,19 @@ DeadNonceList::mark()
 void
 DeadNonceList::adjustCapacity()
 {
+  auto oldCapacity = m_capacity;
   auto equalRange = m_actualMarkCounts.equal_range(EXPECTED_MARK_COUNT);
   if (equalRange.second == m_actualMarkCounts.begin()) {
     // all counts are above expected count, adjust down
     m_capacity = std::max(MIN_CAPACITY, static_cast<size_t>(m_capacity * CAPACITY_DOWN));
-    NFD_LOG_TRACE("adjustCapacity DOWN capacity=" << m_capacity);
   }
   else if (equalRange.first == m_actualMarkCounts.end()) {
     // all counts are below expected count, adjust up
     m_capacity = std::min(MAX_CAPACITY, static_cast<size_t>(m_capacity * CAPACITY_UP));
-    NFD_LOG_TRACE("adjustCapacity UP capacity=" << m_capacity);
+  }
+
+  if (m_capacity != oldCapacity) {
+    NFD_LOG_TRACE("adjusting capacity " << oldCapacity << " -> " << m_capacity);
   }
 
   m_actualMarkCounts.clear();
@@ -157,10 +161,12 @@ DeadNonceList::evictEntries()
     return;
 
   auto nEvict = std::min(m_queue.size() - m_capacity, EVICT_LIMIT);
-  for (; nEvict > 0; --nEvict) {
-    m_queue.erase(m_queue.begin());
+  for (size_t i = 0; i < nEvict; i++) {
+    m_queue.pop_front();
   }
   BOOST_ASSERT(m_queue.size() >= m_capacity);
+
+  NFD_LOG_TRACE("evicted=" << nEvict << " size=" << size() << " capacity=" << m_capacity);
 }
 
 } // namespace nfd

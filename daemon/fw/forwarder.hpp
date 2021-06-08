@@ -224,7 +224,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   NFD_VIRTUAL_WITH_TESTS void
   onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);
 
-NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+private:
   /** \brief set a new expiry timer (now + \p duration) on a PIT entry
    */
   void
@@ -234,8 +234,8 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
    *  \param upstream if null, insert Nonces from all out-records;
    *                  if not null, insert Nonce only on the out-records of this face
    */
-  NFD_VIRTUAL_WITH_TESTS void
-  insertDeadNonceList(pit::Entry& pitEntry, Face* upstream);
+  void
+  insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream);
 
 private:
   ForwarderCounters m_counters;

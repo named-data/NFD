@@ -566,13 +566,13 @@ Forwarder::setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::millisec
 }
 
 void
-Forwarder::insertDeadNonceList(pit::Entry& pitEntry, Face* upstream)
+Forwarder::insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream)
 {
   // need Dead Nonce List insert?
   bool needDnl = true;
   if (pitEntry.isSatisfied) {
     BOOST_ASSERT(pitEntry.dataFreshnessPeriod >= 0_ms);
-    needDnl = static_cast<bool>(pitEntry.getInterest().getMustBeFresh()) &&
+    needDnl = pitEntry.getInterest().getMustBeFresh() &&
               pitEntry.dataFreshnessPeriod < m_deadNonceList.getLifetime();
   }
 

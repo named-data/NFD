@@ -131,19 +131,20 @@ public:
 private:
   const time::nanoseconds m_lifetime;
 
-  using Index = boost::multi_index_container<
+  struct Queue {};
+  struct Hashtable {};
+  using Container = boost::multi_index_container<
     Entry,
     boost::multi_index::indexed_by<
-      boost::multi_index::sequenced<>,
-      boost::multi_index::hashed_non_unique<boost::multi_index::identity<Entry>>
+      boost::multi_index::sequenced<boost::multi_index::tag<Queue>>,
+      boost::multi_index::hashed_non_unique<boost::multi_index::tag<Hashtable>,
+                                            boost::multi_index::identity<Entry>>
     >
   >;
-  using Queue = Index::nth_index<0>::type;
-  using Hashtable = Index::nth_index<1>::type;
 
-  Index m_index;
-  Queue& m_queue;
-  Hashtable& m_ht;
+  Container m_index;
+  Container::index<Queue>::type& m_queue = m_index.get<Queue>();
+  Container::index<Hashtable>::type& m_ht = m_index.get<Hashtable>();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
