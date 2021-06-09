@@ -1,0 +1,14 @@
+        "face" create "udp://192.0.2.1"
+
+route add / udp://192.0.2.2
+
+route    \
+         add \
+         "/test2/foo bar" \
+         'udp://192.0.2.3'
+
+# route test
+    ##### route test
+        # route test
+
+cs info

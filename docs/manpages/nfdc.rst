@@ -7,6 +7,7 @@ SYNOPSIS
 | nfdc help [COMMAND]
 | nfdc [-h|--help]
 | nfdc -V|--version
+| nfdc -f|--batch BATCH-FILE
 
 DESCRIPTION
 -----------
@@ -30,6 +31,19 @@ OPTIONS
 
 ``-V`` or ``--version``
     Show version information and exit.
+
+``-f BATCH-FILE`` or ``--batch BATCH-FILE``
+   Process arguments specified in the ``BATCH-FILE`` as if they would have appeared
+   in the command line (but without ``nfdc``).  When necessary, arguments should be
+   escaped using backslash ``\``, single ``'``, or double quotes ``"``.  If any of
+   the command fails, the processing will be stopped at that command with error
+   code 2. Empty lines and lines that start with ``#`` character will be ignored.
+   Note that the batch file does not support empty string arguments
+   (``""`` or ``''``), even if they are supported by the regular command line ``nfdc``.
+
+   When running a sequence of commands in rapid succession from a script, this
+   option ensures that the commands are properly timestamped and can therefore
+   be accepted by NFD.
 
 EXAMPLES
 --------

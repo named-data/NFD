@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ const int LIST_COMMAND_NAME_COLUMN_WIDTH = 16;
 void
 helpList(std::ostream& os, const CommandParser& parser, ParseMode mode, const std::string& noun)
 {
-  os << "nfdc [-h|--help] [-V|--version] <command> [<args>]\n\n";
+  os << "nfdc [-h|--help] [-V|--version] [-f|--batch <batch-file>] [<command> [<args>]]\n\n";
   if (noun.empty()) {
     os << "All subcommands:\n";
   }
