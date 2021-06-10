@@ -126,7 +126,7 @@ public:
   /// Default entry lifetime
   static constexpr time::nanoseconds DEFAULT_LIFETIME = 6_s;
   /// Minimum entry lifetime
-  static constexpr time::nanoseconds MIN_LIFETIME = 1_ms;
+  static constexpr time::nanoseconds MIN_LIFETIME = 50_ms;
 
 private:
   const time::nanoseconds m_lifetime;
@@ -159,13 +159,13 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    */
   size_t m_capacity;
 
-  static constexpr size_t INITIAL_CAPACITY = 1 << 7;
+  static constexpr size_t INITIAL_CAPACITY = 1 << 14;
 
   /** \brief Minimum capacity
    *
    *  This is to ensure correct algorithm operations.
    */
-  static constexpr size_t MIN_CAPACITY = 1 << 3;
+  static constexpr size_t MIN_CAPACITY = 1 << 10;
 
   /** \brief Maximum capacity
    *
