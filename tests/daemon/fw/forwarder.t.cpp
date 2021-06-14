@@ -265,6 +265,38 @@ BOOST_AUTO_TEST_CASE(HopLimit)
   BOOST_CHECK_EQUAL(faceRemote->sentInterests.size(), 2);
 }
 
+BOOST_AUTO_TEST_CASE(AddDefaultHopLimit)
+{
+  auto face = addFace();
+  auto faceEndpoint = FaceEndpoint(*face, 0);
+  Pit& pit = forwarder.getPit();
+  auto i1 = makeInterest("/A");
+  auto pitA = pit.insert(*i1).first;
+
+  // By default, no HopLimit should be added
+  auto i2 = makeInterest("/A");
+  BOOST_TEST(!i2->getHopLimit().has_value());
+  forwarder.onContentStoreMiss(*i2, faceEndpoint, pitA);
+  BOOST_TEST(!i2->getHopLimit().has_value());
+
+  // Change config value to 10
+  forwarder.m_config.defaultHopLimit = 10;
+
+  // HopLimit should be set to 10 now
+  auto i3 = makeInterest("/A");
+  BOOST_TEST(!i3->getHopLimit().has_value());
+  forwarder.onContentStoreMiss(*i3, faceEndpoint, pitA);
+  BOOST_REQUIRE(i3->getHopLimit().has_value());
+  BOOST_TEST(*i3->getHopLimit() == 10);
+
+  // An existing HopLimit should be preserved
+  auto i4 = makeInterest("/A");
+  i4->setHopLimit(50);
+  forwarder.onContentStoreMiss(*i4, faceEndpoint, pitA);
+  BOOST_REQUIRE(i4->getHopLimit().has_value());
+  BOOST_TEST(*i4->getHopLimit() == 50);
+}
+
 BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 {
   auto face1 = addFace("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
@@ -767,6 +799,84 @@ BOOST_AUTO_TEST_CASE(NewNextHop)
   BOOST_TEST(strategy.afterNewNextHopCalls[0] == "/A");
   BOOST_TEST(strategy.afterNewNextHopCalls[1] == "/A");
 }
+
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
+
+BOOST_AUTO_TEST_CASE(DefaultHopLimit)
+{
+  ConfigFile cf;
+  forwarder.setConfigFile(cf);
+
+  std::string config = R"CONFIG(
+    forwarder
+    {
+      default_hop_limit 10
+    }
+  )CONFIG";
+
+  // The default value is 0
+  BOOST_TEST(forwarder.m_config.defaultHopLimit == 0);
+
+  // Dry run parsing should not change the default config
+  cf.parse(config, true, "dummy-config");
+  BOOST_TEST(forwarder.m_config.defaultHopLimit == 0);
+
+  // Check if the actual parsing works
+  cf.parse(config, false, "dummy-config");
+  BOOST_TEST(forwarder.m_config.defaultHopLimit == 10);
+
+  // After removing default_hop_limit from the config file,
+  // the default value of zero should be restored
+  config = R"CONFIG(
+    forwarder
+    {
+    }
+  )CONFIG";
+
+  cf.parse(config, false, "dummy-config");
+  BOOST_TEST(forwarder.m_config.defaultHopLimit == 0);
+}
+
+BOOST_AUTO_TEST_CASE(BadDefaultHopLimit)
+{
+  ConfigFile cf;
+  forwarder.setConfigFile(cf);
+
+  // not a number
+  std::string config = R"CONFIG(
+    forwarder
+    {
+      default_hop_limit hello
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(cf.parse(config, true, "dummy-config"), ConfigFile::Error);
+  BOOST_CHECK_THROW(cf.parse(config, false, "dummy-config"), ConfigFile::Error);
+
+  // negative number
+  config = R"CONFIG(
+    forwarder
+    {
+      default_hop_limit -1
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(cf.parse(config, true, "dummy-config"), ConfigFile::Error);
+  BOOST_CHECK_THROW(cf.parse(config, false, "dummy-config"), ConfigFile::Error);
+
+  // out of range
+  config = R"CONFIG(
+    forwarder
+    {
+      default_hop_limit 256
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(cf.parse(config, true, "dummy-config"), ConfigFile::Error);
+  BOOST_CHECK_THROW(cf.parse(config, false, "dummy-config"), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarder
 BOOST_AUTO_TEST_SUITE_END() // Fw

@@ -29,6 +29,7 @@
 #include "face-table.hpp"
 #include "forwarder-counters.hpp"
 #include "unsolicited-data-policy.hpp"
+#include "common/config-file.hpp"
 #include "face/face-endpoint.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
@@ -125,6 +126,11 @@ public:
     return m_networkRegionTable;
   }
 
+  /** \brief register handler for forwarder section of NFD configuration file
+   */
+  void
+  setConfigFile(ConfigFile& configFile);
+
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    *  \param interest the incoming Interest, must be well-formed and created with make_shared
@@ -212,6 +218,22 @@ private:
    */
   void
   insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream);
+
+  void
+  processConfig(const ConfigSection& configSection, bool isDryRun,
+                const std::string& filename);
+
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /**
+   * \brief Configuration options from "forwarder" section
+   */
+  struct Config
+  {
+    /// Initial value of HopLimit that should be added to Interests that don't have one.
+    /// A value of zero disables the feature.
+    uint8_t defaultHopLimit = 0;
+  };
+  Config m_config;
 
 private:
   ForwarderCounters m_counters;

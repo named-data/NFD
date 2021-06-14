@@ -40,6 +40,8 @@ namespace nfd {
 
 NFD_LOG_INIT(Forwarder);
 
+const std::string CFGSEC_FORWARDER = "forwarder";
+
 static Name
 getDefaultStrategyName()
 {
@@ -185,6 +187,11 @@ Forwarder::onContentStoreMiss(const Interest& interest, const FaceEndpoint& ingr
 {
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
   ++m_counters.nCsMisses;
+
+  // attach HopLimit if configured and not present in Interest
+  if (m_config.defaultHopLimit > 0 && !interest.getHopLimit()) {
+    const_cast<Interest&>(interest).setHopLimit(m_config.defaultHopLimit);
+  }
 
   // insert in-record
   pitEntry->insertOrUpdateInRecord(ingress.face, interest);
@@ -594,6 +601,32 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream)
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }
+  }
+}
+
+void
+Forwarder::setConfigFile(ConfigFile& configFile)
+{
+  configFile.addSectionHandler(CFGSEC_FORWARDER, bind(&Forwarder::processConfig, this, _1, _2, _3));
+}
+
+void
+Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, const std::string&)
+{
+  Config config;
+
+  for (const auto& pair : configSection) {
+    const std::string& key = pair.first;
+    if (key == "default_hop_limit") {
+      config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFGSEC_FORWARDER);
+    }
+    else {
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFGSEC_FORWARDER + "." + key));
+    }
+  }
+
+  if (!isDryRun) {
+    m_config = config;
   }
 }
 
