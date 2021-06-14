@@ -107,7 +107,7 @@ AsfStrategy::processParams(const PartialName& parsed)
 }
 
 void
-AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
+AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                   const shared_ptr<pit::Entry>& pitEntry)
 {
   const auto& fibEntry = this->lookupFib(*pitEntry);
@@ -165,7 +165,7 @@ AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
     NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress << " retry-to=" << outFace.getId());
     // sendInterest() is used here instead of forwardInterest() because the measurements info
     // were already attached to this face in the previous forwarding
-    auto* outRecord = sendInterest(pitEntry, outFace, interest);
+    auto* outRecord = sendInterest(interest, outFace, pitEntry);
     if (outRecord && suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression.incrementIntervalForOutRecord(*outRecord);
     }
@@ -173,8 +173,8 @@ AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
 }
 
 void
-AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                                   const FaceEndpoint& ingress, const Data& data)
+AsfStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress,
+                                   const shared_ptr<pit::Entry>& pitEntry)
 {
   NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
   if (namespaceInfo == nullptr) {
@@ -207,7 +207,7 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
-AsfStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
+AsfStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                               const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG(nack.getInterest() << " nack from=" << ingress << " reason=" << nack.getReason());
@@ -221,7 +221,7 @@ AsfStrategy::forwardInterest(const Interest& interest, Face& outFace, const fib:
   const auto& interestName = interest.getName();
   auto faceId = outFace.getId();
 
-  auto* outRecord = sendInterest(pitEntry, outFace, interest);
+  auto* outRecord = sendInterest(interest, outFace, pitEntry);
 
   FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interestName, faceId);
 
@@ -361,7 +361,7 @@ AsfStrategy::sendNoRouteNack(Face& face, const shared_ptr<pit::Entry>& pitEntry)
 {
   lp::NackHeader nackHeader;
   nackHeader.setReason(lp::NackReason::NO_ROUTE);
-  this->sendNack(pitEntry, face, nackHeader);
+  this->sendNack(nackHeader, face, pitEntry);
   this->rejectPendingInterest(pitEntry);
 }
 

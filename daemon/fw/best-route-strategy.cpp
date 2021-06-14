@@ -62,7 +62,7 @@ BestRouteStrategy::getStrategyName()
 }
 
 void
-BestRouteStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
+BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppressionResult suppression = m_retxSuppression.decidePerPitEntry(*pitEntry);
@@ -86,15 +86,14 @@ BestRouteStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
 
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
-      this->sendNack(pitEntry, ingress.face, nackHeader);
-
+      this->sendNack(nackHeader, ingress.face, pitEntry);
       this->rejectPendingInterest(pitEntry);
       return;
     }
 
     Face& outFace = it->getFace();
     NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << outFace.getId());
-    this->sendInterest(pitEntry, outFace, interest);
+    this->sendInterest(interest, outFace, pitEntry);
     return;
   }
 
@@ -106,7 +105,7 @@ BestRouteStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
 
   if (it != nexthops.end()) {
     Face& outFace = it->getFace();
-    this->sendInterest(pitEntry, outFace, interest);
+    this->sendInterest(interest, outFace, pitEntry);
     NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-unused-to=" << outFace.getId());
     return;
   }
@@ -118,16 +117,16 @@ BestRouteStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
   }
   else {
     Face& outFace = it->getFace();
-    this->sendInterest(pitEntry, outFace, interest);
+    this->sendInterest(interest, outFace, pitEntry);
     NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << outFace.getId());
   }
 }
 
 void
-BestRouteStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
+BestRouteStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                                     const shared_ptr<pit::Entry>& pitEntry)
 {
-  this->processNack(ingress.face, nack, pitEntry);
+  this->processNack(nack, ingress.face, pitEntry);
 }
 
 } // namespace fw

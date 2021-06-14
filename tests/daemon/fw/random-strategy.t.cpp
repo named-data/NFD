@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,22 +78,22 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   // Send 1000 Interests
   for (int i = 0; i < 1000; ++i) {
-    shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA" + std::to_string(i));
-    shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+    auto interest = makeInterest("ndn:/BzgFBchqA" + std::to_string(i));
+    auto pitEntry = pit.insert(*interest).first;
 
     pitEntry->insertOrUpdateInRecord(*face1, *interest);
-    strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
+    strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
   }
 
-  // Map outFaceId -> SentInterests.
-  std::unordered_map<int, int> faceInterestMap;
+  // Map outFaceId -> SentInterests
+  std::unordered_map<FaceId, int> faceInterestMap;
   for (const auto& i : strategy.sendInterestHistory) {
     faceInterestMap[i.outFaceId]++;
   }
 
   // Check that all faces received at least 10 Interest
   for (const auto& x : faceInterestMap) {
-    BOOST_CHECK_GE(x.second, 10);
+    BOOST_TEST(x.second >= 10);
   }
 }
 

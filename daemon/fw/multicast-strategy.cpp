@@ -62,7 +62,7 @@ MulticastStrategy::getStrategyName()
 }
 
 void
-MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
+MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
@@ -83,7 +83,7 @@ MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Inter
     }
 
     NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
-    auto* sentOutRecord = this->sendInterest(pitEntry, outFace, interest);
+    auto* sentOutRecord = this->sendInterest(interest, outFace, pitEntry);
     if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression.incrementIntervalForOutRecord(*sentOutRecord);
     }
@@ -105,7 +105,7 @@ MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
     if (isNextHopEligible(inFace, interest, nextHop, pitEntry)) {
 
       NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " pitEntry-to=" << nextHopFaceId);
-      this->sendInterest(pitEntry, nextHop.getFace(), interest);
+      this->sendInterest(interest, nextHop.getFace(), pitEntry);
 
       break; // just one eligible incoming face record is enough
     }

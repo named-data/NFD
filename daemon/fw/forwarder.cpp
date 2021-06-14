@@ -57,19 +57,19 @@ Forwarder::Forwarder(FaceTable& faceTable)
   m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
       [this, &face] (const Interest& interest, const EndpointId& endpointId) {
-        this->startProcessInterest(FaceEndpoint(face, endpointId), interest);
+        this->onIncomingInterest(interest, FaceEndpoint(const_cast<Face&>(face), endpointId));
       });
     face.afterReceiveData.connect(
       [this, &face] (const Data& data, const EndpointId& endpointId) {
-        this->startProcessData(FaceEndpoint(face, endpointId), data);
+        this->onIncomingData(data, FaceEndpoint(const_cast<Face&>(face), endpointId));
       });
     face.afterReceiveNack.connect(
       [this, &face] (const lp::Nack& nack, const EndpointId& endpointId) {
-        this->startProcessNack(FaceEndpoint(face, endpointId), nack);
+        this->onIncomingNack(nack, FaceEndpoint(const_cast<Face&>(face), endpointId));
       });
     face.onDroppedInterest.connect(
       [this, &face] (const Interest& interest) {
-        this->onDroppedInterest(face, interest);
+        this->onDroppedInterest(interest, const_cast<Face&>(face));
       });
   });
 
@@ -87,7 +87,7 @@ Forwarder::Forwarder(FaceTable& faceTable)
 Forwarder::~Forwarder() = default;
 
 void
-Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& interest)
+Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingress)
 {
   // receive Interest
   NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName());
@@ -96,13 +96,13 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
 
   // drop if HopLimit zero, decrement otherwise (if present)
   if (interest.getHopLimit()) {
-    if (*interest.getHopLimit() < 1) {
+    if (*interest.getHopLimit() == 0) {
       NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
                     << " hop-limit=0");
-      ++const_cast<PacketCounter&>(ingress.face.getCounters().nInHopLimitZero);
+      ++ingress.face.getCounters().nInHopLimitZero;
+      // drop
       return;
     }
-
     const_cast<Interest&>(interest).setHopLimit(*interest.getHopLimit() - 1);
   }
 
@@ -112,7 +112,7 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingInterest in=" << ingress
                   << " interest=" << interest.getName() << " violates /localhost");
-    // (drop)
+    // drop
     return;
   }
 
@@ -120,7 +120,7 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), interest.getNonce());
   if (hasDuplicateNonceInDnl) {
     // goto Interest loop pipeline
-    this->onInterestLoop(ingress, interest);
+    this->onInterestLoop(interest, ingress);
     return;
   }
 
@@ -144,23 +144,23 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
   }
   if (hasDuplicateNonceInPit) {
     // goto Interest loop pipeline
-    this->onInterestLoop(ingress, interest);
+    this->onInterestLoop(interest, ingress);
     return;
   }
 
   // is pending?
   if (!pitEntry->hasInRecords()) {
     m_cs.find(interest,
-              bind(&Forwarder::onContentStoreHit, this, ingress, pitEntry, _1, _2),
-              bind(&Forwarder::onContentStoreMiss, this, ingress, pitEntry, _1));
+              [=] (const Interest& i, const Data& d) { onContentStoreHit(i, ingress, pitEntry, d); },
+              [=] (const Interest& i) { onContentStoreMiss(i, ingress, pitEntry); });
   }
   else {
-    this->onContentStoreMiss(ingress, pitEntry, interest);
+    this->onContentStoreMiss(interest, ingress, pitEntry);
   }
 }
 
 void
-Forwarder::onInterestLoop(const FaceEndpoint& ingress, const Interest& interest)
+Forwarder::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
 {
   // if multi-access or ad hoc face, drop
   if (ingress.face.getLinkType() != ndn::nfd::LINK_TYPE_POINT_TO_POINT) {
@@ -180,8 +180,8 @@ Forwarder::onInterestLoop(const FaceEndpoint& ingress, const Interest& interest)
 }
 
 void
-Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
-                              const shared_ptr<pit::Entry>& pitEntry, const Interest& interest)
+Forwarder::onContentStoreMiss(const Interest& interest, const FaceEndpoint& ingress,
+                              const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
   ++m_counters.nCsMisses;
@@ -207,19 +207,19 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
                     << " nexthop-faceid=" << nextHopFace->getId());
       // go to outgoing Interest pipeline
       // scope control is unnecessary, because privileged app explicitly wants to forward
-      this->onOutgoingInterest(pitEntry, *nextHopFace, interest);
+      this->onOutgoingInterest(interest, *nextHopFace, pitEntry);
     }
     return;
   }
 
   // dispatch to strategy: after receive Interest
   m_strategyChoice.findEffectiveStrategy(*pitEntry)
-    .afterReceiveInterest(FaceEndpoint(ingress.face, 0), interest, pitEntry);
+    .afterReceiveInterest(interest, FaceEndpoint(ingress.face, 0), pitEntry);
 }
 
 void
-Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry,
-                             const Interest& interest, const Data& data)
+Forwarder::onContentStoreHit(const Interest& interest, const FaceEndpoint& ingress,
+                             const shared_ptr<pit::Entry>& pitEntry, const Data& data)
 {
   NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName());
   ++m_counters.nCsHits;
@@ -235,18 +235,18 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
   this->setExpiryTimer(pitEntry, 0_ms);
 
   // dispatch to strategy: after Content Store hit
-  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterContentStoreHit(pitEntry, ingress, data);
+  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterContentStoreHit(data, ingress, pitEntry);
 }
 
 pit::OutRecord*
-Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
-                              Face& egress, const Interest& interest)
+Forwarder::onOutgoingInterest(const Interest& interest, Face& egress,
+                              const shared_ptr<pit::Entry>& pitEntry)
 {
   // drop if HopLimit == 0 but sending on non-local face
   if (interest.getHopLimit() == 0 && egress.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL) {
     NFD_LOG_DEBUG("onOutgoingInterest out=" << egress.getId() << " interest=" << pitEntry->getName()
                   << " non-local hop-limit=0");
-    ++const_cast<PacketCounter&>(egress.getCounters().nOutHopLimitZero);
+    ++egress.getCounters().nOutHopLimitZero;
     return nullptr;
   }
 
@@ -285,7 +285,7 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
 }
 
 void
-Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
+Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
 {
   // receive Data
   NFD_LOG_DEBUG("onIncomingData in=" << ingress << " data=" << data.getName());
@@ -297,7 +297,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
                               scope_prefix::LOCALHOST.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingData in=" << ingress << " data=" << data.getName() << " violates /localhost");
-    // (drop)
+    // drop
     return;
   }
 
@@ -305,7 +305,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
   pit::DataMatchResult pitMatches = m_pit.findAllDataMatches(data);
   if (pitMatches.size() == 0) {
     // goto Data unsolicited pipeline
-    this->onDataUnsolicited(ingress, data);
+    this->onDataUnsolicited(data, ingress);
     return;
   }
 
@@ -322,7 +322,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     this->setExpiryTimer(pitEntry, 0_ms);
 
     // trigger strategy: after receive Data
-    m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveData(pitEntry, ingress, data);
+    m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveData(data, ingress, pitEntry);
 
     // mark PIT satisfied
     pitEntry->isSatisfied = true;
@@ -354,7 +354,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
       this->setExpiryTimer(pitEntry, 0_ms);
 
       // invoke PIT satisfy callback
-      m_strategyChoice.findEffectiveStrategy(*pitEntry).beforeSatisfyInterest(pitEntry, ingress, data);
+      m_strategyChoice.findEffectiveStrategy(*pitEntry).beforeSatisfyInterest(data, ingress, pitEntry);
 
       // mark PIT satisfied
       pitEntry->isSatisfied = true;
@@ -381,7 +381,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
 }
 
 void
-Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
+Forwarder::onDataUnsolicited(const Data& data, const FaceEndpoint& ingress)
 {
   // accept to cache?
   auto decision = m_unsolicitedDataPolicy->decide(ingress.face, data);
@@ -410,7 +410,7 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onOutgoingData out=" << egress.getId() << " data=" << data.getName()
                   << " violates /localhost");
-    // (drop)
+    // drop
     return false;
   }
 
@@ -424,7 +424,7 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
 }
 
 void
-Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
+Forwarder::onIncomingNack(const lp::Nack& nack, const FaceEndpoint& ingress)
 {
   // receive Nack
   nack.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
@@ -476,12 +476,12 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
   }
 
   // trigger strategy: after receive NACK
-  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveNack(ingress, nack, pitEntry);
+  m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveNack(nack, ingress, pitEntry);
 }
 
 bool
-Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
-                          Face& egress, const lp::NackHeader& nack)
+Forwarder::onOutgoingNack(const lp::NackHeader& nack, Face& egress,
+                          const shared_ptr<pit::Entry>& pitEntry)
 {
   if (egress.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingNack out=(invalid)"
@@ -527,9 +527,9 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
-Forwarder::onDroppedInterest(const Face& egress, const Interest& interest)
+Forwarder::onDroppedInterest(const Interest& interest, Face& egress)
 {
-  m_strategyChoice.findEffectiveStrategy(interest.getName()).onDroppedInterest(egress, interest);
+  m_strategyChoice.findEffectiveStrategy(interest.getName()).onDroppedInterest(interest, egress);
 }
 
 void

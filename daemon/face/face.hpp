@@ -171,7 +171,16 @@ public: // properties
   getExpirationTime() const;
 
   const FaceCounters&
-  getCounters() const;
+  getCounters() const
+  {
+    return m_counters;
+  }
+
+  FaceCounters&
+  getCounters()
+  {
+    return m_counters;
+  }
 
   /**
    * \brief Get channel on which face was created (unicast) or the associated channel (multicast)
@@ -299,12 +308,6 @@ inline time::steady_clock::TimePoint
 Face::getExpirationTime() const
 {
   return m_transport->getExpirationTime();
-}
-
-inline const FaceCounters&
-Face::getCounters() const
-{
-  return m_counters;
 }
 
 std::ostream&

@@ -103,8 +103,8 @@ public:
 
 protected:
   pit::OutRecord*
-  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
-               const Interest& interest) override
+  sendInterest(const Interest& interest, Face& egress,
+               const shared_ptr<pit::Entry>& pitEntry) override
   {
     sendInterestHistory.push_back({pitEntry->getInterest(), egress.getId(), interest});
     auto it = pitEntry->insertOrUpdateOutRecord(egress, interest);
@@ -121,8 +121,8 @@ protected:
   }
 
   bool
-  sendNack(const shared_ptr<pit::Entry>& pitEntry, Face& egress,
-           const lp::NackHeader& header) override
+  sendNack(const lp::NackHeader& header, Face& egress,
+           const shared_ptr<pit::Entry>& pitEntry) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), egress.getId(), header});
     pitEntry->deleteInRecord(egress);

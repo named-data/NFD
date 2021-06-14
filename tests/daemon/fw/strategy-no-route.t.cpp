@@ -165,7 +165,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest,
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest);
 
   auto f = [&] {
-    this->strategy.afterReceiveInterest(FaceEndpoint(*this->face1, 0), *interest, pitEntry);
+    this->strategy.afterReceiveInterest(*interest, FaceEndpoint(*this->face1, 0), pitEntry);
   };
   BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo, 2));
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,23 +44,18 @@ DummyStrategy::getStrategyName(uint64_t version)
 
 DummyStrategy::DummyStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
-  , afterReceiveInterest_count(0)
-  , beforeSatisfyInterest_count(0)
-  , afterContentStoreHit_count(0)
-  , afterReceiveData_count(0)
-  , afterReceiveNack_count(0)
 {
   this->setInstanceName(name);
 }
 
 void
-DummyStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
+DummyStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint&,
                                     const shared_ptr<pit::Entry>& pitEntry)
 {
   ++afterReceiveInterest_count;
 
   if (interestOutFace != nullptr) {
-    this->sendInterest(pitEntry, *interestOutFace, interest);
+    this->sendInterest(interest, *interestOutFace, pitEntry);
   }
   else {
     this->rejectPendingInterest(pitEntry);
@@ -68,39 +63,39 @@ DummyStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest&
 }
 
 void
-DummyStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                                     const FaceEndpoint& ingress, const Data& data)
-{
-  ++beforeSatisfyInterest_count;
-
-  Strategy::beforeSatisfyInterest(pitEntry, ingress, data);
-}
-
-void
-DummyStrategy::afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
-                                    const FaceEndpoint& ingress, const Data& data)
+DummyStrategy::afterContentStoreHit(const Data& data, const FaceEndpoint& ingress,
+                                    const shared_ptr<pit::Entry>& pitEntry)
 {
   ++afterContentStoreHit_count;
 
-  Strategy::afterContentStoreHit(pitEntry, ingress, data);
+  Strategy::afterContentStoreHit(data, ingress, pitEntry);
 }
 
 void
-DummyStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                                const FaceEndpoint& ingress, const Data& data)
+DummyStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress,
+                                     const shared_ptr<pit::Entry>& pitEntry)
+{
+  ++beforeSatisfyInterest_count;
+
+  Strategy::beforeSatisfyInterest(data, ingress, pitEntry);
+}
+
+void
+DummyStrategy::afterReceiveData(const Data& data, const FaceEndpoint& ingress,
+                                const shared_ptr<pit::Entry>& pitEntry)
 {
   ++afterReceiveData_count;
 
-  Strategy::afterReceiveData(pitEntry, ingress, data);
+  Strategy::afterReceiveData(data, ingress, pitEntry);
 }
 
 void
-DummyStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
+DummyStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                                 const shared_ptr<pit::Entry>& pitEntry)
 {
   ++afterReceiveNack_count;
 
-  Strategy::afterReceiveNack(ingress, nack, pitEntry);
+  Strategy::afterReceiveNack(nack, ingress, pitEntry);
 }
 
 void

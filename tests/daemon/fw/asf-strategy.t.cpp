@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(Retransmission) // Bug #4874
   auto& pit = topo.getForwarder(nodeB).getPit();
   auto pitEntry = pit.insert(*interest).first;
 
-  topo.getForwarder(nodeB).onOutgoingInterest(pitEntry, linkBC->getFace(nodeB), *interest);
+  topo.getForwarder(nodeB).onOutgoingInterest(*interest, linkBC->getFace(nodeB), pitEntry);
   this->advanceClocks(time::milliseconds(100));
 
   interest->refreshNonce();
