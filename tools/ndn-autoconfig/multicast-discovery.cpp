@@ -34,7 +34,6 @@ namespace tools {
 namespace autoconfig {
 
 using nfd::ControlParameters;
-using nfd::ControlResponse;
 
 const Name HUB_DISCOVERY_PREFIX("/localhop/ndn-autoconf/hub");
 const uint64_t HUB_DISCOVERY_ROUTE_COST(1);
@@ -55,9 +54,9 @@ MulticastDiscovery::doStart()
 
   m_controller.fetch<nfd::FaceQueryDataset>(
     filter,
-    bind(&MulticastDiscovery::registerHubDiscoveryPrefix, this, _1),
+    [this] (const auto& dataset) { registerHubDiscoveryPrefix(dataset); },
     [this] (uint32_t code, const std::string& reason) {
-      this->fail("Error " + to_string(code) + " when querying multi-access faces: " + reason);
+      fail("Error " + to_string(code) + " when querying multi-access faces: " + reason);
     });
 }
 
@@ -65,7 +64,7 @@ void
 MulticastDiscovery::registerHubDiscoveryPrefix(const std::vector<nfd::FaceStatus>& dataset)
 {
   if (dataset.empty()) {
-    this->fail("No multi-access faces available");
+    fail("No multi-access faces available");
     return;
   }
 
@@ -82,11 +81,11 @@ MulticastDiscovery::registerHubDiscoveryPrefix(const std::vector<nfd::FaceStatus
 
     m_controller.start<nfd::RibRegisterCommand>(
       parameters,
-      [this] (const ControlParameters&) {
+      [this] (const auto&) {
         ++m_nRegSuccess;
         afterReg();
       },
-      [this, faceStatus] (const ControlResponse& resp) {
+      [this, faceStatus] (const auto& resp) {
         std::cerr << "Error " << resp.getCode() << " when registering hub discovery prefix "
                   << "for face " << faceStatus.getFaceId() << " (" << faceStatus.getRemoteUri()
                   << "): " << resp.getText() << std::endl;
@@ -103,10 +102,10 @@ MulticastDiscovery::afterReg()
     return; // continue waiting
   }
   if (m_nRegSuccess > 0) {
-    this->setStrategy();
+    setStrategy();
   }
   else {
-    this->fail("Cannot register hub discovery prefix for any face");
+    fail("Cannot register hub discovery prefix for any face");
   }
 }
 
@@ -119,10 +118,9 @@ MulticastDiscovery::setStrategy()
 
   m_controller.start<nfd::StrategyChoiceSetCommand>(
     parameters,
-    bind(&MulticastDiscovery::requestHubData, this),
-    [this] (const ControlResponse& resp) {
-      this->fail("Error " + to_string(resp.getCode()) + " when setting multicast strategy: " +
-                 resp.getText());
+    [this] (const auto&) { requestHubData(); },
+    [this] (const auto& resp) {
+      fail("Error " + to_string(resp.getCode()) + " when setting multicast strategy: " + resp.getText());
     });
 }
 
@@ -141,17 +139,17 @@ MulticastDiscovery::requestHubData()
 
       auto i = content.find(tlv::nfd::Uri);
       if (i == content.elements_end()) {
-        this->fail("Malformed hub Data: missing Uri element");
+        fail("Malformed hub Data: missing Uri element");
         return;
       }
 
-      this->provideHubFaceUri(std::string(reinterpret_cast<const char*>(i->value()), i->value_size()));
+      provideHubFaceUri(std::string(reinterpret_cast<const char*>(i->value()), i->value_size()));
     },
     [this] (const Interest&, const lp::Nack& nack) {
-      this->fail("Nack-" + boost::lexical_cast<std::string>(nack.getReason()) + " when retrieving hub Data");
+      fail("Nack-" + boost::lexical_cast<std::string>(nack.getReason()) + " when retrieving hub Data");
     },
     [this] (const Interest&) {
-      this->fail("Timeout when retrieving hub Data");
+      fail("Timeout when retrieving hub Data");
     });
 }
 

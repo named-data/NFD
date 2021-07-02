@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,14 +47,17 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   , m_faceTable(faceSystem.getFaceTable())
 {
   // register handlers for ControlCommand
-  registerCommandHandler<ndn::nfd::FaceCreateCommand>("create", bind(&FaceManager::createFace, this, _4, _5));
-  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update", bind(&FaceManager::updateFace, this, _3, _4, _5));
-  registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy", bind(&FaceManager::destroyFace, this, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
+    std::bind(&FaceManager::createFace, this, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
+    std::bind(&FaceManager::updateFace, this, _3, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
+    std::bind(&FaceManager::destroyFace, this, _4, _5));
 
   // register handlers for StatusDataset
-  registerStatusDatasetHandler("list", bind(&FaceManager::listFaces, this, _3));
-  registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _3));
-  registerStatusDatasetHandler("query", bind(&FaceManager::queryFaces, this, _2, _3));
+  registerStatusDatasetHandler("list", std::bind(&FaceManager::listFaces, this, _3));
+  registerStatusDatasetHandler("channels", std::bind(&FaceManager::listChannels, this, _3));
+  registerStatusDatasetHandler("query", std::bind(&FaceManager::queryFaces, this, _2, _3));
 
   // register notification stream
   m_postNotification = registerNotificationStream("events");
@@ -359,13 +362,13 @@ copyFaceProperties(const Face& face, T& to)
 }
 
 static ndn::nfd::FaceStatus
-makeFaceStatus(const Face& face, const time::steady_clock::TimePoint& now)
+makeFaceStatus(const Face& face, const time::steady_clock::time_point& now)
 {
   ndn::nfd::FaceStatus status;
   copyFaceProperties(face, status);
 
   auto expirationTime = face.getExpirationTime();
-  if (expirationTime != time::steady_clock::TimePoint::max()) {
+  if (expirationTime != time::steady_clock::time_point::max()) {
     status.setExpirationPeriod(std::max(0_ms,
                                         time::duration_cast<time::milliseconds>(expirationTime - now)));
   }

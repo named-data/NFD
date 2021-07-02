@@ -97,10 +97,10 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // helpers
    * This is called after the signature has been validated.
    *
    * @param interest a request for ControlCommand
-   * @param accept callback of successful validation, takes the requester string as a argument
+   * @param accept callback of successful validation, takes the requester string as argument
    */
-  void
-  extractRequester(const Interest& interest, ndn::mgmt::AcceptContinuation accept);
+  static void
+  extractRequester(const Interest& interest, const ndn::mgmt::AcceptContinuation& accept);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
@@ -127,7 +127,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
                 const ControlCommandHandler& handler,
                 const Name& prefix, const Interest& interest,
                 const ndn::mgmt::ControlParameters& params,
-                ndn::mgmt::CommandContinuation done);
+                const ndn::mgmt::CommandContinuation& done);
 
   /**
    * @brief Generates the relative prefix for a handler by appending the verb name to the module name.
@@ -148,7 +148,7 @@ private:
 };
 
 template<typename Command>
-inline void
+void
 ManagerBase::registerCommandHandler(const std::string& verb,
                                     const ControlCommandHandler& handler)
 {
@@ -157,8 +157,8 @@ ManagerBase::registerCommandHandler(const std::string& verb,
   m_dispatcher.addControlCommand<ControlParameters>(
     makeRelPrefix(verb),
     makeAuthorization(verb),
-    bind(&ManagerBase::validateParameters, std::cref(*command), _1),
-    bind(&ManagerBase::handleCommand, command, handler, _1, _2, _3, _4));
+    [=] (const auto& params) { return validateParameters(*command, params); },
+    [=] (auto&&... args) { handleCommand(command, handler, std::forward<decltype(args)>(args)...); });
 }
 
 } // namespace nfd

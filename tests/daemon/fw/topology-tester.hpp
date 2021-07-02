@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -242,7 +242,7 @@ public:
 
 /** \brief captured packet timestamp tag
  */
-using TopologyPcapTimestamp = ndn::SimpleTag<time::steady_clock::TimePoint, 0>;
+using TopologyPcapTimestamp = ndn::SimpleTag<time::steady_clock::time_point, 0>;
 
 /** \brief builds a topology for forwarding tests
  */

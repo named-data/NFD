@@ -59,8 +59,6 @@
 #include <vector>
 
 #include <ndn-cxx/data.hpp>
-#include <ndn-cxx/delegation.hpp>
-#include <ndn-cxx/delegation-list.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
@@ -68,6 +66,7 @@
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/exception.hpp>
+#include <ndn-cxx/util/optional.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/signal.hpp>
 #include <ndn-cxx/util/time.hpp>
@@ -94,8 +93,6 @@ using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
 
-using std::bind;
-
 using namespace std::string_literals;
 
 using ndn::optional;
@@ -104,8 +101,6 @@ using ndn::to_string;
 
 using ndn::Block;
 using ndn::Data;
-using ndn::Delegation;
-using ndn::DelegationList;
 using ndn::FaceUri;
 using ndn::Interest;
 using ndn::Name;

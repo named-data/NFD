@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -426,8 +426,8 @@ Rib::sendBatchFromQueue()
   // Until task #1698, each RibUpdateBatch contains exactly one RIB update
   BOOST_ASSERT(batch.size() == 1);
 
-  auto fibSuccessCb = bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
-  auto fibFailureCb = bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
+  auto fibSuccessCb = std::bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
+  auto fibFailureCb = std::bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
 
   m_fibUpdater->computeAndSendFibUpdates(batch, fibSuccessCb, fibFailureCb);
 }

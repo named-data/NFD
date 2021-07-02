@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,11 +62,11 @@ protected:
     server.clear_error_channels(websocketpp::log::elevel::all);
 
     server.init_asio(&g_io);
-    server.set_open_handler(bind(&WebSocketTransportFixture::serverHandleOpen, this, _1));
-    server.set_close_handler(bind(&WebSocketTransportFixture::serverHandleClose, this));
-    server.set_message_handler(bind(&WebSocketTransportFixture::serverHandleMessage, this, _2));
-    server.set_pong_handler(bind(&WebSocketTransportFixture::serverHandlePong, this));
-    server.set_pong_timeout_handler(bind(&WebSocketTransportFixture::serverHandlePongTimeout, this));
+    server.set_open_handler(std::bind(&WebSocketTransportFixture::serverHandleOpen, this, _1));
+    server.set_close_handler(std::bind(&WebSocketTransportFixture::serverHandleClose, this));
+    server.set_message_handler(std::bind(&WebSocketTransportFixture::serverHandleMessage, this, _2));
+    server.set_pong_handler(std::bind(&WebSocketTransportFixture::serverHandlePong, this));
+    server.set_pong_timeout_handler(std::bind(&WebSocketTransportFixture::serverHandlePongTimeout, this));
     server.set_pong_timeout(pongTimeout.count());
 
     server.set_reuse_addr(true);
@@ -84,9 +84,9 @@ protected:
     client.clear_error_channels(websocketpp::log::elevel::all);
 
     client.init_asio(&g_io);
-    client.set_open_handler(bind(&WebSocketTransportFixture::clientHandleOpen, this, _1));
-    client.set_message_handler(bind(&WebSocketTransportFixture::clientHandleMessage, this, _2));
-    client.set_ping_handler(bind(&WebSocketTransportFixture::clientHandlePing, this));
+    client.set_open_handler(std::bind(&WebSocketTransportFixture::clientHandleOpen, this, _1));
+    client.set_message_handler(std::bind(&WebSocketTransportFixture::clientHandleMessage, this, _2));
+    client.set_ping_handler(std::bind(&WebSocketTransportFixture::clientHandlePing, this));
 
     websocketpp::lib::error_code ec;
     auto con = client.get_connection(uri, ec);

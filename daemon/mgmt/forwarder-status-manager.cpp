@@ -35,7 +35,7 @@ ForwarderStatusManager::ForwarderStatusManager(Forwarder& forwarder, Dispatcher&
   , m_startTimestamp(time::system_clock::now())
 {
   m_dispatcher.addStatusDataset("status/general", ndn::mgmt::makeAcceptAllAuthorization(),
-                                bind(&ForwarderStatusManager::listGeneralStatus, this, _1, _2, _3));
+                                std::bind(&ForwarderStatusManager::listGeneralStatus, this, _1, _2, _3));
 }
 
 ndn::nfd::ForwarderStatus

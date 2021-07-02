@@ -291,13 +291,13 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
     return fibEntry;
   }
 
-  const DelegationList& fh = interest.getForwardingHint();
+  const auto& fh = interest.getForwardingHint();
   // Forwarding hint should have been stripped by incoming Interest pipeline when reaching producer region
   BOOST_ASSERT(!m_forwarder.getNetworkRegionTable().isInProducerRegion(fh));
 
   const fib::Entry* fibEntry = nullptr;
-  for (const Delegation& del : fh) {
-    fibEntry = &fib.findLongestPrefixMatch(del.name);
+  for (const auto& delegation : fh) {
+    fibEntry = &fib.findLongestPrefixMatch(delegation.name);
     if (fibEntry->hasNextHops()) {
       if (fibEntry->getPrefix().size() == 0) {
         // in consumer region, return the default route
@@ -305,7 +305,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
       }
       else {
         // in default-free zone, use the first delegation that finds a FIB entry
-        NFD_LOG_TRACE("lookupFib delegation=" << del.name << " found=" << fibEntry->getPrefix());
+        NFD_LOG_TRACE("lookupFib delegation=" << delegation.name << " found=" << fibEntry->getPrefix());
       }
       return *fibEntry;
     }

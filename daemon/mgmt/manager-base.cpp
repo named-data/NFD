@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,7 +59,8 @@ ManagerBase::registerNotificationStream(const std::string& verb)
 }
 
 void
-ManagerBase::extractRequester(const Interest& interest, ndn::mgmt::AcceptContinuation accept)
+ManagerBase::extractRequester(const Interest& interest,
+                              const ndn::mgmt::AcceptContinuation& accept)
 {
   const Name& interestName = interest.getName();
 
@@ -103,7 +104,7 @@ ManagerBase::handleCommand(shared_ptr<ControlCommand> command,
                            const ControlCommandHandler& handler,
                            const Name& prefix, const Interest& interest,
                            const ndn::mgmt::ControlParameters& params,
-                           ndn::mgmt::CommandContinuation done)
+                           const ndn::mgmt::CommandContinuation& done)
 {
   BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 #include "status-report.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
+#include <ndn-cxx/util/any.hpp>
 
 #include <boost/logic/tribool.hpp>
 

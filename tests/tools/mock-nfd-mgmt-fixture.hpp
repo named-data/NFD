@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ class MockNfdMgmtFixture : public IoFixture, public KeyChainFixture
 protected:
   MockNfdMgmtFixture()
     : face(m_io, m_keyChain,
-           {true, false, bind(&MockNfdMgmtFixture::processEventsOverride, this, _1)})
+           {true, false, std::bind(&MockNfdMgmtFixture::processEventsOverride, this, _1)})
   {
     face.onSendInterest.connect([this] (const Interest& interest) {
       if (processInterest) {

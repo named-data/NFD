@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   // more often than DEFAULT_MIN_RETX_INTERVAL
   scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.sendInterestHistory.size();
-  time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
+  auto timeSentLast = time::steady_clock::now();
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
     pitEntry->insertOrUpdateInRecord(*face4, *interest);

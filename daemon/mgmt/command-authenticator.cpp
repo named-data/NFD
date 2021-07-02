@@ -107,8 +107,9 @@ CommandAuthenticator::CommandAuthenticator() = default;
 void
 CommandAuthenticator::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler("authorizations",
-    bind(&CommandAuthenticator::processConfig, this, _1, _2, _3));
+  configFile.addSectionHandler("authorizations", [this] (auto&&... args) {
+    processConfig(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

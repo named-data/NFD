@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -90,7 +90,7 @@ public:
   isBlacklisted(const boost::asio::ip::address& address) const
   {
     return std::any_of(m_blackList.begin(), m_blackList.end(),
-                       bind(&Network::doesContain, _1, address));
+                       std::bind(&Network::doesContain, _1, address));
   }
 
   /**
@@ -100,7 +100,7 @@ public:
   isWhitelisted(const boost::asio::ip::address& address) const
   {
     return std::any_of(m_whiteList.begin(), m_whiteList.end(),
-                       bind(&Network::doesContain, _1, address));
+                       std::bind(&Network::doesContain, _1, address));
   }
 
   void
@@ -114,8 +114,8 @@ public:
           .setOrigin(nfd::ROUTE_ORIGIN_AUTOREG)
           .setCost(m_cost)
           .setExpirationPeriod(time::milliseconds::max()),
-        bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, prefix),
-        bind(&AutoregServer::onRegisterCommandFailure, this, faceId, prefix, _1));
+        std::bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, prefix),
+        std::bind(&AutoregServer::onRegisterCommandFailure, this, faceId, prefix, _1));
     }
   }
 
@@ -154,12 +154,6 @@ public:
     }
   }
 
-  void
-  signalHandler()
-  {
-    m_face.shutdown();
-  }
-
   static void
   usage(std::ostream& os,
         const boost::program_options::options_description& desc,
@@ -194,11 +188,11 @@ public:
       std::cout << "  " << network << std::endl;
     }
 
-    m_faceMonitor.onNotification.connect(bind(&AutoregServer::onNotification, this, _1));
+    m_faceMonitor.onNotification.connect(std::bind(&AutoregServer::onNotification, this, _1));
     m_faceMonitor.start();
 
     boost::asio::signal_set signalSet(m_face.getIoService(), SIGINT, SIGTERM);
-    signalSet.async_wait(bind(&AutoregServer::signalHandler, this));
+    signalSet.async_wait([this] (auto&&...) { m_face.shutdown(); });
 
     m_face.processEvents();
   }
@@ -207,13 +201,13 @@ public:
   startFetchingFaceStatusDataset()
   {
     m_controller.fetch<nfd::FaceDataset>(
-      [this] (const std::vector<nfd::FaceStatus>& faces) {
+      [this] (const auto& faces) {
         for (const auto& faceStatus : faces) {
           registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
                                    faceStatus.getFacePersistency());
         }
       },
-      [] (uint32_t code, const std::string& reason) {});
+      [] (auto&&...) {});
   }
 
   int

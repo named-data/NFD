@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,11 +45,11 @@ FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
   , m_faceTable(faceTable)
 {
   registerCommandHandler<ndn::nfd::FibAddNextHopCommand>("add-nexthop",
-    bind(&FibManager::addNextHop, this, _2, _3, _4, _5));
+    std::bind(&FibManager::addNextHop, this, _2, _3, _4, _5));
   registerCommandHandler<ndn::nfd::FibRemoveNextHopCommand>("remove-nexthop",
-    bind(&FibManager::removeNextHop, this, _2, _3, _4, _5));
+    std::bind(&FibManager::removeNextHop, this, _2, _3, _4, _5));
 
-  registerStatusDatasetHandler("list", bind(&FibManager::listEntries, this, _1, _2, _3));
+  registerStatusDatasetHandler("list", std::bind(&FibManager::listEntries, this, _1, _2, _3));
 }
 
 void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -73,7 +73,7 @@ formatDuration(time::nanoseconds d);
  *  Definition of this format: https://www.w3.org/TR/xmlschema11-2/#dateTime
  */
 std::string
-formatTimestamp(time::system_clock::TimePoint t);
+formatTimestamp(time::system_clock::time_point t);
 
 } // namespace xml
 
@@ -262,7 +262,7 @@ formatDuration(time::nanoseconds d, bool isLong = false)
 }
 
 std::string
-formatTimestamp(time::system_clock::TimePoint t);
+formatTimestamp(time::system_clock::time_point t);
 
 } // namespace text
 

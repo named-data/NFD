@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,21 +31,21 @@ namespace rib {
 
 const uint64_t PA_ROUTE_COST = 2048; ///< cost of route created by prefix announcement
 
-static time::steady_clock::TimePoint
+static time::steady_clock::time_point
 computeExpiration(const ndn::PrefixAnnouncement& ann)
 {
-  time::steady_clock::Duration validityEnd = time::steady_clock::Duration::max();
+  auto validityEnd = time::steady_clock::duration::max();
   if (ann.getValidityPeriod()) {
     auto now = time::system_clock::now();
     if (!ann.getValidityPeriod()->isValid(now)) {
-      validityEnd = time::steady_clock::Duration::zero();
+      validityEnd = time::steady_clock::duration::zero();
     }
     else {
       validityEnd = ann.getValidityPeriod()->getPeriod().second - now;
     }
   }
   return time::steady_clock::now() +
-    std::min(validityEnd, time::duration_cast<time::steady_clock::Duration>(ann.getExpiration()));
+    std::min(validityEnd, time::duration_cast<time::steady_clock::duration>(ann.getExpiration()));
 }
 
 Route::Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId)

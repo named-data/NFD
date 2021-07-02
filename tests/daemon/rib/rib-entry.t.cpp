@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -87,7 +87,7 @@ makeSimpleRoute(uint64_t faceId)
 }
 
 static Route
-makeSimpleRoute(uint64_t faceId, time::steady_clock::Duration expiration)
+makeSimpleRoute(uint64_t faceId, time::nanoseconds expiration)
 {
   Route route = makeSimpleRoute(faceId);
   route.expires = time::steady_clock::now() + expiration;

@@ -40,7 +40,7 @@ namespace nfd {
 
 NFD_LOG_INIT(Forwarder);
 
-const std::string CFGSEC_FORWARDER = "forwarder";
+const std::string CFG_FORWARDER = "forwarder";
 
 static Name
 getDefaultStrategyName()
@@ -607,7 +607,9 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream)
 void
 Forwarder::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler(CFGSEC_FORWARDER, bind(&Forwarder::processConfig, this, _1, _2, _3));
+  configFile.addSectionHandler(CFG_FORWARDER, [this] (auto&&... args) {
+    processConfig(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void
@@ -618,10 +620,10 @@ Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, cons
   for (const auto& pair : configSection) {
     const std::string& key = pair.first;
     if (key == "default_hop_limit") {
-      config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFGSEC_FORWARDER);
+      config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFG_FORWARDER);
     }
     else {
-      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFGSEC_FORWARDER + "." + key));
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_FORWARDER + "." + key));
     }
   }
 

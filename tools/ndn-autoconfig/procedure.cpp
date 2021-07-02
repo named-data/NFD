@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,16 +52,16 @@ void
 Procedure::initialize(const Options& options)
 {
   BOOST_ASSERT(m_stages.empty());
-  this->makeStages(options);
+  makeStages(options);
   BOOST_ASSERT(!m_stages.empty());
 
   for (size_t i = 0; i < m_stages.size(); ++i) {
-    m_stages[i]->onSuccess.connect(bind(&Procedure::connect, this, _1));
+    m_stages[i]->onSuccess.connect([this] (const auto& uri) { connect(uri); });
     if (i + 1 < m_stages.size()) {
-      m_stages[i]->onFailure.connect([=] (const std::string&) { m_stages[i + 1]->start(); });
+      m_stages[i]->onFailure.connect([=] (const auto&) { m_stages[i + 1]->start(); });
     }
     else {
-      m_stages[i]->onFailure.connect([=] (const std::string&) { this->onComplete(false); });
+      m_stages[i]->onFailure.connect([=] (const auto&) { onComplete(false); });
     }
   }
 }

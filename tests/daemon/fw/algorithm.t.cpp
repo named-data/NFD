@@ -190,7 +190,7 @@ BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, GlobalIoTimeFixture)
   auto interest = makeInterest("ndn:/c1I7QCtc");
   pit::Entry entry(*interest);
 
-  time::steady_clock::TimePoint before = time::steady_clock::now();
+  auto before = time::steady_clock::now();
 
   entry.insertOrUpdateOutRecord(*face1, *interest);
   this->advanceClocks(1_s);

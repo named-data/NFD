@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "core/common.hpp"
 
+#include <ndn-cxx/delegation-list.hpp>
+
 namespace nfd {
 
 /** \brief stores a collection of producer region names
@@ -50,7 +52,7 @@ public:
    *  otherwise, the Interest should be forwarded according to the forwarding hint.
    */
   bool
-  isInProducerRegion(const DelegationList& forwardingHint) const;
+  isInProducerRegion(const ndn::DelegationList& forwardingHint) const;
 };
 
 } // namespace nfd

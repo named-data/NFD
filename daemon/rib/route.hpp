@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,7 +82,7 @@ public:
   ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
   uint64_t cost = 0;
   std::underlying_type_t<ndn::nfd::RouteFlags> flags = ndn::nfd::ROUTE_FLAGS_NONE;
-  optional<time::steady_clock::TimePoint> expires;
+  optional<time::steady_clock::time_point> expires;
 
   /** \brief The prefix announcement that caused the creation of this route.
    *
@@ -98,7 +98,7 @@ public:
    *  not yet valid or has expired. In this case, the exact value of this field does not matter.
    *  If this field is after the current time, it indicates when the prefix announcement expires.
    */
-  time::steady_clock::TimePoint annExpires;
+  time::steady_clock::time_point annExpires;
 
 private:
   scheduler::EventId m_expirationEvent;
@@ -111,18 +111,6 @@ inline bool
 operator!=(const Route& lhs, const Route& rhs)
 {
   return !(lhs == rhs);
-}
-
-inline bool
-compareFaceIdAndOrigin(const Route& lhs, const Route& rhs)
-{
-  return (lhs.faceId == rhs.faceId && lhs.origin == rhs.origin);
-}
-
-inline bool
-compareFaceId(const Route& route, const uint64_t faceId)
-{
-  return (route.faceId == faceId);
 }
 
 std::ostream&

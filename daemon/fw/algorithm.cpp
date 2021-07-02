@@ -84,7 +84,7 @@ findDuplicateNonce(const pit::Entry& pitEntry, Interest::Nonce nonce, const Face
 bool
 hasPendingOutRecords(const pit::Entry& pitEntry)
 {
-  time::steady_clock::TimePoint now = time::steady_clock::now();
+  auto now = time::steady_clock::now();
   return std::any_of(pitEntry.out_begin(), pitEntry.out_end(),
                       [&now] (const pit::OutRecord& outRecord) {
                         return outRecord.getExpiry() >= now &&
@@ -92,7 +92,7 @@ hasPendingOutRecords(const pit::Entry& pitEntry)
                       });
 }
 
-time::steady_clock::TimePoint
+time::steady_clock::time_point
 getLastOutgoing(const pit::Entry& pitEntry)
 {
   pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
@@ -111,7 +111,7 @@ findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& int
                                          const shared_ptr<pit::Entry>& pitEntry)
 {
   auto found = nexthops.end();
-  auto earliestRenewed = time::steady_clock::TimePoint::max();
+  auto earliestRenewed = time::steady_clock::time_point::max();
 
   for (auto it = nexthops.begin(); it != nexthops.end(); ++it) {
     if (!isNextHopEligible(inFace, interest, *it, pitEntry))
@@ -132,7 +132,7 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
                   const fib::NextHop& nexthop,
                   const shared_ptr<pit::Entry>& pitEntry,
                   bool wantUnused,
-                  time::steady_clock::TimePoint now)
+                  time::steady_clock::time_point now)
 {
   const Face& outFace = nexthop.getFace();
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -198,8 +198,10 @@ doesNetifMatchRule(const ndn::net::NetworkInterface& netif, const std::string& r
 bool
 NetworkInterfacePredicate::operator()(const ndn::net::NetworkInterface& netif) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesNetifMatchRule, std::cref(netif), _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesNetifMatchRule, std::cref(netif), _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(),
+                     [&netif] (const auto& rule) { return doesNetifMatchRule(netif, rule); }) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(),
+                      [&netif] (const auto& rule) { return doesNetifMatchRule(netif, rule); });
 }
 
 static bool
@@ -219,8 +221,10 @@ doesAddressMatchRule(const boost::asio::ip::address& address, const std::string&
 bool
 IpAddressPredicate::operator()(const boost::asio::ip::address& address) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesAddressMatchRule, std::cref(address), _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesAddressMatchRule, std::cref(address), _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(),
+                     [&address] (const auto& rule) { return doesAddressMatchRule(address, rule); }) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(),
+                      [&address] (const auto& rule) { return doesAddressMatchRule(address, rule); });
 }
 
 } // namespace face

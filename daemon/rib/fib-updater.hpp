@@ -149,7 +149,7 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   *   the FIB update process is considered a success.
   */
   void
-  onUpdateSuccess(const FibUpdate update,
+  onUpdateSuccess(const FibUpdate& update,
                   const FibUpdateSuccessCallback& onSuccess,
                   const FibUpdateFailureCallback& onFailure);
 
@@ -169,7 +169,7 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   *   Otherwise, a non-recoverable error has occurred and an exception is thrown.
   */
   void
-  onUpdateError(const FibUpdate update,
+  onUpdateError(const FibUpdate& update,
                 const FibUpdateSuccessCallback& onSuccess,
                 const FibUpdateFailureCallback& onFailure,
                 const ndn::nfd::ControlResponse& response, uint32_t nTimeouts);
@@ -183,7 +183,7 @@ private:
   *   Otherwise, the update is added to m_updatesForBatchNonFaceId.
   */
   void
-  addFibUpdate(const FibUpdate update);
+  addFibUpdate(const FibUpdate& update);
 
   /** \brief creates records of the passed routes added to the entry and creates FIB updates
   */

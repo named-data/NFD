@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ ForwarderGeneralModule::fetchStatus(Controller& controller,
     onFailure, options);
 }
 
-static time::system_clock::Duration
+static auto
 calculateUptime(const ForwarderStatus& status)
 {
   return status.getCurrentTimestamp() - status.getStartTimestamp();

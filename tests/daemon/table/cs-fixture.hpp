@@ -80,10 +80,10 @@ protected:
               std::memcpy(&found, content.value(), sizeof(found));
               check(found);
             },
-            bind([&] {
+            [&] (auto&&...) {
               hasResult = true;
               check(0);
-            }));
+            });
 
     // current Cs::find implementation is synchronous
     BOOST_CHECK(hasResult);

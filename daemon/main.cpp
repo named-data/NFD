@@ -82,15 +82,15 @@ public:
   NfdRunner(const std::string& configFile)
     : m_nfd(configFile, m_nfdKeyChain)
     , m_configFile(configFile)
-    , m_terminationSignalSet(getGlobalIoService())
-    , m_reloadSignalSet(getGlobalIoService())
+    , m_terminateSignals(getGlobalIoService(), SIGINT, SIGTERM)
+    , m_reloadSignals(getGlobalIoService(), SIGHUP)
   {
-    m_terminationSignalSet.add(SIGINT);
-    m_terminationSignalSet.add(SIGTERM);
-    m_terminationSignalSet.async_wait(bind(&NfdRunner::terminate, this, _1, _2));
-
-    m_reloadSignalSet.add(SIGHUP);
-    m_reloadSignalSet.async_wait(bind(&NfdRunner::reload, this, _1, _2));
+    m_terminateSignals.async_wait([this] (auto&&... args) {
+      terminate(std::forward<decltype(args)>(args)...);
+    });
+    m_reloadSignals.async_wait([this] (auto&&... args) {
+      reload(std::forward<decltype(args)>(args)...);
+    });
   }
 
   void
@@ -210,7 +210,9 @@ private:
     m_nfd.reloadConfigFile();
     systemdNotify("READY=1");
 
-    m_reloadSignalSet.async_wait(bind(&NfdRunner::reload, this, _1, _2));
+    m_reloadSignals.async_wait([this] (auto&&... args) {
+      reload(std::forward<decltype(args)>(args)...);
+    });
   }
 
 private:
@@ -218,8 +220,8 @@ private:
   Nfd                     m_nfd;
   std::string             m_configFile;
 
-  boost::asio::signal_set m_terminationSignalSet;
-  boost::asio::signal_set m_reloadSignalSet;
+  boost::asio::signal_set m_terminateSignals;
+  boost::asio::signal_set m_reloadSignals;
 };
 
 static void

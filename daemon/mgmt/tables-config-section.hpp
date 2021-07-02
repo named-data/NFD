@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,7 +83,7 @@ public:
 
 private:
   void
-  processConfig(const ConfigSection& section, bool isDryRun);
+  processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename);
 
   void
   processStrategyChoiceSection(const ConfigSection& section, bool isDryRun);
@@ -92,10 +92,7 @@ private:
   processNetworkRegionSection(const ConfigSection& section, bool isDryRun);
 
 private:
-  static const size_t DEFAULT_CS_MAX_PACKETS;
-
   Forwarder& m_forwarder;
-
   bool m_isConfigured;
 };
 

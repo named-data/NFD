@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -101,9 +101,9 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
   size_t nReceivedInterests = 0;
   size_t nReceivedData = 0;
   size_t nReceivedNacks = 0;
-  face1->afterReceiveInterest.connect(bind([&nReceivedInterests] { ++nReceivedInterests; }));
-  face1->afterReceiveData.connect(bind([&nReceivedData] { ++nReceivedData; }));
-  face1->afterReceiveNack.connect(bind([&nReceivedNacks] { ++nReceivedNacks; }));
+  face1->afterReceiveInterest.connect([&] (auto&&...) { ++nReceivedInterests; });
+  face1->afterReceiveData.connect([&] (auto&&...) { ++nReceivedData; });
+  face1->afterReceiveNack.connect([&] (auto&&...) { ++nReceivedNacks; });
 
   for (size_t i = 0; i < nInInterests; ++i) {
     face1->receiveInterest(*makeInterest("/JSQdqward4"), 0);

@@ -434,7 +434,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
     NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": no viable IP address");
     // keep an eye on new addresses
     m_netifConns[netif->getIndex()].addrAddConn =
-      netif->onAddressAdded.connect([=] (auto...) { this->applyMcastConfigToNetif(netif); });
+      netif->onAddressAdded.connect([=] (auto&&...) { this->applyMcastConfigToNetif(netif); });
     return {};
   }
 

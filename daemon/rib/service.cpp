@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ NFD_LOG_INIT(RibService);
 
 Service* Service::s_instance = nullptr;
 
-const std::string CFG_SECTION = "rib";
+const std::string CFG_RIB = "rib";
 const std::string CFG_LOCALHOST_SECURITY = "localhost_security";
 const std::string CFG_LOCALHOP_SECURITY = "localhop_security";
 const std::string CFG_PA_VALIDATION = "prefix_announcement_validation";
@@ -126,7 +126,9 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
   s_instance = this;
 
   ConfigFile config(ConfigFile::ignoreUnknownSection);
-  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
+  config.addSectionHandler(CFG_RIB, [this] (auto&&... args) {
+    processConfig(std::forward<decltype(args)>(args)...);
+  });
   configParse(config, true);
   configParse(config, false);
 
@@ -185,10 +187,10 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
       // AutoPrefixPropagator does not support config dry-run
     }
     else if (key == CFG_READVERTISE_NLSR) {
-      ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
+      ConfigFile::parseYesNo(item, CFG_RIB + "." + CFG_READVERTISE_NLSR);
     }
     else {
-      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_RIB + "." + key));
     }
   }
 
@@ -239,10 +241,10 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
       }
     }
     else if (key == CFG_READVERTISE_NLSR) {
-      wantReadvertiseNlsr = ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
+      wantReadvertiseNlsr = ConfigFile::parseYesNo(item, CFG_RIB + "." + CFG_READVERTISE_NLSR);
     }
     else {
-      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_RIB + "." + key));
     }
   }
 

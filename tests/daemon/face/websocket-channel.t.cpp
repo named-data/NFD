@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -175,13 +175,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetPingInterval, F, AddressFamilies)
 {
   auto address = getTestIp(F::value, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
-  const auto pingInterval = 1200_ms;
+  const auto pingInterval = 1500_ms;
   this->initialize(address, pingInterval);
 
-  BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing
-                                  pingInterval * 3), LimitedIo::EXCEED_OPS);
-  BOOST_CHECK_LE(measuredPingInterval, pingInterval * 1.1);
-  BOOST_CHECK_GE(measuredPingInterval, pingInterval * 0.9);
+  BOOST_CHECK_EQUAL(limitedIo.run(5, // clientHandlePing
+                                  5 * pingInterval + 1_s), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(measuredPingIntervals.size(), 4);
+
+  auto avgPingInterval = std::accumulate(measuredPingIntervals.begin(), measuredPingIntervals.end(), 0_ns);
+  avgPingInterval /= measuredPingIntervals.size();
+  BOOST_CHECK_LE(avgPingInterval, pingInterval * 1.1);
+  BOOST_CHECK_GE(avgPingInterval, pingInterval * 0.9);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(SetPongTimeOut, F, AddressFamilies)

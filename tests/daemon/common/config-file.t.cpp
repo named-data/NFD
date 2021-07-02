@@ -106,8 +106,8 @@ public:
   DummyAllSubscriber(ConfigFile& config, bool expectDryRun = false)
     : DummySubscriber(config, CONFIG_N_A_SECTIONS, CONFIG_N_B_SECTIONS, expectDryRun)
   {
-    config.addSectionHandler("a", bind(&DummySubscriber::onA, this, _1, _2));
-    config.addSectionHandler("b", bind(&DummySubscriber::onB, this, _1, _2));
+    config.addSectionHandler("a", std::bind(&DummySubscriber::onA, this, _1, _2));
+    config.addSectionHandler("b", std::bind(&DummySubscriber::onB, this, _1, _2));
   }
 };
 
@@ -121,10 +121,10 @@ public:
                       expectDryRun)
   {
     if (sectionName == "a") {
-      config.addSectionHandler(sectionName, bind(&DummySubscriber::onA, this, _1, _2));
+      config.addSectionHandler(sectionName, std::bind(&DummySubscriber::onA, this, _1, _2));
     }
     else if (sectionName == "b") {
-      config.addSectionHandler(sectionName, bind(&DummySubscriber::onB, this, _1, _2));
+      config.addSectionHandler(sectionName, std::bind(&DummySubscriber::onB, this, _1, _2));
     }
     else {
       BOOST_FAIL("Test setup error: Unexpected section name '" << sectionName << "'");
@@ -304,8 +304,8 @@ BOOST_FIXTURE_TEST_CASE(UncoveredSections, MissingCallbackFixture)
   ConfigFile file;
   BOOST_REQUIRE_THROW(file.parse(CONFIG, false, "dummy-config"), ConfigFile::Error);
 
-  ConfigFile permissiveFile(bind(&MissingCallbackFixture::checkMissingHandler,
-                                 this, _1, _2, _3, _4));
+  ConfigFile permissiveFile(std::bind(&MissingCallbackFixture::checkMissingHandler,
+                                      this, _1, _2, _3, _4));
   DummyOneSubscriber subA(permissiveFile, "a");
 
   BOOST_REQUIRE_NO_THROW(permissiveFile.parse(CONFIG, false, "dummy-config"));

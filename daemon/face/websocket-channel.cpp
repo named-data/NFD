@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,13 +53,13 @@ WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
     }
     return websocketpp::lib::error_code{};
   });
-  m_server.set_open_handler(bind(&WebSocketChannel::handleOpen, this, _1));
-  m_server.set_close_handler(bind(&WebSocketChannel::handleClose, this, _1));
-  m_server.set_message_handler(bind(&WebSocketChannel::handleMessage, this, _1, _2));
+  m_server.set_open_handler(std::bind(&WebSocketChannel::handleOpen, this, _1));
+  m_server.set_close_handler(std::bind(&WebSocketChannel::handleClose, this, _1));
+  m_server.set_message_handler(std::bind(&WebSocketChannel::handleMessage, this, _1, _2));
 
   // Detect disconnections using ping-pong messages
-  m_server.set_pong_handler(bind(&WebSocketChannel::handlePong, this, _1));
-  m_server.set_pong_timeout_handler(bind(&WebSocketChannel::handlePongTimeout, this, _1));
+  m_server.set_pong_handler(std::bind(&WebSocketChannel::handlePong, this, _1));
+  m_server.set_pong_timeout_handler(std::bind(&WebSocketChannel::handlePongTimeout, this, _1));
 
   // Always set SO_REUSEADDR flag
   m_server.set_reuse_addr(true);

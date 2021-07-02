@@ -261,11 +261,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LiveDeadlock,
   ndn::Face& appD = topo.addAppFace("D", nodeD)->getClientFace();
 
   int nNacksA = 0, nNacksD = 0;
-  appA.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
-  appD.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  appA.expressInterest(*makeInterest("/P/1"), nullptr, [&] (auto&&...) { ++nNacksA; }, nullptr);
+  appD.expressInterest(*makeInterest("/P/1"), nullptr, [&] (auto&&...) { ++nNacksD; }, nullptr);
   this->advanceClocks(1_ms, 5_ms);
-  appA.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
-  appD.expressInterest(*makeInterest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  appA.expressInterest(*makeInterest("/P/1"), nullptr, [&] (auto&&...) { ++nNacksA; }, nullptr);
+  appD.expressInterest(*makeInterest("/P/1"), nullptr, [&] (auto&&...) { ++nNacksD; }, nullptr);
   this->advanceClocks(1_ms, 100_ms);
 
   // As long as at least one Nack arrives at each client, strategy behavior is correct.

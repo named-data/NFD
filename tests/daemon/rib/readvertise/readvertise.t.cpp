@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -104,7 +104,7 @@ public:
 public:
   struct HistoryEntry
   {
-    time::steady_clock::TimePoint timestamp;
+    time::steady_clock::time_point timestamp;
     Name prefix;
   };
 
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(AdvertiseRetryInterval)
   BOOST_REQUIRE_GT(destination->advertiseHistory.size(), 2);
 
   // destination->advertise keeps failing, so interval should increase
-  using FloatInterval = time::duration<float, time::steady_clock::Duration::period>;
+  using FloatInterval = time::duration<float, time::steady_clock::duration::period>;
   FloatInterval initialInterval = destination->advertiseHistory[1].timestamp -
                                   destination->advertiseHistory[0].timestamp;
   FloatInterval lastInterval = initialInterval;

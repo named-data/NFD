@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -94,7 +94,9 @@ FaceSystem::hasFactoryForScheme(const std::string& scheme) const
 void
 FaceSystem::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler(CFGSEC_FACESYSTEM, bind(&FaceSystem::processConfig, this, _1, _2, _3));
+  configFile.addSectionHandler(CFGSEC_FACESYSTEM, [this] (auto&&... args) {
+    processConfig(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

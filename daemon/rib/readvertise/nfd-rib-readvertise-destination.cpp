@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,10 +44,17 @@ NfdRibReadvertiseDestination::NfdRibReadvertiseDestination(ndn::nfd::Controller&
   , m_commandOptions(options)
   , m_controlParameters(parameters)
 {
-  m_ribInsertConn = rib.afterInsertEntry.connect(
-    std::bind(&NfdRibReadvertiseDestination::handleRibInsert, this, _1));
-  m_ribEraseConn = rib.afterEraseEntry.connect(
-    std::bind(&NfdRibReadvertiseDestination::handleRibErase, this, _1));
+  m_ribInsertConn = rib.afterInsertEntry.connect([this] (const Name& name) {
+    if (name.isPrefixOf(m_commandOptions.getPrefix())) {
+      setAvailability(true);
+    }
+  });
+
+  m_ribEraseConn = rib.afterEraseEntry.connect([this] (const Name& name) {
+    if (name.isPrefixOf(m_commandOptions.getPrefix())) {
+      setAvailability(false);
+    }
+  });
 }
 
 void
@@ -59,7 +66,7 @@ NfdRibReadvertiseDestination::advertise(const nfd::rib::ReadvertisedRoute& rr,
 
   m_controller.start<ndn::nfd::RibRegisterCommand>(
     getControlParameters().setName(rr.prefix),
-    [=] (const ControlParameters& cp) { successCb(); },
+    [=] (const ControlParameters&) { successCb(); },
     [=] (const ControlResponse& cr) { failureCb(cr.getText()); },
     getCommandOptions().setSigningInfo(rr.signer));
 }
@@ -73,37 +80,9 @@ NfdRibReadvertiseDestination::withdraw(const nfd::rib::ReadvertisedRoute& rr,
 
   m_controller.start<ndn::nfd::RibUnregisterCommand>(
     getControlParameters().setName(rr.prefix),
-    [=] (const ControlParameters& cp) { successCb(); },
+    [=] (const ControlParameters&) { successCb(); },
     [=] (const ControlResponse& cr) { failureCb(cr.getText()); },
     getCommandOptions().setSigningInfo(rr.signer));
-}
-
-ndn::nfd::ControlParameters
-NfdRibReadvertiseDestination::getControlParameters()
-{
-  return m_controlParameters;
-}
-
-ndn::nfd::CommandOptions
-NfdRibReadvertiseDestination::getCommandOptions()
-{
-  return m_commandOptions;
-}
-
-void
-NfdRibReadvertiseDestination::handleRibInsert(const ndn::Name& name)
-{
-  if (name.isPrefixOf(m_commandOptions.getPrefix())) {
-    setAvailability(true);
-  }
-}
-
-void
-NfdRibReadvertiseDestination::handleRibErase(const ndn::Name& name)
-{
-  if (name.isPrefixOf(m_commandOptions.getPrefix())) {
-    setAvailability(false);
-  }
 }
 
 } // namespace rib

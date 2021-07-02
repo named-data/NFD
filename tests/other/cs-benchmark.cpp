@@ -78,11 +78,11 @@ protected:
   void
   find(const Interest& interest)
   {
-    cs.find(interest, bind([]{}), bind([]{}));
+    cs.find(interest, [] (auto&&...) {}, [] (auto&&...) {});
   }
 
 protected:
-  typedef std::function<Name(size_t)> NameGenerator;
+  using NameGenerator = std::function<Name (size_t)>;
 
   class SimpleNameGenerator
   {

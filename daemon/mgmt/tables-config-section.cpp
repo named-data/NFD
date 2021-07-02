@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 namespace nfd {
 
-const size_t TablesConfigSection::DEFAULT_CS_MAX_PACKETS = 65536;
+const size_t DEFAULT_CS_MAX_PACKETS = 65536;
 
 TablesConfigSection::TablesConfigSection(Forwarder& forwarder)
   : m_forwarder(forwarder)
@@ -39,8 +39,9 @@ TablesConfigSection::TablesConfigSection(Forwarder& forwarder)
 void
 TablesConfigSection::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler("tables",
-                               bind(&TablesConfigSection::processConfig, this, _1, _2));
+  configFile.addSectionHandler("tables", [this] (auto&&... args) {
+    processConfig(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void
@@ -58,7 +59,7 @@ TablesConfigSection::ensureConfigured()
 }
 
 void
-TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
+TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun, const std::string&)
 {
   size_t nCsMaxPackets = DEFAULT_CS_MAX_PACKETS;
   OptionalConfigSection csMaxPacketsNode = section.get_child_optional("cs_max_packets");

@@ -88,7 +88,7 @@ BOOST_FIXTURE_TEST_SUITE(TestManagerBase, ManagerBaseFixture)
 BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 {
   bool wasCommandHandlerCalled = false;
-  auto handler = bind([&] { wasCommandHandlerCalled = true; });
+  auto handler = [&] (auto&&...) { wasCommandHandlerCalled = true; };
 
   m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
   m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
 {
   bool isStatusDatasetCalled = false;
-  auto handler = bind([&] { isStatusDatasetCalled = true; });
+  auto handler = [&] (auto&&...) { isStatusDatasetCalled = true; };
 
   m_manager.registerStatusDatasetHandler("test-status", handler);
   setTopPrefix();

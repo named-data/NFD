@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,8 +45,7 @@ public:
                                Rib& rib,
                                const ndn::nfd::CommandOptions& options = ndn::nfd::CommandOptions(),
                                const ndn::nfd::ControlParameters& parameters =
-                                 ndn::nfd::ControlParameters()
-                                   .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT));
+                                 ndn::nfd::ControlParameters().setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT));
 
   /** \brief add a name prefix into NFD RIB
    */
@@ -64,17 +63,16 @@ public:
 
 protected:
   ndn::nfd::ControlParameters
-  getControlParameters();
+  getControlParameters() const
+  {
+    return m_controlParameters;
+  }
 
   ndn::nfd::CommandOptions
-  getCommandOptions();
-
-private:
-  void
-  handleRibInsert(const Name& name);
-
-  void
-  handleRibErase(const Name& name);
+  getCommandOptions() const
+  {
+    return m_commandOptions;
+  }
 
 private:
   ndn::nfd::Controller& m_controller;

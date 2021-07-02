@@ -58,8 +58,8 @@ protected:
 
     tribool isFound = indeterminate;
     cs.find(Interest(data.getFullName()),
-            bind([&] { isFound = true; }),
-            bind([&] { isFound = false; }));
+            [&] (auto&&...) { isFound = true; },
+            [&] (auto&&...) { isFound = false; });
 
     this->advanceClocks(1_ms);
     BOOST_REQUIRE(!indeterminate(isFound));

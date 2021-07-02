@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ BOOST_FIXTURE_TEST_SUITE(TestNetworkRegionTable, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(InProducerRegion)
 {
-  DelegationList fh{{10, "/telia/terabits"}, {20, "/ucla/cs"}};
+  ndn::DelegationList fh{{10, "/telia/terabits"}, {20, "/ucla/cs"}};
 
   NetworkRegionTable nrt1;
   nrt1.insert("/verizon");
