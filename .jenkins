@@ -14,8 +14,10 @@ nanos() {
 for file in .jenkins.d/*; do
     [[ -f $file && -x $file ]] || continue
 
-    if [[ -n $TRAVIS ]]; then
-        label=$(basename "$file" | sed -E 's/[[:digit:]]+-(.*)\..*/\1/')
+    label=$(basename "$file" | sed -E 's/[[:digit:]]+-(.*)\..*/\1/')
+    if [[ -n $GITHUB_ACTIONS ]]; then
+        echo "::group::${label}"
+    elif [[ -n $TRAVIS ]]; then
         echo -ne "travis_fold:start:${label}\r"
         echo -ne "travis_time:start:${label}\r"
         start=$(nanos)
@@ -24,7 +26,9 @@ for file in .jenkins.d/*; do
     echo "\$ $file"
     "$file"
 
-    if [[ -n $TRAVIS ]]; then
+    if [[ -n $GITHUB_ACTIONS ]]; then
+        echo "::endgroup::"
+    elif [[ -n $TRAVIS ]]; then
         finish=$(nanos)
         echo -ne "travis_time:end:${label}:start=${start},finish=${finish},duration=$((finish-start)),event=${label}\r"
         echo -ne "travis_fold:end:${label}\r"

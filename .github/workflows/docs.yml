@@ -1,0 +1,35 @@
+name: Docs
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-10.15, ubuntu-20.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      JOB_NAME: Docs
+      WAF_JOBS: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          case ${RUNNER_OS} in
+            Linux) export NODE_LABELS="Linux Ubuntu Ubuntu-20.04" ;;
+            macOS) export NODE_LABELS="OSX OSX-10.15" ;;
+          esac
+          find .jenkins.d/ -type f -name '[1-9]*.sh' -exec chmod -x '{}' +
+          ./.jenkins
+      - name: Build documentation
+        run: |
+          ./waf --color=yes configure
+          ./waf --color=yes build --targets=version.hpp
+          ./waf --color=yes build --targets=manpages
+          ./waf --color=yes docs
