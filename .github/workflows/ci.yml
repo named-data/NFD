@@ -1,8 +1,15 @@
 name: CI
 on:
   push:
-  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.mailmap'
+      - '.travis.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   linux:

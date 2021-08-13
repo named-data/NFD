@@ -1,8 +1,13 @@
 name: Docs
 on:
   push:
-  pull_request:
+    paths-ignore:
+      - '.mailmap'
+      - '.travis.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:

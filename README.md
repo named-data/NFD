@@ -1,8 +1,9 @@
 # NFD - Named Data Networking Forwarding Daemon
 
-![Language](https://img.shields.io/badge/C%2B%2B-14-blue.svg)
-[![Build Status](https://travis-ci.org/named-data/NFD.svg?branch=master)](https://travis-ci.org/named-data/NFD)
-![Latest Version](https://img.shields.io/github/tag/named-data/NFD.svg?color=darkkhaki&label=latest%20version)
+[![CI](https://github.com/named-data/NFD/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/ci.yml)
+[![Docs](https://github.com/named-data/NFD/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/docs.yml)
+![Language](https://img.shields.io/badge/C%2B%2B-14-blue)
+![Latest version](https://img.shields.io/github/v/tag/named-data/NFD?label=Latest%20version)
 
 ## Overview
 
