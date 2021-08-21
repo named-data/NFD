@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: If you use NFD in your research, please cite it as below.
+license: GPL-3.0-or-later
+repository-code: "https://github.com/named-data/NFD"
+title: Named Data Networking Forwarding Daemon
+url: "https://named-data.net/doc/NFD/"
+preferred-citation:
+  authors:
+    - name: Named Data Networking Project Team
+  date-published: "2021-07-30"
+  journal: NDN Technical Report NDN-0021
+  month: 7
+  title: NFD Developer's Guide
+  type: generic
+  url: "https://named-data.net/publications/techreports/ndn-0021-11-nfd-guide/"
+  version: 11
+  year: 2021
