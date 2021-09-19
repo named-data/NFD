@@ -71,10 +71,9 @@ protected:
     nodeC = topo.addForwarder("C");
     nodeD = topo.addForwarder("D");
 
-    topo.setStrategy<AsfStrategy>(nodeA, Name("/"), parameters);
-    topo.setStrategy<AsfStrategy>(nodeB, Name("/"), parameters);
-    topo.setStrategy<AsfStrategy>(nodeC, Name("/"), parameters);
-    topo.setStrategy<AsfStrategy>(nodeD, Name("/"), parameters);
+    for (auto node : {nodeA, nodeB, nodeC, nodeD}) {
+      topo.setStrategy<AsfStrategy>(node, Name("/"), parameters);
+    }
 
     linkAB = topo.addLink("AB", 10_ms, {nodeA, nodeB});
     linkAD = topo.addLink("AD", 100_ms, {nodeA, nodeD});
@@ -126,7 +125,7 @@ protected:
   AsfStrategyParametersGridFixture()
     : AsfGridFixture(Name(AsfStrategy::getStrategyName())
                      .append("probing-interval~30000")
-                     .append("n-silent-timeouts~5"))
+                     .append("max-timeouts~5"))
   {
   }
 };
@@ -153,8 +152,8 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   linkAB->fail();
 
   runConsumer();
-  // We experience 3 silent timeouts before marking AB as timed out on the fourth interest.
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 56);
+  // We experience 3 timeouts and marked AB as timed out
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 57);
   BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 36);
   BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 24);
 
@@ -166,7 +165,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   this->advanceClocks(10_ms, 10_s);
 
   runConsumer();
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 86);
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 87);
   BOOST_CHECK_GE(linkAB->getFace(nodeA).getCounters().nOutInterests, 50);
   BOOST_CHECK_LE(linkAD->getFace(nodeA).getCounters().nOutInterests, 40);
 
@@ -176,7 +175,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
 
   runConsumer();
 
-  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 86);
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 87);
   BOOST_CHECK_LE(linkAB->getFace(nodeA).getCounters().nOutInterests, 65); // FIXME #3830
   BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 57); // FIXME #3830
 }
@@ -509,11 +508,11 @@ BOOST_FIXTURE_TEST_CASE(IgnoreTimeouts, AsfStrategyParametersGridFixture)
   // Bring down 10 ms link
   linkAB->fail();
 
-  // Send 6 interests, first 5 will be ignored and on the 6th it will record the timeout
+  // Send 5 interests, after the last one it will record the timeout
   // ready to switch for the next interest
-  runConsumer(6);
+  runConsumer(5);
 
-  // Check that link has not been switched to 100 ms because n-silent-timeouts = 5
+  // Check that link has not been switched to 100 ms because max-timeouts = 5
   BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nOutInterests, outInterestsBeforeFailure);
 
   // Send 5 interests, check that 100 ms link is used
@@ -557,21 +556,24 @@ BOOST_AUTO_TEST_CASE(InstantiationWithParameters)
     }
   };
 
-  checkValidity("/probing-interval~30000/n-silent-timeouts~5", true);
-  checkValidity("/n-silent-timeouts~5/probing-interval~30000", true);
+  checkValidity("/probing-interval~30000/max-timeouts~5", true);
+  checkValidity("/max-timeouts~5/probing-interval~30000", true);
   checkValidity("/probing-interval~30000", true);
-  checkValidity("/n-silent-timeouts~5", true);
+  checkValidity("/max-timeouts~5", true);
   checkValidity("", true);
 
   checkValidity("/probing-interval~500", false); // At least 1 seconds
   checkValidity("/probing-interval~-5000", false);
-  checkValidity("/n-silent-timeouts~-5", false);
-  checkValidity("/n-silent-timeouts~-5/probing-interval~-30000", false);
-  checkValidity("/n-silent-timeouts", false);
+  checkValidity("/max-timeouts~0", false);
+  checkValidity("/max-timeouts~-5", false);
+  checkValidity("/max-timeouts~-5/probing-interval~-30000", false);
+  checkValidity("/max-timeouts", false);
   checkValidity("/probing-interval~", false);
   checkValidity("/~1000", false);
   checkValidity("/probing-interval~foo", false);
-  checkValidity("/n-silent-timeouts~1~2", false);
+  checkValidity("/max-timeouts~1~2", false);
+  checkValidity("/foo", false);
+  checkValidity("/foo~42", false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy

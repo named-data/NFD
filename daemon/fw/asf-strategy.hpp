@@ -91,7 +91,7 @@ private:
   AsfMeasurements m_measurements;
   ProbingModule m_probing;
   RetxSuppressionExponential m_retxSuppression;
-  size_t m_nMaxSilentTimeouts = 3;
+  size_t m_nMaxTimeouts = 3;
 
   static const time::milliseconds RETX_SUPPRESSION_INITIAL;
   static const time::milliseconds RETX_SUPPRESSION_MAX;

@@ -91,15 +91,15 @@ public:
   }
 
   size_t
-  getNSilentTimeouts() const
+  getNTimeouts() const
   {
-    return m_nSilentTimeouts;
+    return m_nTimeouts;
   }
 
   void
-  setNSilentTimeouts(size_t nSilentTimeouts)
+  setNTimeouts(size_t nTimeouts)
   {
-    m_nSilentTimeouts = nSilentTimeouts;
+    m_nTimeouts = nTimeouts;
   }
 
 public:
@@ -110,7 +110,7 @@ private:
   ndn::util::RttEstimator m_rttEstimator;
   time::nanoseconds m_lastRtt = RTT_NO_MEASUREMENT;
   Name m_lastInterestName;
-  size_t m_nSilentTimeouts = 0;
+  size_t m_nTimeouts = 0;
 
   // Timeout associated with measurement
   scheduler::ScopedEventId m_measurementExpiration;

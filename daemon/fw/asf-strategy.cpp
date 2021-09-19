@@ -58,7 +58,7 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
   NFD_LOG_DEBUG("probing-interval=" << m_probing.getProbingInterval()
-                << " n-silent-timeouts=" << m_nMaxSilentTimeouts);
+                << " max-timeouts=" << m_nMaxTimeouts);
 }
 
 const Name&
@@ -97,11 +97,13 @@ AsfStrategy::processParams(const PartialName& parsed)
     if (f == "probing-interval") {
       m_probing.setProbingInterval(getParamValue(f, s));
     }
-    else if (f == "n-silent-timeouts") {
-      m_nMaxSilentTimeouts = getParamValue(f, s);
+    else if (f == "max-timeouts") {
+      m_nMaxTimeouts = getParamValue(f, s);
+      if (m_nMaxTimeouts <= 0)
+        NDN_THROW(std::invalid_argument("max-timeouts should be greater than 0"));
     }
     else {
-      NDN_THROW(std::invalid_argument("Parameter should be probing-interval or n-silent-timeouts"));
+      NDN_THROW(std::invalid_argument("Parameter should be probing-interval or max-timeouts"));
     }
   }
 }
@@ -341,10 +343,10 @@ AsfStrategy::onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNac
   }
 
   auto& faceInfo = *fiPtr;
-  size_t nTimeouts = faceInfo.getNSilentTimeouts() + 1;
-  faceInfo.setNSilentTimeouts(nTimeouts);
+  size_t nTimeouts = faceInfo.getNTimeouts() + 1;
+  faceInfo.setNTimeouts(nTimeouts);
 
-  if (nTimeouts <= m_nMaxSilentTimeouts && !isNack) {
+  if (nTimeouts < m_nMaxTimeouts && !isNack) {
     NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts << " ignoring");
     // Extend lifetime for measurements associated with Face
     namespaceInfo->extendFaceInfoLifetime(faceInfo, faceId);
