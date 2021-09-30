@@ -3,27 +3,18 @@ set -e
 source .jenkins.d/util.sh
 
 if has Linux $NODE_LABELS; then
-    export PATH="~/.local/bin${PATH:+:}${PATH}"
+    export PATH="${HOME}/.local/bin${PATH:+:}${PATH}"
 fi
 export CACHE_DIR=${CACHE_DIR:-/tmp}
 export WAF_JOBS=${WAF_JOBS:-1}
 [[ $JOB_NAME == *"code-coverage" ]] && export DISABLE_ASAN=yes
 
-nanos() {
-    # Cannot use date(1) because macOS does not support %N format specifier
-    python3 -c 'import time; print(int(time.time() * 1e9))'
-}
-
 for file in .jenkins.d/*; do
     [[ -f $file && -x $file ]] || continue
 
-    label=$(basename "$file" | sed -E 's/[[:digit:]]+-(.*)\..*/\1/')
     if [[ -n $GITHUB_ACTIONS ]]; then
+        label=$(basename "$file" | sed -E 's/[[:digit:]]+-(.*)\..*/\1/')
         echo "::group::${label}"
-    elif [[ -n $TRAVIS ]]; then
-        echo -ne "travis_fold:start:${label}\r"
-        echo -ne "travis_time:start:${label}\r"
-        start=$(nanos)
     fi
 
     echo "\$ $file"
@@ -31,9 +22,5 @@ for file in .jenkins.d/*; do
 
     if [[ -n $GITHUB_ACTIONS ]]; then
         echo "::endgroup::"
-    elif [[ -n $TRAVIS ]]; then
-        finish=$(nanos)
-        echo -ne "travis_time:end:${label}:start=${start},finish=${finish},duration=$((finish-start)),event=${label}\r"
-        echo -ne "travis_fold:end:${label}\r"
     fi
 done
