@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,16 +121,6 @@ InternalClientTransport::send(const Block& wire)
 
   if (m_forwarder)
     m_forwarder->receivePacket(wire);
-}
-
-void
-InternalClientTransport::send(const Block& header, const Block& payload)
-{
-  ndn::EncodingBuffer encoder(header.size() + payload.size(), header.size() + payload.size());
-  encoder.appendByteArray(header.wire(), header.size());
-  encoder.appendByteArray(payload.wire(), payload.size());
-
-  send(encoder.block());
 }
 
 } // namespace face
