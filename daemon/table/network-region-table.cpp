@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,11 +28,11 @@
 namespace nfd {
 
 bool
-NetworkRegionTable::isInProducerRegion(const ndn::DelegationList& forwardingHint) const
+NetworkRegionTable::isInProducerRegion(span<const Name> forwardingHint) const
 {
   for (const Name& regionName : *this) {
     for (const auto& delegation : forwardingHint) {
-      if (delegation.name.isPrefixOf(regionName)) {
+      if (delegation.isPrefixOf(regionName)) {
         return true;
       }
     }

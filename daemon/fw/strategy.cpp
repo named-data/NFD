@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -297,7 +297,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
 
   const fib::Entry* fibEntry = nullptr;
   for (const auto& delegation : fh) {
-    fibEntry = &fib.findLongestPrefixMatch(delegation.name);
+    fibEntry = &fib.findLongestPrefixMatch(delegation);
     if (fibEntry->hasNextHops()) {
       if (fibEntry->getPrefix().size() == 0) {
         // in consumer region, return the default route
@@ -305,7 +305,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
       }
       else {
         // in default-free zone, use the first delegation that finds a FIB entry
-        NFD_LOG_TRACE("lookupFib delegation=" << delegation.name << " found=" << fibEntry->getPrefix());
+        NFD_LOG_TRACE("lookupFib delegation=" << delegation << " found=" << fibEntry->getPrefix());
       }
       return *fibEntry;
     }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(CanMatch)
   BOOST_CHECK_EQUAL(entry.canMatch(*interest3), true);
 
   auto interest4 = makeInterest("/A");
-  interest4->setForwardingHint({{10, "/telia/terabits"}, {20, "/ucla/cs"}});
+  interest4->setForwardingHint({"/telia/terabits", "/ucla/cs"});
   BOOST_CHECK_EQUAL(entry.canMatch(*interest4), false); // expected failure until #3162
 
   auto interest5 = makeInterest("/A", true);
