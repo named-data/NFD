@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -98,10 +98,19 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
 void
 TcpChannel::createFace(ip::tcp::socket&& socket,
                        const FaceParams& params,
-                       const FaceCreatedCallback& onFaceCreated)
+                       const FaceCreatedCallback& onFaceCreated,
+                       const FaceCreationFailedCallback& onFaceCreationFailed)
 {
   shared_ptr<Face> face;
-  tcp::Endpoint remoteEndpoint = socket.remote_endpoint();
+  boost::system::error_code ec;
+  tcp::Endpoint remoteEndpoint = socket.remote_endpoint(ec);
+  if (ec) {
+    NFD_LOG_CHAN_DEBUG("Retrieve socket remote endpoint failed: " << ec.message());
+    if (onFaceCreationFailed) {
+      onFaceCreationFailed(500, "Retrieve socket remote endpoint failed: " + ec.message());
+    }
+    return;
+  }
 
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it == m_channelFaces.end()) {
@@ -174,7 +183,7 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
 
   FaceParams params;
   params.persistency = ndn::nfd::FACE_PERSISTENCY_ON_DEMAND;
-  createFace(std::move(m_socket), params, onFaceCreated);
+  createFace(std::move(m_socket), params, onFaceCreated, onAcceptFailed);
 
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
@@ -201,7 +210,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
   }
 
   NFD_LOG_CHAN_TRACE("Connected to " << socket->remote_endpoint());
-  createFace(std::move(*socket), params, onFaceCreated);
+  createFace(std::move(*socket), params, onFaceCreated, onConnectFailed);
 }
 
 void
