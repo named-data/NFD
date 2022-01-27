@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,8 @@
 
 #include "tests/test-common.hpp"
 
-#include <stdio.h>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 namespace nfd {
 namespace tests {
@@ -38,9 +39,13 @@ BOOST_AUTO_TEST_CASE(VersionNumber)
 {
   BOOST_TEST_MESSAGE("NFD_VERSION = " + to_string(NFD_VERSION));
 
-  BOOST_CHECK_EQUAL(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
-                                 NFD_VERSION_MINOR * 1000 +
-                                 NFD_VERSION_PATCH);
+  BOOST_TEST(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
+                          NFD_VERSION_MINOR * 1000 +
+                          NFD_VERSION_PATCH);
+
+  static_assert(NFD_VERSION_MAJOR >= 22 && NFD_VERSION_MAJOR <= 100, "");
+  static_assert(NFD_VERSION_MINOR >= 1 && NFD_VERSION_MINOR <= 12, "");
+  static_assert(NFD_VERSION_PATCH < 1000, "");
 }
 
 BOOST_AUTO_TEST_CASE(VersionString)
@@ -48,13 +53,16 @@ BOOST_AUTO_TEST_CASE(VersionString)
   BOOST_TEST_MESSAGE("NFD_VERSION_STRING = " << NFD_VERSION_STRING);
   BOOST_TEST_MESSAGE("NFD_VERSION_BUILD_STRING = " << NFD_VERSION_BUILD_STRING);
 
-  static_assert(NFD_VERSION_MAJOR < 1000, "");
-  static_assert(NFD_VERSION_MINOR < 1000, "");
-  static_assert(NFD_VERSION_PATCH < 1000, "");
-  char buf[12];
-  ::snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
+  std::vector<std::string> v;
+  std::string s(NFD_VERSION_STRING);
+  boost::split(v, s, boost::is_any_of("."));
+  BOOST_TEST_REQUIRE(v.size() >= 2);
+  BOOST_TEST_REQUIRE(v.size() <= 3);
 
-  BOOST_CHECK_EQUAL(NFD_VERSION_STRING, buf);
+  BOOST_TEST(std::stoi(v[0]) == NFD_VERSION_MAJOR);
+  BOOST_TEST(std::stoi(v[1]) == NFD_VERSION_MINOR);
+  int patch = v.size() == 3 ? std::stoi(v[2]) : 0;
+  BOOST_TEST(patch == NFD_VERSION_PATCH);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestVersion

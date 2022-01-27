@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,14 +26,15 @@
 #ifndef NFD_CORE_VERSION_HPP
 #define NFD_CORE_VERSION_HPP
 
-// NFD version follows Semantic Versioning 2.0.0
+// NFD version follows Semantic Versioning 2.0.0 based on year and month of the release
 // https://semver.org/spec/v2.0.0.html
 //
-// To change version number, modify VERSION variable in top-level wscript.
+// To change version number, modify the VERSION variable in the top-level wscript.
 
-/** \brief NFD version represented as an integer.
+/**
+ * \brief NFD version represented as an integer.
  *
- *  Equivalent to: `#NFD_VERSION_MAJOR*1000000 + #NFD_VERSION_MINOR*1000 + #NFD_VERSION_PATCH`
+ * Equivalent to: #NFD_VERSION_MAJOR*1000000 + #NFD_VERSION_MINOR*1000 + #NFD_VERSION_PATCH
  */
 #define NFD_VERSION @VERSION@
 
@@ -44,7 +45,8 @@
 /// The patch version of NFD
 #define NFD_VERSION_PATCH @VERSION_PATCH@
 
-/** \brief NFD version represented as a string.
+/**
+ * \brief NFD version represented as a string.
  *
  * Format:
  * @code
@@ -53,20 +55,21 @@
  */
 extern const char NFD_VERSION_STRING[];
 
-/** \brief NFD version string, including git commit information, if NFD is build from
- *         specific git commit.
+/**
+ * \brief NFD version string, including git commit information if NFD is build from a
+ *        specific git commit.
  *
  * #NFD_VERSION_BUILD_STRING is obtained using the following command (`NFD-` prefix is
- * afterwards removed): `git describe --match 'NFD-*'`
+ * afterwards removed): ``git describe --match 'NFD-*'``
  *
  * When NFD is not built from git, #NFD_VERSION_BUILD_STRING equals #NFD_VERSION_STRING.
  *
  * Format:
  * @code
- * MAJOR.MINOR.PATCH(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
+ * MAJOR.MINOR(.PATCH)(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
  * @endcode
  *
- * Example: 0.1.0-rc1-1-g5c86570
+ * Example: 2022.02-1-g5c86570
  */
 extern const char NFD_VERSION_BUILD_STRING[];
 

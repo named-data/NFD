@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2021,  Regents of the University of California,
+Copyright (c) 2014-2022,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 from waflib import Context, Logs, Utils
 import os, subprocess
 
-VERSION = '0.7.1'
+VERSION = '22.02'
 APPNAME = 'nfd'
 BUGREPORT = 'https://redmine.named-data.net/projects/nfd'
 URL = 'https://named-data.net/doc/NFD/'
@@ -239,17 +239,19 @@ def build(bld):
 def versionhpp(bld):
     version(bld)
 
+    vmajor = int(VERSION_SPLIT[0])
+    vminor = int(VERSION_SPLIT[1]) if len(VERSION_SPLIT) >= 2 else 0
+    vpatch = int(VERSION_SPLIT[2]) if len(VERSION_SPLIT) >= 3 else 0
+
     bld(features='subst',
         name='version.hpp',
         source='core/version.hpp.in',
         target='core/version.hpp',
         install_path=None,
-        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
-                int(VERSION_SPLIT[1]) * 1000 +
-                int(VERSION_SPLIT[2]),
-        VERSION_MAJOR=VERSION_SPLIT[0],
-        VERSION_MINOR=VERSION_SPLIT[1],
-        VERSION_PATCH=VERSION_SPLIT[2])
+        VERSION=vmajor * 1000000 + vminor * 1000 + vpatch,
+        VERSION_MAJOR=str(vmajor),
+        VERSION_MINOR=str(vminor),
+        VERSION_PATCH=str(vpatch))
 
 def docs(bld):
     from waflib import Options
