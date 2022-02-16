@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,10 +69,9 @@ LpReassembler::receiveFragment(EndpointId remoteEndpoint, const lp::Packet& pack
 
   // check for fast path
   if (fragIndex == 0 && fragCount == 1) {
-    ndn::Buffer::const_iterator fragBegin, fragEnd;
-    std::tie(fragBegin, fragEnd) = packet.get<lp::FragmentField>();
-    Block netPkt(&*fragBegin, std::distance(fragBegin, fragEnd));
-    return std::make_tuple(true, netPkt, packet);
+    auto frag = packet.get<lp::FragmentField>();
+    Block netPkt({frag.first, frag.second});
+    return {true, netPkt, packet};
   }
 
   // check Sequence and compute message identifier
@@ -140,7 +139,7 @@ LpReassembler::doReassembly(const Key& key)
     it = std::copy(fragBegin, fragEnd, it);
   }
 
-  return Block(&*(fragBuffer.cbegin()), std::distance(fragBuffer.cbegin(), fragBuffer.cend()));
+  return Block(fragBuffer);
 }
 
 void

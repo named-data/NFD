@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -174,7 +174,7 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
       // Check for recent received Sequences to remove
       auto now = time::steady_clock::now();
       auto rto = m_rttEst.getEstimatedRto();
-      while (m_recentRecvSeqsQueue.size() > 0 &&
+      while (!m_recentRecvSeqsQueue.empty() &&
              now > m_recentRecvSeqs[m_recentRecvSeqsQueue.front()] + rto) {
         m_recentRecvSeqs.erase(m_recentRecvSeqsQueue.front());
         m_recentRecvSeqsQueue.pop();
@@ -226,7 +226,7 @@ LpReliability::assignTxSequence(lp::Packet& frag)
 {
   lp::Sequence txSeq = ++m_lastTxSeqNo;
   frag.set<lp::TxSequenceField>(txSeq);
-  if (m_unackedFrags.size() > 0 && m_lastTxSeqNo == m_firstUnackedFrag->first) {
+  if (!m_unackedFrags.empty() && m_lastTxSeqNo == m_firstUnackedFrag->first) {
     NDN_THROW(std::length_error("TxSequence range exceeded"));
   }
   return m_lastTxSeqNo;
@@ -310,10 +310,8 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq, bool isTimeout)
     // Notify strategy of dropped Interest (if any)
     if (netPkt->isInterest) {
       BOOST_ASSERT(netPkt->pkt.has<lp::FragmentField>());
-      ndn::Buffer::const_iterator fragBegin, fragEnd;
-      std::tie(fragBegin, fragEnd) = netPkt->pkt.get<lp::FragmentField>();
-      Block frag(&*fragBegin, std::distance(fragBegin, fragEnd));
-      onDroppedInterest(Interest(frag));
+      auto frag = netPkt->pkt.get<lp::FragmentField>();
+      onDroppedInterest(Interest(Block({frag.first, frag.second})));
     }
 
     // Delete this LpPacket from m_unackedFrags

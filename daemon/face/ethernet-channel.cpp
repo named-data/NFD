@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -120,26 +120,24 @@ EthernetChannel::handleRead(const boost::system::error_code& error,
     return;
   }
 
-  const uint8_t* pkt;
-  size_t len;
+  span<const uint8_t> pkt;
   std::string err;
-  std::tie(pkt, len, err) = m_pcap.readNextPacket();
+  std::tie(pkt, err) = m_pcap.readNextPacket();
 
-  if (pkt == nullptr) {
+  if (pkt.empty()) {
     NFD_LOG_CHAN_WARN("Read error: " << err);
   }
   else {
     const ether_header* eh;
-    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_localEndpoint->getEthernetAddress(),
+    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, m_localEndpoint->getEthernetAddress(),
                                                    m_localEndpoint->getEthernetAddress());
     if (eh == nullptr) {
       NFD_LOG_CHAN_DEBUG(err);
     }
     else {
       ethernet::Address sender(eh->ether_shost);
-      pkt += ethernet::HDR_LEN;
-      len -= ethernet::HDR_LEN;
-      processIncomingPacket(pkt, len, sender, onFaceCreated, onReceiveFailed);
+      pkt = pkt.subspan(ethernet::HDR_LEN);
+      processIncomingPacket(pkt, sender, onFaceCreated, onReceiveFailed);
     }
   }
 
@@ -154,7 +152,7 @@ EthernetChannel::handleRead(const boost::system::error_code& error,
 }
 
 void
-EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
+EthernetChannel::processIncomingPacket(span<const uint8_t> packet,
                                        const ethernet::Address& sender,
                                        const FaceCreatedCallback& onFaceCreated,
                                        const FaceCreationFailedCallback& onReceiveFailed)
@@ -182,7 +180,7 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
 
   // dispatch the packet to the face for processing
   auto* transport = static_cast<UnicastEthernetTransport*>(face->getTransport());
-  transport->receivePayload(packet, length, sender);
+  transport->receivePayload(packet, sender);
 }
 
 std::pair<bool, shared_ptr<Face>>

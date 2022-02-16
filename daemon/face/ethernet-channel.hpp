@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -111,7 +111,7 @@ private:
              const FaceCreationFailedCallback& onReceiveFailed);
 
   void
-  processIncomingPacket(const uint8_t* packet, size_t length,
+  processIncomingPacket(span<const uint8_t> packet,
                         const ethernet::Address& sender,
                         const FaceCreatedCallback& onFaceCreated,
                         const FaceCreationFailedCallback& onReceiveFailed);

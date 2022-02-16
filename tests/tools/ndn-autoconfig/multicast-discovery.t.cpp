@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -98,10 +98,9 @@ BOOST_AUTO_TEST_CASE(Normal)
     }
 
     if (interest.getName() == "/localhop/ndn-autoconf/hub") {
-      const char FACEURI[] = "udp://router.example.net";
       auto data = makeData(Name("/localhop/ndn-autoconf/hub").appendVersion());
       data->setFreshnessPeriod(1_s);
-      data->setContent(makeBinaryBlock(tlv::nfd::Uri, FACEURI, ::strlen(FACEURI)));
+      data->setContent(makeStringBlock(tlv::nfd::Uri, "udp://router.example.net"));
       face.receive(*data);
       return;
     }

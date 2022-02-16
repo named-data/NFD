@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ template<class Protocol, class Addressing = Unicast>
 class DatagramTransport : public Transport
 {
 public:
-  typedef Protocol protocol;
+  using protocol = Protocol;
 
   /** \brief Construct datagram transport.
    *
@@ -58,11 +58,11 @@ public:
   ssize_t
   getSendQueueLength() override;
 
-  /** \brief Receive datagram, translate buffer into packet, deliver to parent class.
+  /**
+   * \brief Receive datagram, translate buffer into packet, deliver to parent class.
    */
   void
-  receiveDatagram(const uint8_t* buffer, size_t nBytesReceived,
-                  const boost::system::error_code& error);
+  receiveDatagram(span<const uint8_t> buffer, const boost::system::error_code& error);
 
 protected:
   void
@@ -170,23 +170,23 @@ DatagramTransport<T, U>::doSend(const Block& packet)
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesReceived,
+DatagramTransport<T, U>::receiveDatagram(span<const uint8_t> buffer,
                                          const boost::system::error_code& error)
 {
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes from " << m_sender);
+  NFD_LOG_FACE_TRACE("Received: " << buffer.size() << " bytes from " << m_sender);
 
   bool isOk = false;
   Block element;
-  std::tie(isOk, element) = Block::fromBuffer(buffer, nBytesReceived);
+  std::tie(isOk, element) = Block::fromBuffer(buffer);
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << m_sender);
     // This packet won't extend the face lifetime
     return;
   }
-  if (element.size() != nBytesReceived) {
+  if (element.size() != buffer.size()) {
     NFD_LOG_FACE_WARN("Received datagram size and decoded element size don't match");
     // This packet won't extend the face lifetime
     return;
@@ -200,7 +200,7 @@ template<class T, class U>
 void
 DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error, size_t nBytesReceived)
 {
-  receiveDatagram(m_receiveBuffer.data(), nBytesReceived, error);
+  receiveDatagram(ndn::make_span(m_receiveBuffer).first(nBytesReceived), error);
 
   if (m_socket.is_open())
     m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,

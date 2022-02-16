@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -309,7 +309,8 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_BadKeyLocatorType)
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
       ndn::KeyLocator kl;
-      kl.setKeyDigest(ndn::encoding::makeBinaryBlock(tlv::KeyDigest, "\xDD\xDD\xDD\xDD\xDD\xDD\xDD\xDD", 8));
+      kl.setKeyDigest(ndn::makeBinaryBlock(tlv::KeyDigest,
+                                           {0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD}));
       ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
       sigInfo.setKeyLocator(kl);
       setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO,

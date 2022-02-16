@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -105,7 +105,7 @@ protected: // StatusDataset
   void
   sendEmptyDataset(const Name& prefix)
   {
-    this->sendDatasetReply(prefix, nullptr, 0);
+    this->sendDatasetReply(prefix, span<uint8_t>{});
   }
 
   /** \brief send one WireEncodable in reply to StatusDataset request
@@ -141,7 +141,7 @@ protected: // StatusDataset
     payload2.wireEncode(buffer);
     payload1.wireEncode(buffer);
 
-    this->sendDatasetReply(prefix, buffer.buf(), buffer.size());
+    this->sendDatasetReply(prefix, buffer);
   }
 
 private:

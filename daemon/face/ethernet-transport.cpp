@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,17 +125,17 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   // pad with zeroes if the payload is too short
   if (block.size() < ethernet::MIN_DATA_LEN) {
     static const uint8_t padding[ethernet::MIN_DATA_LEN] = {};
-    buffer.appendByteArray(padding, ethernet::MIN_DATA_LEN - block.size());
+    buffer.appendBytes(ndn::make_span(padding).subspan(block.size()));
   }
 
   // construct and prepend the ethernet header
   uint16_t ethertype = boost::endian::native_to_big(ethernet::ETHERTYPE_NDN);
-  buffer.prependByteArray(reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN);
-  buffer.prependByteArray(m_srcAddress.data(), m_srcAddress.size());
-  buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
+  buffer.prependBytes({reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN});
+  buffer.prependBytes(m_srcAddress);
+  buffer.prependBytes(m_destAddress);
 
   // send the frame
-  int sent = pcap_inject(m_pcap, buffer.buf(), buffer.size());
+  int sent = pcap_inject(m_pcap, buffer.data(), buffer.size());
   if (sent < 0)
     handleError("Send operation failed: " + m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
@@ -168,26 +168,24 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
     return;
   }
 
-  const uint8_t* pkt;
-  size_t len;
+  span<const uint8_t> pkt;
   std::string err;
-  std::tie(pkt, len, err) = m_pcap.readNextPacket();
+  std::tie(pkt, err) = m_pcap.readNextPacket();
 
-  if (pkt == nullptr) {
+  if (pkt.empty()) {
     NFD_LOG_FACE_WARN("Read error: " << err);
   }
   else {
     const ether_header* eh;
-    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_srcAddress,
+    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, m_srcAddress,
                                                    m_destAddress.isMulticast() ? m_destAddress : m_srcAddress);
     if (eh == nullptr) {
       NFD_LOG_FACE_WARN(err);
     }
     else {
       ethernet::Address sender(eh->ether_shost);
-      pkt += ethernet::HDR_LEN;
-      len -= ethernet::HDR_LEN;
-      receivePayload(pkt, len, sender);
+      pkt = pkt.subspan(ethernet::HDR_LEN);
+      receivePayload(pkt, sender);
     }
   }
 
@@ -202,14 +200,13 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
 }
 
 void
-EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
-                                  const ethernet::Address& sender)
+EthernetTransport::receivePayload(span<const uint8_t> payload, const ethernet::Address& sender)
 {
-  NFD_LOG_FACE_TRACE("Received: " << length << " bytes from " << sender);
+  NFD_LOG_FACE_TRACE("Received: " << payload.size() << " bytes from " << sender);
 
   bool isOk = false;
   Block element;
-  std::tie(isOk, element) = Block::fromBuffer(payload, length);
+  std::tie(isOk, element) = Block::fromBuffer(payload);
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << sender);
     // This packet won't extend the face lifetime

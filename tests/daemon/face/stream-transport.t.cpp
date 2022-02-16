@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -141,12 +141,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, StreamTransportFixtures, T)
 {
   TRANSPORT_TEST_INIT();
 
-  std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
-  auto pkt1 = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size() - 6);
+  const std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
+  auto pkt1 = ndn::encoding::makeBinaryBlock(300, ndn::make_span(bytes).subspan(6));
   ndn::Buffer buf1(pkt1.begin(), pkt1.end());
   BOOST_REQUIRE_EQUAL(buf1.size(), ndn::MAX_NDN_PACKET_SIZE);
 
-  auto pkt2 = ndn::encoding::makeBinaryBlock(301, bytes.data(), bytes.size());
+  auto pkt2 = ndn::encoding::makeBinaryBlock(301, bytes);
   ndn::Buffer buf2(pkt2.begin(), pkt2.end());
   BOOST_REQUIRE_GT(buf2.size(), ndn::MAX_NDN_PACKET_SIZE);
 

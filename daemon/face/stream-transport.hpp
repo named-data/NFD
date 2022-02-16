@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ template<class Protocol>
 class StreamTransport : public Transport
 {
 public:
-  typedef Protocol protocol;
+  using protocol = Protocol;
 
   /** \brief Construct stream transport.
    *
@@ -244,16 +244,17 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
 
   m_receiveBufferSize += nBytesReceived;
+  auto bufferView = ndn::make_span(m_receiveBuffer, m_receiveBufferSize);
   size_t offset = 0;
   bool isOk = true;
-  while (m_receiveBufferSize - offset > 0) {
+  while (offset < bufferView.size()) {
     Block element;
-    std::tie(isOk, element) = Block::fromBuffer(m_receiveBuffer + offset, m_receiveBufferSize - offset);
+    std::tie(isOk, element) = Block::fromBuffer(bufferView.subspan(offset));
     if (!isOk)
       break;
 
     offset += element.size();
-    BOOST_ASSERT(offset <= m_receiveBufferSize);
+    BOOST_ASSERT(offset <= bufferView.size());
 
     this->receive(element);
   }

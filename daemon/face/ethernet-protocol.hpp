@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_ETHERNET_PROTOCOL_HPP
 
 #include "core/common.hpp"
+
 #include <ndn-cxx/net/ethernet.hpp>
 #include <net/ethernet.h>
 
@@ -35,9 +36,8 @@ namespace ethernet {
 
 using namespace ndn::ethernet;
 
-std::pair<const ether_header*, std::string>
-checkFrameHeader(const uint8_t* packet, size_t length,
-                 const Address& localAddr, const Address& destAddr);
+std::tuple<const ether_header*, std::string>
+checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Address& destAddr);
 
 } // namespace ethernet
 } // namespace nfd

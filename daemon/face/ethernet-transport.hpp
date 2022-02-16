@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,13 +49,11 @@ public:
 
   /**
    * @brief Processes the payload of an incoming frame
-   * @param payload Pointer to the first byte of data after the Ethernet header
-   * @param length Payload length
+   * @param payload Payload bytes, starting from the first byte after the Ethernet header
    * @param sender Sender address
    */
   void
-  receivePayload(const uint8_t* payload, size_t length,
-                 const ethernet::Address& sender);
+  receivePayload(span<const uint8_t> payload, const ethernet::Address& sender);
 
 protected:
   EthernetTransport(const ndn::net::NetworkInterface& localEndpoint,

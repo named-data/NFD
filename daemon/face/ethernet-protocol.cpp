@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,14 +30,13 @@
 namespace nfd {
 namespace ethernet {
 
-std::pair<const ether_header*, std::string>
-checkFrameHeader(const uint8_t* packet, size_t length,
-                 const Address& localAddr, const Address& destAddr)
+std::tuple<const ether_header*, std::string>
+checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Address& destAddr)
 {
-  if (length < HDR_LEN + MIN_DATA_LEN)
-    return {nullptr, "Received frame too short: " + to_string(length) + " bytes"};
+  if (packet.size() < HDR_LEN + MIN_DATA_LEN)
+    return {nullptr, "Received frame too short: " + to_string(packet.size()) + " bytes"};
 
-  const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
+  const ether_header* eh = reinterpret_cast<const ether_header*>(packet.data());
 
   // in some cases VLAN-tagged frames may survive the BPF filter,
   // make sure we do not process those frames (see #3348)
