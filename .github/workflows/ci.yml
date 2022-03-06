@@ -22,8 +22,6 @@ jobs:
         include:
           - compiler: g++-7
             os: ubuntu-18.04
-          - compiler: clang++-5.0
-            os: ubuntu-18.04
           - compiler: clang++-6.0
             os: ubuntu-18.04
     runs-on: ${{ matrix.os }}
@@ -37,7 +35,7 @@ jobs:
           sudo apt-get -qy install ${CXX/clang++/clang}
           ${CXX} --version
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Build and test
         run: ./.jenkins
 
@@ -63,6 +61,6 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode }}
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Build and test
         run: ./.jenkins

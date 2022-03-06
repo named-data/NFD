@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #include "unicast-ethernet-transport.hpp"
 #include "common/global.hpp"
 
-#include <stdio.h>  // for snprintf()
+#include <cstdio>   // for snprintf()
 
 namespace nfd {
 namespace face {
@@ -50,15 +50,13 @@ UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterf
   NFD_LOG_FACE_DEBUG("Creating transport");
 
   char filter[110];
-  // note #1: we cannot use std::snprintf because it's not available
-  //          on some platforms (see #2299)
-  // note #2: "not vlan" must appear last in the filter expression, or the
-  //          rest of the filter won't work as intended (see pcap-filter(7))
-  snprintf(filter, sizeof(filter),
-           "(ether proto 0x%x) && (ether src %s) && (ether dst %s) && (not vlan)",
-           ethernet::ETHERTYPE_NDN,
-           m_destAddress.toString().data(),
-           m_srcAddress.toString().data());
+  // Note: "not vlan" must appear last in the filter expression, or the
+  //       rest of the filter won't work as intended (see pcap-filter(7))
+  std::snprintf(filter, sizeof(filter),
+                "(ether proto 0x%x) && (ether src %s) && (ether dst %s) && (not vlan)",
+                ethernet::ETHERTYPE_NDN,
+                m_destAddress.toString().data(),
+                m_srcAddress.toString().data());
   m_pcap.setPacketFilter(filter);
 
   if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&

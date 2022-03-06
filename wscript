@@ -114,14 +114,10 @@ def configure(conf):
         boost_libs.append('unit_test_framework')
 
     conf.check_boost(lib=boost_libs, mt=True)
-    if conf.env.BOOST_VERSION_NUMBER < 105800:
+    if conf.env.BOOST_VERSION_NUMBER < 106501:
         conf.fatal('The minimum supported version of Boost is 1.65.1.\n'
                    'Please upgrade your distribution or manually install a newer version of Boost.\n'
                    'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
-    elif conf.env.BOOST_VERSION_NUMBER < 106501:
-        Logs.warn('WARNING: Using a version of Boost older than 1.65.1 is not officially supported and may not work.\n'
-                  'If you encounter any problems, please upgrade your distribution or manually install a newer version of Boost.\n'
-                  'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
 
     conf.load('unix-socket')
 

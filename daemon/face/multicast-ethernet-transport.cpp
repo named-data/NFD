@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,9 +27,9 @@
 #include "common/global.hpp"
 
 #include <cerrno>         // for errno
+#include <cstdio>         // for snprintf()
 #include <cstring>        // for memcpy(), strerror(), strncpy()
 #include <net/if.h>       // for struct ifreq
-#include <stdio.h>        // for snprintf()
 #include <sys/ioctl.h>    // for ioctl()
 
 #if defined(__linux__)
@@ -66,20 +66,19 @@ MulticastEthernetTransport::MulticastEthernetTransport(const ndn::net::NetworkIn
   NFD_LOG_FACE_DEBUG("Creating transport");
 
   char filter[110];
-  // note #1: we cannot use std::snprintf because it's not available
-  //          on some platforms (see #2299)
-  // note #2: "not vlan" must appear last in the filter expression, or the
-  //          rest of the filter won't work as intended (see pcap-filter(7))
-  snprintf(filter, sizeof(filter),
-           "(ether proto 0x%x) && (ether dst %s) && (not ether src %s) && (not vlan)",
-           ethernet::ETHERTYPE_NDN,
-           m_destAddress.toString().data(),
-           m_srcAddress.toString().data());
+  // Note: "not vlan" must appear last in the filter expression, or the
+  //       rest of the filter won't work as intended (see pcap-filter(7))
+  std::snprintf(filter, sizeof(filter),
+                "(ether proto 0x%x) && (ether dst %s) && (not ether src %s) && (not vlan)",
+                ethernet::ETHERTYPE_NDN,
+                m_destAddress.toString().data(),
+                m_srcAddress.toString().data());
   m_pcap.setPacketFilter(filter);
 
   BOOST_ASSERT(m_destAddress.isMulticast());
-  if (!m_destAddress.isBroadcast())
+  if (!m_destAddress.isBroadcast()) {
     joinMulticastGroup();
+  }
 }
 
 void

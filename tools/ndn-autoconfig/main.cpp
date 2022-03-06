@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,11 +37,6 @@
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/time.hpp>
-
-// suppress warning caused by boost::program_options::parse_config_file
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wundefined-func-template"
-#endif
 
 // ndn-autoconfig is an NDN tool not an NFD tool, so it uses ndn::tools::autoconfig namespace.
 // It lives in NFD repository because nfd-start can automatically start ndn-autoconfig in daemon mode.

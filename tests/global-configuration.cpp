@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,13 +66,7 @@ private:
   std::string m_home;
 };
 
-#if BOOST_VERSION >= 106500
 BOOST_TEST_GLOBAL_CONFIGURATION(GlobalConfiguration);
-#elif BOOST_VERSION >= 105900
-BOOST_GLOBAL_FIXTURE(GlobalConfiguration);
-#else
-BOOST_GLOBAL_FIXTURE(GlobalConfiguration)
-#endif
 
 } // namespace tests
 } // namespace nfd

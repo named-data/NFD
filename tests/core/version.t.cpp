@@ -37,11 +37,11 @@ BOOST_AUTO_TEST_SUITE(TestVersion)
 
 BOOST_AUTO_TEST_CASE(VersionNumber)
 {
-  BOOST_TEST_MESSAGE("NFD_VERSION = " + to_string(NFD_VERSION));
+  BOOST_TEST_MESSAGE("NFD_VERSION = " << NFD_VERSION);
 
-  BOOST_TEST(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
-                          NFD_VERSION_MINOR * 1000 +
-                          NFD_VERSION_PATCH);
+  BOOST_TEST(NFD_VERSION == NFD_VERSION_MAJOR * 1000000 +
+                            NFD_VERSION_MINOR * 1000 +
+                            NFD_VERSION_PATCH);
 
   static_assert(NFD_VERSION_MAJOR >= 22 && NFD_VERSION_MAJOR <= 100, "");
   static_assert(NFD_VERSION_MINOR >= 1 && NFD_VERSION_MINOR <= 12, "");
