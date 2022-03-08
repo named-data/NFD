@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,7 +76,6 @@ BOOST_AUTO_TEST_CASE(HubData)
 
   // interest2 asks for a different version, and should not be responded
   Interest interest2(Name(interest.getName()).appendVersion(dataName.at(-1).toVersion() - 1));
-  interest2.setCanBePrefix(false);
   face.receive(interest2);
   face.processEvents(1_s);
   BOOST_CHECK_EQUAL(face.sentData.size(), 1);

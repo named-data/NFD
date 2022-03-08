@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,7 +54,6 @@ public:
   {
     if (frags.front().has<lp::FragmentField>()) {
       Interest interest("/test/prefix");
-      interest.setCanBePrefix(false);
       lp::Packet pkt;
       pkt.add<lp::FragmentField>({interest.wireEncode().begin(), interest.wireEncode().end()});
       assignSequences(frags);
@@ -994,7 +993,6 @@ BOOST_AUTO_TEST_CASE(TrackRecentReceivedLpPackets)
 BOOST_AUTO_TEST_CASE(DropDuplicateReceivedSequence)
 {
   Interest interest("/test/prefix");
-  interest.setCanBePrefix(false);
   lp::Packet pkt1;
   pkt1.add<lp::FragmentField>({interest.wireEncode().begin(), interest.wireEncode().end()});
   pkt1.add<lp::SequenceField>(7);
