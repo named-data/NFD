@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,7 +64,7 @@ computeHash(const Name& name, size_t prefixLen)
   HashValue h = 0;
   for (size_t i = 0, last = std::min(prefixLen, name.size()); i < last; ++i) {
     const name::Component& comp = name[i];
-    h ^= HashFunc::compute(comp.wire(), comp.size());
+    h ^= HashFunc::compute(comp.data(), comp.size());
   }
   return h;
 }
@@ -83,7 +83,7 @@ computeHashes(const Name& name, size_t prefixLen)
 
   for (size_t i = 0; i < last; ++i) {
     const name::Component& comp = name[i];
-    h ^= HashFunc::compute(comp.wire(), comp.size());
+    h ^= HashFunc::compute(comp.data(), comp.size());
     seq.push_back(h);
   }
   return seq;

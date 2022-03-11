@@ -297,8 +297,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_MissingKeyLocator)
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
       ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO,
-                       sigInfo.wireEncode().begin(), sigInfo.wireEncode().end());
+      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO, ndn::make_span(sigInfo.wireEncode()));
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
@@ -313,8 +312,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_BadKeyLocatorType)
                                            {0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD}));
       ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
       sigInfo.setKeyLocator(kl);
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO,
-                       sigInfo.wireEncode().begin(), sigInfo.wireEncode().end());
+      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO, ndn::make_span(sigInfo.wireEncode()));
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);

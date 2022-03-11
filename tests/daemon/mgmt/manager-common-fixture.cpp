@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,7 +47,7 @@ CommandInterestSignerFixture::makeControlCommandRequest(Name commandName,
                                                         const ControlParameters& params,
                                                         const Name& identity)
 {
-  commandName.append(params.wireEncode());
+  commandName.append(tlv::GenericNameComponent, params.wireEncode());
   return this->makeCommandInterest(commandName, identity);
 }
 
@@ -155,12 +155,11 @@ ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
   }
 
   ndn::EncodingBuffer encoder;
-  size_t valueLength = 0;
+  size_t length = 0;
   for (size_t i = startIndex; i < endIndex ; i ++) {
-    valueLength += encoder.appendByteArray(m_responses[i].getContent().value(),
-                                           m_responses[i].getContent().value_size());
+    length += encoder.appendBytes(m_responses[i].getContent().value_bytes());
   }
-  encoder.prependVarNumber(valueLength);
+  encoder.prependVarNumber(length);
   encoder.prependVarNumber(tlv::Content);
   return encoder.block();
 }

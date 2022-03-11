@@ -83,7 +83,7 @@ WebSocketTransport::doSend(const Block& packet)
   NFD_LOG_FACE_TRACE(__func__);
 
   websocketpp::lib::error_code error;
-  m_server.send(m_handle, packet.wire(), packet.size(),
+  m_server.send(m_handle, packet.data(), packet.size(),
                 websocketpp::frame::opcode::binary, error);
   if (error)
     return processErrorCode(error);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -147,7 +147,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
   TRANSPORT_TEST_INIT();
 
   auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
-  this->client.send(this->clientHdl, pkt1.wire(), pkt1.size(), websocketpp::frame::opcode::binary);
+  this->client.send(this->clientHdl, pkt1.data(), pkt1.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
 
@@ -155,7 +155,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt1.size());
 
   auto pkt2 = ndn::encoding::makeStringBlock(301, "world!");
-  this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
+  this->client.send(this->clientHdl, pkt2.data(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
 
@@ -175,7 +175,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures
   TRANSPORT_TEST_INIT();
 
   auto pkt1 = ndn::encoding::makeStringBlock(300, "hello");
-  this->client.send(this->clientHdl, pkt1.wire(), pkt1.size() - 1, // truncated
+  this->client.send(this->clientHdl, pkt1.data(), pkt1.size() - 1, // truncated
                     websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
@@ -185,7 +185,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures
   BOOST_CHECK_EQUAL(this->serverReceivedPackets->size(), 0);
 
   auto pkt2 = ndn::encoding::makeStringBlock(301, "world!");
-  this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
+  this->client.send(this->clientHdl, pkt2.data(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
                                         1_s), LimitedIo::EXCEED_OPS);
 

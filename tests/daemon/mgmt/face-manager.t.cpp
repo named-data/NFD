@@ -216,18 +216,16 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
   auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
 
-  auto generateQuery = [] (const FaceQueryFilter& filter) {
-    return Interest(Name("/localhost/nfd/faces/query")
-                    .append(filter.wireEncode().begin(), filter.wireEncode().end()))
+  auto generateQuery = [] (const auto& filter) {
+    return Interest(Name("/localhost/nfd/faces/query").append(tlv::GenericNameComponent, filter.wireEncode()))
            .setCanBePrefix(true);
   };
 
   auto schemeQuery = generateQuery(FaceQueryFilter().setUriScheme("dummy"));
   auto idQuery = generateQuery(FaceQueryFilter().setFaceId(face1->getId()));
   auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL));
-  auto invalidContent = ndn::makeStringBlock(tlv::Content, "invalid");
   auto invalidQueryName = Name("/localhost/nfd/faces/query")
-                          .append(invalidContent.begin(), invalidContent.end());
+                          .append(tlv::GenericNameComponent, ndn::makeStringBlock(tlv::Content, "invalid"));
   auto invalidQuery = Interest(invalidQueryName).setCanBePrefix(true);
 
   receiveInterest(schemeQuery); // face1 and face2 expected
