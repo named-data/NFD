@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,9 +70,7 @@ public: // triggers
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  static const time::milliseconds RETX_SUPPRESSION_INITIAL;
-  static const time::milliseconds RETX_SUPPRESSION_MAX;
-  RetxSuppressionExponential m_retxSuppression;
+  std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
 
   friend ProcessNackTraits<BestRouteStrategy>;
 };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,10 +26,10 @@
 #ifndef NFD_DAEMON_FW_ASF_STRATEGY_HPP
 #define NFD_DAEMON_FW_ASF_STRATEGY_HPP
 
+#include "strategy.hpp"
 #include "asf-measurements.hpp"
 #include "asf-probing-module.hpp"
-#include "fw/retx-suppression-exponential.hpp"
-#include "fw/strategy.hpp"
+#include "retx-suppression-exponential.hpp"
 
 namespace nfd {
 namespace fw {
@@ -65,9 +65,6 @@ public: // triggers
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 private:
-  void
-  processParams(const PartialName& parsed);
-
   pit::OutRecord*
   forwardInterest(const Interest& interest, Face& outFace, const fib::Entry& fibEntry,
                   const shared_ptr<pit::Entry>& pitEntry);
@@ -89,12 +86,11 @@ private:
 
 private:
   AsfMeasurements m_measurements;
-  ProbingModule m_probing;
-  RetxSuppressionExponential m_retxSuppression;
-  size_t m_nMaxTimeouts = 3;
 
-  static const time::milliseconds RETX_SUPPRESSION_INITIAL;
-  static const time::milliseconds RETX_SUPPRESSION_MAX;
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
+  ProbingModule m_probing;
+  size_t m_nMaxTimeouts = 3;
 };
 
 } // namespace asf

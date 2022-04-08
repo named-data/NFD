@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,25 +33,22 @@ namespace fw {
 NFD_LOG_INIT(BestRouteStrategy);
 NFD_REGISTER_STRATEGY(BestRouteStrategy);
 
-const time::milliseconds BestRouteStrategy::RETX_SUPPRESSION_INITIAL(10);
-const time::milliseconds BestRouteStrategy::RETX_SUPPRESSION_MAX(250);
-
 BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , ProcessNackTraits(this)
-  , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
-                      RetxSuppressionExponential::DEFAULT_MULTIPLIER,
-                      RETX_SUPPRESSION_MAX)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
-  if (!parsed.parameters.empty()) {
-    NDN_THROW(std::invalid_argument("BestRouteStrategy does not accept parameters"));
-  }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     NDN_THROW(std::invalid_argument(
       "BestRouteStrategy does not support version " + to_string(*parsed.version)));
   }
+
+  StrategyParameters params = parseParameters(parsed.parameters);
+  m_retxSuppression = RetxSuppressionExponential::construct(params);
+
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
+
+  NDN_LOG_DEBUG(*m_retxSuppression);
 }
 
 const Name&
@@ -65,7 +62,7 @@ void
 BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
-  RetxSuppressionResult suppression = m_retxSuppression.decidePerPitEntry(*pitEntry);
+  RetxSuppressionResult suppression = m_retxSuppression->decidePerPitEntry(*pitEntry);
   if (suppression == RetxSuppressionResult::SUPPRESS) {
     NFD_LOG_DEBUG(interest << " from=" << ingress << " suppressed");
     return;

@@ -28,8 +28,6 @@ import os, subprocess
 
 VERSION = '22.02'
 APPNAME = 'nfd'
-BUGREPORT = 'https://redmine.named-data.net/projects/nfd'
-URL = 'https://named-data.net/doc/NFD/'
 GIT_TAG_PREFIX = 'NFD-'
 
 def options(opt):

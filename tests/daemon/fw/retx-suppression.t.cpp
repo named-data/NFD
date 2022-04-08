@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(Exponential)
   FaceTable faceTable;
   Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
-  RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
+  RetxSuppressionExponential rs(10_ms, 100_ms, 3.0);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
   FaceTable faceTable;
   Forwarder forwarder(faceTable);
   Pit& pit = forwarder.getPit();
-  RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
+  RetxSuppressionExponential rs(10_ms, 100_ms, 3.0);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();

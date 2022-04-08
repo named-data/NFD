@@ -42,6 +42,29 @@ OPTIONS
     A name that identifies the forwarding strategy.
     Consult NFD Developer's Guide for a complete list of all implemented strategies.
 
+    For the ASF, BestRoute, and Multicast strategies, the following options may be supplied
+    to configure exponential retransmission suppression by appending them after the strategy
+    name and version number.
+
+    **retx-suppression-initial**
+        Starting duration of the suppression interval within which any retransmitted
+        Interests are considered for suppression. The default value is 10 ms.
+
+        Format: ``retx-suppression-initial~<milliseconds>``
+
+    **retx-suppression-max**
+        Maximum duration of the suppression interval. Must not be smaller than
+        **retx-suppression-initial**. The default value is 250 ms.
+
+        Format: ``retx-suppression-max~<milliseconds>``
+
+    **retx-suppression-multiplier**
+        The suppression interval is increased by this multiplier. The default value is 2.
+
+        Format: ``retx-suppression-multiplier~<float>``
+
+    See :manpage:`nfd-asf-strategy(7)` for details on additional parameters for ASF strategy.
+
 EXIT CODES
 ----------
 0: Success
@@ -65,6 +88,10 @@ nfdc strategy set prefix / strategy /localhost/nfd/strategy/best-route
 
 nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/multicast/v=4
     Set the strategy for the "/ndn" prefix to multicast, version 4.
+
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/multicast/v=4/retx-suppression-initial~20/retx-suppression-max~500
+    Set the strategy for the "/ndn" prefix to multicast, version 4, with retransmission
+    suppression initial interval set to 20 ms and maximum interval set to 500 ms.
 
 nfdc strategy unset prefix /ndn
     Clear the strategy choice for the "/ndn" prefix.

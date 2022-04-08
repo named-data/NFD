@@ -40,13 +40,18 @@ nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf
     Use the default values for all parameters.
 
 nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000
-    Set probing interval to 30 seconds.
+    Set the probing interval to 30 seconds.
 
 nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/max-timeouts~5
-    Set max timeouts to 5.
+    Set the maximum number of timeouts to 5.
 
 nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000/max-timeouts~2
-    Set probing interval to 30 seconds and max timeouts to 2.
+    Set the probing interval to 30 seconds and the maximum number of timeouts to 2.
+
+nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/retx-suppression-multiplier~2.5/probing-interval~45000
+    Set the retransmission suppression multiplier to 2.5 and the probing interval
+    to 45 seconds. See :manpage:`nfdc-strategy(1)` for more information on the
+    retransmission suppression parameters.
 
 See also
 --------

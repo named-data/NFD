@@ -140,6 +140,29 @@ Strategy::makeInstanceName(const Name& input, const Name& strategyName)
   return hasVersion ? input : Name(input).append(strategyName.at(-1));
 }
 
+StrategyParameters
+Strategy::parseParameters(const PartialName& params)
+{
+  StrategyParameters parsed;
+
+  for (const auto& component : params) {
+    auto sep = std::find(component.value_begin(), component.value_end(), '~');
+    if (sep == component.value_end()) {
+      NDN_THROW(std::invalid_argument("Strategy parameters format is (<parameter>~<value>)*"));
+    }
+
+    std::string p(component.value_begin(), sep);
+    std::advance(sep, 1);
+    std::string v(sep, component.value_end());
+    if (p.empty() || v.empty()) {
+      NDN_THROW(std::invalid_argument("Strategy parameter name and value cannot be empty"));
+    }
+    parsed[std::move(p)] = std::move(v);
+  }
+
+  return parsed;
+}
+
 Strategy::Strategy(Forwarder& forwarder)
   : afterAddFace(forwarder.m_faceTable.afterAdd)
   , beforeRemoveFace(forwarder.m_faceTable.beforeRemove)
@@ -299,7 +322,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
   for (const auto& delegation : fh) {
     fibEntry = &fib.findLongestPrefixMatch(delegation);
     if (fibEntry->hasNextHops()) {
-      if (fibEntry->getPrefix().size() == 0) {
+      if (fibEntry->getPrefix().empty()) {
         // in consumer region, return the default route
         NFD_LOG_TRACE("lookupFib inConsumerRegion found=" << fibEntry->getPrefix());
       }
@@ -309,9 +332,9 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
       }
       return *fibEntry;
     }
-    BOOST_ASSERT(fibEntry->getPrefix().size() == 0); // only ndn:/ FIB entry can have zero nexthop
+    BOOST_ASSERT(fibEntry->getPrefix().empty()); // only ndn:/ FIB entry can have zero nexthop
   }
-  BOOST_ASSERT(fibEntry != nullptr && fibEntry->getPrefix().size() == 0);
+  BOOST_ASSERT(fibEntry != nullptr && fibEntry->getPrefix().empty());
   return *fibEntry; // only occurs if no delegation finds a FIB nexthop
 }
 

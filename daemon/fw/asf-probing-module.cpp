@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -171,10 +171,10 @@ ProbingModule::getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t n
 }
 
 void
-ProbingModule::setProbingInterval(size_t probingInterval)
+ProbingModule::setProbingInterval(time::milliseconds probingInterval)
 {
-  if (time::milliseconds(probingInterval) >= MIN_PROBING_INTERVAL) {
-    m_probingInterval = time::milliseconds(probingInterval);
+  if (probingInterval >= MIN_PROBING_INTERVAL) {
+    m_probingInterval = probingInterval;
   }
   else {
     NDN_THROW(std::invalid_argument("Probing interval must be >= " +
