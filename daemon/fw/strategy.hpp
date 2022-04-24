@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,6 @@
 
 namespace nfd {
 namespace fw {
-
-class StrategyParameters;
 
 /**
  * \brief Represents a forwarding strategy
@@ -68,7 +66,7 @@ public: // registry
   canCreate(const Name& instanceName);
 
   /** \return A strategy instance created from \p instanceName
-   *  \retval nullptr if `canCreate(instanceName) == false`
+   *  \retval nullptr if !canCreate(instanceName)
    *  \throw std::invalid_argument strategy type constructor does not accept
    *                               specified version or parameters
    */
@@ -376,9 +374,9 @@ protected: // accessors
 protected: // instance name
   struct ParsedInstanceName
   {
-    Name strategyName; ///< Strategy name without parameters
-    optional<uint64_t> version; ///< The strategy version number, if present
-    PartialName parameters; ///< Parameter components, may be empty
+    Name strategyName; ///< strategy name without parameters
+    optional<uint64_t> version; ///< whether strategyName contains a version component
+    PartialName parameters; ///< parameter components
   };
 
   /** \brief Parse a strategy instance name
@@ -410,15 +408,6 @@ protected: // instance name
     m_name = name;
   }
 
-NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
-  /**
-   * \brief Parse strategy parameters encoded in a strategy instance name
-   * \param params encoded parameters, typically obtained from a call to parseInstanceName()
-   * \throw std::invalid_argument the encoding format is invalid or unsupported by this implementation
-   */
-  static StrategyParameters
-  parseParameters(const PartialName& params);
-
 private: // registry
   using CreateFunc = std::function<unique_ptr<Strategy>(Forwarder&, const Name& /*strategyName*/)>;
   using Registry = std::map<Name, CreateFunc>; // indexed by strategy name
@@ -437,48 +426,6 @@ private: // instance fields
   Name m_name;
   Forwarder& m_forwarder;
   MeasurementsAccessor m_measurements;
-};
-
-class StrategyParameters : public std::map<std::string, std::string>
-{
-public:
-  // Note: only arithmetic types are supported by getOrDefault() for now
-
-  template<typename T>
-  std::enable_if_t<std::is_signed<T>::value, T>
-  getOrDefault(const key_type& key, const T& defaultVal) const
-  {
-    auto it = find(key);
-    if (it == end()) {
-      return defaultVal;
-    }
-
-    T val{};
-    if (!boost::conversion::try_lexical_convert(it->second, val)) {
-      NDN_THROW(std::invalid_argument(key + " value is malformed"));
-    }
-    return val;
-  }
-
-  template<typename T>
-  std::enable_if_t<std::is_unsigned<T>::value, T>
-  getOrDefault(const key_type& key, const T& defaultVal) const
-  {
-    auto it = find(key);
-    if (it == end()) {
-      return defaultVal;
-    }
-
-    if (it->second.find('-') != std::string::npos) {
-      NDN_THROW(std::invalid_argument(key + " cannot be negative"));
-    }
-
-    T val{};
-    if (!boost::conversion::try_lexical_convert(it->second, val)) {
-      NDN_THROW(std::invalid_argument(key + " value is malformed"));
-    }
-    return val;
-  }
 };
 
 } // namespace fw

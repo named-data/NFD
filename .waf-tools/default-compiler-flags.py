@@ -16,21 +16,20 @@ def configure(conf):
     errmsg = ''
     warnmsg = ''
     if cxx == 'gcc':
-        if ccver < (7, 4, 0):
+        if ccver < (5, 3, 0):
             errmsg = ('The version of gcc you are using is too old.\n'
-                      'The minimum supported gcc version is 7.4.')
+                      'The minimum supported gcc version is 7.4.0.')
+        elif ccver < (7, 4, 0):
+            warnmsg = ('Using a version of gcc older than 7.4.0 is not '
+                       'officially supported and may result in build failures.')
         conf.flags = GccFlags()
     elif cxx == 'clang':
-        if Utils.unversioned_sys_platform() == 'darwin':
-            if ccver < (10, 0, 0):
-                errmsg = ('The version of Xcode you are using is too old.\n'
-                          'The minimum supported Xcode version is 11.3.')
-            elif ccver < (11, 0, 0):
-                warnmsg = ('Using a version of Xcode older than 11.3 is not '
-                           'officially supported and may result in build failures.')
-        elif ccver < (6, 0, 0):
+        if Utils.unversioned_sys_platform() == 'darwin' and ccver < (9, 0, 0):
+            errmsg = ('The version of Xcode you are using is too old.\n'
+                      'The minimum supported Xcode version is 9.0.')
+        elif ccver < (4, 0, 0):
             errmsg = ('The version of clang you are using is too old.\n'
-                      'The minimum supported clang version is 6.0.')
+                      'The minimum supported clang version is 4.0.')
         conf.flags = ClangFlags()
     else:
         warnmsg = '%s compiler is unsupported' % cxx
@@ -182,7 +181,7 @@ class GccFlags(GccBasicFlags):
         flags['CXXFLAGS'] += ['-fdiagnostics-color',
                               '-Wredundant-tags',
                               ]
-        if platform.machine() == 'armv7l':
+        if platform.machine() == 'armv7l' and self.getCompilerVersion(conf) >= (7, 1, 0):
             flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
@@ -191,7 +190,7 @@ class GccFlags(GccBasicFlags):
         flags['CXXFLAGS'] += ['-fdiagnostics-color',
                               '-Wredundant-tags',
                               ]
-        if platform.machine() == 'armv7l':
+        if platform.machine() == 'armv7l' and self.getCompilerVersion(conf) >= (7, 1, 0):
             flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
@@ -213,6 +212,8 @@ class ClangFlags(GccBasicFlags):
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
+        if self.getCompilerVersion(conf) < (6, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -221,4 +222,6 @@ class ClangFlags(GccBasicFlags):
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
+        if self.getCompilerVersion(conf) < (6, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags

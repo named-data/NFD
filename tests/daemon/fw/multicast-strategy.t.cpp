@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -170,8 +170,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   BOOST_TEST(didSendInterestTo(*face1));
   BOOST_TEST(didSendInterestTo(*face2));
 
-  const auto TICK = time::duration_cast<time::nanoseconds>(
-                    RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL) / 10;
+  const auto TICK = time::duration_cast<time::nanoseconds>(MulticastStrategy::RETX_SUPPRESSION_INITIAL) / 10;
 
   // downstream retransmits frequently, but the strategy should not send Interests
   // more often than DEFAULT_MIN_RETX_INTERVAL
@@ -196,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
     retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
+  this->advanceClocks(TICK, MulticastStrategy::RETX_SUPPRESSION_MAX * 16);
   retxFrom4Evt.cancel();
 }
 
@@ -216,7 +215,7 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
 
 BOOST_AUTO_TEST_CASE(RetxSuppression)
 {
-  const auto suppressPeriod = RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL;
+  const auto suppressPeriod = MulticastStrategy::RETX_SUPPRESSION_INITIAL;
   BOOST_ASSERT(suppressPeriod >= 8_ms);
 
   // Set up the FIB

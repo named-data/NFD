@@ -1,9 +1,13 @@
 # NFD - Named Data Networking Forwarding Daemon
 
+This version works with ndn-cxx: NDN C++ library with ISO-chinese cypto standard algorithms SM2, SM3, SM4 eXperimental eXtensions
+https://github.com/liupenghui1982/ndn-cxx
+
 [![CI](https://github.com/named-data/NFD/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/ci.yml)
 [![Docs](https://github.com/named-data/NFD/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/docs.yml)
 ![Language](https://img.shields.io/badge/C%2B%2B-14-blue)
 ![Latest version](https://img.shields.io/github/v/tag/named-data/NFD?label=Latest%20version)
+![ndn-cxx](https://github.com/liupenghui1982/ndn-cxx)
 
 ## Overview
 

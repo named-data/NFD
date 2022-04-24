@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -153,11 +153,13 @@ public:
   std::string
   getIdentityCertificateBase64(const Name& identity) const
   {
-    namespace tr = ndn::security::transform;
-
     auto cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
+    const auto& block = cert.wireEncode();
+
+    namespace tr = ndn::security::transform;
     std::ostringstream oss;
-    tr::bufferSource(cert.wireEncode()) >> tr::base64Encode(false) >> tr::streamSink(oss);
+    tr::bufferSource(block.wire(), block.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
+
     return oss.str();
   }
 

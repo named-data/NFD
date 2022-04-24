@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,7 +83,7 @@ WebSocketTransport::doSend(const Block& packet)
   NFD_LOG_FACE_TRACE(__func__);
 
   websocketpp::lib::error_code error;
-  m_server.send(m_handle, packet.data(), packet.size(),
+  m_server.send(m_handle, packet.wire(), packet.size(),
                 websocketpp::frame::opcode::binary, error);
   if (error)
     return processErrorCode(error);
@@ -98,7 +98,7 @@ WebSocketTransport::receiveMessage(const std::string& msg)
 
   bool isOk = false;
   Block element;
-  std::tie(isOk, element) = Block::fromBuffer({reinterpret_cast<const uint8_t*>(msg.data()), msg.size()});
+  std::tie(isOk, element) = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.data()), msg.size());
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse message payload");
     return;

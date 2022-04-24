@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2020,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -216,8 +216,8 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
   auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
 
-  auto generateQuery = [] (const auto& filter) {
-    return Interest(Name("/localhost/nfd/faces/query").append(tlv::GenericNameComponent, filter.wireEncode()))
+  auto generateQuery = [] (const FaceQueryFilter& filter) {
+    return Interest(Name("/localhost/nfd/faces/query").append(filter.wireEncode()))
            .setCanBePrefix(true);
   };
 
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto idQuery = generateQuery(FaceQueryFilter().setFaceId(face1->getId()));
   auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL));
   auto invalidQueryName = Name("/localhost/nfd/faces/query")
-                          .append(tlv::GenericNameComponent, ndn::makeStringBlock(tlv::Content, "invalid"));
+                          .append(ndn::makeStringBlock(tlv::Content, "invalid"));
   auto invalidQuery = Interest(invalidQueryName).setCanBePrefix(true);
 
   receiveInterest(schemeQuery); // face1 and face2 expected

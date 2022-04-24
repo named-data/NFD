@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -141,7 +141,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
 
   // dispatch the datagram to the face for processing
   auto* transport = static_cast<UnicastUdpTransport*>(face->getTransport());
-  transport->receiveDatagram(ndn::make_span(m_receiveBuffer).first(nBytesReceived), error);
+  transport->receiveDatagram(m_receiveBuffer.data(), nBytesReceived, error);
 
   waitForNewPeer(onFaceCreated, onReceiveFailed);
 }

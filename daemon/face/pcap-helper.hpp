@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -79,7 +79,7 @@ public:
    * @sa pcap_close(3pcap)
    */
   void
-  close() noexcept;
+  close();
 
   /**
    * @brief Obtain a file descriptor that can be used in calls such as select(2) and poll(2).
@@ -98,7 +98,7 @@ public:
    * @sa pcap_geterr(3pcap)
    */
   std::string
-  getLastError() const noexcept;
+  getLastError() const;
 
   /**
    * @brief Get the number of packets dropped by the kernel, as reported by libpcap.
@@ -120,17 +120,18 @@ public:
 
   /**
    * @brief Read the next packet captured on the interface.
-   * @return If successful, returns a tuple containing a read-only view of the received
-   *         packet bytes (including the link-layer header) and a second element that
-   *         must be ignored. On failure, returns a tuple containing an empty span and
-   *         the reason for the failure.
-   * @warning The returned span is valid only until the next call to this function.
+   * @return If successful, returns a tuple containing a pointer to the received packet
+   *         (including the link-layer header) and the size of the packet; the third
+   *         element must be ignored. On failure, returns a tuple containing nullptr,
+   *         0, and the reason for the failure.
+   * @warning The returned pointer must not be freed by the caller, and is valid only
+   *          until the next call to this function.
    * @sa pcap_next_ex(3pcap)
    */
-  std::tuple<span<const uint8_t>, std::string>
-  readNextPacket() const noexcept;
+  std::tuple<const uint8_t*, size_t, std::string>
+  readNextPacket() const;
 
-  operator pcap_t*() const noexcept
+  operator pcap_t*() const
   {
     return m_pcap;
   }

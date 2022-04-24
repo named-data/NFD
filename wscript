@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2022,  Regents of the University of California,
+Copyright (c) 2014-2021,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,10 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 from waflib import Context, Logs, Utils
 import os, subprocess
 
-VERSION = '22.02'
+VERSION = '0.7.1'
 APPNAME = 'nfd'
+BUGREPORT = 'https://redmine.named-data.net/projects/nfd'
+URL = 'https://named-data.net/doc/NFD/'
 GIT_TAG_PREFIX = 'NFD-'
 
 def options(opt):
@@ -92,9 +94,8 @@ def configure(conf):
     conf.find_program('bash', var='BASH')
     conf.find_program('dot', var='DOT', mandatory=False)
 
-    pkg_config_path = os.environ.get('PKG_CONFIG_PATH', f'{conf.env.LIBDIR}/pkgconfig')
-    conf.check_cfg(package='libndn-cxx', args=['libndn-cxx >= 0.8.0', '--cflags', '--libs'],
-                   uselib_store='NDN_CXX', pkg_config_path=pkg_config_path)
+    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
+                   pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
     if not conf.options.without_systemd:
         conf.check_cfg(package='libsystemd', args=['--cflags', '--libs'],
@@ -113,10 +114,14 @@ def configure(conf):
         boost_libs.append('unit_test_framework')
 
     conf.check_boost(lib=boost_libs, mt=True)
-    if conf.env.BOOST_VERSION_NUMBER < 106501:
+    if conf.env.BOOST_VERSION_NUMBER < 105800:
         conf.fatal('The minimum supported version of Boost is 1.65.1.\n'
                    'Please upgrade your distribution or manually install a newer version of Boost.\n'
                    'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
+    elif conf.env.BOOST_VERSION_NUMBER < 106501:
+        Logs.warn('WARNING: Using a version of Boost older than 1.65.1 is not officially supported and may not work.\n'
+                  'If you encounter any problems, please upgrade your distribution or manually install a newer version of Boost.\n'
+                  'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
 
     conf.load('unix-socket')
 
@@ -234,19 +239,17 @@ def build(bld):
 def versionhpp(bld):
     version(bld)
 
-    vmajor = int(VERSION_SPLIT[0])
-    vminor = int(VERSION_SPLIT[1]) if len(VERSION_SPLIT) >= 2 else 0
-    vpatch = int(VERSION_SPLIT[2]) if len(VERSION_SPLIT) >= 3 else 0
-
     bld(features='subst',
         name='version.hpp',
         source='core/version.hpp.in',
         target='core/version.hpp',
         install_path=None,
-        VERSION=vmajor * 1000000 + vminor * 1000 + vpatch,
-        VERSION_MAJOR=str(vmajor),
-        VERSION_MINOR=str(vminor),
-        VERSION_PATCH=str(vpatch))
+        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
+                int(VERSION_SPLIT[1]) * 1000 +
+                int(VERSION_SPLIT[2]),
+        VERSION_MAJOR=VERSION_SPLIT[0],
+        VERSION_MINOR=VERSION_SPLIT[1],
+        VERSION_PATCH=VERSION_SPLIT[2])
 
 def docs(bld):
     from waflib import Options

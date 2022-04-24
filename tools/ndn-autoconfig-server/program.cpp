@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,9 +53,12 @@ Program::Program(const Options& options, Face& face, KeyChain& keyChain)
 void
 Program::enableHubData(const FaceUri& hubFaceUri)
 {
+  std::string uri = hubFaceUri.toString();
+
   auto data = make_shared<Data>(Name(HUB_DATA_NAME).appendVersion());
   data->setFreshnessPeriod(1_h);
-  data->setContent(makeStringBlock(tlv::nfd::Uri, hubFaceUri.toString()));
+  data->setContent(makeBinaryBlock(tlv::nfd::Uri,
+                                   reinterpret_cast<const uint8_t*>(uri.data()), uri.size()));
   m_keyChain.sign(*data);
 
   m_face.setInterestFilter(HUB_DATA_NAME,

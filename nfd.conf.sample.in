@@ -374,16 +374,18 @@ rib
   ;   {
   ;     id "RIB Command Interest"
   ;     for interest
-  ;     ; match Commmand Interest name (either in v0.3 or v0.2 format)
+  ;     ; match Commmand Interest name
+  ;     ; last three components are ControlParameters, timestamp, and random-value
+  ;     ; SignatureInfo and SignatureValue are stripped before passing to the filter
   ;     filter
   ;     {
   ;       type name
-  ;       regex ^<localhop><nfd><rib>[<register><unregister>]<>{1,3}$
+  ;       regex ^<localhop><nfd><rib>[<register><unregister>]<>{3}$
   ;     }
   ;     checker
   ;     {
   ;       type customized
-  ;       sig-type ecdsa-sha256
+  ;       sig-type  sm2-sm3
   ;       ; KeyLocator must be either a key name or a certificate name
   ;       key-locator
   ;       {
@@ -405,7 +407,7 @@ rib
   ;     checker
   ;     {
   ;       type customized
-  ;       sig-type ecdsa-sha256
+  ;       sig-type sm2-sm3
   ;       key-locator
   ;       {
   ;         type name

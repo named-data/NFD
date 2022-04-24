@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -123,7 +123,8 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
   auto post = m_manager.registerNotificationStream("test-notification");
   setTopPrefix();
 
-  post(Block({0x82, 0x01, 0x02}));
+  const uint8_t buf[] = {0x82, 0x01, 0x02};
+  post(Block(buf, sizeof(buf)));
   advanceClocks(1_ms);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);

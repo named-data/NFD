@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,21 +34,24 @@ NFD_REGISTER_STRATEGY(MulticastStrategy);
 
 NFD_LOG_INIT(MulticastStrategy);
 
+const time::milliseconds MulticastStrategy::RETX_SUPPRESSION_INITIAL(10);
+const time::milliseconds MulticastStrategy::RETX_SUPPRESSION_MAX(250);
+
 MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
+  , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
+                      RetxSuppressionExponential::DEFAULT_MULTIPLIER,
+                      RETX_SUPPRESSION_MAX)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    NDN_THROW(std::invalid_argument("MulticastStrategy does not accept parameters"));
+  }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     NDN_THROW(std::invalid_argument(
       "MulticastStrategy does not support version " + to_string(*parsed.version)));
   }
-
-  StrategyParameters params = parseParameters(parsed.parameters);
-  m_retxSuppression = RetxSuppressionExponential::construct(params);
-
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
-
-  NDN_LOG_DEBUG(*m_retxSuppression);
 }
 
 const Name&
@@ -68,7 +71,7 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
-    RetxSuppressionResult suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
+    RetxSuppressionResult suppressResult = m_retxSuppression.decidePerUpstream(*pitEntry, outFace);
 
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
       NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
@@ -82,7 +85,7 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
     NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
     auto* sentOutRecord = this->sendInterest(interest, outFace, pitEntry);
     if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
-      m_retxSuppression->incrementIntervalForOutRecord(*sentOutRecord);
+      m_retxSuppression.incrementIntervalForOutRecord(*sentOutRecord);
     }
   }
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -541,53 +541,39 @@ BOOST_FIXTURE_TEST_CASE(ProbingInterval, AsfStrategyParametersGridFixture)
   BOOST_CHECK_EQUAL(linkAC->getFace(nodeA).getCounters().nOutInterests, 1);
 }
 
-BOOST_AUTO_TEST_CASE(Parameters)
+BOOST_AUTO_TEST_CASE(InstantiationWithParameters)
 {
   FaceTable faceTable;
   Forwarder forwarder{faceTable};
 
-  auto checkValidity = [&] (const std::string& parameters, bool isCorrect) {
-    Name strategyName(Name(AsfStrategy::getStrategyName()).append(parameters));
-    std::unique_ptr<AsfStrategy> strategy;
-    BOOST_TEST_CONTEXT(parameters) {
-      if (isCorrect) {
-        strategy = make_unique<AsfStrategy>(forwarder, strategyName);
-        BOOST_CHECK(strategy->m_retxSuppression != nullptr);
-      }
-      else {
-        BOOST_CHECK_THROW(make_unique<AsfStrategy>(forwarder, strategyName), std::invalid_argument);
-      }
+  auto checkValidity = [&] (std::string parameters, bool isCorrect) {
+    Name strategyName(Name(AsfStrategy::getStrategyName()).append(std::move(parameters)));
+    if (isCorrect) {
+      BOOST_CHECK_NO_THROW(make_unique<AsfStrategy>(forwarder, strategyName));
     }
-    return strategy;
+    else {
+      BOOST_CHECK_THROW(make_unique<AsfStrategy>(forwarder, strategyName), std::invalid_argument);
+    }
   };
 
-  auto strategy = checkValidity("", true);
-  BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
-  BOOST_TEST(strategy->m_nMaxTimeouts == 3);
-  strategy = checkValidity("/probing-interval~30000/max-timeouts~5", true);
-  BOOST_TEST(strategy->m_probing.getProbingInterval() == 30_s);
-  BOOST_TEST(strategy->m_nMaxTimeouts == 5);
-  strategy = checkValidity("/max-timeouts~5/probing-interval~30000", true);
-  BOOST_TEST(strategy->m_probing.getProbingInterval() == 30_s);
-  BOOST_TEST(strategy->m_nMaxTimeouts == 5);
-  strategy = checkValidity("/probing-interval~1000", true);
-  BOOST_TEST(strategy->m_probing.getProbingInterval() == 1_s);
-  BOOST_TEST(strategy->m_nMaxTimeouts == 3);
-  strategy = checkValidity("/max-timeouts~0", true);
-  BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
-  BOOST_TEST(strategy->m_nMaxTimeouts == 0);
-  BOOST_TEST(strategy->m_retxSuppression->m_initialInterval == RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL);
-  BOOST_TEST(strategy->m_retxSuppression->m_maxInterval == RetxSuppressionExponential::DEFAULT_MAX_INTERVAL);
-  BOOST_TEST(strategy->m_retxSuppression->m_multiplier == RetxSuppressionExponential::DEFAULT_MULTIPLIER);
+  checkValidity("/probing-interval~30000/max-timeouts~5", true);
+  checkValidity("/max-timeouts~5/probing-interval~30000", true);
+  checkValidity("/probing-interval~30000", true);
+  checkValidity("/max-timeouts~5", true);
+  checkValidity("", true);
 
-  checkValidity("/probing-interval~500", false); // minimum is 1 second
+  checkValidity("/probing-interval~500", false); // At least 1 seconds
   checkValidity("/probing-interval~-5000", false);
-  checkValidity("/max-timeouts~-1", false);
-  checkValidity("/max-timeouts~ -1", false);
-  checkValidity("/max-timeouts~1-0", false);
-  checkValidity("/max-timeouts~1/probing-interval~-30000", false);
+  checkValidity("/max-timeouts~0", false);
+  checkValidity("/max-timeouts~-5", false);
+  checkValidity("/max-timeouts~-5/probing-interval~-30000", false);
+  checkValidity("/max-timeouts", false);
+  checkValidity("/probing-interval~", false);
+  checkValidity("/~1000", false);
   checkValidity("/probing-interval~foo", false);
   checkValidity("/max-timeouts~1~2", false);
+  checkValidity("/foo", false);
+  checkValidity("/foo~42", false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -112,7 +112,9 @@ protected:
     std::vector<shared_ptr<Interest>> workload(count);
     for (size_t i = 0; i < count; ++i) {
       Name name = genName(i);
-      workload[i] = std::make_shared<Interest>(name);
+      auto interest = std::make_shared<Interest>(name);
+      interest->setCanBePrefix(false);
+      workload[i] = interest;
     }
     return workload;
   }

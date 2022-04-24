@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,30 +28,27 @@
 
 #include "algorithm.hpp"
 #include "retx-suppression.hpp"
-#include "strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-/**
- * \brief A retransmission suppression decision algorithm that suppresses
- *        retransmissions using exponential backoff.
+/** \brief a retransmission suppression decision algorithm that
+ *         suppresses retransmissions using exponential backoff
  *
- * The i-th retransmission will be suppressed if the last transmission (out-record)
- * occurred within `MIN(initialInterval * multiplier^(i-1), maxInterval)`.
+ *  The i-th retransmission will be suppressed if the last transmission (out-record)
+ *  occurred within MIN(initialInterval * multiplier^(i-1), maxInterval)
  */
 class RetxSuppressionExponential
 {
 public:
-  /**
-   * \brief Time granularity.
+  /** \brief time granularity
    */
-  using Duration = time::milliseconds;
+  typedef time::microseconds Duration;
 
   explicit
-  RetxSuppressionExponential(Duration initialInterval = DEFAULT_INITIAL_INTERVAL,
-                             Duration maxInterval = DEFAULT_MAX_INTERVAL,
-                             float multiplier = DEFAULT_MULTIPLIER);
+  RetxSuppressionExponential(const Duration& initialInterval = DEFAULT_INITIAL_INTERVAL,
+                             float multiplier = DEFAULT_MULTIPLIER,
+                             const Duration& maxInterval = DEFAULT_MAX_INTERVAL);
 
   /** \brief determines whether Interest is a retransmission per pit entry
    *         and if so, whether it shall be forwarded or suppressed
@@ -70,27 +67,20 @@ public:
   void
   incrementIntervalForOutRecord(pit::OutRecord& outRecord);
 
-  static std::unique_ptr<RetxSuppressionExponential>
-  construct(const StrategyParameters& params);
-
-private: // non-member operators (hidden friends)
-  friend std::ostream&
-  operator<<(std::ostream& os, const RetxSuppressionExponential& retxSupp)
-  {
-    return os << "RetxSuppressionExponential initial-interval=" << retxSupp.m_initialInterval
-              << " max-interval=" << retxSupp.m_maxInterval
-              << " multiplier=" << retxSupp.m_multiplier;
-  }
+public:
+  /** \brief StrategyInfo on pit::Entry
+   */
+  class PitInfo;
 
 public:
   static const Duration DEFAULT_INITIAL_INTERVAL;
-  static const Duration DEFAULT_MAX_INTERVAL;
   static const float DEFAULT_MULTIPLIER;
+  static const Duration DEFAULT_MAX_INTERVAL;
 
-NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+private:
   const Duration m_initialInterval;
-  const Duration m_maxInterval;
   const float m_multiplier;
+  const Duration m_maxInterval;
 };
 
 } // namespace fw

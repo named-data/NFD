@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,13 +28,11 @@
 namespace nfd {
 namespace fw {
 
-const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL = 10_ms;
+const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL = 1_ms;
 const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_MAX_INTERVAL = 250_ms;
 const float RetxSuppressionExponential::DEFAULT_MULTIPLIER = 2.0f;
 
-namespace {
-
-class PitInfo final : public StrategyInfo
+class RetxSuppressionExponential::PitInfo final : public StrategyInfo
 {
 public:
   static constexpr int
@@ -44,7 +42,7 @@ public:
   }
 
   explicit
-  PitInfo(const RetxSuppressionExponential::Duration& initialInterval)
+  PitInfo(const Duration& initialInterval)
     : suppressionInterval(initialInterval)
   {
   }
@@ -53,27 +51,19 @@ public:
   /** \brief if last transmission occurred within suppressionInterval,
    *         retransmission will be suppressed
    */
-  RetxSuppressionExponential::Duration suppressionInterval;
+  Duration suppressionInterval;
 };
 
-} // namespace
-
-RetxSuppressionExponential::RetxSuppressionExponential(Duration initialInterval,
-                                                       Duration maxInterval,
-                                                       float multiplier)
+RetxSuppressionExponential::RetxSuppressionExponential(const Duration& initialInterval,
+                                                       float multiplier,
+                                                       const Duration& maxInterval)
   : m_initialInterval(initialInterval)
-  , m_maxInterval(maxInterval)
   , m_multiplier(multiplier)
+  , m_maxInterval(maxInterval)
 {
-  if (m_initialInterval <= 0_ns) {
-    NDN_THROW(std::invalid_argument("Retx suppression initial interval must be > 0"));
-  }
-  if (m_maxInterval < m_initialInterval) {
-    NDN_THROW(std::invalid_argument("Retx suppression max interval must be >= initial interval"));
-  }
-  if (m_multiplier < 1.0f) {
-    NDN_THROW(std::invalid_argument("Retx suppression multiplier must be >= 1"));
-  }
+  BOOST_ASSERT(initialInterval > 0_us);
+  BOOST_ASSERT(multiplier >= 1.0f);
+  BOOST_ASSERT(maxInterval >= initialInterval);
 }
 
 RetxSuppressionResult
@@ -131,19 +121,6 @@ RetxSuppressionExponential::incrementIntervalForOutRecord(pit::OutRecord& outRec
   PitInfo* pi = outRecord.insertStrategyInfo<PitInfo>(m_initialInterval).first;
   pi->suppressionInterval = std::min(m_maxInterval,
     time::duration_cast<Duration>(pi->suppressionInterval * m_multiplier));
-}
-
-std::unique_ptr<RetxSuppressionExponential>
-RetxSuppressionExponential::construct(const StrategyParameters& params)
-{
-  auto init = params.getOrDefault<Duration::rep>("retx-suppression-initial",
-                                                 RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL.count());
-  auto max = params.getOrDefault<Duration::rep>("retx-suppression-max",
-                                                RetxSuppressionExponential::DEFAULT_MAX_INTERVAL.count());
-  auto mult = params.getOrDefault<float>("retx-suppression-multiplier",
-                                         RetxSuppressionExponential::DEFAULT_MULTIPLIER);
-
-  return make_unique<RetxSuppressionExponential>(Duration(init), Duration(max), mult);
 }
 
 } // namespace fw

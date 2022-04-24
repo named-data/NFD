@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,7 +69,6 @@
 #include <ndn-cxx/util/optional.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/signal.hpp>
-#include <ndn-cxx/util/span.hpp>
 #include <ndn-cxx/util/time.hpp>
 
 #include <boost/asio.hpp>
@@ -98,7 +97,6 @@ using namespace std::string_literals;
 
 using ndn::optional;
 using ndn::nullopt;
-using ndn::span;
 using ndn::to_string;
 
 using ndn::Block;
