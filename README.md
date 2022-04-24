@@ -1,4 +1,4 @@
-# NFD - Named Data Networking Forwarding Daemon
+# NFD - Named Data Networking Forwarding Daemon working with ISO-chinese cypto standard algorithms
 
 This version works with ndn-cxx: NDN C++ library with ISO-chinese cypto standard algorithms SM2, SM3, SM4 eXperimental eXtensions
 https://github.com/liupenghui1982/ndn-cxx
