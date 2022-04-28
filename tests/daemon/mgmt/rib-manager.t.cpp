@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -128,16 +128,16 @@ public:
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
   {
-    m_keyChain.createIdentity(m_anchorId);
-    m_keyChain.createIdentity(m_derivedId);
-
-    m_derivedCert = m_keyChain.getPib().getIdentity(m_derivedId).getDefaultKey().getDefaultCertificate();
-    ndn::SignatureInfo signatureInfo;
-    signatureInfo.setValidityPeriod(m_derivedCert.getValidityPeriod());
-    ndn::security::SigningInfo signingInfo(ndn::security::SigningInfo::SIGNER_TYPE_ID,
-                                           m_anchorId, signatureInfo);
-    m_keyChain.sign(m_derivedCert, signingInfo);
+    auto anchorIdentity = m_keyChain.createIdentity(m_anchorId);
     saveIdentityCert(m_anchorId, "signer.ndncert", true);
+
+    auto derivedKey = m_keyChain.createIdentity(m_derivedId).getDefaultKey();
+    auto derivedSelfSigned = derivedKey.getDefaultCertificate();
+    ndn::security::MakeCertificateOptions opts;
+    opts.validity = derivedSelfSigned.getValidityPeriod();
+    auto derivedCert = m_keyChain.makeCertificate(derivedSelfSigned,
+                       ndn::security::signingByIdentity(anchorIdentity), opts);
+    m_keyChain.setDefaultCertificate(derivedKey, derivedCert);
 
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
@@ -155,11 +155,11 @@ public:
       clearRib();
     }
 
-    m_face.onSendInterest.connect([this] (const Interest& interest) {
-      if (interest.getName().isPrefixOf(m_derivedCert.getName())) {
-        if (m_status.isLocalhopConfigured && interest.template getTag<lp::NextHopFaceIdTag>() != nullptr) {
-          m_face.put(m_derivedCert);
-        }
+    m_face.onSendInterest.connect([=] (const Interest& interest) {
+      if (interest.matchesData(derivedCert) &&
+          m_status.isLocalhopConfigured &&
+          interest.template getTag<lp::NextHopFaceIdTag>() != nullptr) {
+        m_face.put(derivedCert);
       }
     });
   }
@@ -234,7 +234,6 @@ protected:
   ConfigurationStatus m_status;
   Name m_anchorId;
   Name m_derivedId;
-  ndn::security::Certificate m_derivedCert;
 
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;

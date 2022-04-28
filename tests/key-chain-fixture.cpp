@@ -47,30 +47,6 @@ KeyChainFixture::~KeyChainFixture()
   }
 }
 
-Certificate
-KeyChainFixture::makeCert(const Key& key, const std::string& issuer, const Key& signingKey)
-{
-  Certificate cert;
-  cert.setName(Name(key.getName())
-               .append(issuer)
-               .appendVersion());
-
-  // set metainfo
-  cert.setContentType(tlv::ContentType_Key);
-  cert.setFreshnessPeriod(1_h);
-
-  // set content
-  cert.setContent(key.getPublicKey());
-
-  // set signature info
-  ndn::SignatureInfo info;
-  auto now = time::system_clock::now();
-  info.setValidityPeriod(ValidityPeriod(now - 30_days, now + 30_days));
-
-  m_keyChain.sign(cert, signingByKey(signingKey ? signingKey : key).setSignatureInfo(info));
-  return cert;
-}
-
 bool
 KeyChainFixture::saveCert(const Data& cert, const std::string& filename)
 {

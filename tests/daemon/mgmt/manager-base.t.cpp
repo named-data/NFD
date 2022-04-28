@@ -141,8 +141,9 @@ BOOST_AUTO_TEST_CASE(ExtractRequester)
 
   requesterName = "";
   m_manager.extractRequester(makeControlCommandRequest("/test/interest/signed", ControlParameters()), testAccept);
-  auto keyLocator = m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY).getDefaultKey().getName();
-  BOOST_CHECK_EQUAL(requesterName, keyLocator.toUri());
+  BOOST_CHECK_EQUAL(requesterName,
+    m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
+      .getDefaultKey().getDefaultCertificate().getName().toUri());
 }
 
 BOOST_AUTO_TEST_CASE(ValidateParameters)
