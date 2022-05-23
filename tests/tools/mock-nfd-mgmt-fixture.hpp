@@ -64,11 +64,11 @@ protected: // ControlCommand
    *  \retval nullopt last Interest is not the expected command
    *  \return command parameters
    */
-  static optional<ControlParameters>
+  static std::optional<ControlParameters>
   parseCommand(const Interest& interest, const Name& expectedPrefix)
   {
     if (!expectedPrefix.isPrefixOf(interest.getName())) {
-      return nullopt;
+      return std::nullopt;
     }
     return ControlParameters(interest.getName().at(expectedPrefix.size()).blockFromValue());
   }

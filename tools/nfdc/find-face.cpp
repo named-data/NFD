@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,14 +57,14 @@ FindFace::execute(uint64_t faceId)
 }
 
 FindFace::Code
-FindFace::execute(const ndn::any& faceIdOrUri, bool allowMulti)
+FindFace::execute(const std::any& faceIdOrUri, bool allowMulti)
 {
-  const uint64_t* faceId = ndn::any_cast<uint64_t>(&faceIdOrUri);
+  const uint64_t* faceId = std::any_cast<uint64_t>(&faceIdOrUri);
   if (faceId != nullptr) {
     return this->execute(*faceId);
   }
   else {
-    return this->execute(ndn::any_cast<FaceUri>(faceIdOrUri), allowMulti);
+    return this->execute(std::any_cast<FaceUri>(faceIdOrUri), allowMulti);
   }
 }
 
@@ -105,7 +105,7 @@ FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
   return m_res;
 }
 
-optional<FaceUri>
+std::optional<FaceUri>
 FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
 {
   // We use a wrapper because we want to accept FaceUris that cannot be canonized
@@ -114,7 +114,7 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
     return uri;
   }
 
-  optional<FaceUri> result;
+  std::optional<FaceUri> result;
   std::string error;
   std::tie(result, error) = nfdc::canonize(m_ctx, uri);
 
@@ -125,7 +125,7 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
   else {
     // Canonization failed
     std::tie(m_res, m_errorReason) = canonizeErrorHelper(uri, error);
-    return nullopt;
+    return std::nullopt;
   }
 }
 

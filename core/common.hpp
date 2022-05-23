@@ -50,11 +50,10 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -66,7 +65,6 @@
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/exception.hpp>
-#include <ndn-cxx/util/optional.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/signal.hpp>
 #include <ndn-cxx/util/span.hpp>
@@ -96,8 +94,6 @@ using std::const_pointer_cast;
 
 using namespace std::string_literals;
 
-using ndn::optional;
-using ndn::nullopt;
 using ndn::span;
 using ndn::to_string;
 

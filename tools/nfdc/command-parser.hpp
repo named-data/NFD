@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -79,7 +79,7 @@ public:
    */
   CommandParser&
   addCommand(const CommandDefinition& def, const ExecuteCommand& execute,
-             std::underlying_type<AvailableIn>::type modes = AVAILABLE_IN_ALL);
+             std::underlying_type_t<AvailableIn> modes = AVAILABLE_IN_ALL);
 
   /** \brief add an alias "noun verb2" to existing command "noun verb"
    *  \throw std::out_of_range "noun verb" does not exist
@@ -106,7 +106,7 @@ public:
   parse(const std::vector<std::string>& tokens, ParseMode mode) const;
 
 private:
-  typedef std::pair<std::string, std::string> CommandName;
+  using CommandName = std::pair<std::string, std::string>;
 
   struct Command
   {
@@ -117,7 +117,7 @@ private:
 
   /** \brief map from command name or alias to command definition
    */
-  typedef std::map<CommandName, shared_ptr<Command>> CommandContainer;
+  using CommandContainer = std::map<CommandName, shared_ptr<Command>>;
   CommandContainer m_commands;
 
   /** \brief commands in insertion order

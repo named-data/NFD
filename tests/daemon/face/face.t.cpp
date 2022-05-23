@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
   }
 
   for (size_t i = 0; i < nInNacks; ++i) {
-    face1->receiveNack(makeNack(*makeInterest("/StnEVTj4Ex", false, nullopt, 561),
+    face1->receiveNack(makeNack(*makeInterest("/StnEVTj4Ex", false, std::nullopt, 561),
                                 lp::NackReason::CONGESTION), 0);
   }
 
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
   }
 
   for (size_t i = 0; i < nOutNacks; ++i) {
-    face1->sendNack(makeNack(*makeInterest("/9xK6FbwIBM", false, nullopt, 365),
+    face1->sendNack(makeNack(*makeInterest("/9xK6FbwIBM", false, std::nullopt, 365),
                              lp::NackReason::CONGESTION));
   }
 

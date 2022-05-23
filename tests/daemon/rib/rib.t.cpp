@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -300,17 +300,17 @@ BOOST_AUTO_TEST_CASE(Output)
 
   Route root = createRoute(1, 20);
   Name name1("/");
-  root.expires = nullopt;
+  root.expires = std::nullopt;
   rib.insert(name1, root);
 
   Route route1 = createRoute(2, 20);
   Name name2("/hello");
-  route1.expires = nullopt;
+  route1.expires = std::nullopt;
   rib.insert(name2, route1);
 
   Route route2 = createRoute(3, 20);
   Name name3("/hello/world");
-  route2.expires = nullopt;
+  route2.expires = std::nullopt;
   rib.insert(name3, route2);
 
   const std::string ribStr = std::string(R"TEXT(

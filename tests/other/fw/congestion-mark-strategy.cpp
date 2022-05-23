@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
         "Second parameter to CongestionMarkStrategy must be either 'true' or 'false'"));
     }
     m_shouldPreserveMark = parsed.parameters.at(1).toUri() == "true";
-    NDN_CXX_FALLTHROUGH;
+    [[fallthrough]];
   case 1:
     try {
       auto s = parsed.parameters.at(0).toUri();
@@ -55,7 +55,7 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
       NDN_THROW(std::invalid_argument(
         "First parameter to CongestionMarkStrategy must be a non-negative integer"));
     }
-    NDN_CXX_FALLTHROUGH;
+    [[fallthrough]];
   case 0:
     break;
   default:

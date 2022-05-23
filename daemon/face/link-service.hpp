@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,9 +75,10 @@ public:
 class LinkService : protected virtual LinkServiceCounters, noncopyable
 {
 public:
-  /** \brief counters provided by LinkService
+  /**
+   * \brief %Counters provided by LinkService.
    */
-  typedef LinkServiceCounters Counters;
+  using Counters = LinkServiceCounters;
 
 public:
   LinkService();
@@ -250,8 +251,8 @@ std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LinkService>& flh);
 
 template<typename T>
-typename std::enable_if<std::is_base_of<LinkService, T>::value &&
-                        !std::is_same<LinkService, T>::value, std::ostream&>::type
+std::enable_if_t<std::is_base_of_v<LinkService, T> && !std::is_same_v<LinkService, T>,
+                 std::ostream&>
 operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
 {
   return os << FaceLogHelper<LinkService>(flh.obj);

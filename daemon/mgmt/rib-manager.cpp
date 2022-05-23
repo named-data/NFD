@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,7 +125,7 @@ RibManager::enableLocalFields()
 }
 
 void
-RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseconds> expires,
+RibManager::beginAddRoute(const Name& name, Route route, std::optional<time::nanoseconds> expires,
                           const std::function<void(RibUpdateResult)>& done)
 {
   if (expires) {
@@ -238,7 +238,7 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
   route.cost = parameters.getCost();
   route.flags = parameters.getFlags();
 
-  optional<time::nanoseconds> expires;
+  std::optional<time::nanoseconds> expires;
   if (parameters.hasExpirationPeriod() &&
       parameters.getExpirationPeriod() != time::milliseconds::max()) {
     expires = time::duration_cast<time::nanoseconds>(parameters.getExpirationPeriod());
@@ -261,12 +261,11 @@ RibManager::unregisterEntry(const Name&, const Interest& interest,
   route.faceId = parameters.getFaceId();
   route.origin = parameters.getOrigin();
 
-  beginRemoveRoute(parameters.getName(), route, [] (RibUpdateResult) {});
+  beginRemoveRoute(parameters.getName(), route, [] (auto&&...) {});
 }
 
 void
-RibManager::listEntries(const Name&, const Interest& interest,
-                        ndn::mgmt::StatusDatasetContext& context)
+RibManager::listEntries(const Name&, const Interest&, ndn::mgmt::StatusDatasetContext& context)
 {
   auto now = time::steady_clock::now();
   for (const auto& kv : m_rib) {
@@ -363,7 +362,7 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
     [=] (const Data&) {
       Route route(pa, faceId);
       route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
-      beginAddRoute(pa.getAnnouncedName(), route, nullopt,
+      beginAddRoute(pa.getAnnouncedName(), route, std::nullopt,
         [=] (RibUpdateResult ribRes) {
           auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
           NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << ": " << res);
@@ -395,7 +394,7 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
 
   Route route = *oldRoute;
   route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
-  beginAddRoute(routeName, route, nullopt,
+  beginAddRoute(routeName, route, std::nullopt,
     [=] (RibUpdateResult ribRes) {
       auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
       NFD_LOG_INFO("slRenew " << name << " " << faceId << ": " << res << " " << routeName);
@@ -415,7 +414,7 @@ RibManager::slFindAnn(const Name& name, const SlFindAnnCallback& cb) const
     entry = m_rib.findParent(name);
   }
   if (entry == nullptr) {
-    return cb(nullopt);
+    return cb(std::nullopt);
   }
 
   auto pa = entry->getPrefixAnnouncement();

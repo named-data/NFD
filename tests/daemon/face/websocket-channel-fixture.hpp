@@ -39,7 +39,7 @@ class WebSocketChannelFixture : public ChannelFixture<WebSocketChannel, websocke
 protected:
   shared_ptr<WebSocketChannel>
   makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0,
-              optional<size_t> mtu = nullopt) final
+              std::optional<size_t> mtu = std::nullopt) final
   {
     if (port == 0)
       port = getNextPort();

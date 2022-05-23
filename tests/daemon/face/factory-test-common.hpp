@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,7 +44,7 @@ struct CreateFaceExpectedResult
 inline void
 createFace(ProtocolFactory& factory,
            const FaceUri& remoteUri,
-           const optional<FaceUri>& localUri,
+           const std::optional<FaceUri>& localUri,
            const FaceParams& params,
            const CreateFaceExpectedResult& expected,
            const std::function<void(const Face&)>& extraChecks = nullptr)

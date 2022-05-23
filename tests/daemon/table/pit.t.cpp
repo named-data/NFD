@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(Insert)
   bool isNew = false;
 
   // base
-  auto interestA = makeInterest(name1, false, nullopt, 2148);
+  auto interestA = makeInterest(name1, false, std::nullopt, 2148);
   std::tie(entry, isNew) = pit.insert(*interestA);
   BOOST_CHECK_EQUAL(isNew, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);

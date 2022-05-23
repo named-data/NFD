@@ -64,7 +64,7 @@ template<typename M, typename MakeValidator = MakeValidatorNull>
 class StatusFixture : public MockNfdMgmtFixture
 {
 protected:
-  using ValidatorUniquePtr = typename std::result_of<MakeValidator(Face&, KeyChain&)>::type;
+  using ValidatorUniquePtr = std::invoke_result_t<MakeValidator, Face&, KeyChain&>;
 
   StatusFixture()
     : validator(MakeValidator()(face, m_keyChain))

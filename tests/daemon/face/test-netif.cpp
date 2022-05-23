@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,7 +44,7 @@ enumerateNetworkInterfaces(NetworkMonitor& netmon)
 std::vector<shared_ptr<const NetworkInterface>>
 collectNetworkInterfaces(bool allowCached)
 {
-  static optional<std::vector<shared_ptr<const NetworkInterface>>> cached;
+  static std::optional<std::vector<shared_ptr<const NetworkInterface>>> cached;
   if (!allowCached || !cached) {
     NetworkMonitor netmon(getGlobalIoService());
     cached = enumerateNetworkInterfaces(netmon);

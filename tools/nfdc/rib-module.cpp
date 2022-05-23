@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -189,7 +189,7 @@ RibModule::add(ExecuteContext& ctx)
   };
 
   auto handleFaceNotFound = [&] {
-    const FaceUri* faceUri = ndn::any_cast<FaceUri>(&nexthop);
+    const FaceUri* faceUri = std::any_cast<FaceUri>(&nexthop);
     if (faceUri == nullptr) {
       ctx.err << "Face not found\n";
       return;
@@ -203,7 +203,7 @@ RibModule::add(ExecuteContext& ctx)
       return;
     }
 
-    optional<FaceUri> canonized;
+    std::optional<FaceUri> canonized;
     std::string error;
     std::tie(canonized, error) = canonize(ctx, *faceUri);
     if (!canonized) {

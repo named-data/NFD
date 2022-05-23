@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "fw/strategy-info.hpp"
 
+#include <unordered_map>
+
 namespace nfd {
 
 /** \brief Base class for an entity onto which StrategyInfo items may be placed
@@ -43,8 +45,7 @@ public:
   T*
   getStrategyInfo() const
   {
-    static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
-                  "T must inherit from StrategyInfo");
+    static_assert(std::is_base_of_v<fw::StrategyInfo, T>);
 
     auto it = m_items.find(T::getTypeId());
     if (it == m_items.end()) {
@@ -62,8 +63,7 @@ public:
   std::pair<T*, bool>
   insertStrategyInfo(A&&... args)
   {
-    static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
-                  "T must inherit from StrategyInfo");
+    static_assert(std::is_base_of_v<fw::StrategyInfo, T>);
 
     auto& item = m_items[T::getTypeId()];
     bool isNew = item == nullptr;
@@ -81,8 +81,7 @@ public:
   size_t
   eraseStrategyInfo()
   {
-    static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
-                  "T must inherit from StrategyInfo");
+    static_assert(std::is_base_of_v<fw::StrategyInfo, T>);
 
     return m_items.erase(T::getTypeId());
   }

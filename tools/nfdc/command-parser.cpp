@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,9 +34,9 @@ namespace nfdc {
 
 NDN_LOG_INIT(nfdc.CommandParser);
 
-static_assert(std::is_same<std::underlying_type<AvailableIn>::type,
-                           std::underlying_type<ParseMode>::type>::value,
-              "AvailableIn and ParseMode must be declared with same underlying type");
+static_assert(std::is_same_v<std::underlying_type_t<AvailableIn>,
+                             std::underlying_type_t<ParseMode>>,
+              "AvailableIn and ParseMode must be declared with the same underlying type");
 
 std::ostream&
 operator<<(std::ostream& os, AvailableIn modes)
@@ -72,7 +72,7 @@ operator<<(std::ostream& os, ParseMode mode)
 
 CommandParser&
 CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& execute,
-                          std::underlying_type<AvailableIn>::type modes)
+                          std::underlying_type_t<AvailableIn> modes)
 {
   BOOST_ASSERT(modes != AVAILABLE_IN_NONE);
 
@@ -98,7 +98,7 @@ CommandParser::listCommands(const std::string& noun, ParseMode mode) const
 {
   std::vector<const CommandDefinition*> results;
   for (auto i : m_commandOrder) {
-    const Command& command = *i->second;
+    const auto& command = *i->second;
     if ((command.modes & static_cast<AvailableIn>(mode)) != 0 &&
         (noun.empty() || noun == command.def.getNoun())) {
       results.push_back(&command.def);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -155,7 +155,7 @@ BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, GlobalIoTimeFixture)
   auto face2 = make_shared<DummyFace>();
   auto face3 = make_shared<DummyFace>();
 
-  auto interest = makeInterest("/totzXG0d", false, nullopt, 29321);
+  auto interest = makeInterest("/totzXG0d", false, std::nullopt, 29321);
   pit::Entry entry(*interest);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 

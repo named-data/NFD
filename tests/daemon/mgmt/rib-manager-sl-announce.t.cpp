@@ -91,7 +91,7 @@ public:
   SlAnnounceResult
   slAnnounceSync(const ndn::PrefixAnnouncement& pa, uint64_t faceId, time::milliseconds maxLifetime)
   {
-    optional<SlAnnounceResult> result;
+    std::optional<SlAnnounceResult> result;
     manager->slAnnounce(pa, faceId, maxLifetime,
       [&] (RibManager::SlAnnounceResult res) {
         BOOST_CHECK(!result);
@@ -108,7 +108,7 @@ public:
   SlAnnounceResult
   slRenewSync(const Name& name, uint64_t faceId, time::milliseconds maxLifetime)
   {
-    optional<SlAnnounceResult> result;
+    std::optional<SlAnnounceResult> result;
     manager->slRenew(name, faceId, maxLifetime,
       [&] (RibManager::SlAnnounceResult res) {
         BOOST_CHECK(!result);
@@ -122,19 +122,19 @@ public:
 
   /** \brief Invoke manager->slFindAnn and wait for result.
    */
-  optional<ndn::PrefixAnnouncement>
+  std::optional<ndn::PrefixAnnouncement>
   slFindAnnSync(const Name& name)
   {
-    optional<optional<ndn::PrefixAnnouncement>> result;
+    std::optional<std::optional<ndn::PrefixAnnouncement>> result;
     manager->slFindAnn(name,
-      [&] (optional<ndn::PrefixAnnouncement> found) {
+      [&] (std::optional<ndn::PrefixAnnouncement> found) {
         BOOST_CHECK(!result);
         result = found;
       });
 
     g_io.poll();
     BOOST_CHECK(result);
-    return result.value_or(nullopt);
+    return result.value_or(std::nullopt);
   }
 
   /** \brief Lookup a route with PREFIXANN origin.

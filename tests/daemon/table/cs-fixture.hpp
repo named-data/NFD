@@ -92,12 +92,12 @@ protected:
   size_t
   erase(const Name& prefix, size_t limit)
   {
-    optional<size_t> nErased;
-    cs.erase(prefix, limit, [&] (size_t nErased1) { nErased = nErased1; });
+    std::optional<size_t> nErased;
+    cs.erase(prefix, limit, [&] (size_t n) { nErased = n; });
 
     // current Cs::erase implementation is synchronous
     // if callback was not invoked, bad_optional_access would occur
-    return *nErased;
+    return nErased.value();
   }
 
 protected:

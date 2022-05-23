@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -382,7 +382,7 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   return face;
 }
 
-static optional<ip::address>
+static std::optional<ip::address>
 pickAddress(const net::NetworkInterface& netif, net::AddressFamily af)
 {
   for (const auto& na : netif.getNetworkAddresses()) {
@@ -391,7 +391,7 @@ pickAddress(const net::NetworkInterface& netif, net::AddressFamily af)
       return na.getIp();
     }
   }
-  return nullopt;
+  return std::nullopt;
 }
 
 std::vector<shared_ptr<Face>>

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,12 +71,12 @@ public:
   execute(uint64_t faceId);
 
   /** \brief find face by FaceId or FaceUri
-   *  \param faceIdOrUri a ndn::any that contains uint64_t or FaceUri
+   *  \param faceIdOrUri either a FaceId (uint64_t) or a FaceUri
    *  \param allowMulti effective only if \p faceIdOrUri contains a FaceUri
    *  \throw ndn::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
    */
   Code
-  execute(const ndn::any& faceIdOrUri, bool allowMulti = false);
+  execute(const std::any& faceIdOrUri, bool allowMulti = false);
 
   /** \brief find face by FaceQueryFilter
    *  \pre execute has not been invoked
@@ -121,7 +121,7 @@ public:
   printDisambiguation(std::ostream& os, DisambiguationStyle style) const;
 
 private:
-  optional<FaceUri>
+  std::optional<FaceUri>
   canonize(const std::string& fieldName, const FaceUri& uri);
 
   /** \brief retrieve FaceStatus from filter

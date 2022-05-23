@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -124,19 +124,19 @@ public:
 
   /** \brief if hashtable has more than nBuckets*expandLoadFactor nodes, it will be expanded
    */
-  float expandLoadFactor = 0.5;
+  float expandLoadFactor = 0.5f;
 
   /** \brief when hashtable is expanded, its new size is nBuckets*expandFactor
    */
-  float expandFactor = 2.0;
+  float expandFactor = 2.0f;
 
   /** \brief if hashtable has less than nBuckets*shrinkLoadFactor nodes, it will be shrunk
    */
-  float shrinkLoadFactor = 0.1;
+  float shrinkLoadFactor = 0.1f;
 
   /** \brief when hashtable is shrunk, its new size is max(nBuckets*shrinkFactor, minSize)
    */
-  float shrinkFactor = 0.5;
+  float shrinkFactor = 0.5f;
 };
 
 /** \brief a hashtable for fast exact name lookup
@@ -149,7 +149,7 @@ public:
 class Hashtable
 {
 public:
-  typedef HashtableOptions Options;
+  using Options = HashtableOptions;
 
   explicit
   Hashtable(const Options& options);

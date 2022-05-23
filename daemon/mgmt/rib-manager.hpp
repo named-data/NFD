@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -99,7 +99,7 @@ public: // self-learning support
   };
 
   using SlAnnounceCallback = std::function<void(SlAnnounceResult res)>;
-  using SlFindAnnCallback = std::function<void(optional<ndn::PrefixAnnouncement>)>;
+  using SlFindAnnCallback = std::function<void(std::optional<ndn::PrefixAnnouncement>)>;
 
   /** \brief Insert a route by prefix announcement from self-learning strategy.
    *  \param pa A prefix announcement. It must contain the Data.
@@ -176,7 +176,7 @@ private: // RIB and FibUpdater actions
    *  \param done completion callback
    */
   void
-  beginAddRoute(const Name& name, rib::Route route, optional<time::nanoseconds> expires,
+  beginAddRoute(const Name& name, rib::Route route, std::optional<time::nanoseconds> expires,
                 const std::function<void(RibUpdateResult)>& done);
 
   /** \brief Start removing a route from RIB and FIB.

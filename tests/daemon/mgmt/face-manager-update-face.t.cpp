@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,8 +54,8 @@ public:
   void
   createFace(const std::string& uri = "tcp4://127.0.0.1:26363",
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             optional<time::nanoseconds> baseCongestionMarkingInterval = nullopt,
-             optional<uint64_t> defaultCongestionThreshold = nullopt,
+             std::optional<time::nanoseconds> baseCongestionMarkingInterval = std::nullopt,
+             std::optional<uint64_t> defaultCongestionThreshold = std::nullopt,
              bool enableLocalFields = false,
              bool enableReliability = false,
              boost::logic::tribool enableCongestionMarking = boost::logic::indeterminate)

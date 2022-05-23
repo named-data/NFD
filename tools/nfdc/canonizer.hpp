@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,7 @@ namespace nfdc {
 /** \brief canonize FaceUri
  *  \return pair of canonical FaceUri (nullopt if failure) and error string
  */
-std::pair<optional<FaceUri>, std::string>
+std::pair<std::optional<FaceUri>, std::string>
 canonize(ExecuteContext& ctx, const FaceUri& uri);
 
 /** \brief helper to generate exit code and error message for face canonization failures

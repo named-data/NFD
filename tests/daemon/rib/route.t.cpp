@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,9 +118,9 @@ BOOST_AUTO_TEST_CASE(Equality)
   BOOST_CHECK_NE(a, b);
   a.cost = 103;
 
-  b.expires = nullopt;
+  b.expires = std::nullopt;
   BOOST_CHECK_NE(a, b);
-  a.expires = nullopt;
+  a.expires = std::nullopt;
 
   BOOST_CHECK_EQUAL(a, b);
 }
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(Output)
                     "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, expires in: "
                     "791214234 milliseconds)");
 
-  r.expires = nullopt;
+  r.expires = std::nullopt;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
                     "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, never expires)");
 

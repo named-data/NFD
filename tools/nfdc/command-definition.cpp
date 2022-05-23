@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -240,7 +240,7 @@ parseFacePersistency(const std::string& s)
   NDN_THROW(std::invalid_argument("unrecognized FacePersistency '" + s + "'"));
 }
 
-ndn::any
+std::any
 CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) const
 {
   switch (valueType) {

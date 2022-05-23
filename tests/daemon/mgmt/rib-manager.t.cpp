@@ -448,7 +448,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     rib::Route route;
     route.faceId = ++faceId;
     route.cost = route.faceId * 10;
-    route.expires = nullopt;
+    route.expires = std::nullopt;
     return route;
   };
 

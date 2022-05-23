@@ -138,7 +138,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
                                           socket.remote_endpoint().address());
     auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency, faceScope);
     face = make_shared<Face>(std::move(linkService), std::move(transport));
-    face->setChannel(shared_from_this()); // use weak_from_this() in C++17
+    face->setChannel(weak_from_this());
 
     m_channelFaces[remoteEndpoint] = face;
     connectFaceClosedSignal(*face, [this, remoteEndpoint] { m_channelFaces.erase(remoteEndpoint); });

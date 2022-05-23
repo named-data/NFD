@@ -136,7 +136,7 @@ class GccBasicFlags(CompilerFlags):
     """
     def getGeneralFlags(self, conf):
         flags = super(GccBasicFlags, self).getGeneralFlags(conf)
-        flags['CXXFLAGS'] += ['-std=c++14']
+        flags['CXXFLAGS'] += ['-std=c++17']
         if Utils.unversioned_sys_platform() == 'linux':
             flags['LINKFLAGS'] += ['-fuse-ld=gold']
         elif Utils.unversioned_sys_platform() == 'freebsd':

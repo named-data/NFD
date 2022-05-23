@@ -377,7 +377,7 @@ protected: // instance name
   struct ParsedInstanceName
   {
     Name strategyName; ///< Strategy name without parameters
-    optional<uint64_t> version; ///< The strategy version number, if present
+    std::optional<uint64_t> version; ///< The strategy version number, if present
     PartialName parameters; ///< Parameter components, may be empty
   };
 
@@ -445,7 +445,7 @@ public:
   // Note: only arithmetic types are supported by getOrDefault() for now
 
   template<typename T>
-  std::enable_if_t<std::is_signed<T>::value, T>
+  std::enable_if_t<std::is_signed_v<T>, T>
   getOrDefault(const key_type& key, const T& defaultVal) const
   {
     auto it = find(key);
@@ -461,7 +461,7 @@ public:
   }
 
   template<typename T>
-  std::enable_if_t<std::is_unsigned<T>::value, T>
+  std::enable_if_t<std::is_unsigned_v<T>, T>
   getOrDefault(const key_type& key, const T& defaultVal) const
   {
     auto it = find(key);

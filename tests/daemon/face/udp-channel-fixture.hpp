@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,12 +39,14 @@ class UdpChannelFixture : public ChannelFixture<UdpChannel, udp::Endpoint>
 {
 protected:
   shared_ptr<UdpChannel>
-  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0, optional<size_t> mtu = nullopt) final
+  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0,
+              std::optional<size_t> mtu = std::nullopt) final
   {
     if (port == 0)
       port = getNextPort();
 
-    return std::make_shared<UdpChannel>(udp::Endpoint(addr, port), 2_s, false, mtu.value_or(ndn::MAX_NDN_PACKET_SIZE));
+    return std::make_shared<UdpChannel>(udp::Endpoint(addr, port), 2_s, false,
+                                        mtu.value_or(ndn::MAX_NDN_PACKET_SIZE));
   }
 
   void

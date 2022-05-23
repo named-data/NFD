@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -379,7 +379,8 @@ class ExecuteFaceCreateCommandFixture : public ExecuteCommandFixture
 {
 protected:
   void
-  respond409(const Interest& interest, FacePersistency persistency, optional<uint64_t> mtu = {},
+  respond409(const Interest& interest, FacePersistency persistency,
+             std::optional<uint64_t> mtu = std::nullopt,
              bool enableLpReliability = false,
              bool enableCongestionMarking = false)
   {

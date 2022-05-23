@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,7 +48,7 @@ namespace tests {
  *  \return a reference to the strategy
  */
 template<typename S>
-typename std::enable_if<std::is_base_of<fw::Strategy, S>::value, S&>::type
+std::enable_if_t<std::is_base_of_v<fw::Strategy, S>, S&>
 choose(Forwarder& forwarder, const Name& prefix = "/",
        const Name& instanceName = S::getStrategyName())
 {

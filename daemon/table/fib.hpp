@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -122,8 +122,8 @@ public: // mutation
   removeNextHop(Entry& entry, const Face& face);
 
 public: // enumeration
-  typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
-  typedef boost::range_iterator<Range>::type const_iterator;
+  using Range = boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range>;
+  using const_iterator = boost::range_iterator<Range>::type;
 
   /** \return an iterator to the beginning
    *  \note The iteration order is implementation-defined.

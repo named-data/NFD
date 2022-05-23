@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -95,9 +95,9 @@ public: // for check
    */
   CheckNextHopResult
   checkNextHop(const Name& prefix,
-               optional<size_t> expectedNNextHops = nullopt,
-               optional<FaceId> faceId = nullopt,
-               optional<uint64_t> expectedCost = nullopt) const
+               std::optional<size_t> expectedNNextHops = std::nullopt,
+               std::optional<FaceId> faceId = std::nullopt,
+               std::optional<uint64_t> expectedCost = std::nullopt) const
   {
     const fib::Entry* entry = m_fib.findExactMatch(prefix);
     if (entry == nullptr) {
@@ -128,7 +128,7 @@ protected:
   FibManager m_manager;
 };
 
-std::ostream&
+static std::ostream&
 operator<<(std::ostream& os, FibManagerFixture::CheckNextHopResult result)
 {
   switch (result) {
@@ -163,7 +163,8 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
                     CheckResponseResult::OK);
 
   // double check that the next hop was not added
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, nullopt, 101), CheckNextHopResult::NO_FIB_ENTRY);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", std::nullopt, std::nullopt, 101),
+                    CheckNextHopResult::NO_FIB_ENTRY);
 }
 
 BOOST_AUTO_TEST_CASE(NameTooLong)
@@ -388,12 +389,12 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
   testRemoveNextHop(makeParameters("/hello", face2 + 100));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // face does not exist
   BOOST_CHECK_EQUAL(checkResponse(0, expectedName, expectedResponse), CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, face2 + 100), CheckNextHopResult::NO_NEXTHOP);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", std::nullopt, face2 + 100), CheckNextHopResult::NO_NEXTHOP);
 
   testRemoveNextHop(makeParameters("/hello", face2));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // record does not exist
   BOOST_CHECK_EQUAL(checkResponse(0, expectedName, expectedResponse), CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, face2), CheckNextHopResult::NO_NEXTHOP);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", std::nullopt, face2), CheckNextHopResult::NO_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // RemoveNextHop

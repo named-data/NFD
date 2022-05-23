@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,15 +29,15 @@ namespace nfd {
 namespace tests {
 
 shared_ptr<Interest>
-makeInterest(const Name& name, bool canBePrefix, optional<time::milliseconds> lifetime,
-             optional<Interest::Nonce> nonce)
+makeInterest(const Name& name, bool canBePrefix, std::optional<time::milliseconds> lifetime,
+             std::optional<Interest::Nonce> nonce)
 {
   auto interest = std::make_shared<Interest>(name);
   interest->setCanBePrefix(canBePrefix);
   if (lifetime) {
     interest->setInterestLifetime(*lifetime);
   }
-  interest->setNonce(nonce);
+  interest->setNonce(nonce ? ndn::make_optional(*nonce) : ndn::nullopt);
   return interest;
 }
 
@@ -67,12 +67,12 @@ makeNack(Interest interest, lp::NackReason reason)
 
 ndn::PrefixAnnouncement
 makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
-              optional<ndn::security::ValidityPeriod> validity)
+              std::optional<ndn::security::ValidityPeriod> validity)
 {
   ndn::PrefixAnnouncement pa;
   pa.setAnnouncedName(announcedName);
   pa.setExpiration(expiration);
-  pa.setValidityPeriod(validity);
+  pa.setValidityPeriod(validity ? ndn::make_optional(*validity) : ndn::nullopt);
   return pa;
 }
 
@@ -87,9 +87,9 @@ makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
 
 ndn::PrefixAnnouncement
 signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
-              const ndn::security::SigningInfo& si, optional<uint64_t> version)
+              const ndn::security::SigningInfo& si, std::optional<uint64_t> version)
 {
-  pa.toData(keyChain, si, version);
+  pa.toData(keyChain, si, version ? ndn::make_optional(*version) : ndn::nullopt);
   return std::move(pa);
 }
 

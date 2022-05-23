@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,13 +82,13 @@ public:
   ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
   uint64_t cost = 0;
   std::underlying_type_t<ndn::nfd::RouteFlags> flags = ndn::nfd::ROUTE_FLAGS_NONE;
-  optional<time::steady_clock::time_point> expires;
+  std::optional<time::steady_clock::time_point> expires;
 
   /** \brief The prefix announcement that caused the creation of this route.
    *
    *  This is nullopt if this route is not created by a prefix announcement.
    */
-  optional<ndn::PrefixAnnouncement> announcement;
+  std::optional<ndn::PrefixAnnouncement> announcement;
 
   /** \brief Expiration time of the prefix announcement.
    *

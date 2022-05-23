@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,9 +78,9 @@ using EndpointId = uint64_t;
 struct FaceParams
 {
   ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  optional<time::nanoseconds> baseCongestionMarkingInterval;
-  optional<uint64_t> defaultCongestionThreshold;
-  optional<ssize_t> mtu;
+  std::optional<time::nanoseconds> baseCongestionMarkingInterval;
+  std::optional<uint64_t> defaultCongestionThreshold;
+  std::optional<ssize_t> mtu;
   bool wantLocalFields = false;
   bool wantLpReliability = false;
   boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
@@ -128,9 +128,7 @@ using face::FaceId;
 // implementation detail
 #define NFD_LOG_FACE(level, msg) NFD_LOG_##level( \
   ::nfd::face::FaceLogHelper< \
-    typename std::remove_cv< \
-      typename std::remove_reference<decltype(*this)>::type \
-    >::type \
+    std::remove_cv_t<std::remove_reference_t<decltype(*this)>> \
   >(*this) \
   << msg)
 /** \endcond */

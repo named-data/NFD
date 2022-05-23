@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,7 +41,7 @@ public:
    *  If the route origin is "client" (typically from auto prefix propagation), readvertise it
    *  using the default signing identity.
    */
-  optional<ReadvertiseAction>
+  std::optional<ReadvertiseAction>
   handleNewRoute(const RibRouteRef& ribRoute) const override;
 
   time::milliseconds

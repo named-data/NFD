@@ -52,9 +52,10 @@ public:
   }
 };
 
-/** \brief a type with compute static method to compute hash value from a raw buffer
+/**
+ * \brief A type with a `compute()` static method to compute the hash value from a raw buffer
  */
-using HashFunc = std::conditional<(sizeof(HashValue) > 4), Hash64, Hash32>::type;
+using HashFunc = std::conditional_t<(sizeof(HashValue) > 4), Hash64, Hash32>;
 
 HashValue
 computeHash(const Name& name, size_t prefixLen)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -160,17 +160,17 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   auto face2 = addFace();
 
   Pit& pit = forwarder.getPit();
-  auto interestA1 = makeInterest("/A", false, nullopt, 8378);
+  auto interestA1 = makeInterest("/A", false, std::nullopt, 8378);
   auto pitA = pit.insert(*interestA1).first;
   pitA->insertOrUpdateInRecord(*face1, *interestA1);
 
-  auto interestA2 = makeInterest("/A", false, nullopt, 1698);
+  auto interestA2 = makeInterest("/A", false, std::nullopt, 1698);
   auto outA2 = forwarder.onOutgoingInterest(*interestA2, *face2, pitA);
   BOOST_REQUIRE(outA2 != nullptr);
   BOOST_CHECK_EQUAL(outA2->getLastNonce(), 1698);
 
   // This packet will be dropped because HopLimit=0
-  auto interestA3 = makeInterest("/A", false, nullopt, 9876);
+  auto interestA3 = makeInterest("/A", false, std::nullopt, 9876);
   interestA3->setHopLimit(0);
   auto outA3 = forwarder.onOutgoingInterest(*interestA3, *face2, pitA);
   BOOST_CHECK(outA3 == nullptr);
@@ -468,10 +468,10 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   Pit& pit = forwarder.getPit();
 
   // dispatch to the correct strategy
-  auto interest1 = makeInterest("/A/AYJqayrzF", false, nullopt, 562);
+  auto interest1 = makeInterest("/A/AYJqayrzF", false, std::nullopt, 562);
   auto pit1 = pit.insert(*interest1).first;
   pit1->insertOrUpdateOutRecord(*face1, *interest1);
-  auto interest2 = makeInterest("/B/EVyP73ru", false, nullopt, 221);
+  auto interest2 = makeInterest("/B/EVyP73ru", false, std::nullopt, 221);
   auto pit2 = pit.insert(*interest2).first;
   pit2->insertOrUpdateOutRecord(*face1, *interest2);
 
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
 
   // drop if no PIT entry
-  auto nack3 = makeNack(*makeInterest("/yEcw5HhdM", false, nullopt, 243), lp::NackReason::CONGESTION);
+  auto nack3 = makeNack(*makeInterest("/yEcw5HhdM", false, std::nullopt, 243), lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(nack3, FaceEndpoint(*face1, 0));
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
   // drop if no out-record
-  auto interest4 = makeInterest("/Etab4KpY", false, nullopt, 157);
+  auto interest4 = makeInterest("/Etab4KpY", false, std::nullopt, 157);
   auto pit4 = pit.insert(*interest4).first;
   pit4->insertOrUpdateOutRecord(*face1, *interest4);
 
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
   // drop if Nonce does not match out-record
-  auto nack4b = makeNack(*makeInterest("/Etab4KpY", false, nullopt, 294), lp::NackReason::CONGESTION);
+  auto nack4b = makeNack(*makeInterest("/Etab4KpY", false, std::nullopt, 294), lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(nack4b, FaceEndpoint(*face1, 0));
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   nackHeader.setReason(lp::NackReason::CONGESTION);
 
   // don't send Nack if there's no in-record
-  auto interest1 = makeInterest("/fM5IVEtC", false, nullopt, 719);
+  auto interest1 = makeInterest("/fM5IVEtC", false, std::nullopt, 719);
   auto pit1 = pit.insert(*interest1).first;
   pit1->insertOrUpdateInRecord(*face1, *interest1);
 
@@ -558,10 +558,10 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face2->sentNacks.size(), 0);
 
   // send Nack with correct Nonce
-  auto interest2a = makeInterest("/Vi8tRm9MG3", false, nullopt, 152);
+  auto interest2a = makeInterest("/Vi8tRm9MG3", false, std::nullopt, 152);
   auto pit2 = pit.insert(*interest2a).first;
   pit2->insertOrUpdateInRecord(*face1, *interest2a);
-  auto interest2b = makeInterest("/Vi8tRm9MG3", false, nullopt, 808);
+  auto interest2b = makeInterest("/Vi8tRm9MG3", false, std::nullopt, 808);
   pit2->insertOrUpdateInRecord(*face2, *interest2b);
   face1->sentNacks.clear();
   face2->sentNacks.clear();
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK(inRecord2b == pit2->in_end());
 
   // don't send Nack to multi-access face
-  auto interest2c = makeInterest("/Vi8tRm9MG3", false, nullopt, 228);
+  auto interest2c = makeInterest("/Vi8tRm9MG3", false, std::nullopt, 228);
   pit2->insertOrUpdateInRecord(*face3, *interest2c);
 
   face3->sentNacks.clear();
@@ -596,7 +596,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face3->sentNacks.size(), 0);
 
   // don't send Nack to face with invalid ID
-  auto interest1b = makeInterest("/fM5IVEtC", false, nullopt, 553);
+  auto interest1b = makeInterest("/fM5IVEtC", false, std::nullopt, 553);
   pit1->insertOrUpdateInRecord(*face4, *interest1b);
 
   face4->sentNacks.clear();
@@ -620,19 +620,19 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
 
   // receive Interest on face1
   face1->sentNacks.clear();
-  auto interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
+  auto interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, std::nullopt, 732);
   face1->receiveInterest(*interest1a, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face1: legit retransmission
   face1->sentNacks.clear();
-  auto interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
+  auto interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, std::nullopt, 732);
   face1->receiveInterest(*interest1b, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face2
   face2->sentNacks.clear();
-  auto interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
+  auto interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, std::nullopt, 732);
   face2->receiveInterest(*interest2a, 0);
   BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().wireEncode(), interest2a->wireEncode());
@@ -640,13 +640,13 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
 
   // receive Interest with new Nonce on face2
   face2->sentNacks.clear();
-  auto interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 944);
+  auto interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, std::nullopt, 944);
   face2->receiveInterest(*interest2b, 0);
   BOOST_CHECK(face2->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face3, don't send Nack to multi-access face
   face3->sentNacks.clear();
-  auto interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, nullopt, 732);
+  auto interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", false, std::nullopt, 732);
   face3->receiveInterest(*interest3a, 0);
   BOOST_CHECK(face3->sentNacks.empty());
 }

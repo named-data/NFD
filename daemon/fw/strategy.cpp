@@ -31,6 +31,7 @@
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <unordered_set>
 
 namespace nfd {
 namespace fw {
@@ -127,7 +128,7 @@ Strategy::parseInstanceName(const Name& input)
       return {input.getPrefix(i + 1), input[i].toVersion(), input.getSubName(i + 1)};
     }
   }
-  return {input, nullopt, PartialName()};
+  return {input, std::nullopt, PartialName()};
 }
 
 Name

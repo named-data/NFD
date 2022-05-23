@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@ UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
   : StreamTransport(std::move(socket))
 {
   static_assert(
-    std::is_same<std::remove_cv<protocol::socket::native_handle_type>::type, int>::value,
+    std::is_same_v<std::remove_cv_t<protocol::socket::native_handle_type>, int>,
     "The native handle type for UnixStreamTransport sockets must be 'int'"
   );
 

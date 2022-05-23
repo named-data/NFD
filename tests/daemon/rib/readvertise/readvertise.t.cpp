@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ using namespace nfd::tests;
 class DummyReadvertisePolicy : public ReadvertisePolicy
 {
 public:
-  optional<ReadvertiseAction>
+  std::optional<ReadvertiseAction>
   handleNewRoute(const RibRouteRef&) const override
   {
     return this->decision;
@@ -56,7 +56,7 @@ public:
   }
 
 public:
-  optional<ReadvertiseAction> decision;
+  std::optional<ReadvertiseAction> decision;
 };
 
 class DummyReadvertiseDestination : public ReadvertiseDestination
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveRoute)
 
 BOOST_AUTO_TEST_CASE(NoAdvertise)
 {
-  policy->decision = nullopt;
+  policy->decision = std::nullopt;
 
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
   this->insertRoute("/A/2", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);

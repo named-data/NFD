@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -97,8 +97,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   this->fib.addOrUpdateNextHop(fibEntry, *this->face4, 20);
   this->fib.addOrUpdateNextHop(fibEntry, *this->face5, 30);
 
-  auto interest1 = makeInterest("/McQYjMbm", false, nullopt, 992);
-  auto interest2 = makeInterest("/McQYjMbm", false, nullopt, 114);
+  auto interest1 = makeInterest("/McQYjMbm", false, std::nullopt, 992);
+  auto interest2 = makeInterest("/McQYjMbm", false, std::nullopt, 114);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
   pitEntry->insertOrUpdateInRecord(*this->face2, *interest2);
@@ -136,7 +136,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
   this->fib.addOrUpdateNextHop(fibEntry, *this->face4, 20);
   this->fib.addOrUpdateNextHop(fibEntry, *this->face5, 30);
 
-  auto interest1 = makeInterest("/aS9FAyUV19", false, nullopt, 286);
+  auto interest1 = makeInterest("/aS9FAyUV19", false, std::nullopt, 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
@@ -178,7 +178,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
   pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
 
   this->advanceClocks(300_ms);
-  auto interest2 = makeInterest("/sIYw0TXWDj", false, nullopt, 223);
+  auto interest2 = makeInterest("/sIYw0TXWDj", false, std::nullopt, 223);
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest2);
   pitEntry->insertOrUpdateOutRecord(*this->face4, *interest2);
 
@@ -325,7 +325,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
   fib.addOrUpdateNextHop(fibEntry, *face4, 20);
   fib.addOrUpdateNextHop(fibEntry, *face5, 30);
 
-  auto interest1 = makeInterest("/F6sEwB24I", false, nullopt, 282);
+  auto interest1 = makeInterest("/F6sEwB24I", false, std::nullopt, 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest1);
   pitEntry->insertOrUpdateOutRecord(*face3, *interest1);

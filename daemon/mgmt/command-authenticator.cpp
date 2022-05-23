@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,12 +51,12 @@ using SignerTag = ndn::SimpleTag<Name, 20>;
 
 /** \brief obtain signer from SignerTag attached to Interest, if available
  */
-static optional<std::string>
+static std::optional<std::string>
 getSignerFromTag(const Interest& interest)
 {
-  shared_ptr<SignerTag> signerTag = interest.getTag<SignerTag>();
+  auto signerTag = interest.getTag<SignerTag>();
   if (signerTag == nullptr) {
-    return nullopt;
+    return std::nullopt;
   }
   else {
     return signerTag->get().toUri();

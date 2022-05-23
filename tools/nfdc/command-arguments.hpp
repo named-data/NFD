@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,8 @@
 #include "status-report.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
-#include <ndn-cxx/util/any.hpp>
 
+#include <any>
 #include <boost/logic/tribool.hpp>
 
 namespace nfd {
@@ -43,17 +43,17 @@ using ndn::nfd::RouteOrigin;
 
 /** \brief contains named command arguments
  */
-class CommandArguments : public std::map<std::string, ndn::any>
+class CommandArguments : public std::map<std::string, std::any>
 {
 public:
   /** \return the argument value, or nullopt if the argument is omitted on command line
    */
   template<typename T>
-  optional<T>
+  std::optional<T>
   getOptional(const std::string& key) const
   {
     auto i = find(key);
-    return i == end() ? nullopt : ndn::make_optional(ndn::any_cast<T>(i->second));
+    return i == end() ? std::nullopt : std::make_optional(std::any_cast<T>(i->second));
   }
 
   /** \return the argument value, or a default value if the argument is omitted on command line

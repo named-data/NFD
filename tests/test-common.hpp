@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,8 +52,8 @@ namespace tests {
  */
 shared_ptr<Interest>
 makeInterest(const Name& name, bool canBePrefix = false,
-             optional<time::milliseconds> lifetime = nullopt,
-             optional<Interest::Nonce> nonce = nullopt);
+             std::optional<time::milliseconds> lifetime = std::nullopt,
+             std::optional<Interest::Nonce> nonce = std::nullopt);
 
 /**
  * \brief Create a Data with a null (i.e., empty) signature
@@ -105,7 +105,7 @@ setNameComponent(Packet& pkt, ssize_t index, Args&& ...args)
  */
 ndn::PrefixAnnouncement
 makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
-              optional<ndn::security::ValidityPeriod> validity = nullopt);
+              std::optional<ndn::security::ValidityPeriod> validity = std::nullopt);
 
 /**
  * \brief Create a prefix announcement without signing
@@ -123,7 +123,7 @@ makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
 ndn::PrefixAnnouncement
 signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
               const ndn::security::SigningInfo& si = ndn::security::SigningInfo(),
-              optional<uint64_t> version = nullopt);
+              std::optional<uint64_t> version = std::nullopt);
 
 } // namespace tests
 } // namespace nfd

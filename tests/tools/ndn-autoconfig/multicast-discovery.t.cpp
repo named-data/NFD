@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(Normal)
       return;
     }
 
-    optional<ControlParameters> req = parseCommand(interest, "/localhost/nfd/rib/register");
+    auto req = parseCommand(interest, "/localhost/nfd/rib/register");
     if (req) {
       BOOST_REQUIRE(req->hasName());
       BOOST_CHECK_EQUAL(req->getName(), "/localhop/ndn-autoconf/hub");

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,7 +75,7 @@ public:
    *  \param io io_service to asynchronously post the result
    */
   DummyStage(const std::string& stageName, int* nCalls,
-             const optional<FaceUri>& result, boost::asio::io_service& io)
+             const std::optional<FaceUri>& result, boost::asio::io_service& io)
     : m_stageName(stageName)
     , m_nCalls(nCalls)
     , m_result(result)
@@ -109,7 +109,7 @@ private:
 private:
   std::string m_stageName;
   int* m_nCalls;
-  optional<FaceUri> m_result;
+  std::optional<FaceUri> m_result;
   boost::asio::io_service& m_io;
 };
 
@@ -131,7 +131,7 @@ private:
   makeStages(const Options& options) override
   {
     m_stages.push_back(make_unique<DummyStage>("first", &nCalls1, FaceUri("udp://188.7.60.95"), m_io));
-    m_stages.push_back(make_unique<DummyStage>("second", &nCalls2, nullopt, m_io));
+    m_stages.push_back(make_unique<DummyStage>("second", &nCalls2, std::nullopt, m_io));
   }
 
 public:
@@ -157,7 +157,7 @@ private:
   void
   makeStages(const Options& options) override
   {
-    m_stages.push_back(make_unique<DummyStage>("first", &nCalls1, nullopt, m_io));
+    m_stages.push_back(make_unique<DummyStage>("first", &nCalls1, std::nullopt, m_io));
     m_stages.push_back(make_unique<DummyStage>("second", &nCalls2, FaceUri("tcp://40.23.174.71"), m_io));
   }
 
@@ -178,7 +178,7 @@ BOOST_FIXTURE_TEST_CASE(Normal, ProcedureFixture<ProcedureSuccessFailure>)
 
   int nRegisterNdn = 0, nRegisterLocalhopNfd = 0;
   this->processInterest = [&] (const Interest& interest) {
-    optional<ControlParameters> req = parseCommand(interest, "/localhost/nfd/faces/create");
+    auto req = parseCommand(interest, "/localhost/nfd/faces/create");
     if (req) {
       BOOST_REQUIRE(req->hasUri());
       BOOST_CHECK_EQUAL(req->getUri(), "udp4://188.7.60.95:6363");
@@ -236,7 +236,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
 
   int nRegisterDefault = 0, nRegisterLocalhopNfd = 0;
   this->processInterest = [&] (const Interest& interest) {
-    optional<ControlParameters> req = parseCommand(interest, "/localhost/nfd/faces/create");
+    auto req = parseCommand(interest, "/localhost/nfd/faces/create");
     if (req) {
       ControlParameters resp;
       resp.setFaceId(3146)

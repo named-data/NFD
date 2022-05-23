@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(CanMatch)
   auto interest1 = makeInterest("/B");
   BOOST_CHECK_EQUAL(entry.canMatch(*interest1), false);
 
-  auto interest2 = makeInterest("/A", false, nullopt, 27956);
+  auto interest2 = makeInterest("/A", false, std::nullopt, 27956);
   BOOST_CHECK_EQUAL(entry.canMatch(*interest2), true);
 
   auto interest3 = makeInterest("/A", false, 6210_ms);

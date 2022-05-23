@@ -31,7 +31,7 @@
 namespace nfd {
 
 namespace tcp {
-typedef boost::asio::ip::tcp::endpoint Endpoint;
+using Endpoint = boost::asio::ip::tcp::endpoint;
 } // namespace tcp
 
 namespace face {

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,9 +36,10 @@ namespace face {
 
 class Channel;
 
-/** \brief indicates the state of a face
+/**
+ * \brief Indicates the state of a face.
  */
-typedef TransportState FaceState;
+using FaceState = TransportState;
 
 /** \brief generalization of a network interface
  *

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,8 +43,7 @@ using namespace nfd::tests;
 template<class ChannelT, class EndpointT>
 class ChannelFixture : public GlobalIoFixture
 {
-  static_assert(std::is_base_of<Channel, ChannelT>::value,
-                "ChannelFixture must be instantiated with a type derived from Channel");
+  static_assert(std::is_base_of_v<Channel, ChannelT>);
 
 public:
   virtual
@@ -71,14 +70,15 @@ protected:
   }
 
   virtual shared_ptr<ChannelT>
-  makeChannel(const boost::asio::ip::address&, uint16_t port = 0, optional<size_t> mtu = nullopt)
+  makeChannel(const boost::asio::ip::address&, uint16_t port = 0,
+              std::optional<size_t> mtu = std::nullopt)
   {
     BOOST_FAIL("Unimplemented");
     return nullptr;
   }
 
   void
-  listen(const boost::asio::ip::address& addr, optional<size_t> mtu = nullopt)
+  listen(const boost::asio::ip::address& addr, std::optional<size_t> mtu = std::nullopt)
   {
     listenerEp = EndpointT{addr, 7030};
     listenerChannel = makeChannel(addr, 7030, mtu);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -106,7 +106,7 @@ public: // Strategy Choice table
     Status m_status;
     std::string m_exceptionMessage;
 
-    friend class StrategyChoice;
+    friend StrategyChoice;
     friend std::ostream& operator<<(std::ostream&, const InsertResult&);
   };
 
@@ -152,8 +152,8 @@ public: // effective strategy
   findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
 
 public: // enumeration
-  typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
-  typedef boost::range_iterator<Range>::type const_iterator;
+  using Range = boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range>;
+  using const_iterator = boost::range_iterator<Range>::type;
 
   /** \return an iterator to the beginning
    *  \note Iteration order is implementation-defined.

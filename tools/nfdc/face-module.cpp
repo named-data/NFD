@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -164,7 +164,7 @@ FaceModule::create(ExecuteContext& ctx)
   auto mtuArg = ctx.args.getOptional<std::string>("mtu");
 
   // MTU is nominally a uint64_t, but can be the string value 'auto' to unset an override MTU
-  optional<uint64_t> mtu;
+  std::optional<uint64_t> mtu;
   if (mtuArg == "auto") {
     mtu = std::numeric_limits<uint64_t>::max();
   }
@@ -180,8 +180,8 @@ FaceModule::create(ExecuteContext& ctx)
     mtu = static_cast<uint64_t>(v);
   }
 
-  optional<FaceUri> canonicalRemote;
-  optional<FaceUri> canonicalLocal;
+  std::optional<FaceUri> canonicalRemote;
+  std::optional<FaceUri> canonicalLocal;
 
   auto updateFace = [&] (ControlParameters respParams, ControlParameters resp) {
     // faces/update response does not have FaceUris, copy from faces/create response

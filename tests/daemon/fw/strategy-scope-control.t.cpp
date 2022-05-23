@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -229,7 +229,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
   this->fib.addOrUpdateNextHop(*fibEntry, *this->localFace4, 10);
   this->fib.addOrUpdateNextHop(*fibEntry, *this->nonLocalFace2, 20);
 
-  auto interest = makeInterest("/localhost/A/1", false, nullopt, 1460);
+  auto interest = makeInterest("/localhost/A/1", false, std::nullopt, 1460);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, *interest);
   lp::Nack nack = makeNack(*interest, lp::NackReason::NO_ROUTE);
@@ -254,7 +254,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
   this->fib.addOrUpdateNextHop(*fibEntry, *this->localFace4, 10);
   this->fib.addOrUpdateNextHop(*fibEntry, *this->nonLocalFace2, 20);
 
-  auto interest = makeInterest("/localhop/A/1", false, nullopt, 1377);
+  auto interest = makeInterest("/localhop/A/1", false, std::nullopt, 1377);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, *interest);
   lp::Nack nack = makeNack(*interest, lp::NackReason::NO_ROUTE);

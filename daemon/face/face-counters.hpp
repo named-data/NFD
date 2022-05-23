@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ public:
    *  \throw std::bad_cast counters type mismatch
    */
   template<typename T>
-  typename std::enable_if<std::is_base_of<LinkService::Counters, T>::value, const T&>::type
+  std::enable_if_t<std::is_base_of_v<LinkService::Counters, T>, const T&>
   get() const
   {
     return dynamic_cast<const T&>(m_linkServiceCounters);
@@ -61,7 +61,7 @@ public:
    *  \throw std::bad_cast counters type mismatch
    */
   template<typename T>
-  typename std::enable_if<std::is_base_of<Transport::Counters, T>::value, const T&>::type
+  std::enable_if_t<std::is_base_of_v<Transport::Counters, T>, const T&>
   get() const
   {
     return dynamic_cast<const T&>(m_transportCounters);
