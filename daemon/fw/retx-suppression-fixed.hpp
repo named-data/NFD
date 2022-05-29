@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,8 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
 
-#include "algorithm.hpp"
 #include "retx-suppression.hpp"
+#include "table/pit-entry.hpp"
 
 namespace nfd {
 namespace fw {
@@ -48,7 +48,7 @@ public:
   decidePerPitEntry(pit::Entry& pitEntry) const;
 
 public:
-  static const time::milliseconds DEFAULT_MIN_RETX_INTERVAL;
+  static constexpr time::milliseconds DEFAULT_MIN_RETX_INTERVAL = 100_ms;
 
 private:
   const time::milliseconds m_minRetxInterval;

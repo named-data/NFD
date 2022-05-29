@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,12 +39,18 @@ namespace face {
 
 class GenericLinkService;
 
-/** \brief provides for reliable sending and receiving of link-layer packets
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+/**
+ * \brief Provides for reliable sending and receiving of link-layer packets
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpReliability : noncopyable
 {
 public:
+  /// TxSequence TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + lp::Sequence (8 octets)
+  static constexpr size_t RESERVED_HEADER_SPACE = tlv::sizeOfVarNumber(lp::tlv::TxSequence) +
+                                                  tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
+                                                  sizeof(lp::Sequence);
+
   struct Options
   {
     /** \brief enables link-layer reliability
@@ -110,7 +116,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   class NetPkt;
   using UnackedFrags = std::map<lp::Sequence, UnackedFrag>;
 
-NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief assign TxSequence number to a fragment
    *  \param frag fragment to assign TxSequence to
    *  \return assigned TxSequence number
@@ -163,7 +168,8 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   deleteUnackedFrag(UnackedFrags::iterator fragIt);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  /** \brief contains a sent fragment that has not been acknowledged and associated data
+  /**
+   * \brief Contains a sent fragment that has not been acknowledged and associated data
    */
   class UnackedFrag
   {
@@ -180,7 +186,8 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
     shared_ptr<NetPkt> netPkt;
   };
 
-  /** \brief contains a network-layer packet with unacknowledged fragments
+  /**
+   * \brief Contains a network-layer packet with unacknowledged fragments
    */
   class NetPkt
   {
@@ -194,13 +201,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
     bool didRetx;
   };
 
-public:
-  /// TxSequence TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + lp::Sequence (8 octets)
-  static constexpr size_t RESERVED_HEADER_SPACE = tlv::sizeOfVarNumber(lp::tlv::TxSequence) +
-                                                  tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
-                                                  sizeof(lp::Sequence);
-
-NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Options m_options;
   GenericLinkService* m_linkService;
   UnackedFrags m_unackedFrags;

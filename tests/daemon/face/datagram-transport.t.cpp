@@ -56,7 +56,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
   std::vector<uint8_t> readBuf(block1.size());
   this->remoteRead(readBuf);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.end(), block1.begin(), block1.end());
+  BOOST_TEST(readBuf == block1, boost::test_tools::per_element());
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
 }
 

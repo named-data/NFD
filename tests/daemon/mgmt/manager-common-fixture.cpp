@@ -28,8 +28,6 @@
 namespace nfd {
 namespace tests {
 
-const Name CommandInterestSignerFixture::DEFAULT_COMMAND_SIGNER_IDENTITY("/CommandInterestSignerFixture-identity");
-
 CommandInterestSignerFixture::CommandInterestSignerFixture()
   : m_signer(m_keyChain)
 {

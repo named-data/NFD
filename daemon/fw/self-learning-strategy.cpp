@@ -42,7 +42,7 @@ namespace fw {
 NFD_LOG_INIT(SelfLearningStrategy);
 NFD_REGISTER_STRATEGY(SelfLearningStrategy);
 
-const time::milliseconds SelfLearningStrategy::ROUTE_RENEW_LIFETIME(10_min);
+constexpr time::milliseconds ROUTE_RENEW_LIFETIME = 10_min;
 
 SelfLearningStrategy::SelfLearningStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
@@ -191,11 +191,11 @@ SelfLearningStrategy::asyncProcessData(const shared_ptr<pit::Entry>& pitEntry, c
   // (the PIT entry's expiry timer was set to 0 before dispatching)
   this->setExpiryTimer(pitEntry, 1_s);
 
-  runOnRibIoService([pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data, this] {
+  runOnRibIoService([this, pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data] {
     rib::Service::get().getRibManager().slFindAnn(data.getName(),
-      [pitEntryWeak, inFaceId, data, this] (std::optional<ndn::PrefixAnnouncement> paOpt) {
+      [this, pitEntryWeak, inFaceId, data] (std::optional<ndn::PrefixAnnouncement> paOpt) {
         if (paOpt) {
-          runOnMainIoService([pitEntryWeak, inFaceId, data, pa = std::move(*paOpt), this] {
+          runOnMainIoService([this, pitEntryWeak, inFaceId, data, pa = std::move(*paOpt)] {
             auto pitEntry = pitEntryWeak.lock();
             auto inFace = this->getFace(inFaceId);
             if (pitEntry && inFace) {

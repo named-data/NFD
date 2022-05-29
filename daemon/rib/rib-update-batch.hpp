@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,20 +33,24 @@
 namespace nfd {
 namespace rib {
 
-typedef std::list<RibUpdate> RibUpdateList;
+using RibUpdateList = std::list<RibUpdate>;
 
-/** \brief Represents a collection of RibUpdates to be applied to a single FaceId.
+/**
+ * \brief Represents a collection of RibUpdates to be applied to a single FaceId.
  */
 class RibUpdateBatch
 {
 public:
-  typedef RibUpdateList::const_iterator const_iterator;
+  using const_iterator = RibUpdateList::const_iterator;
 
   explicit
   RibUpdateBatch(uint64_t faceId);
 
   uint64_t
-  getFaceId() const;
+  getFaceId() const
+  {
+    return m_faceId;
+  }
 
   void
   add(const RibUpdate& update);
@@ -64,12 +68,6 @@ private:
   uint64_t m_faceId;
   RibUpdateList m_updates;
 };
-
-inline uint64_t
-RibUpdateBatch::getFaceId() const
-{
-  return m_faceId;
-}
 
 } // namespace rib
 } // namespace nfd

@@ -27,7 +27,6 @@
 #define NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP
 
 #include "core/common.hpp"
-#include "status-report.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 
@@ -43,14 +42,14 @@ using ndn::nfd::RouteOrigin;
 
 /** \brief contains named command arguments
  */
-class CommandArguments : public std::map<std::string, std::any>
+class CommandArguments : public std::map<std::string, std::any, std::less<>>
 {
 public:
   /** \return the argument value, or nullopt if the argument is omitted on command line
    */
   template<typename T>
   std::optional<T>
-  getOptional(const std::string& key) const
+  getOptional(std::string_view key) const
   {
     auto i = find(key);
     return i == end() ? std::nullopt : std::make_optional(std::any_cast<T>(i->second));
@@ -60,7 +59,7 @@ public:
    */
   template<typename T>
   T
-  get(const std::string& key, const T& defaultValue = T()) const
+  get(std::string_view key, const T& defaultValue = T()) const
   {
     return getOptional<T>(key).value_or(defaultValue);
   }
@@ -69,7 +68,7 @@ public:
    *  \return the argument value, or boost::logic::indeterminate if the argument is omitted on command line
    */
   boost::logic::tribool
-  getTribool(const std::string& key) const
+  getTribool(std::string_view key) const
   {
     auto value = getOptional<bool>(key);
     return value ? boost::logic::tribool(*value) : boost::logic::indeterminate;

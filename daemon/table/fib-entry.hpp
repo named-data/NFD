@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,7 +48,9 @@ class Fib;
  */
 using NextHopList = std::vector<NextHop>;
 
-/** \brief represents a FIB entry
+/**
+ * \brief Represents an entry in the FIB.
+ * \sa Fib
  */
 class Entry : noncopyable
 {
@@ -115,8 +117,8 @@ private:
 
   name_tree::Entry* m_nameTreeEntry = nullptr;
 
-  friend class name_tree::Entry;
-  friend class Fib;
+  friend name_tree::Entry;
+  friend Fib;
 };
 
 } // namespace fib

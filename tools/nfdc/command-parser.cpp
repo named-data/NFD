@@ -94,7 +94,7 @@ CommandParser::addAlias(const std::string& noun, const std::string& verb, const 
 }
 
 std::vector<const CommandDefinition*>
-CommandParser::listCommands(const std::string& noun, ParseMode mode) const
+CommandParser::listCommands(std::string_view noun, ParseMode mode) const
 {
   std::vector<const CommandDefinition*> results;
   for (auto i : m_commandOrder) {
@@ -126,7 +126,7 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
   NDN_LOG_TRACE("found command noun=" << def.getNoun() << " verb=" << def.getVerb());
 
   size_t nConsumed = std::min<size_t>(2, tokens.size());
-  return std::make_tuple(def.getNoun(), def.getVerb(), def.parse(tokens, nConsumed), i->second->execute);
+  return {def.getNoun(), def.getVerb(), def.parse(tokens, nConsumed), i->second->execute};
 }
 
 } // namespace nfdc

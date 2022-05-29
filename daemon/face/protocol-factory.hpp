@@ -69,9 +69,11 @@ public: // registry
   static void
   registerType(const std::string& id = PF::getId())
   {
-    Registry& registry = getRegistry();
-    BOOST_ASSERT(registry.count(id) == 0);
-    registry[id] = [] (const CtorParams& p) { return make_unique<PF>(p); };
+    BOOST_ASSERT(!id.empty());
+    auto r = getRegistry().insert_or_assign(id, [] (auto&&... p) {
+      return make_unique<PF>(std::forward<decltype(p)>(p)...);
+    });
+    BOOST_VERIFY(r.second);
   }
 
   /** \brief Create a protocol factory instance

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,21 +39,26 @@ class Entry;
 
 namespace pit {
 
-/** \brief An unordered collection of in-records
+/**
+ * \brief An unordered collection of in-records
  */
-typedef std::list<InRecord> InRecordCollection;
+using InRecordCollection = std::list<InRecord>;
 
-/** \brief An unordered collection of out-records
+/**
+ * \brief An unordered collection of out-records
  */
-typedef std::list<OutRecord> OutRecordCollection;
+using OutRecordCollection = std::list<OutRecord>;
 
-/** \brief An Interest table entry
+/**
+ * \brief Represents an entry in the %Interest table (PIT).
  *
- *  An Interest table entry represents either a pending Interest or a recently satisfied Interest.
- *  Each entry contains a collection of in-records, a collection of out-records,
- *  and two timers used in forwarding pipelines.
- *  In addition, the entry, in-records, and out-records are subclasses of StrategyInfoHost,
- *  which allows forwarding strategy to store arbitrary information on them.
+ * An Interest table entry represents either a pending Interest or a recently satisfied Interest.
+ * Each entry contains a collection of in-records, a collection of out-records,
+ * and two timers used in forwarding pipelines.
+ * In addition, the entry, in-records, and out-records are subclasses of StrategyInfoHost,
+ * which allows forwarding strategy to store arbitrary information on them.
+ *
+ * \sa Pit
  */
 class Entry : public StrategyInfoHost, noncopyable
 {
@@ -238,7 +243,7 @@ private:
 
   name_tree::Entry* m_nameTreeEntry = nullptr;
 
-  friend class name_tree::Entry;
+  friend name_tree::Entry;
 };
 
 } // namespace pit

@@ -274,26 +274,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LiveDeadlock,
   BOOST_CHECK_GT(nNacksD, 0);
 }
 
-template<lp::NackReason X, lp::NackReason Y, lp::NackReason R>
+template<auto X, auto Y, auto R>
 struct NackReasonCombination
 {
-  static lp::NackReason
-  getX()
-  {
-    return X;
-  }
-
-  static lp::NackReason
-  getY()
-  {
-    return Y;
-  }
-
-  static lp::NackReason
-  getExpectedResult()
-  {
-    return R;
-  }
+  static constexpr lp::NackReason firstReason{X};
+  static constexpr lp::NackReason secondReason{Y};
+  static constexpr lp::NackReason expectedResult{R};
 };
 
 using NackReasonCombinations = boost::mpl::vector<
@@ -320,24 +306,24 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
                                  Combination, NackReasonCombinations,
                                  StrategyNackReturnFixture<BestRouteStrategy>)
 {
-  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  auto& fibEntry = *fib.insert(Name()).first;
   fib.addOrUpdateNextHop(fibEntry, *face3, 10);
   fib.addOrUpdateNextHop(fibEntry, *face4, 20);
   fib.addOrUpdateNextHop(fibEntry, *face5, 30);
 
   auto interest1 = makeInterest("/F6sEwB24I", false, std::nullopt, 282);
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
+  auto pitEntry = pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest1);
   pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
   pitEntry->insertOrUpdateOutRecord(*face4, *interest1);
 
-  lp::Nack nack3 = makeNack(*interest1, Combination::getX());
+  lp::Nack nack3 = makeNack(*interest1, Combination::firstReason);
   pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
   strategy.afterReceiveNack(nack3, FaceEndpoint(*face3, 0), pitEntry);
 
   BOOST_CHECK_EQUAL(strategy.sendNackHistory.size(), 0);
 
-  lp::Nack nack4 = makeNack(*interest1, Combination::getY());
+  lp::Nack nack4 = makeNack(*interest1, Combination::secondReason);
   pitEntry->getOutRecord(*face4)->setIncomingNack(nack4);
   strategy.afterReceiveNack(nack4, FaceEndpoint(*face4, 0), pitEntry);
 
@@ -345,7 +331,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest.wireEncode(),
                     pitEntry->getInterest().wireEncode());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), Combination::getExpectedResult());
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), Combination::expectedResult);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyNackReturn

@@ -494,8 +494,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
   }
 
   BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
-  BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
-                                expectedRecords.begin(), expectedRecords.end());
+  BOOST_TEST(receivedRecords == expectedRecords, boost::test_tools::per_element());
 }
 
 BOOST_FIXTURE_TEST_SUITE(FaceMonitor, LocalhostAuthorizedRibManagerFixture)

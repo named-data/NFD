@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -95,8 +95,8 @@ private:
   afterTimeout();
 
 public:
-  static const int UNLIMITED_OPS;
-  static const time::nanoseconds UNLIMITED_TIME;
+  static constexpr int UNLIMITED_OPS = std::numeric_limits<int>::max();
+  static constexpr time::nanoseconds UNLIMITED_TIME = time::nanoseconds::min();
 
 private:
   GlobalIoTimeFixture* m_fixture;

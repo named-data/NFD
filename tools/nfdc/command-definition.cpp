@@ -24,6 +24,7 @@
  */
 
 #include "command-definition.hpp"
+#include "status-report.hpp"
 
 #include <ndn-cxx/util/logger.hpp>
 
@@ -93,7 +94,7 @@ getMetavarFromType(ArgValueType vt)
   NDN_CXX_UNREACHABLE;
 }
 
-CommandDefinition::CommandDefinition(const std::string& noun, const std::string& verb)
+CommandDefinition::CommandDefinition(std::string_view noun, std::string_view verb)
   : m_noun(noun)
   , m_verb(verb)
 {
@@ -103,8 +104,8 @@ CommandDefinition::~CommandDefinition() = default;
 
 CommandDefinition&
 CommandDefinition::addArg(const std::string& name, ArgValueType valueType,
-                        Required isRequired, Positional allowPositional,
-                        const std::string& metavar)
+                          Required isRequired, Positional allowPositional,
+                          const std::string& metavar)
 {
   bool isNew = m_args.emplace(name,
     Arg{name, valueType, static_cast<bool>(isRequired),
@@ -151,7 +152,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
         const std::string& valueToken = tokens[++i];
         NDN_LOG_TRACE(arg.name << " has value " << valueToken);
         try {
-          ca[arg.name] = this->parseValue(arg.valueType, valueToken);
+          ca[arg.name] = parseValue(arg.valueType, valueToken);
         }
         catch (const std::exception& e) {
           NDN_LOG_TRACE(valueToken << " cannot be parsed as " << arg.valueType);
@@ -180,7 +181,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
       }
 
       try {
-        ca[arg.name] = this->parseValue(arg.valueType, token);
+        ca[arg.name] = parseValue(arg.valueType, token);
         NDN_LOG_TRACE(token << " is parsed as value for " << arg.name);
         break;
       }
@@ -207,7 +208,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
     ++positionalArgIndex;
   }
 
-  for (const std::string& argName : m_requiredArgs) {
+  for (const auto& argName : m_requiredArgs) {
     if (ca.count(argName) == 0) {
       NDN_THROW(Error(argName + ": required argument is missing"));
     }
@@ -241,7 +242,7 @@ parseFacePersistency(const std::string& s)
 }
 
 std::any
-CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) const
+CommandDefinition::parseValue(ArgValueType valueType, const std::string& token)
 {
   switch (valueType) {
     case ArgValueType::NONE:

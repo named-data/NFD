@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,13 +28,8 @@
 namespace nfd {
 namespace rib {
 
-RibUpdate::RibUpdate()
-{
-
-}
-
 std::ostream&
-operator<<(std::ostream& os, const RibUpdate::Action action)
+operator<<(std::ostream& os, RibUpdate::Action action)
 {
   switch (action) {
   case RibUpdate::REGISTER:
@@ -47,22 +42,18 @@ operator<<(std::ostream& os, const RibUpdate::Action action)
     os << "REMOVE_FACE";
     break;
   }
-
   return os;
 }
 
 std::ostream&
 operator<<(std::ostream& os, const RibUpdate& update)
 {
-  os << "RibUpdate {\n";
-  os << "  Name: " << update.getName() << "\n";
-  os << "  Action: " << update.getAction() << "\n";
-  os << "  " << update.getRoute() << "\n";
-  os << "}";
-
-  return os;
+  return os << "RibUpdate {\n"
+            << "  Name: " << update.getName() << "\n"
+            << "  Action: " << update.getAction() << "\n"
+            << "  " << update.getRoute() << "\n"
+            << "}";
 }
-
 
 } // namespace rib
 } // namespace nfd

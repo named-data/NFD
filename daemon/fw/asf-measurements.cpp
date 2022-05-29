@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,6 @@
 namespace nfd {
 namespace fw {
 namespace asf {
-
-const time::nanoseconds FaceInfo::RTT_NO_MEASUREMENT{-1};
-const time::nanoseconds FaceInfo::RTT_TIMEOUT{-2};
 
 time::nanoseconds
 FaceInfo::scheduleTimeout(const Name& interestName, scheduler::EventCallback cb)
@@ -63,11 +60,9 @@ NamespaceInfo::getFaceInfo(FaceId faceId)
 FaceInfo&
 NamespaceInfo::getOrCreateFaceInfo(FaceId faceId)
 {
-  auto ret = m_fiMap.emplace(std::piecewise_construct,
-                             std::forward_as_tuple(faceId),
-                             std::forward_as_tuple(m_rttEstimatorOpts));
-  auto& faceInfo = ret.first->second;
-  if (ret.second) {
+  auto [it, isNew] = m_fiMap.try_emplace(faceId, m_rttEstimatorOpts);
+  auto& faceInfo = it->second;
+  if (isNew) {
     extendFaceInfoLifetime(faceInfo, faceId);
   }
   return faceInfo;
@@ -82,8 +77,6 @@ NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
-constexpr time::microseconds AsfMeasurements::MEASUREMENTS_LIFETIME;
 
 AsfMeasurements::AsfMeasurements(MeasurementsAccessor& measurements)
   : m_measurements(measurements)

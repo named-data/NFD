@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -107,7 +107,7 @@ private:
   applyConfig(const ConfigSection& section, const std::string& filename);
 
 private:
-  static Service* s_instance;
+  static inline Service* s_instance = nullptr;
 
   ndn::KeyChain& m_keyChain;
   ndn::Face m_face;

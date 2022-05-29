@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,10 +74,7 @@ void
 TopologyLink::addFace(TopologyNode i, shared_ptr<Face> face)
 {
   auto receiveCb = [this, i] (const Block& packet) { transmit(i, packet); };
-
-  auto ret = m_transports.emplace(std::piecewise_construct,
-                                  std::forward_as_tuple(i),
-                                  std::forward_as_tuple(std::move(face), std::move(receiveCb)));
+  auto ret = m_transports.try_emplace(i, std::move(face), std::move(receiveCb));
   BOOST_ASSERT(ret.second);
 
   auto& node = ret.first->second;
@@ -93,12 +90,12 @@ TopologyLink::transmit(TopologyNode i, const Block& packet)
 
   const auto& blockedDestinations = m_transports.at(i).blockedDestinations;
 
-  for (const auto& p : m_transports) {
-    if (p.first == i || blockedDestinations.count(p.first) > 0) {
+  for (const auto& [node, transport] : m_transports) {
+    if (node == i || blockedDestinations.count(node) > 0) {
       continue;
     }
 
-    getScheduler().schedule(m_delay, [packet, recipient = p.second.transport] {
+    getScheduler().schedule(m_delay, [packet, recipient = transport.transport] {
       recipient->receivePacket(packet);
     });
   }

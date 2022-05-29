@@ -336,9 +336,9 @@ BOOST_AUTO_TEST_CASE(Iterator)
   for (const auto& pitEntry : pit) {
     actual.insert(&pitEntry.getInterest());
   }
-  std::set<const Interest*> expected = {interestA.get(), interestABC1.get(),
-                                        interestABC2.get(), interestD.get()};
-  BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+  const auto expected = std::set{interestA.get(), interestABC1.get(),
+                                 interestABC2.get(), interestD.get()};
+  BOOST_TEST(actual == expected, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPit

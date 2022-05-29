@@ -105,8 +105,8 @@ public:
   }
 
 public:
-  static const time::nanoseconds RTT_NO_MEASUREMENT;
-  static const time::nanoseconds RTT_TIMEOUT;
+  static constexpr time::nanoseconds RTT_NO_MEASUREMENT = -1_ns;
+  static constexpr time::nanoseconds RTT_TIMEOUT = -2_ns;
 
 private:
   ndn::util::RttEstimator m_rttEstimator;

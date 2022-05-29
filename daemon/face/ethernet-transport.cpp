@@ -168,19 +168,15 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
     return;
   }
 
-  span<const uint8_t> pkt;
-  std::string err;
-  std::tie(pkt, err) = m_pcap.readNextPacket();
-
+  auto [pkt, readErr] = m_pcap.readNextPacket();
   if (pkt.empty()) {
-    NFD_LOG_FACE_WARN("Read error: " << err);
+    NFD_LOG_FACE_WARN("Read error: " << readErr);
   }
   else {
-    const ether_header* eh;
-    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, m_srcAddress,
-                                                   m_destAddress.isMulticast() ? m_destAddress : m_srcAddress);
+    auto [eh, frameErr] = ethernet::checkFrameHeader(pkt, m_srcAddress,
+                                                     m_destAddress.isMulticast() ? m_destAddress : m_srcAddress);
     if (eh == nullptr) {
-      NFD_LOG_FACE_WARN(err);
+      NFD_LOG_FACE_WARN(frameErr);
     }
     else {
       ethernet::Address sender(eh->ether_shost);
@@ -204,9 +200,7 @@ EthernetTransport::receivePayload(span<const uint8_t> payload, const ethernet::A
 {
   NFD_LOG_FACE_TRACE("Received: " << payload.size() << " bytes from " << sender);
 
-  bool isOk = false;
-  Block element;
-  std::tie(isOk, element) = Block::fromBuffer(payload);
+  auto [isOk, element] = Block::fromBuffer(payload);
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << sender);
     // This packet won't extend the face lifetime

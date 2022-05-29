@@ -43,9 +43,9 @@ BOOST_AUTO_TEST_CASE(VersionNumber)
                             NFD_VERSION_MINOR * 1000 +
                             NFD_VERSION_PATCH);
 
-  static_assert(NFD_VERSION_MAJOR >= 22 && NFD_VERSION_MAJOR <= 100, "");
-  static_assert(NFD_VERSION_MINOR >= 1 && NFD_VERSION_MINOR <= 12, "");
-  static_assert(NFD_VERSION_PATCH < 1000, "");
+  static_assert(NFD_VERSION_MAJOR >= 22 && NFD_VERSION_MAJOR <= 100);
+  static_assert(NFD_VERSION_MINOR >= 1 && NFD_VERSION_MINOR <= 12);
+  static_assert(NFD_VERSION_PATCH < 1000);
 }
 
 BOOST_AUTO_TEST_CASE(VersionString)

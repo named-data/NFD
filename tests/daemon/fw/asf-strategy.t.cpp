@@ -114,10 +114,8 @@ protected:
   shared_ptr<TopologyAppLink> consumer;
   shared_ptr<TopologyAppLink> producer;
 
-  static const Name PRODUCER_PREFIX;
+  static inline const Name PRODUCER_PREFIX{"/hr/C"};
 };
-
-const Name AsfGridFixture::PRODUCER_PREFIX("/hr/C");
 
 class AsfStrategyParametersGridFixture : public AsfGridFixture
 {

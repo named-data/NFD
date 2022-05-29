@@ -33,11 +33,7 @@ namespace nfd {
 namespace fw {
 namespace asf {
 
-constexpr time::milliseconds ProbingModule::DEFAULT_PROBING_INTERVAL;
-constexpr time::milliseconds ProbingModule::MIN_PROBING_INTERVAL;
-
-static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::MEASUREMENTS_LIFETIME,
-              "ProbingModule::DEFAULT_PROBING_INTERVAL must be less than AsfMeasurements::MEASUREMENTS_LIFETIME");
+static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::MEASUREMENTS_LIFETIME);
 
 ProbingModule::ProbingModule(AsfMeasurements& measurements)
   : m_probingInterval(DEFAULT_PROBING_INTERVAL)

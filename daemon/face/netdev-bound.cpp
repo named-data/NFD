@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,9 +46,7 @@ NetdevBound::processConfig(OptionalConfigSection configSection,
   std::vector<Rule> rules;
   if (configSection) {
     int ruleIndex = 0;
-    for (const auto& pair : *configSection) {
-      const std::string& key = pair.first;
-      const ConfigSection& value = pair.second;
+    for (const auto& [key, value] : *configSection) {
       if (key == "rule") {
         rules.push_back(parseRule(ruleIndex++, value));
       }
@@ -94,9 +92,7 @@ NetdevBound::parseRule(int index, const ConfigSection& confRule) const
 
   bool hasWhitelist = false;
   bool hasBlacklist = false;
-  for (const auto& pair : confRule) {
-    const std::string& key = pair.first;
-    const ConfigSection& value = pair.second;
+  for (const auto& [key, value] : confRule) {
     if (key == "remote") {
       try {
         rule.remotes.emplace_back(value.get_value<std::string>());

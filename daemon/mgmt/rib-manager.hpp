@@ -240,7 +240,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onNotification(const ndn::nfd::FaceEventNotification& notification);
 
 public:
-  static const Name LOCALHOP_TOP_PREFIX;
+  static inline const Name LOCALHOP_TOP_PREFIX{"/localhop/nfd"};
 
 private:
   rib::Rib& m_rib;

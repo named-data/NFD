@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -72,17 +72,20 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   handleReconnectTimeout();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  /** \brief how long to wait before the first reconnection attempt after the TCP connection has been severed
+  /**
+   * \brief Delay before the first reconnection attempt after the TCP connection has been severed
    */
-  static time::milliseconds s_initialReconnectWait;
+  static constexpr time::milliseconds INITIAL_RECONNECT_DELAY = 1_s;
 
-  /** \brief maximum amount of time to wait before a reconnection attempt
+  /**
+   * \brief Maximum amount of time to wait before a reconnection attempt
    */
-  static time::milliseconds s_maxReconnectWait;
+  static constexpr time::milliseconds MAX_RECONNECT_DELAY = 5_min;
 
-  /** \brief multiplier for the exponential backoff of the reconnection timer
+  /**
+   * \brief Multiplier for the exponential backoff of the reconnection timer
    */
-  static float s_reconnectWaitMultiplier;
+  static constexpr float RECONNECT_DELAY_MULTIPLIER = 2.0f;
 
 private:
   typename protocol::endpoint m_remoteEndpoint;

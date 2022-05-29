@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,7 +65,7 @@ protected:
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
-  static const Name DEFAULT_COMMAND_SIGNER_IDENTITY;
+  static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/CommandInterestSignerFixture-identity"};
 
 private:
   ndn::security::InterestSigner m_signer;
@@ -188,7 +188,7 @@ public:
   }
 };
 
-template<int CODE>
+template<auto CODE>
 class CommandFailure
 {
 public:

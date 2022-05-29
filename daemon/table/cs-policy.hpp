@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,8 @@ namespace cs {
 
 class Cs;
 
-/** \brief represents a CS replacement policy
+/**
+ * \brief Represents a CS replacement policy
  */
 class Policy : noncopyable
 {
@@ -42,9 +43,9 @@ public: // registry
   static void
   registerPolicy(const std::string& policyName = P::POLICY_NAME)
   {
-    Registry& registry = getRegistry();
-    BOOST_ASSERT(registry.count(policyName) == 0);
-    registry[policyName] = [] { return make_unique<P>(); };
+    BOOST_ASSERT(!policyName.empty());
+    auto r = getRegistry().insert_or_assign(policyName, [] { return make_unique<P>(); });
+    BOOST_VERIFY(r.second);
   }
 
   /** \return a cs::Policy identified by \p policyName,
@@ -59,9 +60,6 @@ public: // registry
   getPolicyNames();
 
 public:
-  explicit
-  Policy(const std::string& policyName);
-
   virtual
   ~Policy() = default;
 
@@ -190,6 +188,9 @@ protected:
   evictEntries() = 0;
 
 protected:
+  explicit
+  Policy(std::string_view policyName);
+
   DECLARE_SIGNAL_EMIT(beforeEvict)
 
 private: // registry
@@ -200,7 +201,7 @@ private: // registry
   getRegistry();
 
 private:
-  std::string m_policyName;
+  const std::string m_policyName;
   size_t m_limit;
   Cs* m_cs;
 };

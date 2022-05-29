@@ -52,11 +52,10 @@ public: // registry
   {
     BOOST_ASSERT(strategyName.size() > 1);
     BOOST_ASSERT(strategyName.at(-1).isVersion());
-    Registry& registry = getRegistry();
-    BOOST_ASSERT(registry.count(strategyName) == 0);
-    registry[strategyName] = [] (auto&&... args) {
+    auto r = getRegistry().insert_or_assign(strategyName, [] (auto&&... args) {
       return make_unique<S>(std::forward<decltype(args)>(args)...);
-    };
+    });
+    BOOST_VERIFY(r.second);
   }
 
   /** \return Whether a strategy instance can be created from \p instanceName

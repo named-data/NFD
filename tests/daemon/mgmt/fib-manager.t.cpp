@@ -438,8 +438,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   }
 
   BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
-  BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
-                                expectedRecords.begin(), expectedRecords.end());
+  BOOST_TEST(receivedRecords == expectedRecords, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // List

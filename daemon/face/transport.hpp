@@ -86,24 +86,29 @@ public:
   ByteCounter nOutBytes;
 };
 
-/** \brief indicates the transport has no limit on payload size
+/**
+ * \brief Indicates that the transport has no limit on payload size
  */
-const ssize_t MTU_UNLIMITED = -1;
+constexpr ssize_t MTU_UNLIMITED = -1;
 
-/** \brief (for internal use) indicates MTU field is unset
+/**
+ * \brief (for internal use) Indicates that the MTU field is unset
  */
-const ssize_t MTU_INVALID = -2;
+constexpr ssize_t MTU_INVALID = -2;
 
-/** \brief indicates that the transport does not support reading the queue capacity/length
+/**
+ * \brief Indicates that the transport does not support reading the queue capacity/length
  */
-const ssize_t QUEUE_UNSUPPORTED = -1;
+constexpr ssize_t QUEUE_UNSUPPORTED = -1;
 
-/** \brief indicates that the transport was unable to retrieve the queue capacity/length
+/**
+ * \brief Indicates that the transport was unable to retrieve the queue capacity/length
  */
-const ssize_t QUEUE_ERROR = -2;
+constexpr ssize_t QUEUE_ERROR = -2;
 
-/** \brief The lower half of a Face.
- *  \sa Face
+/**
+ * \brief The lower half of a Face.
+ * \sa Face
  */
 class Transport : protected virtual TransportCounters, noncopyable
 {

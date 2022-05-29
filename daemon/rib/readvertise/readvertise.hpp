@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -68,18 +68,14 @@ private:
   withdraw(ReadvertisedRouteContainer::iterator rrIt);
 
 private:
-  /** \brief maps from RIB route to readvertised route derived from RIB route(s)
-   */
-  using RouteRrIndex = std::map<RibRouteRef, ReadvertisedRouteContainer::iterator>;
-
-  static const time::milliseconds RETRY_DELAY_MIN;
-  static const time::milliseconds RETRY_DELAY_MAX;
-
   unique_ptr<ReadvertisePolicy> m_policy;
   unique_ptr<ReadvertiseDestination> m_destination;
 
   ReadvertisedRouteContainer m_rrs;
-  RouteRrIndex m_routeToRr;
+  /**
+   * \brief maps from RIB route to readvertised route derived from RIB route(s)
+   */
+  std::map<RibRouteRef, ReadvertisedRouteContainer::iterator> m_routeToRr;
 
   signal::ScopedConnection m_addRouteConn;
   signal::ScopedConnection m_removeRouteConn;

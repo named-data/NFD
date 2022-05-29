@@ -229,8 +229,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterest)
 
   auto interest1 = makeInterest("/23Rd9hEiR");
   lp::Packet lpPacket;
-  lpPacket.set<lp::FragmentField>(std::make_pair(
-    interest1->wireEncode().begin(), interest1->wireEncode().end()));
+  lpPacket.set<lp::FragmentField>({interest1->wireEncode().begin(), interest1->wireEncode().end()});
   lpPacket.set<lp::SequenceField>(0); // force LpPacket encoding
 
   transport->receivePacket(lpPacket.wireEncode());
@@ -264,8 +263,7 @@ BOOST_AUTO_TEST_CASE(ReceiveData)
 
   auto data1 = makeData("/12345689");
   lp::Packet lpPacket;
-  lpPacket.set<lp::FragmentField>(std::make_pair(
-    data1->wireEncode().begin(), data1->wireEncode().end()));
+  lpPacket.set<lp::FragmentField>({data1->wireEncode().begin(), data1->wireEncode().end()});
   lpPacket.set<lp::SequenceField>(0); // force LpPacket encoding
 
   transport->receivePacket(lpPacket.wireEncode());
@@ -282,11 +280,11 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
   options.allowLocalFields = false;
   initialize(options);
 
-  lp::Nack nack1 = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 323),
-                            lp::NackReason::NO_ROUTE);
+  auto nack1 = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 323),
+                        lp::NackReason::NO_ROUTE);
   lp::Packet lpPacket;
-  lpPacket.set<lp::FragmentField>(std::make_pair(
-    nack1.getInterest().wireEncode().begin(), nack1.getInterest().wireEncode().end()));
+  lpPacket.set<lp::FragmentField>({nack1.getInterest().wireEncode().begin(),
+                                   nack1.getInterest().wireEncode().end()});
   lpPacket.set<lp::NackField>(nack1.getHeader());
 
   transport->receivePacket(lpPacket.wireEncode());
@@ -430,12 +428,9 @@ BOOST_AUTO_TEST_CASE(ReassembleFragments)
 
   // fragment the packet
   LpFragmenter fragmenter({});
-  size_t mtu = 100;
-  bool isOk = false;
-  std::vector<lp::Packet> frags;
-  std::tie(isOk, frags) = fragmenter.fragmentPacket(packet, mtu);
+  auto [isOk, frags] = fragmenter.fragmentPacket(packet, 100);
   BOOST_REQUIRE(isOk);
-  BOOST_CHECK_GT(frags.size(), 1);
+  BOOST_TEST(frags.size() > 1);
 
   // receive the fragments
   for (ssize_t fragIndex = frags.size() - 1; fragIndex >= 0; --fragIndex) {
@@ -970,11 +965,11 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropNack)
   options.allowLocalFields = true;
   initialize(options);
 
-  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
-                           lp::NackReason::NO_ROUTE);
+  auto nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
+                       lp::NackReason::NO_ROUTE);
   lp::Packet packet;
-  packet.set<lp::FragmentField>(std::make_pair(
-    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::FragmentField>({nack.getInterest().wireEncode().begin(),
+                                 nack.getInterest().wireEncode().end()});
   packet.set<lp::NackField>(nack.getHeader());
   packet.set<lp::NextHopFaceIdField>(1000);
 
@@ -1205,11 +1200,11 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkData)
 
 BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkNack)
 {
-  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
-                           lp::NackReason::NO_ROUTE);
+  auto nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
+                       lp::NackReason::NO_ROUTE);
   lp::Packet packet;
-  packet.set<lp::FragmentField>(std::make_pair(
-    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::FragmentField>({nack.getInterest().wireEncode().begin(),
+                                 nack.getInterest().wireEncode().end()});
   packet.set<lp::NackField>(nack.getHeader());
   packet.set<lp::CongestionMarkField>(1);
 
@@ -1310,11 +1305,11 @@ BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDropNack)
   options.allowSelfLearning = true;
   initialize(options);
 
-  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
-                           lp::NackReason::NO_ROUTE);
+  auto nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
+                       lp::NackReason::NO_ROUTE);
   lp::Packet packet;
-  packet.set<lp::FragmentField>(std::make_pair(
-    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::FragmentField>({nack.getInterest().wireEncode().begin(),
+                                 nack.getInterest().wireEncode().end()});
   packet.set<lp::NackField>(nack.getHeader());
   packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
 
@@ -1418,11 +1413,11 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropNack)
   options.allowSelfLearning = true;
   initialize(options);
 
-  lp::Nack nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
-                           lp::NackReason::NO_ROUTE);
+  auto nack = makeNack(*makeInterest("/localhost/test", false, std::nullopt, 123),
+                       lp::NackReason::NO_ROUTE);
   lp::Packet packet;
-  packet.set<lp::FragmentField>(std::make_pair(
-    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::FragmentField>({nack.getInterest().wireEncode().begin(),
+                                 nack.getInterest().wireEncode().end()});
   packet.set<lp::NackField>(nack.getHeader());
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   packet.set<lp::PrefixAnnouncementField>(pah);

@@ -54,6 +54,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -93,6 +94,7 @@ using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
 
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 using ndn::span;
 using ndn::to_string;

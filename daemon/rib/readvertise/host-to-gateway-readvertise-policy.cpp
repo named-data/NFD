@@ -33,8 +33,8 @@
 namespace nfd {
 namespace rib {
 
-static const name::Component IGNORE_COMPONENT("nrd");
-static const time::seconds DEFAULT_REFRESH_INTERVAL = 25_s;
+const name::Component IGNORE_COMPONENT("nrd");
+const time::seconds DEFAULT_REFRESH_INTERVAL = 25_s;
 
 HostToGatewayReadvertisePolicy::HostToGatewayReadvertisePolicy(const ndn::KeyChain& keyChain,
                                                                const ConfigSection& section)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,19 +33,15 @@
 namespace nfd {
 namespace rib {
 
-/** \brief Represents a RIB entry, which contains one or more Routes with the same prefix.
+/**
+ * \brief Represents a RIB entry, which contains one or more Routes with the same prefix.
  */
 class RibEntry : public std::enable_shared_from_this<RibEntry>
 {
 public:
-  typedef std::list<Route> RouteList;
-  typedef RouteList::iterator iterator;
-  typedef RouteList::const_iterator const_iterator;
-
-  RibEntry()
-    : m_nRoutesWithCaptureSet(0)
-  {
-  }
+  using RouteList = std::list<Route>;
+  using iterator = RouteList::iterator;
+  using const_iterator = RouteList::const_iterator;
 
   void
   setName(const Name& prefix);
@@ -210,7 +206,7 @@ private:
    *  If the number is greater than zero, a route on the namespace has its capture
    *  flag set which means the namespace should not inherit any routes.
    */
-  uint64_t m_nRoutesWithCaptureSet;
+  uint64_t m_nRoutesWithCaptureSet = 0;
 };
 
 inline void
@@ -228,7 +224,7 @@ RibEntry::getName() const
 inline void
 RibEntry::setParent(shared_ptr<RibEntry> parent)
 {
-  m_parent = parent;
+  m_parent = std::move(parent);
 }
 
 inline shared_ptr<RibEntry>

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,19 +76,20 @@ FaceTable::addReserved(shared_ptr<Face> face, FaceId faceId)
 }
 
 void
-FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
+FaceTable::addImpl(shared_ptr<Face> facePtr, FaceId faceId)
 {
-  face->setId(faceId);
-  auto ret = m_faces.emplace(faceId, face);
-  BOOST_VERIFY(ret.second);
+  facePtr->setId(faceId);
+  auto [it, isNew] = m_faces.try_emplace(faceId, std::move(facePtr));
+  BOOST_VERIFY(isNew);
+  auto& face = *it->second;
 
   NFD_LOG_INFO("Added face id=" << faceId <<
-               " remote=" << face->getRemoteUri() <<
-               " local=" << face->getLocalUri());
+               " remote=" << face.getRemoteUri() <<
+               " local=" << face.getLocalUri());
 
-  connectFaceClosedSignal(*face, [=] { remove(faceId); });
+  connectFaceClosedSignal(face, [this, faceId] { remove(faceId); });
 
-  this->afterAdd(*face);
+  this->afterAdd(face);
 }
 
 void

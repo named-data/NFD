@@ -51,15 +51,11 @@ protected:
 
     CommandParser parser;
     registerCommands(parser);
-
-    std::string noun, verb;
-    CommandArguments ca;
-    ExecuteCommand execute;
-    std::tie(noun, verb, ca, execute) = parser.parse(args, ParseMode::ONE_SHOT);
+    auto [noun, verb, ca, exec] = parser.parse(args, ParseMode::ONE_SHOT);
 
     Controller controller(face, m_keyChain);
     ExecuteContext ctx{noun, verb, ca, 0, out, err, face, m_keyChain, controller};
-    execute(ctx);
+    exec(ctx);
     exitCode = ctx.exitCode;
   }
 

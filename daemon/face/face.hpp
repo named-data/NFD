@@ -202,7 +202,7 @@ public: // properties
   }
 
 private:
-  FaceId m_id;
+  FaceId m_id = INVALID_FACEID;
   unique_ptr<LinkService> m_service;
   unique_ptr<Transport> m_transport;
   FaceCounters m_counters;

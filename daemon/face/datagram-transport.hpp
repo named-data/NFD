@@ -178,9 +178,7 @@ DatagramTransport<T, U>::receiveDatagram(span<const uint8_t> buffer,
 
   NFD_LOG_FACE_TRACE("Received: " << buffer.size() << " bytes from " << m_sender);
 
-  bool isOk = false;
-  Block element;
-  std::tie(isOk, element) = Block::fromBuffer(buffer);
+  auto [isOk, element] = Block::fromBuffer(buffer);
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << m_sender);
     // This packet won't extend the face lifetime

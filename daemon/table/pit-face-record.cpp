@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@ namespace nfd {
 namespace pit {
 
 // Impose a maximum lifetime to prevent integer overflow when calculating m_expiry.
-static const time::milliseconds MAX_LIFETIME{10_days};
+const time::milliseconds MAX_LIFETIME = 10_days;
 
 void
 FaceRecord::update(const Interest& interest)

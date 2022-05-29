@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -102,10 +102,10 @@ operator<<(std::ostream& os, const Spaces& spaces);
 class Separator : noncopyable
 {
 public:
-  Separator(const std::string& first, const std::string& subsequent);
+  Separator(std::string_view first, std::string_view subsequent);
 
   explicit
-  Separator(const std::string& subsequent);
+  Separator(std::string_view subsequent);
 
   int
   getCount() const
@@ -114,9 +114,9 @@ public:
   }
 
 private:
-  std::string m_first;
-  std::string m_subsequent;
-  int m_count;
+  const std::string m_first;
+  const std::string m_subsequent;
+  int m_count = 0;
 
   friend std::ostream& operator<<(std::ostream& os, Separator& sep);
 };
@@ -166,9 +166,9 @@ public:
   end() const;
 
 private:
-  bool m_wantMultiLine;
-  int m_maxAttributeWidth;
-  int m_count;
+  const bool m_wantMultiLine;
+  const int m_maxAttributeWidth;
+  int m_count = 0;
 
   friend std::ostream& operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,7 +59,7 @@ Policy::getPolicyNames()
   return policyNames;
 }
 
-Policy::Policy(const std::string& policyName)
+Policy::Policy(std::string_view policyName)
   : m_policyName(policyName)
 {
 }

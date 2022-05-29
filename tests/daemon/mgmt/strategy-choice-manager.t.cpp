@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,12 +62,8 @@ public:
   Name
   getInstanceName(const Name& name) const
   {
-    bool hasEntry = false;
-    Name instanceName;
-    std::tie(hasEntry, instanceName) = sc.get(name);
-    return hasEntry ?
-           instanceName :
-           Name("/no-StrategyChoice-entry-at").append(name);
+    auto [hasEntry, instanceName] = sc.get(name);
+    return hasEntry ? instanceName : Name("/no-StrategyChoice-entry-at").append(name);
   }
 
 protected:

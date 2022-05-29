@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 namespace nfd {
 
-const size_t DEFAULT_CS_MAX_PACKETS = 65536;
+constexpr size_t DEFAULT_CS_MAX_PACKETS = 65536;
 
 TablesConfigSection::TablesConfigSection(Forwarder& forwarder)
   : m_forwarder(forwarder)
@@ -118,22 +118,19 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun, 
 void
 TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, bool isDryRun)
 {
-  using fw::Strategy;
-
   std::map<Name, Name> choices;
   for (const auto& prefixAndStrategy : section) {
     Name prefix(prefixAndStrategy.first);
     Name strategy(prefixAndStrategy.second.get_value<std::string>());
 
-    if (!Strategy::canCreate(strategy)) {
-      NDN_THROW(ConfigFile::Error(
-        "Unknown strategy '" + prefixAndStrategy.second.get_value<std::string>() +
-        "' for prefix '" + prefix.toUri() + "' in section 'strategy_choice'"));
+    if (!fw::Strategy::canCreate(strategy)) {
+      NDN_THROW(ConfigFile::Error("Unknown strategy '" + prefixAndStrategy.second.get_value<std::string>() +
+                                  "' for prefix '" + prefix.toUri() + "' in section 'strategy_choice'"));
     }
 
-    if (!choices.emplace(prefix, strategy).second) {
-      NDN_THROW(ConfigFile::Error(
-        "Duplicate strategy choice for prefix '" + prefix.toUri() + "' in section 'strategy_choice'"));
+    if (!choices.try_emplace(prefix, std::move(strategy)).second) {
+      NDN_THROW(ConfigFile::Error("Duplicate strategy choice for prefix '" + prefix.toUri() +
+                                  "' in section 'strategy_choice'"));
     }
   }
 

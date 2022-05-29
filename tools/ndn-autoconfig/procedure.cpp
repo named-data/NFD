@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,10 +36,10 @@ namespace autoconfig {
 using nfd::ControlParameters;
 using nfd::ControlResponse;
 
-const time::nanoseconds FACEURI_CANONIZE_TIMEOUT = 4_s;
+constexpr time::nanoseconds FACEURI_CANONIZE_TIMEOUT = 4_s;
 const std::vector<Name> HUB_PREFIXES{"/", "/localhop/nfd"};
-const nfd::RouteOrigin HUB_ROUTE_ORIGIN = nfd::ROUTE_ORIGIN_AUTOCONF;
-const uint64_t HUB_ROUTE_COST = 100;
+constexpr nfd::RouteOrigin HUB_ROUTE_ORIGIN = nfd::ROUTE_ORIGIN_AUTOCONF;
+constexpr uint64_t HUB_ROUTE_COST = 100;
 
 Procedure::Procedure(Face& face, KeyChain& keyChain)
   : m_face(face)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,17 +71,15 @@ LruPolicy::evictEntries()
     BOOST_ASSERT(!m_queue.empty());
     EntryRef i = m_queue.front();
     m_queue.pop_front();
-    this->emitSignal(beforeEvict, i);
+    emitSignal(beforeEvict, i);
   }
 }
 
 void
 LruPolicy::insertToQueue(EntryRef i, bool isNewEntry)
 {
-  Queue::iterator it;
-  bool isNew = false;
   // push_back only if i does not exist
-  std::tie(it, isNew) = m_queue.push_back(i);
+  auto [it, isNew] = m_queue.push_back(i);
 
   BOOST_ASSERT(isNew == isNewEntry);
   if (!isNewEntry) {

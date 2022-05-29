@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -271,7 +271,7 @@ RibEntry::getPrefixAnnouncement(time::milliseconds minExpiration,
 
   ndn::PrefixAnnouncement ann;
   ann.setAnnouncedName(m_name);
-  ann.setExpiration(ndn::clamp(
+  ann.setExpiration(std::clamp(
     time::duration_cast<time::milliseconds>(entryExpiry - time::steady_clock::now()),
     minExpiration, maxExpiration));
   return ann;
@@ -280,16 +280,12 @@ RibEntry::getPrefixAnnouncement(time::milliseconds minExpiration,
 std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry)
 {
-  os << "RibEntry {\n";
-  os << "  Name: " << entry.getName() << "\n";
-
+  os << "RibEntry {\n"
+     << "  Name: " << entry.getName() << "\n";
   for (const Route& route : entry) {
     os << "  " << route << "\n";
   }
-
-  os << "}";
-
-  return os;
+  return os << "}";
 }
 
 } // namespace rib

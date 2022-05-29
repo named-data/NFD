@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,7 +48,7 @@ public:
    *  \param iPitEntry make this iterator to dereference to the i-th PIT entry in name tree entry
    */
   explicit
-  Iterator(const NameTree::const_iterator& ntIt = NameTree::const_iterator(), size_t iPitEntry = 0);
+  Iterator(const NameTree::const_iterator& ntIt = {}, size_t iPitEntry = 0);
 
   const Entry&
   operator*() const

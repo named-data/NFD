@@ -46,9 +46,9 @@ namespace autoconfig {
 
 namespace po = boost::program_options;
 
-const time::nanoseconds DAEMON_INITIAL_DELAY = 100_ms;
-const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = 1_h;
-const time::nanoseconds NETMON_DAMPEN_PERIOD = 5_s;
+constexpr time::nanoseconds DAEMON_INITIAL_DELAY = 100_ms;
+constexpr time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = 1_h;
+constexpr time::nanoseconds NETMON_DAMPEN_PERIOD = 5_s;
 
 static void
 usage(std::ostream& os,

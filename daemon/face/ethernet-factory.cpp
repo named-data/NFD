@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -240,7 +240,7 @@ EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
 {
   BOOST_ASSERT(address.isMulticast());
 
-  auto key = std::make_pair(netif.getName(), address);
+  std::pair key(netif.getName(), address);
   auto found = m_mcastFaces.find(key);
   if (found != m_mcastFaces.end()) {
     return found->second;
@@ -339,7 +339,7 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
     return nullptr;
   }
 
-  if (face->getId() == face::INVALID_FACEID) {
+  if (face->getId() == INVALID_FACEID) {
     // new face: register with forwarding
     this->addFace(face);
   }

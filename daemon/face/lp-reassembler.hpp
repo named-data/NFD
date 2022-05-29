@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,9 @@
 namespace nfd {
 namespace face {
 
-/** \brief reassembles fragmented network-layer packets
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+/**
+ * \brief Reassembles fragmented network-layer packets
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpReassembler : noncopyable
 {
@@ -96,7 +97,8 @@ public:
   signal::Signal<LpReassembler, EndpointId, size_t> beforeTimeout;
 
 private:
-  /** \brief holds all fragments of packet until reassembled
+  /**
+   * \brief Holds all fragments of packet until reassembled
    */
   struct PartialPacket
   {
@@ -106,12 +108,13 @@ private:
     scheduler::ScopedEventId dropTimer;
   };
 
-  /** \brief index key for PartialPackets
+  /**
+   * \brief Index key for PartialPackets
    */
-  typedef std::tuple<
+  using Key = std::tuple<
     EndpointId, // remoteEndpoint
     lp::Sequence // message identifier (sequence of the first fragment)
-  > Key;
+  >;
 
   Block
   doReassembly(const Key& key);

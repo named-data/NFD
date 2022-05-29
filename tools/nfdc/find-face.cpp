@@ -114,10 +114,7 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
     return uri;
   }
 
-  std::optional<FaceUri> result;
-  std::string error;
-  std::tie(result, error) = nfdc::canonize(m_ctx, uri);
-
+  auto [result, error] = nfdc::canonize(m_ctx, uri);
   if (result) {
     // Canonization succeeded
     return result;

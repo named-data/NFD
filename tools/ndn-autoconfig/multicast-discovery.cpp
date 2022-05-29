@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,9 +36,9 @@ namespace autoconfig {
 using nfd::ControlParameters;
 
 const Name HUB_DISCOVERY_PREFIX("/localhop/ndn-autoconf/hub");
-const uint64_t HUB_DISCOVERY_ROUTE_COST(1);
-const time::milliseconds HUB_DISCOVERY_ROUTE_EXPIRATION = 30_s;
-const time::milliseconds HUB_DISCOVERY_INTEREST_LIFETIME = 4_s;
+constexpr uint64_t HUB_DISCOVERY_ROUTE_COST(1);
+constexpr time::milliseconds HUB_DISCOVERY_ROUTE_EXPIRATION = 30_s;
+constexpr time::milliseconds HUB_DISCOVERY_INTEREST_LIFETIME = 4_s;
 
 MulticastDiscovery::MulticastDiscovery(Face& face, nfd::Controller& controller)
   : m_face(face)

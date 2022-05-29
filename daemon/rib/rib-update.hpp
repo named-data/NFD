@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,26 +32,22 @@
 namespace nfd {
 namespace rib {
 
-/** RibUpdate
- *  \brief represents a route that will be added to or removed from a namespace
- *
- *  \note This type is copyable so that it can be stored in STL containers.
+/**
+ * \brief Represents a route that will be added to or removed from a namespace
+ * \note This type is copyable so that it can be stored in STL containers.
  */
 class RibUpdate
 {
 public:
   enum Action {
-    REGISTER     = 0,
-    UNREGISTER   = 1,
-
-    /** \brief An update triggered by a face destruction notification
-     *
-     *  \note indicates a Route needs to be removed after a face is destroyed
+    REGISTER    = 0,
+    UNREGISTER  = 1,
+    /**
+     * \brief An update triggered by a face destruction notification
+     * \note indicates a Route needs to be removed after a face is destroyed
      */
-    REMOVE_FACE = 2
+    REMOVE_FACE = 2,
   };
-
-  RibUpdate();
 
   RibUpdate&
   setAction(Action action);
@@ -117,7 +113,7 @@ RibUpdate::getRoute() const
 }
 
 std::ostream&
-operator<<(std::ostream& os, const RibUpdate::Action action);
+operator<<(std::ostream& os, RibUpdate::Action action);
 
 std::ostream&
 operator<<(std::ostream& os, const RibUpdate& update);

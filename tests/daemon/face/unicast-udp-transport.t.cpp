@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -162,7 +162,7 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
     });
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.end(), block1.begin(), block1.end());
+  BOOST_TEST(readBuf == block1, boost::test_tools::per_element());
 
   Block block2 = ndn::encoding::makeStringBlock(301, "world");
   ndn::Buffer buf(block2.begin(), block2.end());

@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(AnnounceReplace)
 
 BOOST_AUTO_TEST_CASE(AnnounceExpired)
 {
-  auto pa = makeTrustedAnn("/awrVv6V7", 1_h, std::make_pair(-3_h, -1_h));
+  auto pa = makeTrustedAnn("/awrVv6V7", 1_h, std::pair(-3_h, -1_h));
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 9087, 1_h), SlAnnounceResult::EXPIRED);
 
   BOOST_CHECK(findAnnRoute("/awrVv6V7", 9087) == nullptr);

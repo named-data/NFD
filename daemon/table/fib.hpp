@@ -36,6 +36,7 @@ namespace nfd {
 namespace measurements {
 class Entry;
 } // namespace measurements
+
 namespace pit {
 class Entry;
 } // namespace pit

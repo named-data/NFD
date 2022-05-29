@@ -122,7 +122,8 @@ enum class Positional {
   YES = true  ///< argument can be specified as positional
 };
 
-/** \brief declares semantics of a command
+/**
+ * \brief Defines a command
  */
 class CommandDefinition
 {
@@ -133,17 +134,17 @@ public:
     using std::invalid_argument::invalid_argument;
   };
 
-  CommandDefinition(const std::string& noun, const std::string& verb);
+  CommandDefinition(std::string_view noun, std::string_view verb);
 
   ~CommandDefinition();
 
-  const std::string
+  const std::string&
   getNoun() const
   {
     return m_noun;
   }
 
-  const std::string
+  const std::string&
   getVerb() const
   {
     return m_verb;
@@ -162,7 +163,7 @@ public: // help
    *  \param title one-line description, written in lower case
    */
   CommandDefinition&
-  setTitle(const std::string& title)
+  setTitle(std::string_view title)
   {
     m_title = title;
     return *this;
@@ -191,12 +192,12 @@ public: // arguments
   parse(const std::vector<std::string>& tokens, size_t start = 0) const;
 
 private:
-  std::any
-  parseValue(ArgValueType valueType, const std::string& token) const;
+  static std::any
+  parseValue(ArgValueType valueType, const std::string& token);
 
 private:
-  std::string m_noun;
-  std::string m_verb;
+  const std::string m_noun;
+  const std::string m_verb;
   std::string m_title;
 
   struct Arg

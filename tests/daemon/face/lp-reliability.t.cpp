@@ -140,8 +140,7 @@ public:
   getPktNum(const lp::Packet& pkt)
   {
     BOOST_REQUIRE(pkt.has<lp::FragmentField>());
-    ndn::Buffer::const_iterator begin, end;
-    std::tie(begin, end) = pkt.get<lp::FragmentField>();
+    auto [begin, end] = pkt.get<lp::FragmentField>();
     if (std::distance(begin, end) < 4) {
       return 0;
     }

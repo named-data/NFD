@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ public:
   getMaxRangeV6();
 
   static bool
-  isValidCidr(const std::string& cidr);
+  isValidCidr(std::string_view cidr);
 
   bool
   operator==(const Network& rhs) const

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,6 @@
 #include <ndn-cxx/mgmt/nfd/cs-info.hpp>
 
 namespace nfd {
-
-constexpr size_t CsManager::ERASE_LIMIT;
 
 CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCounters,
                      Dispatcher& dispatcher, CommandAuthenticator& authenticator)
@@ -101,8 +99,7 @@ CsManager::erase(const ControlParameters& parameters,
 }
 
 void
-CsManager::serveInfo(const Name& topPrefix, const Interest& interest,
-                     ndn::mgmt::StatusDatasetContext& context) const
+CsManager::serveInfo(const Name&, const Interest&, ndn::mgmt::StatusDatasetContext& context) const
 {
   ndn::nfd::CsInfo info;
   info.setCapacity(m_cs.getLimit());

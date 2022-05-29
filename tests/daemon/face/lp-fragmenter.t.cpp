@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,9 +52,7 @@ BOOST_AUTO_TEST_CASE(SingleFragment)
   auto data = makeData("/test/data123");
   packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
-  bool isOk = false;
-  std::vector<lp::Packet> frags;
-  std::tie(isOk, frags) = fragmenter.fragmentPacket(packet, mtu);
+  auto [isOk, frags] = fragmenter.fragmentPacket(packet, mtu);
   BOOST_REQUIRE(isOk);
   BOOST_REQUIRE_EQUAL(frags.size(), 1);
 
@@ -64,8 +62,7 @@ BOOST_AUTO_TEST_CASE(SingleFragment)
   BOOST_CHECK(!frags[0].has<lp::FragCountField>());
   BOOST_CHECK_LE(frags[0].wireEncode().size(), mtu);
 
-  ndn::Buffer::const_iterator fragBegin, fragEnd;
-  std::tie(fragBegin, fragEnd) = frags[0].get<lp::FragmentField>();
+  auto [fragBegin, fragEnd] = frags[0].get<lp::FragmentField>();
   BOOST_CHECK_EQUAL_COLLECTIONS(data->wireEncode().begin(), data->wireEncode().end(),
                                 fragBegin, fragEnd);
 }
@@ -80,9 +77,7 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   auto data = makeData("/test/data123/123456789/987654321/123456789");
   packet.add<lp::FragmentField>({data->wireEncode().begin(), data->wireEncode().end()});
 
-  bool isOk = false;
-  std::vector<lp::Packet> frags;
-  std::tie(isOk, frags) = fragmenter.fragmentPacket(packet, mtu);
+  auto [isOk, frags] = fragmenter.fragmentPacket(packet, mtu);
   BOOST_REQUIRE(isOk);
   BOOST_REQUIRE_EQUAL(frags.size(), 5);
 
@@ -93,8 +88,7 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   BOOST_CHECK_EQUAL(frags[0].get<lp::FragIndexField>(), 0);
   BOOST_CHECK_EQUAL(frags[0].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[0].wireEncode().size(), mtu);
-  ndn::Buffer::const_iterator frag0Begin, frag0End;
-  std::tie(frag0Begin, frag0End) = frags[0].get<lp::FragmentField>();
+  auto [frag0Begin, frag0End] = frags[0].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag0Begin, frag0End), reassembledPayload.size());
   auto reassembledPos = std::copy(frag0Begin, frag0End, reassembledPayload.begin());
 
@@ -103,8 +97,7 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   BOOST_CHECK_EQUAL(frags[1].get<lp::FragIndexField>(), 1);
   BOOST_CHECK_EQUAL(frags[1].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[1].wireEncode().size(), mtu);
-  ndn::Buffer::const_iterator frag1Begin, frag1End;
-  std::tie(frag1Begin, frag1End) = frags[1].get<lp::FragmentField>();
+  auto [frag1Begin, frag1End] = frags[1].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag1Begin, frag1End),
                    std::distance(reassembledPos, reassembledPayload.end()));
   reassembledPos = std::copy(frag1Begin, frag1End, reassembledPos);
@@ -114,8 +107,7 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   BOOST_CHECK_EQUAL(frags[2].get<lp::FragIndexField>(), 2);
   BOOST_CHECK_EQUAL(frags[2].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[2].wireEncode().size(), mtu);
-  ndn::Buffer::const_iterator frag2Begin, frag2End;
-  std::tie(frag2Begin, frag2End) = frags[2].get<lp::FragmentField>();
+  auto [frag2Begin, frag2End] = frags[2].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag2Begin, frag2End),
                    std::distance(reassembledPos, reassembledPayload.end()));
   reassembledPos = std::copy(frag2Begin, frag2End, reassembledPos);
@@ -125,8 +117,7 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   BOOST_CHECK_EQUAL(frags[3].get<lp::FragIndexField>(), 3);
   BOOST_CHECK_EQUAL(frags[3].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[3].wireEncode().size(), mtu);
-  ndn::Buffer::const_iterator frag3Begin, frag3End;
-  std::tie(frag3Begin, frag3End) = frags[3].get<lp::FragmentField>();
+  auto [frag3Begin, frag3End] = frags[3].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag3Begin, frag3End),
                    std::distance(reassembledPos, reassembledPayload.end()));
   reassembledPos = std::copy(frag3Begin, frag3End, reassembledPos);
@@ -136,14 +127,12 @@ BOOST_AUTO_TEST_CASE(MultipleFragments)
   BOOST_CHECK_EQUAL(frags[4].get<lp::FragIndexField>(), 4);
   BOOST_CHECK_EQUAL(frags[4].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[4].wireEncode().size(), mtu);
-  ndn::Buffer::const_iterator frag4Begin, frag4End;
-  std::tie(frag4Begin, frag4End) = frags[4].get<lp::FragmentField>();
+  auto [frag4Begin, frag4End] = frags[4].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag4Begin, frag4End),
                    std::distance(reassembledPos, reassembledPayload.end()));
   std::copy(frag4Begin, frag4End, reassembledPos);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(data->wireEncode().begin(), data->wireEncode().end(),
-                                reassembledPayload.begin(), reassembledPayload.end());
+  BOOST_TEST(data->wireEncode() == reassembledPayload, boost::test_tools::per_element());
 }
 
 BOOST_AUTO_TEST_CASE(MtuTooSmall)

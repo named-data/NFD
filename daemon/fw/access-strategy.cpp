@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,8 +60,7 @@ void
 AccessStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-  auto suppressResult = m_retxSuppression.decidePerPitEntry(*pitEntry);
-  switch (suppressResult) {
+  switch (auto res = m_retxSuppression.decidePerPitEntry(*pitEntry); res) {
   case RetxSuppressionResult::NEW:
     return afterReceiveNewInterest(interest, ingress, pitEntry);
   case RetxSuppressionResult::FORWARD:
@@ -77,9 +76,7 @@ AccessStrategy::afterReceiveNewInterest(const Interest& interest, const FaceEndp
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   const auto& fibEntry = this->lookupFib(*pitEntry);
-  Name miName;
-  MtInfo* mi = nullptr;
-  std::tie(miName, mi) = this->findPrefixMeasurements(*pitEntry);
+  auto [miName, mi] = this->findPrefixMeasurements(*pitEntry);
 
   // has measurements for Interest Name?
   if (mi != nullptr) {
@@ -236,10 +233,7 @@ AccessStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingr
 void
 AccessStrategy::updateMeasurements(const Face& inFace, const Data& data, time::nanoseconds rtt)
 {
-  auto ret = m_fit.emplace(std::piecewise_construct,
-                           std::forward_as_tuple(inFace.getId()),
-                           std::forward_as_tuple(m_rttEstimatorOpts));
-  FaceInfo& fi = ret.first->second;
+  FaceInfo& fi = m_fit.try_emplace(inFace.getId(), m_rttEstimatorOpts).first->second;
   fi.rtt.addMeasurement(rtt);
 
   MtInfo* mi = this->addPrefixMeasurements(data);
@@ -257,14 +251,14 @@ AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
 {
   auto me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
   if (me == nullptr) {
-    return std::make_tuple(Name(), nullptr);
+    return {Name{}, nullptr};
   }
 
   auto mi = me->getStrategyInfo<MtInfo>();
   // TODO: after a runtime strategy change, it's possible that a measurements::Entry exists but
   //       the corresponding MtInfo doesn't exist (mi == nullptr); this case needs another longest
   //       prefix match until an MtInfo is found.
-  return std::make_tuple(me->getName(), mi);
+  return {me->getName(), mi};
 }
 
 AccessStrategy::MtInfo*

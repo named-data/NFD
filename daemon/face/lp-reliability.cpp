@@ -80,10 +80,7 @@ LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, 
     lp::Sequence txSeq = assignTxSequence(frag);
 
     // Store LpPacket for future retransmissions
-    unackedFragsIt = m_unackedFrags.emplace_hint(unackedFragsIt,
-                                                 std::piecewise_construct,
-                                                 std::forward_as_tuple(txSeq),
-                                                 std::forward_as_tuple(frag));
+    unackedFragsIt = m_unackedFrags.try_emplace(unackedFragsIt, txSeq, frag);
     unackedFragsIt->second.sendTime = sendTime;
     auto rto = m_rttEst.getEstimatedRto();
     lp::Sequence seq = frag.get<lp::SequenceField>();
@@ -179,7 +176,7 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
         m_recentRecvSeqs.erase(m_recentRecvSeqsQueue.front());
         m_recentRecvSeqsQueue.pop();
       }
-      m_recentRecvSeqs.emplace(pktSequence, now);
+      m_recentRecvSeqs.try_emplace(pktSequence, now);
       m_recentRecvSeqsQueue.push(pktSequence);
     }
 
@@ -324,13 +321,10 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq, bool isTimeout)
     netPkt->didRetx = true;
 
     // Move fragment to new TxSequence mapping
-    auto newTxFragIt = m_unackedFrags.emplace_hint(
-      m_firstUnackedFrag != m_unackedFrags.end() && m_firstUnackedFrag->first > newTxSeq
-        ? m_firstUnackedFrag
-        : m_unackedFrags.end(),
-      std::piecewise_construct,
-      std::forward_as_tuple(newTxSeq),
-      std::forward_as_tuple(txFrag.pkt));
+    auto hint = m_firstUnackedFrag != m_unackedFrags.end() && m_firstUnackedFrag->first > newTxSeq
+                ? m_firstUnackedFrag
+                : m_unackedFrags.end();
+    auto newTxFragIt = m_unackedFrags.try_emplace(hint, newTxSeq, txFrag.pkt);
     auto& newTxFrag = newTxFragIt->second;
     newTxFrag.retxCount = txFrag.retxCount + 1;
     newTxFrag.netPkt = netPkt;

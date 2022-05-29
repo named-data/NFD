@@ -203,9 +203,7 @@ RibModule::add(ExecuteContext& ctx)
       return;
     }
 
-    std::optional<FaceUri> canonized;
-    std::string error;
-    std::tie(canonized, error) = canonize(ctx, *faceUri);
+    auto [canonized, error] = canonize(ctx, *faceUri);
     if (!canonized) {
       // Canonization failed
       auto canonizationError = canonizeErrorHelper(*faceUri, error);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -120,22 +120,19 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   }
 
   // process in protocol factories
-  for (const auto& pair : m_factories) {
-    const std::string& sectionName = pair.first;
-    ProtocolFactory* factory = pair.second.get();
-
+  for (const auto& [sectionName, factory] : m_factories) {
     std::set<std::string> oldProvidedSchemes = factory->getProvidedSchemes();
     factory->processConfig(configSection.get_child_optional(sectionName), context);
 
     if (!isDryRun) {
-      for (const std::string& scheme : factory->getProvidedSchemes()) {
-        m_factoryByScheme[scheme] = factory;
+      for (const auto& scheme : factory->getProvidedSchemes()) {
+        m_factoryByScheme[scheme] = factory.get();
         if (oldProvidedSchemes.erase(scheme) == 0) {
           NFD_LOG_TRACE("factory " << sectionName <<
                         " provides " << scheme << " FaceUri scheme");
         }
       }
-      for (const std::string& scheme : oldProvidedSchemes) {
+      for (const auto& scheme : oldProvidedSchemes) {
         m_factoryByScheme.erase(scheme);
         NFD_LOG_TRACE("factory " << sectionName <<
                       " no longer provides " << scheme << " FaceUri scheme");

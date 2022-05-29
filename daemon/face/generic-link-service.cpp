@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -312,10 +312,7 @@ GenericLinkService::doReceivePacket(const Block& packet, const EndpointId& endpo
       return;
     }
 
-    bool isReassembled = false;
-    Block netPkt;
-    lp::Packet firstPkt;
-    std::tie(isReassembled, netPkt, firstPkt) = m_reassembler.receiveFragment(endpoint, pkt);
+    auto [isReassembled, netPkt, firstPkt] = m_reassembler.receiveFragment(endpoint, pkt);
     if (isReassembled) {
       this->decodeNetPacket(netPkt, firstPkt, endpoint);
     }

@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
 
-#include "algorithm.hpp"
 #include "retx-suppression.hpp"
 #include "strategy.hpp"
 
@@ -83,9 +82,9 @@ private: // non-member operators (hidden friends)
   }
 
 public:
-  static const Duration DEFAULT_INITIAL_INTERVAL;
-  static const Duration DEFAULT_MAX_INTERVAL;
-  static const float DEFAULT_MULTIPLIER;
+  static constexpr Duration DEFAULT_INITIAL_INTERVAL = 10_ms;
+  static constexpr Duration DEFAULT_MAX_INTERVAL = 250_ms;
+  static constexpr float DEFAULT_MULTIPLIER = 2.0f;
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   const Duration m_initialInterval;

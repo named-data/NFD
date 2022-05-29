@@ -34,8 +34,8 @@ namespace rib {
 
 NFD_LOG_INIT(Readvertise);
 
-const time::milliseconds Readvertise::RETRY_DELAY_MIN = 50_s;
-const time::milliseconds Readvertise::RETRY_DELAY_MAX = 1_h;
+constexpr time::milliseconds RETRY_DELAY_MIN = 50_s;
+constexpr time::milliseconds RETRY_DELAY_MAX = 1_h;
 
 static time::milliseconds
 randomizeTimer(time::milliseconds baseTimer)
@@ -74,20 +74,16 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
     return;
   }
 
-  ReadvertisedRouteContainer::iterator rrIt;
-  bool isNew = false;
-  std::tie(rrIt, isNew) = m_rrs.emplace(action->prefix);
-
-  if (!isNew && rrIt->signer != action->signer) {
+  auto [rrIt, isNewRr] = m_rrs.emplace(action->prefix);
+  if (!isNewRr && rrIt->signer != action->signer) {
     NFD_LOG_WARN("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                  ',' << ribRoute.route->origin << ") readvertising-as " << action->prefix <<
+                 ',' << ribRoute.route->origin << ") readvertising-as " << action->prefix <<
                  " old-signer " << rrIt->signer << " new-signer " << action->signer);
   }
   rrIt->signer = action->signer;
 
-  RouteRrIndex::iterator indexIt;
-  std::tie(indexIt, isNew) = m_routeToRr.emplace(ribRoute, rrIt);
-  BOOST_ASSERT(isNew);
+  bool isNewInMap = m_routeToRr.try_emplace(ribRoute, rrIt).second;
+  BOOST_VERIFY(isNewInMap);
 
   if (rrIt->nRibRoutes++ > 0) {
     NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<

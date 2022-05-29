@@ -24,13 +24,10 @@
  */
 
 #include "retx-suppression-exponential.hpp"
+#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {
-
-const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL = 10_ms;
-const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_MAX_INTERVAL = 250_ms;
-const float RetxSuppressionExponential::DEFAULT_MULTIPLIER = 2.0f;
 
 namespace {
 

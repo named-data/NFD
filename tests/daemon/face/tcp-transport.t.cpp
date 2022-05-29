@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -187,14 +187,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   // measure retry intervals
   auto retryTime1 = time::steady_clock::now();
 
-  auto expectedWait1 = TcpTransport::s_initialReconnectWait;
+  auto expectedWait1 = TcpTransport::INITIAL_RECONNECT_DELAY;
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + 1_s), // add some slack
                       LimitedIo::EXCEED_OPS);
   auto retryTime2 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   auto expectedWait2 = time::duration_cast<time::nanoseconds>(expectedWait1 *
-                                                              TcpTransport::s_reconnectWaitMultiplier);
+                                                              TcpTransport::RECONNECT_DELAY_MULTIPLIER);
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait2 + 1_s), // add some slack
                       LimitedIo::EXCEED_OPS);
   auto retryTime3 = time::steady_clock::now();
@@ -210,7 +210,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   this->startAccept(remoteEp);
 
   auto expectedWait3 = time::duration_cast<time::nanoseconds>(expectedWait2 *
-                                                              TcpTransport::s_reconnectWaitMultiplier);
+                                                              TcpTransport::RECONNECT_DELAY_MULTIPLIER);
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(3, // reconnect, handleReconnect, async_accept
                                           expectedWait3 + 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::UP);

@@ -39,26 +39,28 @@ namespace face {
 class Face;
 class LinkService;
 
-/** \brief Identifies a face.
+/**
+ * \brief Identifies a face.
  */
 using FaceId = uint64_t;
 
-/// indicates an invalid FaceId
-const FaceId INVALID_FACEID = ndn::nfd::INVALID_FACE_ID;
-/// identifies the InternalFace used in management
-const FaceId FACEID_INTERNAL_FACE = 1;
-/// identifies a packet comes from the ContentStore
-const FaceId FACEID_CONTENT_STORE = 254;
-/// identifies the NullFace that drops every packet
-const FaceId FACEID_NULL = 255;
-/// upper bound of reserved FaceIds
-const FaceId FACEID_RESERVED_MAX = 255;
+/// Indicates an invalid FaceId
+constexpr FaceId INVALID_FACEID = ndn::nfd::INVALID_FACE_ID;
+/// Identifies the InternalFace used in management
+constexpr FaceId FACEID_INTERNAL_FACE = 1;
+/// Identifies a packet comes from the ContentStore
+constexpr FaceId FACEID_CONTENT_STORE = 254;
+/// Identifies the NullFace that drops every packet
+constexpr FaceId FACEID_NULL = 255;
+/// Upper bound of reserved FaceIds
+constexpr FaceId FACEID_RESERVED_MAX = 255;
 
-/** \brief Minimum MTU that may be set
+/**
+ * \brief Minimum MTU that may be set.
  *
- *  This is done to ensure the NDNLPv2 fragmentation feature functions properly.
+ * This is done to ensure the NDNLPv2 fragmentation feature functions properly.
  */
-const ssize_t MIN_MTU = 64;
+constexpr ssize_t MIN_MTU = 64;
 
 /** \brief Identifies a remote endpoint on the link.
  *

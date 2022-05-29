@@ -120,19 +120,15 @@ EthernetChannel::handleRead(const boost::system::error_code& error,
     return;
   }
 
-  span<const uint8_t> pkt;
-  std::string err;
-  std::tie(pkt, err) = m_pcap.readNextPacket();
-
+  auto [pkt, readErr] = m_pcap.readNextPacket();
   if (pkt.empty()) {
-    NFD_LOG_CHAN_WARN("Read error: " << err);
+    NFD_LOG_CHAN_WARN("Read error: " << readErr);
   }
   else {
-    const ether_header* eh;
-    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, m_localEndpoint->getEthernetAddress(),
-                                                   m_localEndpoint->getEthernetAddress());
+    auto [eh, frameErr] = ethernet::checkFrameHeader(pkt, m_localEndpoint->getEthernetAddress(),
+                                                     m_localEndpoint->getEthernetAddress());
     if (eh == nullptr) {
-      NFD_LOG_CHAN_DEBUG(err);
+      NFD_LOG_CHAN_DEBUG(frameErr);
     }
     else {
       ethernet::Address sender(eh->ether_shost);

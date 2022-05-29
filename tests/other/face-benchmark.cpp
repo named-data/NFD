@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -102,14 +102,14 @@ private:
 
     // find a matching right uri
     FaceUri uriR;
-    for (const auto& pair : m_faceUris) {
-      if (pair.first.getHost() == faceL->getRemoteUri().getHost() &&
-          pair.first.getScheme() == faceL->getRemoteUri().getScheme()) {
-        uriR = pair.second;
+    for (const auto& [first, second] : m_faceUris) {
+      if (first.getHost() == faceL->getRemoteUri().getHost() &&
+          first.getScheme() == faceL->getRemoteUri().getScheme()) {
+        uriR = second;
       }
-      else if (pair.second.getHost() == faceL->getRemoteUri().getHost() &&
-               pair.second.getScheme() == faceL->getRemoteUri().getScheme()) {
-        uriR = pair.first;
+      else if (second.getHost() == faceL->getRemoteUri().getHost() &&
+               second.getScheme() == faceL->getRemoteUri().getScheme()) {
+        uriR = first;
       }
     }
 
@@ -124,17 +124,17 @@ private:
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port), {},
-                           std::bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
+                           std::bind(&FaceBenchmark::onRightFaceCreated, faceL, _1),
                            std::bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
     else if (uriR.getScheme() == "udp4") {
       m_udpChannel.connect(udp::Endpoint(addr, port), {},
-                           std::bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
+                           std::bind(&FaceBenchmark::onRightFaceCreated, faceL, _1),
                            std::bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
   }
 
-  void
+  static void
   onRightFaceCreated(const shared_ptr<Face>& faceL, const shared_ptr<Face>& faceR)
   {
     std::clog << "Right face created: remote=" << faceR->getRemoteUri()
@@ -147,18 +147,18 @@ private:
   static void
   tieFaces(const shared_ptr<Face>& face1, const shared_ptr<Face>& face2)
   {
-    face1->afterReceiveInterest.connect([face2] (const Interest& interest, const EndpointId&) {
+    face1->afterReceiveInterest.connect([face2] (const auto& interest, const EndpointId&) {
       face2->sendInterest(interest);
     });
-    face1->afterReceiveData.connect([face2] (const Data& data, const EndpointId&) {
+    face1->afterReceiveData.connect([face2] (const auto& data, const EndpointId&) {
       face2->sendData(data);
     });
-    face1->afterReceiveNack.connect([face2] (const ndn::lp::Nack& nack, const EndpointId&) {
+    face1->afterReceiveNack.connect([face2] (const auto& nack, const EndpointId&) {
       face2->sendNack(nack);
     });
   }
 
-  static void
+  [[noreturn]] static void
   onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
     NDN_THROW(std::runtime_error("Failed to create face: [" + to_string(status) + "] " + reason));

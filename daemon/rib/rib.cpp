@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -96,10 +96,7 @@ Rib::insert(const Name& prefix, const Route& route)
   // Name prefix exists
   if (ribIt != m_rib.end()) {
     shared_ptr<RibEntry> entry(ribIt->second);
-
-    RibEntry::iterator entryIt;
-    bool didInsert = false;
-    std::tie(entryIt, didInsert) = entry->insertRoute(route);
+    auto [entryIt, didInsert] = entry->insertRoute(route);
 
     if (didInsert) {
       // The route was new and we successfully inserted it.
@@ -139,15 +136,13 @@ Rib::insert(const Name& prefix, const Route& route)
       parent->addChild(entry);
     }
 
-    RibEntryList children = findDescendants(prefix);
-
+    auto children = findDescendants(prefix);
     for (const auto& child : children) {
       if (child->getParent() == parent) {
         // Remove child from parent and inherit parent's child
         if (parent != nullptr) {
           parent->removeChild(child);
         }
-
         entry->addChild(child);
       }
     }
@@ -229,12 +224,12 @@ Rib::findDescendants(const Name& prefix) const
 {
   std::list<shared_ptr<RibEntry>> children;
 
-  RibTable::const_iterator it = m_rib.find(prefix);
+  auto it = m_rib.find(prefix);
   if (it != m_rib.end()) {
     ++it;
     for (; it != m_rib.end(); ++it) {
       if (prefix.isPrefixOf(it->first)) {
-        children.push_back((it->second));
+        children.push_back(it->second);
       }
       else {
         break;
@@ -250,9 +245,9 @@ Rib::findDescendantsForNonInsertedName(const Name& prefix) const
 {
   std::list<shared_ptr<RibEntry>> children;
 
-  for (const auto& pair : m_rib) {
-    if (prefix.isPrefixOf(pair.first)) {
-      children.push_back(pair.second);
+  for (const auto& [name, ribEntry] : m_rib) {
+    if (prefix.isPrefixOf(name)) {
+      children.push_back(ribEntry);
     }
   }
 
@@ -268,7 +263,6 @@ Rib::eraseEntry(RibTable::iterator it)
   }
 
   shared_ptr<RibEntry> entry(it->second);
-
   shared_ptr<RibEntry> parent = entry->getParent();
 
   // Remove self from parent's children
@@ -293,7 +287,7 @@ Rib::eraseEntry(RibTable::iterator it)
 
   auto nextIt = m_rib.erase(it);
 
-  // do something after erasing an entry.
+  // do something after erasing an entry
   afterEraseEntry(entry->getName());
 
   return nextIt;
@@ -304,10 +298,9 @@ Rib::getAncestorRoutes(const RibEntry& entry) const
 {
   RouteSet ancestorRoutes(&sortRoutes);
 
-  shared_ptr<RibEntry> parent = entry.getParent();
-
+  auto parent = entry.getParent();
   while (parent != nullptr) {
-    for (const Route& route : parent->getRoutes()) {
+    for (const auto& route : parent->getRoutes()) {
       if (route.isChildInherit()) {
         ancestorRoutes.insert(route);
       }
@@ -328,10 +321,9 @@ Rib::getAncestorRoutes(const Name& name) const
 {
   RouteSet ancestorRoutes(&sortRoutes);
 
-  shared_ptr<RibEntry> parent = findParent(name);
-
+  auto parent = findParent(name);
   while (parent != nullptr) {
-    for (const Route& route : parent->getRoutes()) {
+    for (const auto& route : parent->getRoutes()) {
       if (route.isChildInherit()) {
         ancestorRoutes.insert(route);
       }
@@ -353,9 +345,7 @@ Rib::beginApplyUpdate(const RibUpdate& update,
                       const Rib::UpdateFailureCallback& onFailure)
 {
   BOOST_ASSERT(m_fibUpdater != nullptr);
-
   addUpdateToQueue(update, onSuccess, onFailure);
-
   sendBatchFromQueue();
 }
 
@@ -372,11 +362,11 @@ Rib::beginRemoveFace(uint64_t faceId)
 void
 Rib::beginRemoveFailedFaces(const std::set<uint64_t>& activeFaceIds)
 {
-  for (auto it = m_faceEntries.begin(); it != m_faceEntries.end(); ++it) {
-    if (activeFaceIds.count(it->first) > 0) {
+  for (const auto& [faceId, ribEntry] : m_faceEntries) {
+    if (activeFaceIds.count(faceId) > 0) {
       continue;
     }
-    enqueueRemoveFace(*it->second, it->first);
+    enqueueRemoveFace(*ribEntry, faceId);
   }
   sendBatchFromQueue();
 }
@@ -428,7 +418,6 @@ Rib::sendBatchFromQueue()
 
   auto fibSuccessCb = std::bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
   auto fibFailureCb = std::bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
-
   m_fibUpdater->computeAndSendFibUpdates(batch, fibSuccessCb, fibFailureCb);
 }
 

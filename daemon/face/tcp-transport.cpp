@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,16 +36,12 @@ namespace face {
 
 NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
 
-time::milliseconds TcpTransport::s_initialReconnectWait = 1_s;
-time::milliseconds TcpTransport::s_maxReconnectWait = 5_min;
-float TcpTransport::s_reconnectWaitMultiplier = 2.0f;
-
 TcpTransport::TcpTransport(protocol::socket&& socket,
                            ndn::nfd::FacePersistency persistency,
                            ndn::nfd::FaceScope faceScope)
   : StreamTransport(std::move(socket))
   , m_remoteEndpoint(m_socket.remote_endpoint())
-  , m_nextReconnectWait(s_initialReconnectWait)
+  , m_nextReconnectWait(INITIAL_RECONNECT_DELAY)
 {
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
   this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
@@ -165,7 +161,7 @@ TcpTransport::handleReconnect(const boost::system::error_code& error)
   }
 
   m_reconnectEvent.cancel();
-  m_nextReconnectWait = s_initialReconnectWait;
+  m_nextReconnectWait = INITIAL_RECONNECT_DELAY;
 
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
   NFD_LOG_FACE_TRACE("TCP connection reestablished");
@@ -182,8 +178,8 @@ TcpTransport::handleReconnectTimeout()
 
   // exponentially back off the reconnection timer
   m_nextReconnectWait =
-      std::min(time::duration_cast<time::milliseconds>(m_nextReconnectWait * s_reconnectWaitMultiplier),
-               s_maxReconnectWait);
+      std::min(time::duration_cast<time::milliseconds>(m_nextReconnectWait * RECONNECT_DELAY_MULTIPLIER),
+               MAX_RECONNECT_DELAY);
 
   // do this asynchronously because there could be some callbacks still pending
   getGlobalIoService().post([this] { reconnect(); });

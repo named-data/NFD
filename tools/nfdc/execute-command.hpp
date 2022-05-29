@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_TOOLS_NFDC_EXECUTE_COMMAND_HPP
 
 #include "command-arguments.hpp"
+
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/nfd/command-options.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
@@ -46,7 +47,8 @@ using ndn::nfd::ControlParameters;
 using ndn::nfd::ControlResponse;
 using ndn::nfd::Controller;
 
-/** \brief context for command execution
+/**
+ * \brief Context for command execution
  */
 class ExecuteContext
 {
@@ -72,8 +74,8 @@ public:
   makeDatasetFailureHandler(const std::string& datasetName);
 
 public:
-  const std::string& noun;
-  const std::string& verb;
+  std::string_view noun;
+  std::string_view verb;
   const CommandArguments& args;
 
   int exitCode; ///< program exit code
@@ -82,13 +84,13 @@ public:
 
   Face& face;
   KeyChain& keyChain;
-  ///\todo validator
   Controller& controller;
 };
 
-/** \brief a function to execute a command
+/**
+ * \brief A function to execute a command
  */
-using ExecuteCommand = std::function<void(ExecuteContext& ctx)>;
+using ExecuteCommand = std::function<void(ExecuteContext&)>;
 
 } // namespace nfdc
 } // namespace tools

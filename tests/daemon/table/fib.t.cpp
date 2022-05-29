@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(FibEntry)
   // [(face1,30), (face2,40)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
   {
-    NextHopList::const_iterator it = entry.getNextHops().begin();
+    auto it = entry.getNextHops().begin();
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
     BOOST_CHECK_EQUAL(it->getCost(), 30);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(FibEntry)
   // [(face2,10), (face1,30)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
   {
-    NextHopList::const_iterator it = entry.getNextHops().begin();
+    auto it = entry.getNextHops().begin();
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
     BOOST_CHECK_EQUAL(it->getCost(), 10);

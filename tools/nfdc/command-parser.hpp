@@ -93,7 +93,7 @@ public:
    *  \return commands in insertion order
    */
   std::vector<const CommandDefinition*>
-  listCommands(const std::string& noun, ParseMode mode) const;
+  listCommands(std::string_view noun, ParseMode mode) const;
 
   /** \brief parse a command line
    *  \param tokens command line

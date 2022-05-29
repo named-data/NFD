@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,6 @@
 
 namespace nfd {
 namespace tests {
-
-const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
-const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
 LimitedIo::LimitedIo(GlobalIoTimeFixture* fixture)
   : m_fixture(fixture)

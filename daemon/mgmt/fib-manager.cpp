@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,7 +53,7 @@ FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
 }
 
 void
-FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
+FibManager::addNextHop(const Name&, const Interest& interest,
                        ControlParameters parameters,
                        const ndn::mgmt::CommandContinuation& done)
 {
@@ -84,7 +84,7 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
 }
 
 void
-FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
+FibManager::removeNextHop(const Name&, const Interest& interest,
                           ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
@@ -121,7 +121,7 @@ FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
 }
 
 void
-FibManager::listEntries(const Name& topPrefix, const Interest& interest,
+FibManager::listEntries(const Name&, const Interest&,
                         ndn::mgmt::StatusDatasetContext& context)
 {
   for (const auto& entry : m_fib) {
@@ -142,9 +142,9 @@ FibManager::listEntries(const Name& topPrefix, const Interest& interest,
 void
 FibManager::setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters)
 {
-  bool isSelfRegistration = (parameters.getFaceId() == 0);
+  bool isSelfRegistration = parameters.getFaceId() == face::INVALID_FACEID;
   if (isSelfRegistration) {
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
+    auto incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
     // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
     // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
     // and is initialized synchronously with IncomingFaceId field enabled.

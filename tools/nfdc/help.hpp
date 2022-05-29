@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ namespace nfdc {
  */
 void
 helpList(std::ostream& os, const CommandParser& parser,
-         ParseMode mode = ParseMode::ONE_SHOT, const std::string& noun = "");
+         ParseMode mode = ParseMode::ONE_SHOT, std::string_view noun = "");
 
 /** \brief tries to help the user, if requested on the command line
  *

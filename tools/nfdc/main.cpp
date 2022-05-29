@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,15 +62,14 @@ main(int argc, char** argv)
 
   auto processLine = [&parser] (const std::vector<std::string>& line) -> Command {
     try {
-      Command cmd;
-      std::tie(cmd.noun, cmd.verb, cmd.ca, cmd.execute) = parser.parse(line, ParseMode::ONE_SHOT);
-      return cmd;
+      auto [noun, verb, ca, execute] = parser.parse(line, ParseMode::ONE_SHOT);
+      return {noun, verb, ca, execute};
     }
     catch (const std::invalid_argument& e) {
       int ret = help(std::cout, parser, line);
       if (ret == 2)
         std::cerr << e.what() << std::endl;
-      return {"", "", {}, nullptr};
+      return {};
     }
   };
 
@@ -83,7 +82,7 @@ main(int argc, char** argv)
       return 2;
     }
 
-    auto processIstream = [&commands,&processLine] (std::istream& is, const std::string& inputFile) {
+    auto processIstream = [&commands, &processLine] (std::istream& is, const std::string& inputFile) {
       std::string line;
       size_t lineCounter = 0;
       while (std::getline(is, line)) {
@@ -118,9 +117,8 @@ main(int argc, char** argv)
         }
 
         std::vector<std::string> lineArgs;
-        std::copy_if(firstNonEmptyToken, tokenizer.end(),
-                     std::back_inserter<std::vector<std::string>>(lineArgs),
-                     [] (const std::string& t) { return !t.empty(); });
+        std::copy_if(firstNonEmptyToken, tokenizer.end(), std::back_inserter(lineArgs),
+                     [] (const auto& t) { return !t.empty(); });
 
         auto cmd = processLine(lineArgs);
         if (cmd.noun.empty()) {

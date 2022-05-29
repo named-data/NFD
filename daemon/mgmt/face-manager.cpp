@@ -260,7 +260,7 @@ FaceManager::updateFace(const Interest& interest,
                         const ndn::mgmt::CommandContinuation& done)
 {
   FaceId faceId = parameters.getFaceId();
-  if (faceId == 0) { // Self-update
+  if (faceId == face::INVALID_FACEID) { // Self-update
     auto incomingFaceIdTag = interest.getTag<lp::IncomingFaceIdTag>();
     if (incomingFaceIdTag == nullptr) {
       NFD_LOG_TRACE("unable to determine face for self-update");

@@ -220,11 +220,10 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
   this->setDestinationAvailability(true);
   std::set<Name> advertisedPrefixes;
   boost::copy(destination->advertiseHistory | boost::adaptors::transformed(
-                [] (const DummyReadvertiseDestination::HistoryEntry& he) { return he.prefix; }),
+                [] (const auto& he) { return he.prefix; }),
               std::inserter(advertisedPrefixes, advertisedPrefixes.end()));
-  std::set<Name> expectedPrefixes{"/A", "/B"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(advertisedPrefixes.begin(), advertisedPrefixes.end(),
-                                expectedPrefixes.begin(), expectedPrefixes.end());
+  const std::set<Name> expectedPrefixes{"/A", "/B"};
+  BOOST_TEST(advertisedPrefixes == expectedPrefixes, boost::test_tools::per_element());
   destination->advertiseHistory.clear();
 
   this->setDestinationAvailability(false);
