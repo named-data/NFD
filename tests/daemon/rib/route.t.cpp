@@ -28,11 +28,9 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using rib::Route;
 
 BOOST_FIXTURE_TEST_SUITE(TestRoute, GlobalIoTimeFixture)
 
@@ -161,6 +159,4 @@ BOOST_AUTO_TEST_CASE(Output)
 
 BOOST_AUTO_TEST_SUITE_END() // TestRoute
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

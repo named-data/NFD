@@ -28,8 +28,7 @@
 
 #include "face/face.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /**
  * \brief Decision made by UnsolicitedDataPolicy
@@ -144,8 +143,7 @@ public:
  */
 using DefaultUnsolicitedDataPolicy = DropAllUnsolicitedDataPolicy;
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 /**
  * \brief Registers an unsolicited data policy

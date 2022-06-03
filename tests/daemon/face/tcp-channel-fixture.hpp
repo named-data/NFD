@@ -31,9 +31,9 @@
 
 #include "channel-fixture.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using face::TcpChannel;
 
 class TcpChannelFixture : public ChannelFixture<TcpChannel, tcp::Endpoint>
 {
@@ -83,11 +83,9 @@ protected:
 
 protected:
   std::vector<shared_ptr<Face>> clientFaces;
-  IpAddressPredicate local;
+  face::IpAddressPredicate local;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_TCP_CHANNEL_FIXTURE_HPP

@@ -25,8 +25,7 @@
 
 #include "manager-common-fixture.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 CommandInterestSignerFixture::CommandInterestSignerFixture()
   : m_signer(m_keyChain)
@@ -212,5 +211,4 @@ ManagerFixtureWithAuthenticator::setPrivilege(const std::string& privilege)
   cf.parse(config, false, "ManagerCommonFixture.authenticator.conf");
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

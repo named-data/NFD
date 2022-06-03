@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,26 +33,15 @@
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
 namespace ip = boost::asio::ip;
 using ip::udp;
+using face::MulticastUdpTransport;
 
 class MulticastUdpTransportFixture : public GlobalIoFixture
 {
 protected:
-  MulticastUdpTransportFixture()
-    : transport(nullptr)
-    , txPort(7001)
-    , receivedPackets(nullptr)
-    , remoteSockRx(g_io)
-    , remoteSockTx(g_io)
-  {
-  }
-
   void
   initialize(ip::address address)
   {
@@ -84,7 +73,7 @@ protected:
     transport = static_cast<MulticastUdpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
-    BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
+    BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
 
   void
@@ -120,20 +109,18 @@ protected:
 
 protected:
   LimitedIo limitedIo;
-  MulticastUdpTransport* transport;
+  MulticastUdpTransport* transport = nullptr;
   udp::endpoint mcastEp;
-  uint16_t txPort;
-  std::vector<RxPacket>* receivedPackets;
+  uint16_t txPort = 7001;
+  std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
   unique_ptr<Face> face;
   udp::endpoint remoteMcastEp;
-  udp::socket remoteSockRx;
-  udp::socket remoteSockTx;
+  udp::socket remoteSockRx{g_io};
+  udp::socket remoteSockTx{g_io};
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_FIXTURE_HPP

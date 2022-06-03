@@ -30,8 +30,7 @@
 
 #include <ndn-cxx/lp/prefix-announcement-header.hpp>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief Self-learning forwarding strategy
  *
@@ -138,7 +137,6 @@ private: // operations
   renewRoute(const Name& name, FaceId inFaceId, time::milliseconds maxLifetime);
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_SELF_LEARNING_STRATEGY_HPP

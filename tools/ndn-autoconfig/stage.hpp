@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,16 +26,12 @@
 #ifndef NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
 #define NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
 
-#include "core/common.hpp"
-
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
 #include <iostream>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 /** \brief a discovery stage
  */
@@ -45,14 +41,11 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
-  virtual ~Stage() = default;
+  virtual
+  ~Stage() = default;
 
   /** \brief get stage name
    *  \return stage name as a phrase, typically starting with lower case
@@ -99,8 +92,6 @@ private:
   bool m_isInProgress = false;
 };
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP

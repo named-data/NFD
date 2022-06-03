@@ -25,8 +25,7 @@
 
 #include "pit-face-record.hpp"
 
-namespace nfd {
-namespace pit {
+namespace nfd::pit {
 
 // Impose a maximum lifetime to prevent integer overflow when calculating m_expiry.
 const time::milliseconds MAX_LIFETIME = 10_days;
@@ -42,5 +41,4 @@ FaceRecord::update(const Interest& interest)
   m_expiry = m_lastRenewed + lifetime;
 }
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit

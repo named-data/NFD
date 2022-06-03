@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,9 +28,7 @@
 #include "tests/test-common.hpp"
 #include "fib-updates-common.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_FIXTURE_TEST_SUITE(TestFibUpdates, FibUpdatesFixture)
 
@@ -261,6 +259,4 @@ BOOST_AUTO_TEST_SUITE_END() // UpdateFace
 
 BOOST_AUTO_TEST_SUITE_END() // FibUpdates
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

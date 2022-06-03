@@ -30,9 +30,9 @@
 
 #include "channel-fixture.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using face::WebSocketChannel;
 
 class WebSocketChannelFixture : public ChannelFixture<WebSocketChannel, websocket::Endpoint>
 {
@@ -153,8 +153,6 @@ private:
   time::steady_clock::time_point m_prevPingRecvTime;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_WEBSOCKET_CHANNEL_FIXTURE_HPP

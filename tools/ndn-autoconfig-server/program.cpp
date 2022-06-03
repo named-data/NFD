@@ -31,9 +31,7 @@
 
 #include <iostream>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig_server {
+namespace ndn::autoconfig_server {
 
 const Name HUB_DATA_NAME("/localhop/ndn-autoconf/hub");
 const Name ROUTABLE_PREFIXES_DATA_PREFIX("/localhop/nfd");
@@ -97,6 +95,4 @@ Program::handlePrefixRegistrationFailure(const Name& prefix, const std::string& 
   m_face.shutdown();
 }
 
-} // namespace autoconfig_server
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig_server

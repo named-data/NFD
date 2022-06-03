@@ -28,8 +28,7 @@
 
 #include <ndn-cxx/mgmt/nfd/control-command.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(RibEntry);
 
@@ -288,5 +287,4 @@ operator<<(std::ostream& os, const RibEntry& entry)
   return os << "}";
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

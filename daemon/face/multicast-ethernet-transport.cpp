@@ -43,8 +43,7 @@
 #endif
 #endif
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(MulticastEthernetTransport);
 
@@ -146,5 +145,4 @@ MulticastEthernetTransport::joinMulticastGroup()
   NDN_THROW(Error("Failed to join multicast group"));
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

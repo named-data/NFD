@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include "pit-face-record.hpp"
 
-namespace nfd {
-namespace pit {
+namespace nfd::pit {
 
 /** \brief Contains information about an Interest toward an outgoing face
  */
@@ -75,7 +74,6 @@ private:
   unique_ptr<lp::NackHeader> m_incomingNack;
 };
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit
 
 #endif // NFD_DAEMON_TABLE_PIT_OUT_RECORD_HPP

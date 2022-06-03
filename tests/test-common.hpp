@@ -44,8 +44,7 @@
 #define SKIP_IF_NOT_SUPERUSER()
 #endif // NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 /**
  * \brief Create an Interest
@@ -125,7 +124,6 @@ signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
               const ndn::security::SigningInfo& si = ndn::security::SigningInfo(),
               std::optional<uint64_t> version = std::nullopt);
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_TEST_COMMON_HPP

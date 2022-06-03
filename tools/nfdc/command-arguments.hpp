@@ -33,9 +33,7 @@
 #include <any>
 #include <boost/logic/tribool.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 using ndn::nfd::FacePersistency;
 using ndn::nfd::RouteOrigin;
@@ -75,8 +73,6 @@ public:
   }
 };
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP

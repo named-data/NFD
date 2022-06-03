@@ -28,13 +28,11 @@
 
 #include "channel.hpp"
 
-namespace nfd {
-
-namespace unix_stream {
+namespace nfd::unix_stream {
 using Endpoint = boost::asio::local::stream_protocol::endpoint;
-} // namespace unix_stream
+} // namespace nfd::unix_stream
 
-namespace face {
+namespace nfd::face {
 
 /**
  * \brief Class implementing a local channel to create faces
@@ -114,7 +112,6 @@ private:
   bool m_wantCongestionMarking;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_UNIX_STREAM_CHANNEL_HPP

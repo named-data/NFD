@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,7 @@
 #include "null-link-service.hpp"
 #include "null-transport.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 shared_ptr<Face>
 makeNullFace(const FaceUri& uri)
@@ -39,5 +38,4 @@ makeNullFace(const FaceUri& uri)
                            make_unique<NullTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

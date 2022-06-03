@@ -30,11 +30,9 @@
 #include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using BestRouteStrategyTester = StrategyTester<BestRouteStrategy>;
+using BestRouteStrategyTester = StrategyTester<fw::BestRouteStrategy>;
 NFD_REGISTER_STRATEGY(BestRouteStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
@@ -83,7 +81,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   const auto TICK = time::duration_cast<time::nanoseconds>(
-                      RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL * 0.1);
+                      fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL * 0.1);
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -114,7 +112,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
   retxFrom4Evt.cancel();
 
   // nexthops for accepted retransmissions: follow FIB cost,
@@ -130,7 +128,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
-    this->advanceClocks(TICK, RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 2);
+    this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 2);
     pitEntry->insertOrUpdateInRecord(*face5, *interest);
     strategy.afterReceiveInterest(*interest, FaceEndpoint(*face5, 0), pitEntry);
   }
@@ -144,6 +142,4 @@ BOOST_AUTO_TEST_CASE(Forward)
 BOOST_AUTO_TEST_SUITE_END() // TestBestRouteStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

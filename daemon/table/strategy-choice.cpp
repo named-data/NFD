@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,8 +32,7 @@
 
 #include <ndn-cxx/util/concepts.hpp>
 
-namespace nfd {
-namespace strategy_choice {
+namespace nfd::strategy_choice {
 
 NDN_CXX_ASSERT_FORWARD_ITERATOR(StrategyChoice::const_iterator);
 
@@ -266,5 +265,4 @@ StrategyChoice::getRange() const
                                       &name_tree::Entry::getStrategyChoiceEntry));
 }
 
-} // namespace strategy_choice
-} // namespace nfd
+} // namespace nfd::strategy_choice

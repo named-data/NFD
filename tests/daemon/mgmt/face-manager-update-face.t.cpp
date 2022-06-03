@@ -35,8 +35,7 @@
 
 #include <boost/logic/tribool.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
@@ -203,7 +202,6 @@ BOOST_AUTO_TEST_CASE(FaceDoesNotExist)
   });
 }
 
-using nfd::face::tests::DummyTransportBase;
 using UpdatePersistencyTests = mpl::vector<
   mpl::pair<DummyTransportBase<true>, CommandSuccess>,
   mpl::pair<DummyTransportBase<false>, CommandFailure<409>>
@@ -737,5 +735,4 @@ BOOST_AUTO_TEST_SUITE_END() // UpdateFace
 BOOST_AUTO_TEST_SUITE_END() // TestFaceManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

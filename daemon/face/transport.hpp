@@ -29,8 +29,7 @@
 #include "face-common.hpp"
 #include "common/counter.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Indicates the state of a transport.
  */
@@ -481,7 +480,6 @@ operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
   return os << FaceLogHelper<Transport>(flh.obj);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_TRANSPORT_HPP

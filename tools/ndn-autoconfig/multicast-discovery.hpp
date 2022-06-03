@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 /** \brief multicast discovery stage
  *
@@ -87,8 +85,6 @@ private:
   int m_nRegFailure = 0;
 };
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_MULTICAST_DISCOVERY_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,14 +26,12 @@
 #ifndef NFD_TOOLS_NDN_AUTOCONFIG_SERVER_PROGRAM_HPP
 #define NFD_TOOLS_NDN_AUTOCONFIG_SERVER_PROGRAM_HPP
 
-#include "core/common.hpp"
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig_server {
+namespace ndn::autoconfig_server {
 
 struct Options
 {
@@ -68,8 +66,6 @@ private:
   mgmt::Dispatcher m_dispatcher;
 };
 
-} // namespace autoconfig_server
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig_server
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_SERVER_PROGRAM_HPP

@@ -31,8 +31,7 @@
 
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 using ndn::nfd::ControlParameters;
 
@@ -254,7 +253,6 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const Rib& rib);
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_RIB_HPP

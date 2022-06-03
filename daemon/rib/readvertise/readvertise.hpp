@@ -31,8 +31,7 @@
 #include "readvertised-route.hpp"
 #include "rib/rib.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief readvertise a subset of routes to a destination according to a policy
  *
@@ -81,7 +80,6 @@ private:
   signal::ScopedConnection m_removeRouteConn;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_READVERTISE_HPP

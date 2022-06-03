@@ -31,8 +31,7 @@
 #include "lp-reassembler.hpp"
 #include "lp-reliability.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief counters provided by GenericLinkService
  *  \note The type name 'GenericLinkServiceCounters' is implementation detail.
@@ -325,7 +324,6 @@ GenericLinkService::getCounters() const
   return *this;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_GENERIC_LINK_SERVICE_HPP

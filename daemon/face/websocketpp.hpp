@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,13 +41,11 @@
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
-namespace nfd {
-namespace websocket {
+namespace nfd::websocket {
 
-typedef websocketpp::client<websocketpp::config::asio_client> Client;
-typedef websocketpp::server<websocketpp::config::asio> Server;
+using Client = websocketpp::client<websocketpp::config::asio_client>;
+using Server = websocketpp::server<websocketpp::config::asio>;
 
-} // namespace websocket
-} // namespace nfd
+} // namespace nfd::websocket
 
 #endif // NFD_DAEMON_FACE_WEBSOCKETPP_HPP

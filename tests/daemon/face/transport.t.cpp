@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,12 +40,10 @@
 #include <boost/mpl/set.hpp>
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 namespace mpl = boost::mpl;
-using namespace nfd::tests;
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestTransport)
@@ -145,8 +143,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 {
   auto transport = make_unique<DummyTransport>();
 
-  TransportState from = static_cast<TransportState>(T::first::value);
-  TransportState to = static_cast<TransportState>(T::second::value);
+  auto from = static_cast<TransportState>(T::first::value);
+  auto to = static_cast<TransportState>(T::second::value);
   BOOST_TEST_MESSAGE("SetState " << from << " -> " << to);
 
   // enter from state
@@ -248,6 +246,4 @@ BOOST_FIXTURE_TEST_CASE(Receive, DummyTransportFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

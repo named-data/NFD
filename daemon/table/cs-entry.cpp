@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,7 @@
 
 #include "cs-entry.hpp"
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 
 Entry::Entry(shared_ptr<const Data> data, bool isUnsolicited)
   : m_data(std::move(data))
@@ -111,5 +110,4 @@ operator<(const Entry& lhs, const Entry& rhs)
   return compareDataWithData(lhs.getData(), rhs.getData()) < 0;
 }
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs

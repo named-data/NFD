@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,7 @@
 
 #include "tests/test-common.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(TestPrivilegeHelper)
 
@@ -69,5 +68,4 @@ BOOST_AUTO_TEST_CASE(DropRaise)
 
 BOOST_AUTO_TEST_SUITE_END() // TestPrivilegeHelper
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

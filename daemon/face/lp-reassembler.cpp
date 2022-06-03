@@ -29,8 +29,7 @@
 
 #include <numeric>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(LpReassembler);
 
@@ -161,5 +160,4 @@ operator<<(std::ostream& os, const FaceLogHelper<LpReassembler>& flh)
   return os;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

@@ -31,9 +31,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 static int
 main(int argc, char** argv)
@@ -184,9 +182,7 @@ main(int argc, char** argv)
   }
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 int
 main(int argc, char** argv)

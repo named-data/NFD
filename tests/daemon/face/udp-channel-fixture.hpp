@@ -31,9 +31,9 @@
 
 #include "channel-fixture.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using face::UdpChannel;
 
 class UdpChannelFixture : public ChannelFixture<UdpChannel, udp::Endpoint>
 {
@@ -69,8 +69,6 @@ protected:
   std::vector<shared_ptr<Face>> clientFaces;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_UDP_CHANNEL_FIXTURE_HPP

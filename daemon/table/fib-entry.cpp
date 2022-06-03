@@ -25,8 +25,7 @@
 
 #include "fib-entry.hpp"
 
-namespace nfd {
-namespace fib {
+namespace nfd::fib {
 
 Entry::Entry(const Name& prefix)
   : m_prefix(prefix)
@@ -83,5 +82,4 @@ Entry::sortNextHops()
             [] (const NextHop& a, const NextHop& b) { return a.getCost() < b.getCost(); });
 }
 
-} // namespace fib
-} // namespace nfd
+} // namespace nfd::fib

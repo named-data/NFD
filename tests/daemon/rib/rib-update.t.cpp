@@ -29,9 +29,9 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/rib/create-route.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::rib;
 
 BOOST_AUTO_TEST_SUITE(TestRibUpdate)
 
@@ -76,6 +76,4 @@ BOOST_AUTO_TEST_CASE(BatchBasic)
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibUpdate
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

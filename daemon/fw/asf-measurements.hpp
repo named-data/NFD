@@ -33,9 +33,7 @@
 
 #include <unordered_map>
 
-namespace nfd {
-namespace fw {
-namespace asf {
+namespace nfd::fw::asf {
 
 /** \brief Strategy information for each face in a namespace
 */
@@ -217,8 +215,6 @@ private:
   shared_ptr<const ndn::util::RttEstimator::Options> m_rttEstimatorOpts;
 };
 
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw::asf
 
 #endif // NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP

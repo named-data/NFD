@@ -38,8 +38,7 @@
 #include <ndn-cxx/transport/tcp-transport.hpp>
 #include <ndn-cxx/transport/unix-transport.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(RibService);
 
@@ -262,5 +261,4 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
   }
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

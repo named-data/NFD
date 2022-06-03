@@ -26,8 +26,7 @@
 #include "internal-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_INIT(InternalForwarderTransport, InternalForwarderTransport);
 NFD_LOG_MEMBER_INIT(InternalClientTransport, InternalClientTransport);
@@ -123,5 +122,4 @@ InternalClientTransport::send(const Block& wire)
     m_forwarder->receivePacket(wire);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

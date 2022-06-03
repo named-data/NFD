@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,9 +34,7 @@
 #include <boost/property_tree/info_parser.hpp>
 #include <sstream>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestNetworkPredicate)
@@ -66,7 +64,7 @@ protected:
   T predicate;
 };
 
-class NetworkInterfacePredicateFixture : public NetworkPredicateBaseFixture<NetworkInterfacePredicate>
+class NetworkInterfacePredicateFixture : public NetworkPredicateBaseFixture<face::NetworkInterfacePredicate>
 {
 protected:
   NetworkInterfacePredicateFixture()
@@ -377,7 +375,7 @@ BOOST_AUTO_TEST_CASE(UnrecognizedKey)
 
 BOOST_AUTO_TEST_SUITE_END() // NetworkInterface
 
-class IpAddressPredicateFixture : public NetworkPredicateBaseFixture<IpAddressPredicate>
+class IpAddressPredicateFixture : public NetworkPredicateBaseFixture<face::IpAddressPredicate>
 {
 protected:
   IpAddressPredicateFixture()
@@ -512,6 +510,4 @@ BOOST_AUTO_TEST_SUITE_END() // IpAddress
 BOOST_AUTO_TEST_SUITE_END() // TestNetworkPredicate
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

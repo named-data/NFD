@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,9 @@
 
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestMulticastEthernetTransport, EthernetFixture)
@@ -140,6 +140,4 @@ BOOST_AUTO_TEST_CASE(SendQueueLength)
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastEthernetTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

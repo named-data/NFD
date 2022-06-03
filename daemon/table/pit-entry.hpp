@@ -31,13 +31,11 @@
 
 #include <list>
 
-namespace nfd {
-
-namespace name_tree {
+namespace nfd::name_tree {
 class Entry;
-} // namespace name_tree
+} // namespace nfd::name_tree
 
-namespace pit {
+namespace nfd::pit {
 
 /**
  * \brief An unordered collection of in-records
@@ -246,7 +244,6 @@ private:
   friend name_tree::Entry;
 };
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit
 
 #endif // NFD_DAEMON_TABLE_PIT_ENTRY_HPP

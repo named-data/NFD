@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,7 @@
 
 #include "tcp-factory.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 namespace ip = boost::asio::ip;
 
@@ -223,5 +222,4 @@ TcpFactory::determineFaceScopeFromAddresses(const boost::asio::ip::address& loca
   return ndn::nfd::FACE_SCOPE_NON_LOCAL;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

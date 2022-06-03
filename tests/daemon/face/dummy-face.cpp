@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,9 +27,7 @@
 #include "dummy-link-service.hpp"
 #include "dummy-transport.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 DummyFace::DummyFace(const std::string& localUri, const std::string& remoteUri,
                      ndn::nfd::FaceScope scope, ndn::nfd::FacePersistency persistency,
@@ -45,7 +43,7 @@ DummyFace::DummyFace(const std::string& localUri, const std::string& remoteUri,
 }
 
 void
-DummyFace::setState(FaceState state)
+DummyFace::setState(face::FaceState state)
 {
   static_cast<DummyTransport*>(getTransport())->setState(state);
 }
@@ -74,6 +72,4 @@ DummyFace::getDummyLinkService() const
   return static_cast<DummyLinkService*>(getLinkService());
 }
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

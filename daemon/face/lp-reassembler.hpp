@@ -30,8 +30,7 @@
 
 #include <ndn-cxx/lp/packet.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /**
  * \brief Reassembles fragmented network-layer packets
@@ -149,7 +148,6 @@ LpReassembler::size() const
   return m_partialPackets.size();
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_LP_REASSEMBLER_HPP

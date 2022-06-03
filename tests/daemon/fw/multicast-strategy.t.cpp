@@ -32,11 +32,9 @@
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using MulticastStrategyTester = StrategyTester<MulticastStrategy>;
+using MulticastStrategyTester = StrategyTester<fw::MulticastStrategy>;
 NFD_REGISTER_STRATEGY(MulticastStrategyTester);
 
 class MulticastStrategyFixture : public GlobalIoTimeFixture
@@ -117,7 +115,7 @@ BOOST_AUTO_TEST_CASE(Bug5123)
                nodeC = topo.addForwarder("C");
 
   for (TopologyNode node : {nodeA, nodeB, nodeC}) {
-    topo.setStrategy<MulticastStrategy>(node);
+    topo.setStrategy<fw::MulticastStrategy>(node);
   }
 
   shared_ptr<TopologyLink> linkAB = topo.addLink("AB", 10_ms,  {nodeA, nodeB}),
@@ -171,7 +169,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   BOOST_TEST(didSendInterestTo(*face2));
 
   const auto TICK = time::duration_cast<time::nanoseconds>(
-                    RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL) / 10;
+                      fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL) / 10;
 
   // downstream retransmits frequently, but the strategy should not send Interests
   // more often than DEFAULT_MIN_RETX_INTERVAL
@@ -196,7 +194,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
     retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
   retxFrom4Evt.cancel();
 }
 
@@ -216,7 +214,7 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
 
 BOOST_AUTO_TEST_CASE(RetxSuppression)
 {
-  const auto suppressPeriod = RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL;
+  const auto suppressPeriod = fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL;
   BOOST_ASSERT(suppressPeriod >= 8_ms);
 
   // Set up the FIB
@@ -510,6 +508,4 @@ BOOST_AUTO_TEST_SUITE_END() // LocalhopScope
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

@@ -29,8 +29,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class CommandAuthenticatorFixture : public CommandInterestSignerFixture
 {
@@ -468,5 +467,4 @@ BOOST_AUTO_TEST_SUITE_END() // BadConfig
 BOOST_AUTO_TEST_SUITE_END() // TestCommandAuthenticator
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

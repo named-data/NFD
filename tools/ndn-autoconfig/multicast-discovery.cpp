@@ -29,9 +29,7 @@
 
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 using nfd::ControlParameters;
 
@@ -153,6 +151,4 @@ MulticastDiscovery::requestHubData()
     });
 }
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig

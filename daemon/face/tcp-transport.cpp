@@ -31,8 +31,7 @@
 #include <sys/ioctl.h>
 #endif
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
 
@@ -192,5 +191,4 @@ TcpTransport::doClose()
   StreamTransport::doClose();
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

@@ -23,7 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fw/strategy.hpp"
 #include "fw/retx-suppression-fixed.hpp"
 #include "fw/retx-suppression-exponential.hpp"
 
@@ -31,11 +30,9 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::fw;
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestRetxSuppression, GlobalIoTimeFixture)
@@ -203,6 +200,4 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
 BOOST_AUTO_TEST_SUITE_END() // TestRetxSuppression
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,11 +37,7 @@
 
 #include <ndn-cxx/net/network-monitor-stub.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 class FaceSystemFixture : public virtual GlobalIoFixture
 {
@@ -140,10 +136,11 @@ protected:
   FaceTable faceTable;
   shared_ptr<ndn::net::NetworkMonitorStub> netmon;
   FaceSystem faceSystem;
-  NetdevBound& netdevBound;
+  face::NetdevBound& netdevBound;
 };
 
-/** \brief FaceSystemFixture with a ProtocolFactory reference
+/**
+ * \brief FaceSystemFixture with a ProtocolFactory reference
  */
 template<typename FactoryType>
 class FaceSystemFactoryFixture : public FaceSystemFixture
@@ -158,9 +155,10 @@ protected:
   FactoryType& factory;
 };
 
-/** \brief A dummy ProtocolFactory for testing FaceSystem configuration parsing.
+/**
+ * \brief A dummy ProtocolFactory for testing FaceSystem configuration parsing.
  */
-class DummyProtocolFactory : public ProtocolFactory
+class DummyProtocolFactory : public face::ProtocolFactory
 {
 public:
   using ProtocolFactory::ProtocolFactory;
@@ -188,8 +186,6 @@ public:
   std::set<std::string> newProvidedSchemes;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_FACE_SYSTEM_FIXTURE_HPP

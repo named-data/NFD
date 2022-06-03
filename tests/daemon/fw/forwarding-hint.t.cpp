@@ -28,11 +28,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "topology-tester.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 #define CHECK_FH_EQUAL(actual, ...) \
   do { \
@@ -76,7 +72,7 @@ public:
     nodeS = topo.addForwarder("spurs");
     nodeQ = topo.addForwarder("serverQ");
     for (auto node : {nodeA, nodeH, nodeT, nodeP, nodeC, nodeS, nodeQ}) {
-      topo.setStrategy<BestRouteStrategy>(node);
+      topo.setStrategy<fw::BestRouteStrategy>(node);
     }
 
     topo.getForwarder(nodeH).getNetworkRegionTable().insert("/arizona/cs/hobo");
@@ -192,6 +188,4 @@ BOOST_AUTO_TEST_SUITE_END() // NdnsimTeliaUclaTopology
 BOOST_AUTO_TEST_SUITE_END() // TestForwardingHint
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,7 @@
 
 #include <ndn-cxx/net/network-interface.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>));
 
@@ -94,7 +93,6 @@ private:
   protocol::socket m_sendSocket;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_HPP

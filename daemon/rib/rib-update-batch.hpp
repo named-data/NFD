@@ -30,8 +30,7 @@
 
 #include <list>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 using RibUpdateList = std::list<RibUpdate>;
 
@@ -69,7 +68,6 @@ private:
   RibUpdateList m_updates;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_RIB_UPDATE_BATCH_HPP

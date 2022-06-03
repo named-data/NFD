@@ -33,8 +33,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Parameters to ProtocolFactory constructor
  *
@@ -248,8 +247,7 @@ protected:
   shared_ptr<ndn::net::NetworkMonitor> netmon;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 /** \brief Registers a protocol factory
  *

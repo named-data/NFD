@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "protocol-factory.hpp"
 #include "udp-channel.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Protocol factory for UDP over IPv4 and IPv6
  */
@@ -145,7 +144,6 @@ private:
   std::map<int, NetifConns> m_netifConns; // ifindex => signal connections
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_UDP_FACTORY_HPP

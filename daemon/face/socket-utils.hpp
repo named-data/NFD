@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include "core/common.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief obtain send queue length from a specified system socket
  *  \param fd file descriptor of the socket
@@ -42,7 +41,6 @@ namespace face {
 ssize_t
 getTxQueueLength(int fd);
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_SOCKET_UTILS_HPP

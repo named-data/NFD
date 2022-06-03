@@ -29,9 +29,7 @@
 #include "find-face.hpp"
 #include "format-helpers.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 void
 RibModule::registerCommands(CommandParser& parser)
@@ -410,6 +408,4 @@ RibModule::formatRouteText(std::ostream& os, const RibEntry& entry, const Route&
   }
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

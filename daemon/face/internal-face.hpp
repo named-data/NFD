@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,10 +27,10 @@
 #define NFD_DAEMON_FACE_INTERNAL_FACE_HPP
 
 #include "face.hpp"
+
 #include <ndn-cxx/face.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief make a pair of forwarder-side face and client-side face
  *         that are connected with each other
@@ -45,7 +45,6 @@ namespace face {
 std::tuple<shared_ptr<Face>, shared_ptr<ndn::Face>>
 makeInternalFace(ndn::KeyChain& clientKeyChain);
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_INTERNAL_FACE_HPP

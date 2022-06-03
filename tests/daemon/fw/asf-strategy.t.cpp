@@ -28,12 +28,9 @@
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
-namespace nfd {
-namespace fw {
-namespace asf {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::fw::tests;
+using fw::AsfStrategy;
 
 // The tester is unused in this file, but it's used in various templated test suites.
 using AsfStrategyTester = StrategyTester<AsfStrategy>;
@@ -574,9 +571,9 @@ BOOST_AUTO_TEST_CASE(Parameters)
   strategy = checkValidity("/max-timeouts~0", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 0);
-  BOOST_TEST(strategy->m_retxSuppression->m_initialInterval == RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL);
-  BOOST_TEST(strategy->m_retxSuppression->m_maxInterval == RetxSuppressionExponential::DEFAULT_MAX_INTERVAL);
-  BOOST_TEST(strategy->m_retxSuppression->m_multiplier == RetxSuppressionExponential::DEFAULT_MULTIPLIER);
+  BOOST_TEST(strategy->m_retxSuppression->m_initialInterval == fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL);
+  BOOST_TEST(strategy->m_retxSuppression->m_maxInterval == fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL);
+  BOOST_TEST(strategy->m_retxSuppression->m_multiplier == fw::RetxSuppressionExponential::DEFAULT_MULTIPLIER);
 
   checkValidity("/probing-interval~500", false); // minimum is 1 second
   checkValidity("/probing-interval~-5000", false);
@@ -591,7 +588,4 @@ BOOST_AUTO_TEST_CASE(Parameters)
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

@@ -28,13 +28,11 @@
 
 #include "channel.hpp"
 
-namespace nfd {
-
-namespace tcp {
+namespace nfd::tcp {
 using Endpoint = boost::asio::ip::tcp::endpoint;
-} // namespace tcp
+} // namespace nfd::tcp
 
-namespace face {
+namespace nfd::face {
 
 using DetermineFaceScopeFromAddress = std::function<ndn::nfd::FaceScope(const boost::asio::ip::address& local,
                                                                         const boost::asio::ip::address& remote)>;
@@ -133,7 +131,6 @@ private:
   DetermineFaceScopeFromAddress m_determineFaceScope;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_TCP_CHANNEL_HPP

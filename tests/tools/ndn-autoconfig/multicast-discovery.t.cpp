@@ -30,16 +30,10 @@
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
-namespace tests {
-
-using namespace ::nfd::tools::tests;
-using nfd::ControlParameters;
+namespace ndn::autoconfig::tests {
 
 BOOST_AUTO_TEST_SUITE(NdnAutoconfig)
-BOOST_FIXTURE_TEST_SUITE(TestMulticastDiscovery, MockNfdMgmtFixture)
+BOOST_FIXTURE_TEST_SUITE(TestMulticastDiscovery, ::nfd::tests::MockNfdMgmtFixture)
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
@@ -69,7 +63,7 @@ BOOST_AUTO_TEST_CASE(Normal)
       BOOST_REQUIRE(req->hasFaceId());
 
       if (req->getFaceId() == 860) {
-        ControlParameters resp;
+        nfd::ControlParameters resp;
         resp.setName("/localhop/ndn-autoconf/hub")
             .setFaceId(860)
             .setOrigin(nfd::ROUTE_ORIGIN_APP)
@@ -98,7 +92,7 @@ BOOST_AUTO_TEST_CASE(Normal)
     }
 
     if (interest.getName() == "/localhop/ndn-autoconf/hub") {
-      auto data = makeData(Name("/localhop/ndn-autoconf/hub").appendVersion());
+      auto data = ::nfd::tests::makeData(Name("/localhop/ndn-autoconf/hub").appendVersion());
       data->setFreshnessPeriod(1_s);
       data->setContent(makeStringBlock(tlv::nfd::Uri, "udp://router.example.net"));
       face.receive(*data);
@@ -131,7 +125,4 @@ BOOST_AUTO_TEST_CASE(Normal)
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastDiscovery
 BOOST_AUTO_TEST_SUITE_END() // NdnAutoconfig
 
-} // namespace tests
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig::tests

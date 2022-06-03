@@ -38,8 +38,7 @@
 #include <ndn-cxx/transport/transport.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 class Readvertise;
 
@@ -121,7 +120,6 @@ private:
   RibManager m_ribManager;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_SERVICE_HPP

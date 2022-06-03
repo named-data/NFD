@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,17 +28,15 @@
 
 #include "rib/route.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-inline Route
+inline rib::Route
 createRoute(uint64_t faceId,
             std::underlying_type_t<ndn::nfd::RouteOrigin> origin,
             uint64_t cost = 0,
             std::underlying_type_t<ndn::nfd::RouteFlags> flags = ndn::nfd::ROUTE_FLAGS_NONE)
 {
-  Route r;
+  rib::Route r;
   r.faceId = faceId;
   r.origin = static_cast<ndn::nfd::RouteOrigin>(origin);
   r.cost = cost;
@@ -46,8 +44,6 @@ createRoute(uint64_t faceId,
   return r;
 }
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_RIB_CREATE_ROUTE_HPP

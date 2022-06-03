@@ -32,8 +32,7 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class FibManagerFixture : public ManagerFixtureWithAuthenticator
 {
@@ -446,5 +445,4 @@ BOOST_AUTO_TEST_SUITE_END() // List
 BOOST_AUTO_TEST_SUITE_END() // TestFibManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

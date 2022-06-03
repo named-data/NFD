@@ -28,9 +28,7 @@
 
 #include "asf-measurements.hpp"
 
-namespace nfd {
-namespace fw {
-namespace asf {
+namespace nfd::fw::asf {
 
 /** \brief ASF Probing Module
  */
@@ -97,8 +95,6 @@ private:
   AsfMeasurements& m_measurements;
 };
 
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw::asf
 
 #endif // NFD_DAEMON_FW_ASF_PROBING_MODULE_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,12 +30,11 @@
 #include <boost/filesystem.hpp>
 #include <fstream>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 namespace fs = boost::filesystem;
 namespace local = boost::asio::local;
+using face::UnixStreamChannel;
 
 class UnixStreamChannelFixture : public ChannelFixture<UnixStreamChannel, unix_stream::Endpoint>
 {
@@ -176,6 +175,4 @@ BOOST_AUTO_TEST_CASE(ExistingRegularFile)
 BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

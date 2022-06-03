@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 #include <ndn-cxx/util/logger.hpp>
 #include <ndn-cxx/util/logging.hpp>
 
-namespace nfd {
-namespace log {
+namespace nfd::log {
 
 static ndn::util::LogLevel
 parseLogLevel(const ConfigSection& item, const std::string& key)
@@ -92,5 +91,4 @@ setConfigFile(ConfigFile& config)
   config.addSectionHandler("log", &onConfig);
 }
 
-} // namespace log
-} // namespace nfd
+} // namespace nfd::log

@@ -35,8 +35,7 @@
 #define PCAP_NETMASK_UNKNOWN  0xffffffff
 #endif
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 PcapHelper::PcapHelper(const std::string& interfaceName)
   : m_pcap(nullptr)
@@ -143,5 +142,4 @@ PcapHelper::readNextPacket() const noexcept
     return {{packet, header->caplen}, ""};
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

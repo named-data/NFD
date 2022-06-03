@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,9 +25,7 @@
 
 #include "dummy-link-service.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 void
 DummyLinkService::doSendInterest(const Interest& interest)
@@ -63,6 +61,4 @@ DummyLinkService::doReceivePacket(const Block& packet, const EndpointId& endpoin
     receivedPackets.push_back({packet, endpoint});
 }
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #include "name-tree-entry.hpp"
 #include "name-tree.hpp"
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 Entry::Entry(const Name& name, Node* node)
   : m_name(name)
@@ -139,5 +138,4 @@ Entry::setStrategyChoiceEntry(unique_ptr<strategy_choice::Entry> strategyChoiceE
   }
 }
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree

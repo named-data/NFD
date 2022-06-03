@@ -28,9 +28,7 @@
 
 #include "command-parser.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 /** \brief writes the list of available commands to a stream
  *  \param os the output stream to write the list to
@@ -56,8 +54,6 @@ int
 help(std::ostream& os, const CommandParser& parser,
      std::vector<std::string> args);
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_HELP_HPP

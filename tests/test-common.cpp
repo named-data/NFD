@@ -25,8 +25,7 @@
 
 #include "tests/test-common.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 shared_ptr<Interest>
 makeInterest(const Name& name, bool canBePrefix, std::optional<time::milliseconds> lifetime,
@@ -93,5 +92,4 @@ signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
   return std::move(pa);
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

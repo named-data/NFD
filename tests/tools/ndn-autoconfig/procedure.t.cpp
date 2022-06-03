@@ -29,16 +29,10 @@
 
 #include <boost/logic/tribool.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
-namespace tests {
-
-using namespace ::nfd::tests;
-using nfd::ControlParameters;
+namespace ndn::autoconfig::tests {
 
 template<typename ProcedureClass>
-class ProcedureFixture : public ::nfd::tools::tests::MockNfdMgmtFixture
+class ProcedureFixture : public ::nfd::tests::MockNfdMgmtFixture
 {
 public:
   void
@@ -128,7 +122,7 @@ public:
 
 private:
   void
-  makeStages(const Options& options) override
+  makeStages(const Options&) override
   {
     m_stages.push_back(make_unique<DummyStage>("first", &nCalls1, FaceUri("udp://188.7.60.95"), m_io));
     m_stages.push_back(make_unique<DummyStage>("second", &nCalls2, std::nullopt, m_io));
@@ -155,7 +149,7 @@ public:
 
 private:
   void
-  makeStages(const Options& options) override
+  makeStages(const Options&) override
   {
     m_stages.push_back(make_unique<DummyStage>("first", &nCalls1, std::nullopt, m_io));
     m_stages.push_back(make_unique<DummyStage>("second", &nCalls2, FaceUri("tcp://40.23.174.71"), m_io));
@@ -183,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE(Normal, ProcedureFixture<ProcedureSuccessFailure>)
       BOOST_REQUIRE(req->hasUri());
       BOOST_CHECK_EQUAL(req->getUri(), "udp4://188.7.60.95:6363");
 
-      ControlParameters resp;
+      nfd::ControlParameters resp;
       resp.setFaceId(1178)
           .setUri("udp4://188.7.60.95:6363")
           .setLocalUri("udp4://110.69.164.68:23197")
@@ -210,7 +204,7 @@ BOOST_FIXTURE_TEST_CASE(Normal, ProcedureFixture<ProcedureSuccessFailure>)
         BOOST_ERROR("unexpected prefix registration " << req->getName());
       }
 
-      ControlParameters resp;
+      nfd::ControlParameters resp;
       resp.setName(req->getName())
           .setFaceId(1178)
           .setOrigin(nfd::ROUTE_ORIGIN_AUTOCONF)
@@ -238,7 +232,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
   this->processInterest = [&] (const Interest& interest) {
     auto req = parseCommand(interest, "/localhost/nfd/faces/create");
     if (req) {
-      ControlParameters resp;
+      nfd::ControlParameters resp;
       resp.setFaceId(3146)
           .setUri("tcp4://40.23.174.71:6363")
           .setLocalUri("tcp4://34.213.69.67:14445")
@@ -261,7 +255,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
         BOOST_ERROR("unexpected prefix registration " << req->getName());
       }
 
-      ControlParameters resp;
+      nfd::ControlParameters resp;
       resp.setName(req->getName())
           .setFaceId(3146)
           .setOrigin(nfd::ROUTE_ORIGIN_AUTOCONF)
@@ -284,7 +278,4 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
 BOOST_AUTO_TEST_SUITE_END() // TestProcedure
 BOOST_AUTO_TEST_SUITE_END() // NdnAutoconfig
 
-} // namespace tests
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig::tests

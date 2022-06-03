@@ -32,8 +32,7 @@
 #include <ndn-cxx/security/pib/key.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class TestCommandVoidParameters : public ControlCommand
 {
@@ -168,5 +167,4 @@ BOOST_AUTO_TEST_CASE(MakeRelPrefix)
 BOOST_AUTO_TEST_SUITE_END() // TestManagerBase
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

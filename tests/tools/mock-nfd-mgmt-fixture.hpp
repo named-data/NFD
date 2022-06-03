@@ -36,14 +36,12 @@
 
 #include <boost/concept/assert.hpp>
 
-namespace nfd {
-namespace tools {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
 using ndn::nfd::ControlParameters;
 
-/** \brief Fixture to emulate NFD management.
+/**
+ * \brief Fixture to emulate NFD management.
  */
 class MockNfdMgmtFixture : public IoFixture, public KeyChainFixture
 {
@@ -210,9 +208,7 @@ protected:
   std::function<void(const Interest&)> processInterest;
 };
 
-} // namespace tests
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tests
 
 /** \brief require the command in \p interest has expected prefix
  *  \note This must be used in processInterest lambda, and the Interest must be named 'interest'.

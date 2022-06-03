@@ -25,8 +25,7 @@
 
 #include "unix-stream-transport.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::local::stream_protocol>, UnixStreamTransport);
 
@@ -48,5 +47,4 @@ UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
   NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

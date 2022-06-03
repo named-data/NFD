@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,7 @@
 #include "face/generic-link-service.hpp"
 #include "face-manager-command-fixture.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
@@ -477,5 +476,4 @@ BOOST_AUTO_TEST_SUITE_END() // CreateFace
 BOOST_AUTO_TEST_SUITE_END() // TestFaceManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

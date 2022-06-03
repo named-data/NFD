@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestCleanup, GlobalIoFixture)
@@ -183,5 +182,4 @@ BOOST_AUTO_TEST_SUITE_END() // FaceRemovalCleanup
 BOOST_AUTO_TEST_SUITE_END() // TestCleanup
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

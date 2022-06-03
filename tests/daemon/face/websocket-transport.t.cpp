@@ -29,9 +29,9 @@
 
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketTransport, IpTransportFixture<WebSocketTransportFixture>)
@@ -260,6 +260,4 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SendQueueLength, T, WebSocketTransportFixtures,
 BOOST_AUTO_TEST_SUITE_END() // TestWebSocketTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

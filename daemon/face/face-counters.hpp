@@ -29,8 +29,7 @@
 #include "link-service.hpp"
 #include "transport.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief gives access to counters provided by Face
  *
@@ -94,7 +93,6 @@ private:
   const Transport::Counters& m_transportCounters;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_FACE_COUNTERS_HPP

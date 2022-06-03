@@ -29,8 +29,7 @@
 #include "websocket-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(WebSocketChannel);
 
@@ -162,5 +161,4 @@ WebSocketChannel::listen(const FaceCreatedCallback& onFaceCreated)
   NFD_LOG_CHAN_DEBUG("Started listening");
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

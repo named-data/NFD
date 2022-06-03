@@ -33,8 +33,7 @@
 
 #include <unordered_map>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief Access Router strategy
  *
@@ -173,7 +172,6 @@ private:
   signal::ScopedConnection m_removeFaceConn;
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_ACCESS_STRATEGY_HPP

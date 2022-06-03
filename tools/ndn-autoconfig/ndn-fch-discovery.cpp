@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 #include <regex>
 #include <sstream>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 /**
  * A partial and specialized copy of ndn::FaceUri implementation
@@ -210,6 +208,4 @@ NdnFchDiscovery::doStart()
   }
 }
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig

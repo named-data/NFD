@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,18 +32,14 @@
 
 #include <cstring>
 
-namespace nfd {
-namespace general {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 class GeneralConfigSectionFixture : public GlobalIoFixture
 {
 public:
   GeneralConfigSectionFixture()
   {
-    setConfigFile(configFile);
+    general::setConfigFile(configFile);
   }
 
 #ifdef NFD_HAVE_PRIVILEGE_DROP_AND_ELEVATE
@@ -163,6 +159,4 @@ BOOST_AUTO_TEST_CASE(InvalidGroupConfig)
 BOOST_AUTO_TEST_SUITE_END() // TestGeneralConfigSection
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace general
-} // namespace nfd
+} // namespace nfd::tests

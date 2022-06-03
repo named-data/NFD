@@ -29,8 +29,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestDeadNonceList, GlobalIoFixture)
@@ -193,5 +192,4 @@ BOOST_FIXTURE_TEST_CASE(CapacityUp, PeriodicalInsertionFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestDeadNonceList
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

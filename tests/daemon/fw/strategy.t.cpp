@@ -34,11 +34,9 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::fw;
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestStrategy, GlobalIoFixture)
@@ -126,6 +124,4 @@ BOOST_AUTO_TEST_CASE(ParseParameters)
 BOOST_AUTO_TEST_SUITE_END() // TestStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

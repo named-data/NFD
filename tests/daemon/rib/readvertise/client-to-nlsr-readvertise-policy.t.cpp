@@ -28,11 +28,9 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::rib;
 
 BOOST_AUTO_TEST_SUITE(Readvertise)
 BOOST_FIXTURE_TEST_SUITE(TestClientToNlsrReadvertisePolicy, GlobalIoFixture)
@@ -72,6 +70,4 @@ BOOST_AUTO_TEST_CASE(DontReadvertiseRoute)
 BOOST_AUTO_TEST_SUITE_END() // TestClientToNlsrReadvertisePolicy
 BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

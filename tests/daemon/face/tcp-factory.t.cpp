@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,10 @@
 #include "factory-test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using face::TcpChannel;
+using face::TcpFactory;
 
 class TcpFactoryFixture : public FaceSystemFactoryFixture<TcpFactory>
 {
@@ -175,7 +176,7 @@ BOOST_AUTO_TEST_CASE(ConfigureLocal)
                BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
              });
 
-  limitedIo.run(1, 100_ms);
+  limitedIo.defer(100_ms);
 }
 
 BOOST_AUTO_TEST_CASE(ConfigureNonLocal)
@@ -217,7 +218,7 @@ BOOST_AUTO_TEST_CASE(ConfigureNonLocal)
                BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
              });
 
-  limitedIo.run(1, 100_ms);
+  limitedIo.defer(100_ms);
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -468,6 +469,4 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceTimeout, CreateFaceTimeoutFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestTcpFactory
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

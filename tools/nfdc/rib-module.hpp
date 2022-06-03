@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,7 @@
 #include "module.hpp"
 #include "command-parser.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 using ndn::nfd::RibEntry;
 using ndn::nfd::Route;
@@ -113,8 +111,6 @@ private:
   std::vector<RibEntry> m_status;
 };
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_RIB_MODULE_HPP

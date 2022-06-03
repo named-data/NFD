@@ -37,8 +37,7 @@
 #include <valgrind/callgrind.h>
 #endif
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class FaceBenchmark
 {
@@ -171,8 +170,7 @@ private:
   std::vector<std::pair<FaceUri, FaceUri>> m_faceUris;
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 int
 main(int argc, char** argv)

@@ -28,13 +28,11 @@
 
 #include "strategy-info-host.hpp"
 
-namespace nfd {
-
-namespace name_tree {
+namespace nfd::name_tree {
 class Entry;
-} // namespace name_tree
+} // namespace nfd::name_tree
 
-namespace measurements {
+namespace nfd::measurements {
 
 class Measurements;
 
@@ -68,7 +66,6 @@ private:
   friend name_tree::Entry;
 };
 
-} // namespace measurements
-} // namespace nfd
+} // namespace nfd::measurements
 
 #endif // NFD_DAEMON_TABLE_MEASUREMENTS_ENTRY_HPP

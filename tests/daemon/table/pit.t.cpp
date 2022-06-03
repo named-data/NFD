@@ -27,13 +27,10 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
-namespace nfd {
-namespace pit {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::pit;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestPit, GlobalIoFixture)
@@ -344,6 +341,4 @@ BOOST_AUTO_TEST_CASE(Iterator)
 BOOST_AUTO_TEST_SUITE_END() // TestPit
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::tests

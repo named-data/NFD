@@ -29,11 +29,9 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::fw;
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestAlgorithm, GlobalIoFixture)
@@ -205,6 +203,4 @@ BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, GlobalIoTimeFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestPitAlgorithm
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

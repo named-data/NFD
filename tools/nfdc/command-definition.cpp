@@ -28,9 +28,7 @@
 
 #include <ndn-cxx/util/logger.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 NDN_LOG_INIT(nfdc.CommandDefinition);
 
@@ -291,6 +289,4 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token)
   NDN_CXX_UNREACHABLE;
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

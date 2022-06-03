@@ -31,8 +31,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 namespace ip = boost::asio::ip;
 namespace net = ndn::net;
@@ -477,5 +476,4 @@ UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext&)
   }
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

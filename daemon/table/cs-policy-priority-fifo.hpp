@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,7 @@
 
 #include <list>
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 namespace priority_fifo {
 
 using Queue = std::list<Policy::EntryRef>;
@@ -121,7 +120,6 @@ private:
 
 using priority_fifo::PriorityFifoPolicy;
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs
 
 #endif // NFD_DAEMON_TABLE_CS_POLICY_PRIORITY_FIFO_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include <ndn-cxx/util/random.hpp>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_REGISTER_STRATEGY(RandomStrategy);
 NFD_LOG_INIT(RandomStrategy);
@@ -87,5 +86,4 @@ RandomStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingre
   this->processNack(nack, ingress.face, pitEntry);
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

@@ -31,8 +31,7 @@
 
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief a policy to readvertise routes registered by local applications into remote gateway
  */
@@ -54,7 +53,6 @@ private:
   time::seconds m_refreshInterval;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP

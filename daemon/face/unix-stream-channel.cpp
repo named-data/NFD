@@ -32,8 +32,7 @@
 #include <boost/filesystem.hpp>
 #include <sys/stat.h> // for chmod()
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(UnixStreamChannel);
 
@@ -148,5 +147,4 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
   accept(onFaceCreated, onAcceptFailed);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

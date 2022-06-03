@@ -29,8 +29,7 @@
 #include "retx-suppression.hpp"
 #include "strategy.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /**
  * \brief A retransmission suppression decision algorithm that suppresses
@@ -92,7 +91,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   const float m_multiplier;
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP

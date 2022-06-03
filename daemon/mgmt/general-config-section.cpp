@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #include "general-config-section.hpp"
 #include "common/privilege-helper.hpp"
 
-namespace nfd {
-namespace general {
+namespace nfd::general {
 
 static void
 onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
@@ -75,5 +74,4 @@ setConfigFile(ConfigFile& config)
   config.addSectionHandler("general", &onConfig);
 }
 
-} // namespace general
-} // namespace nfd
+} // namespace nfd::general

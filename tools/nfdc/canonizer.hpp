@@ -32,9 +32,7 @@
 
 #include <ndn-cxx/net/face-uri.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 /** \brief canonize FaceUri
  *  \return pair of canonical FaceUri (nullopt if failure) and error string
@@ -53,8 +51,6 @@ canonizeErrorHelper(const FaceUri& uri,
                     const std::string& error,
                     const std::string& field = "");
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_CANONIZER_HPP

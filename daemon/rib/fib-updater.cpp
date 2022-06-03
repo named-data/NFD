@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(FibUpdater);
 
@@ -708,5 +707,4 @@ FibUpdater::removeInheritedRoute(const Name& name, const Route& route)
   m_inheritedRoutes.push_back(update);
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

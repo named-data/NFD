@@ -35,11 +35,9 @@
 #include <ndn-cxx/lp/prefix-announcement-header.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 
@@ -1470,6 +1468,4 @@ BOOST_AUTO_TEST_SUITE_END() // Malformed
 BOOST_AUTO_TEST_SUITE_END() // TestGenericLinkService
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

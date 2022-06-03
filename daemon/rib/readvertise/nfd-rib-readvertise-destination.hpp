@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,7 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief a readvertise destination using NFD RIB management protocol
  */
@@ -84,7 +83,6 @@ private:
   ndn::nfd::ControlParameters m_controlParameters;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_NFD_RIB_READVERTISE_DESTINATION_HPP

@@ -34,8 +34,7 @@
 
 #include <boost/property_tree/info_parser.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 struct ConfigurationStatus
 {
@@ -237,7 +236,7 @@ protected:
 
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;
-  rib::tests::MockFibUpdater m_fibUpdater;
+  MockFibUpdater m_fibUpdater;
   RibManager m_manager;
 };
 
@@ -561,5 +560,4 @@ BOOST_AUTO_TEST_SUITE_END() // FaceMonitor
 BOOST_AUTO_TEST_SUITE_END() // TestRibManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

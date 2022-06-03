@@ -29,9 +29,7 @@
 
 #include <ndn-cxx/lp/tags.hpp>
 
-namespace nfd {
-namespace cs {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestCs, CsFixture)
@@ -275,6 +273,4 @@ BOOST_AUTO_TEST_CASE(Enumeration)
 BOOST_AUTO_TEST_SUITE_END() // TestCs
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::tests

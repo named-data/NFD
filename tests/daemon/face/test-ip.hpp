@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 #include <boost/asio/ip/address.hpp>
 #include <ndn-cxx/net/network-address.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 enum class AddressFamily {
   V4 = static_cast<int>(ndn::net::AddressFamily::V4),
@@ -92,9 +90,11 @@ getTestIp(AddressFamily family = AddressFamily::Any,
           AddressScope scope = AddressScope::Any,
           MulticastInterface mcast = MulticastInterface::Any);
 
+} // namespace nfd::tests
+
 /** \brief Skip the rest of the test case if \p address is unavailable
  *
- *  This macro can be used in conjunction with nfd::tests::getTestIp in a test case. Example:
+ *  This macro can be used in conjunction with nfd::tests::getTestIp() in a test case. Example:
  *  \code
  *  BOOST_AUTO_TEST_CASE(TestCase)
  *  {
@@ -111,9 +111,5 @@ getTestIp(AddressFamily family = AddressFamily::Any,
       return; \
     } \
   } while (false)
-
-} // namespace tests
-} // namespace face
-} // namespace nfd
 
 #endif // NFD_TESTS_DAEMON_FACE_TEST_IP_HPP

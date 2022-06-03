@@ -34,11 +34,9 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::rib;
 
 class DummyReadvertisePolicy : public ReadvertisePolicy
 {
@@ -300,6 +298,4 @@ BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
 BOOST_AUTO_TEST_SUITE_END() // TestReadvertise
 BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

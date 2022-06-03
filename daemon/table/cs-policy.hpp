@@ -28,8 +28,7 @@
 
 #include "cs-entry.hpp"
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 
 class Cs;
 
@@ -206,8 +205,7 @@ private:
   Cs* m_cs;
 };
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs
 
 /** \brief registers a CS policy
  *  \param P a subclass of nfd::cs::Policy

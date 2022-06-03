@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include "name-tree-hashtable.hpp"
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 class NameTree;
 
@@ -211,7 +210,6 @@ private:
  */
 using Range = boost::iterator_range<Iterator>;
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree
 
 #endif // NFD_DAEMON_TABLE_NAME_TREE_ITERATOR_HPP

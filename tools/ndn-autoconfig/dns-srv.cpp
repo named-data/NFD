@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,13 +34,14 @@
 #include <arpa/nameser_compat.h>
 #endif
 
+#include <ndn-cxx/util/backports.hpp>
+#include <ndn-cxx/util/exception.hpp>
+
 #include <iostream>
 
 #include <boost/endian/conversion.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 using namespace std::string_literals;
 
@@ -165,6 +166,4 @@ querySrvRrSearch()
   return parseSrvRr(queryAnswer, answerSize);
 }
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig

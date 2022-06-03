@@ -31,11 +31,9 @@
 #include "dummy-face.hpp"
 #include "dummy-transport.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestFace, GlobalIoFixture)
@@ -149,6 +147,4 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
 BOOST_AUTO_TEST_SUITE_END() // TestFace
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

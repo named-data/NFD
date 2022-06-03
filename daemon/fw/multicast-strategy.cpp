@@ -27,8 +27,7 @@
 #include "algorithm.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_REGISTER_STRATEGY(MulticastStrategy);
 
@@ -111,5 +110,4 @@ MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
   // if nothing found, the interest will not be forwarded
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

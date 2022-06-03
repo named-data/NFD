@@ -29,10 +29,7 @@
 
 #include <boost/test/tools/output_test_stream.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
-namespace tests {
+namespace nfd::tools::nfdc::tests {
 
 using boost::test_tools::output_test_stream;
 
@@ -141,7 +138,4 @@ BOOST_AUTO_TEST_SUITE_END() // Text
 BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers
 BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
-} // namespace tests
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc::tests

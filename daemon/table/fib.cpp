@@ -29,8 +29,7 @@
 
 #include <ndn-cxx/util/concepts.hpp>
 
-namespace nfd {
-namespace fib {
+namespace nfd::fib {
 
 NDN_CXX_ASSERT_FORWARD_ITERATOR(Fib::const_iterator);
 
@@ -165,5 +164,4 @@ Fib::getRange() const
          boost::adaptors::transformed(name_tree::GetTableEntry<Entry>(&name_tree::Entry::getFibEntry));
 }
 
-} // namespace fib
-} // namespace nfd
+} // namespace nfd::fib

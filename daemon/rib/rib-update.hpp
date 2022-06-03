@@ -29,8 +29,7 @@
 #include "core/common.hpp"
 #include "route.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /**
  * \brief Represents a route that will be added to or removed from a namespace
@@ -118,7 +117,6 @@ operator<<(std::ostream& os, RibUpdate::Action action);
 std::ostream&
 operator<<(std::ostream& os, const RibUpdate& update);
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_RIB_UPDATE_HPP

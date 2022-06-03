@@ -30,9 +30,7 @@
 
 #include "tests/test-common.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 struct CreateFaceExpectedResult
 {
@@ -42,46 +40,44 @@ struct CreateFaceExpectedResult
 };
 
 inline void
-createFace(ProtocolFactory& factory,
+createFace(face::ProtocolFactory& factory,
            const FaceUri& remoteUri,
            const std::optional<FaceUri>& localUri,
-           const FaceParams& params,
+           const face::FaceParams& params,
            const CreateFaceExpectedResult& expected,
            const std::function<void(const Face&)>& extraChecks = nullptr)
 {
   factory.createFace({remoteUri, localUri, params},
-                     [expected, extraChecks] (const shared_ptr<Face>& face) {
-                       BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
+                     [result = expected.result, extraChecks] (const auto& face) {
+                       BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, result);
                        if (extraChecks) {
                          extraChecks(*face);
                        }
                      },
-                     [expected] (uint32_t actualStatus, const std::string& actualReason) {
+                     [expected] (uint32_t actualStatus, const auto& actualReason) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::FAILURE, expected.result);
                        BOOST_CHECK_EQUAL(actualStatus, expected.status);
                        BOOST_CHECK_EQUAL(actualReason, expected.reason);
                      });
 }
 
-/** \brief check that channels in a factory equal given channel URIs
+/**
+ * \brief Check that channels in a factory equal given channel URIs
  */
 inline void
-checkChannelListEqual(const ProtocolFactory& factory, const std::set<std::string>& channelUris)
+checkChannelListEqual(const face::ProtocolFactory& factory, std::set<std::string> expectedUris)
 {
-  std::set<std::string> expected(channelUris); // make a copy so we can erase as we go
   for (const auto& channel : factory.getChannels()) {
-    std::string uri = channel->getUri().toString();
-    if (expected.erase(uri) == 0) {
+    auto uri = channel->getUri().toString();
+    if (expectedUris.erase(uri) == 0) {
       BOOST_ERROR("Unexpected channel " << uri);
     }
   }
-  for (const auto& uri : expected) {
+  for (const auto& uri : expectedUris) {
     BOOST_ERROR("Missing channel " << uri);
   }
 }
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_FACTORY_TEST_COMMON_HPP

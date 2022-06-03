@@ -29,9 +29,7 @@
 
 #include <ndn-cxx/util/random.hpp>
 
-namespace nfd {
-namespace fw {
-namespace asf {
+namespace nfd::fw::asf {
 
 static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::MEASUREMENTS_LIFETIME);
 
@@ -178,6 +176,4 @@ ProbingModule::setProbingInterval(time::milliseconds probingInterval)
   }
 }
 
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw::asf

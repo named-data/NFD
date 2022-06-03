@@ -37,8 +37,7 @@
 
 #include <boost/property_tree/info_parser.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 using rib::Route;
 
@@ -182,7 +181,7 @@ private:
   ndn::util::DummyClientFace m_face;
   ndn::nfd::Controller m_nfdController;
   Dispatcher m_dispatcher;
-  rib::tests::MockFibUpdater m_fibUpdater;
+  MockFibUpdater m_fibUpdater;
 
   ndn::security::SigningInfo m_trustedSigner;
   ndn::security::SigningInfo m_untrustedSigner;
@@ -376,5 +375,4 @@ BOOST_AUTO_TEST_SUITE_END() // SlAnnounce
 BOOST_AUTO_TEST_SUITE_END() // TestRibManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

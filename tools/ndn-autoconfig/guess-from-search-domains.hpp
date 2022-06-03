@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,9 +28,7 @@
 
 #include "stage.hpp"
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 /**
  * @brief Guessing home router based on DNS query with default suffix
@@ -61,8 +59,6 @@ private:
   doStart() override;
 };
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_GUESS_FROM_SEARCH_DOMAINS_HPP

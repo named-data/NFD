@@ -28,8 +28,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 using fw::StrategyInfo;
 
@@ -131,5 +130,4 @@ BOOST_AUTO_TEST_CASE(Types)
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyInfoHost
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

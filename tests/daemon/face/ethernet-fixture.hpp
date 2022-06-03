@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,13 +32,14 @@
 #include "tests/daemon/limited-io.hpp"
 #include "test-netif.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using face::EthernetTransport;
+using face::MulticastEthernetTransport;
+using face::UnicastEthernetTransport;
 
-/** \brief Fixture providing a list of EthernetTransport-capable network interfaces.
+/**
+ * \brief Fixture providing a list of EthernetTransport-capable network interfaces.
  */
 class EthernetFixture : public virtual GlobalIoFixture
 {
@@ -48,8 +49,8 @@ protected:
     for (const auto& netif : collectNetworkInterfaces()) {
       if (!netif->isLoopback() && netif->isUp()) {
         try {
-          MulticastEthernetTransport transport(*netif, ethernet::getBroadcastAddress(),
-                                               ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+          MulticastEthernetTransport t(*netif, ethernet::getBroadcastAddress(),
+                                       ndn::nfd::LINK_TYPE_MULTI_ACCESS);
           netifs.push_back(netif);
         }
         catch (const EthernetTransport::Error&) {
@@ -121,6 +122,8 @@ protected:
   ethernet::Address remoteEp;
 };
 
+} // namespace nfd::tests
+
 #define SKIP_IF_ETHERNET_NETIF_COUNT_LT(n) \
   do { \
     if (this->netifs.size() < (n)) { \
@@ -138,9 +141,5 @@ protected:
       return; \
     } \
   } while (false)
-
-} // namespace tests
-} // namespace face
-} // namespace nfd
 
 #endif // NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP

@@ -33,8 +33,7 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <unordered_set>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_LOG_INIT(Strategy);
 
@@ -339,5 +338,4 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
   return *fibEntry; // only occurs if no delegation finds a FIB nexthop
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

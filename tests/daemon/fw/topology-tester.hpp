@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,11 +38,7 @@
 
 #include <ndn-cxx/face.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 /** \brief identifies a node (forwarder) in the topology
  */
@@ -367,8 +363,6 @@ private:
   bool m_wantPcap = false;
 };
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FW_TOPOLOGY_TESTER_HPP

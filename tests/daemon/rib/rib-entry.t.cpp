@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,21 +28,20 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using rib::RibEntry;
+using rib::Route;
 
 BOOST_FIXTURE_TEST_SUITE(TestRibEntry, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
-  rib::RibEntry entry;
-  rib::RibEntry::iterator entryIt;
+  RibEntry entry;
+  RibEntry::iterator entryIt;
   bool didInsert = false;
 
-  rib::Route route1;
+  Route route1;
   route1.faceId = 1;
   route1.origin = ndn::nfd::ROUTE_ORIGIN_APP;
 
@@ -172,6 +171,4 @@ BOOST_AUTO_TEST_SUITE_END() // GetAnnouncement
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibEntry
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

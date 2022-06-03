@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,9 +30,7 @@
 
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketChannel, WebSocketChannelFixture)
@@ -199,9 +197,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetPongTimeOut, F, AddressFamilies)
                                   2_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
 
-  auto transport = static_cast<WebSocketTransport*>(listenerFaces.at(0)->getTransport());
-  BOOST_CHECK(transport->getState() == TransportState::FAILED ||
-              transport->getState() == TransportState::CLOSED);
+  auto transport = static_cast<face::WebSocketTransport*>(listenerFaces.at(0)->getTransport());
+  BOOST_CHECK(transport->getState() == face::TransportState::FAILED ||
+              transport->getState() == face::TransportState::CLOSED);
   BOOST_CHECK_GE(transport->getCounters().nOutPings, 1);
   BOOST_CHECK_LE(transport->getCounters().nOutPings, 2);
   BOOST_CHECK_EQUAL(transport->getCounters().nInPongs, 0);
@@ -210,6 +208,4 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetPongTimeOut, F, AddressFamilies)
 BOOST_AUTO_TEST_SUITE_END() // TestWebSocketChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

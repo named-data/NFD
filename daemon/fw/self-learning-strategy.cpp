@@ -36,8 +36,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_LOG_INIT(SelfLearningStrategy);
 NFD_REGISTER_STRATEGY(SelfLearningStrategy);
@@ -258,5 +257,4 @@ SelfLearningStrategy::renewRoute(const Name& name, FaceId inFaceId, time::millis
   });
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

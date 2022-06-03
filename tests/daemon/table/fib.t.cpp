@@ -31,11 +31,9 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-namespace nfd {
-namespace fib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::fib;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestFib, GlobalIoFixture)
@@ -390,6 +388,4 @@ BOOST_AUTO_TEST_CASE(Iterator)
 BOOST_AUTO_TEST_SUITE_END() // TestFib
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace fib
-} // namespace nfd
+} // namespace nfd::tests

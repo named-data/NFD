@@ -30,8 +30,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(TestVersion)
 
@@ -67,5 +66,4 @@ BOOST_AUTO_TEST_CASE(VersionString)
 
 BOOST_AUTO_TEST_SUITE_END() // TestVersion
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

@@ -36,8 +36,7 @@
 #include <ndn-cxx/security/interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 /** \brief A fixture that wraps an InterestSigner.
  */
@@ -201,7 +200,6 @@ public:
   }
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_MGMT_MANAGER_COMMON_FIXTURE_HPP

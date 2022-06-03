@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,8 +37,7 @@
 #include <sys/socket.h> // for setsockopt()
 #endif // __linux__
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>), MulticastUdpTransport);
 
@@ -207,5 +206,4 @@ DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protoco
   }
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

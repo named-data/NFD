@@ -30,8 +30,7 @@
 
 #include <cmath>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(GenericLinkService);
 
@@ -507,5 +506,4 @@ GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt,
   this->receiveNack(nack, endpointId);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

@@ -29,8 +29,7 @@
 #include "retx-suppression.hpp"
 #include "table/pit-entry.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief a retransmission suppression decision algorithm that
  *         suppresses retransmissions within a fixed duration
@@ -54,7 +53,6 @@ private:
   const time::milliseconds m_minRetxInterval;
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP

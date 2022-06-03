@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "fib-entry.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace measurements {
+namespace nfd::measurements {
 
 Measurements::Measurements(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -150,5 +149,4 @@ Measurements::cleanup(Entry& entry)
   --m_nItems;
 }
 
-} // namespace measurements
-} // namespace nfd
+} // namespace nfd::measurements

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,14 +35,13 @@
 
 #include <boost/filesystem.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
-typedef boost::asio::local::stream_protocol unix_stream;
+using unix_stream = boost::asio::local::stream_protocol;
+using face::UnixStreamTransport;
 
-/** \brief automatically unlinks the socket file of a Unix stream acceptor
+/**
+ * \brief Automatically unlinks the socket file of a Unix stream acceptor
  */
 class AcceptorWithCleanup : public unix_stream::acceptor
 {
@@ -117,7 +116,7 @@ protected:
     transport = static_cast<UnixStreamTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
-    BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
+    BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
 
   void
@@ -144,8 +143,6 @@ private:
   unique_ptr<Face> face;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_UNIX_STREAM_TRANSPORT_FIXTURE_HPP

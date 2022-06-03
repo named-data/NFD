@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,9 +30,7 @@
 #include "tests/test-common.hpp"
 #include "test-ip.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 /** \brief Check that a transport has all its static properties set after initialization
  *
@@ -42,14 +40,14 @@ namespace tests {
  *  Thus, if a transport forgets to set a static property, this check would fail.
  */
 inline void
-checkStaticPropertiesInitialized(const Transport& transport)
+checkStaticPropertiesInitialized(const face::Transport& transport)
 {
   BOOST_CHECK(!transport.getLocalUri().getScheme().empty());
   BOOST_CHECK(!transport.getRemoteUri().getScheme().empty());
   BOOST_CHECK_NE(transport.getScope(), ndn::nfd::FACE_SCOPE_NONE);
   BOOST_CHECK_NE(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_NONE);
   BOOST_CHECK_NE(transport.getLinkType(), ndn::nfd::LINK_TYPE_NONE);
-  BOOST_CHECK_NE(transport.getMtu(), MTU_INVALID);
+  BOOST_CHECK_NE(transport.getMtu(), face::MTU_INVALID);
 }
 
 /** \brief Generic wrapper for transport fixtures that require an IP address
@@ -69,7 +67,7 @@ protected:
                        " TestIp=" << address);
   }
 
-  std::pair<bool, std::string>
+  [[nodiscard]] std::pair<bool, std::string>
   checkPreconditions() const
   {
     return {!address.is_unspecified(), "no appropriate IP address available"};
@@ -88,9 +86,7 @@ protected:
   const boost::asio::ip::address address = getTestIp(AF, AS, MC);
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #define GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(F) \
   IpTransportFixture<F, AddressFamily::V4, AddressScope::Loopback>,  \
@@ -101,9 +97,9 @@ protected:
 
 #define TRANSPORT_TEST_CHECK_PRECONDITIONS() \
   do { \
-    auto result = this->checkPreconditions(); \
-    if (!result.first) { \
-      BOOST_WARN_MESSAGE(false, "skipping test case: " << result.second); \
+    auto [ok, reason] = this->checkPreconditions(); \
+    if (!ok) { \
+      BOOST_WARN_MESSAGE(false, "skipping test case: " << reason); \
       return; \
     } \
   } while (false)

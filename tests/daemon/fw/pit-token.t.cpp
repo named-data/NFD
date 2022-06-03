@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,11 +29,7 @@
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/pit-token.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestPitToken)
@@ -89,6 +85,4 @@ BOOST_FIXTURE_TEST_CASE(Downstream, GlobalIoTimeFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestPitToken
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

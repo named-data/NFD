@@ -29,8 +29,7 @@
 #include "unicast-udp-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(UdpChannel);
 
@@ -197,5 +196,4 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
   return {true, face};
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

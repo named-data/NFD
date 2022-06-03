@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "core/common.hpp"
 #include "face/face.hpp"
 
-namespace nfd {
-namespace fib {
+namespace nfd::fib {
 
 /** \brief Represents a nexthop record in a FIB entry
  */
@@ -66,7 +65,6 @@ private:
   uint64_t m_cost = 0;
 };
 
-} // namespace fib
-} // namespace nfd
+} // namespace nfd::fib
 
 #endif // NFD_DAEMON_TABLE_FIB_NEXTHOP_HPP

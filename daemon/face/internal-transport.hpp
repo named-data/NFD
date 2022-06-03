@@ -30,8 +30,7 @@
 
 #include <ndn-cxx/transport/transport.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Abstracts a transport that can be paired with another.
  */
@@ -125,7 +124,6 @@ private:
   signal::ScopedConnection m_fwTransportStateConn;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_INTERNAL_TRANSPORT_HPP

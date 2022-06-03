@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 
 #include <boost/exception/diagnostic_information.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig_server {
+namespace ndn::autoconfig_server {
 
 static void
 usage(const char* programName)
@@ -93,12 +91,10 @@ main(int argc, char** argv)
   return 0;
 }
 
-} // namespace autoconfig_server
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig_server
 
 int
 main(int argc, char** argv)
 {
-  return ndn::tools::autoconfig_server::main(argc, argv);
+  return ndn::autoconfig_server::main(argc, argv);
 }

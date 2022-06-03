@@ -32,8 +32,7 @@
 
 NFD_LOG_INIT(CsPolicy);
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 
 Policy::Registry&
 Policy::getRegistry()
@@ -100,5 +99,4 @@ Policy::beforeUse(EntryRef i)
   this->doBeforeUse(i);
 }
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs

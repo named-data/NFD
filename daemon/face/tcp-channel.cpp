@@ -29,8 +29,7 @@
 #include "tcp-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(TcpChannel);
 
@@ -228,5 +227,4 @@ TcpChannel::handleConnectTimeout(const tcp::Endpoint& remoteEndpoint,
     onConnectFailed(504, "Connection timed out");
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

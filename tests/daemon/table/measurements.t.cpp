@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,11 +30,9 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace measurements {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::measurements;
 
 BOOST_AUTO_TEST_SUITE(Table)
 
@@ -260,6 +258,4 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
 BOOST_AUTO_TEST_SUITE_END() // TestMeasurements
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace measurements
-} // namespace nfd
+} // namespace nfd::tests

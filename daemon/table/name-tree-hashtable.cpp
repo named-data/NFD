@@ -27,8 +27,7 @@
 #include "common/city-hash.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 NFD_LOG_INIT(NameTreeHashtable);
 
@@ -278,5 +277,4 @@ Hashtable::resize(size_t newNBuckets)
   this->computeThresholds();
 }
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree

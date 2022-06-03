@@ -32,10 +32,7 @@
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/segment-fetcher.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig_server {
-namespace tests {
+namespace ndn::autoconfig_server::tests {
 
 class AutoconfigServerFixture : public ::nfd::tests::KeyChainFixture
 {
@@ -136,7 +133,4 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDisabled)
 BOOST_AUTO_TEST_SUITE_END() // TestProgram
 BOOST_AUTO_TEST_SUITE_END() // NdnAutoconfigServer
 
-} // namespace tests
-} // namespace autoconfig_server
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig_server::tests

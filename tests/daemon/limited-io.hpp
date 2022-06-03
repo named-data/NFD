@@ -30,8 +30,7 @@
 
 #include <exception>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 /** \brief Provides IO operations limit and/or time limit for unit testing.
  *
@@ -61,21 +60,22 @@ public:
    *  \param tick if this LimitedIo is constructed with GlobalIoTimeFixture,
    *              this is passed to .advanceClocks(), otherwise ignored
    */
-  StopReason
+  [[nodiscard]] StopReason
   run(int nOpsLimit, time::nanoseconds timeLimit, time::nanoseconds tick = 1_ms);
 
-  /// count an operation
+  /// Count an operation
   void
   afterOp();
 
-  /** \brief defer for specified duration
+  /**
+   * \brief Defer for the specified duration
    *
-   *  equivalent to .run(UNLIMITED_OPS, d)
+   * Equivalent to run(UNLIMITED_OPS, d)
    */
   void
   defer(time::nanoseconds d)
   {
-    this->run(UNLIMITED_OPS, d);
+    std::ignore = run(UNLIMITED_OPS, d);
   }
 
   std::exception_ptr
@@ -107,7 +107,6 @@ private:
   bool m_isRunning = false;
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_LIMITED_IO_HPP

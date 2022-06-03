@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include "core/common.hpp"
 
-namespace nfd {
-namespace udp {
+namespace nfd::udp {
 
 typedef boost::asio::ip::udp::endpoint Endpoint;
 
@@ -54,7 +53,6 @@ getDefaultMulticastGroupV6()
   return {boost::asio::ip::address_v6::from_string("FF02::1234"), 56363};
 }
 
-} // namespace udp
-} // namespace nfd
+} // namespace nfd::udp
 
 #endif // NFD_DAEMON_FACE_UDP_PROTOCOL_HPP

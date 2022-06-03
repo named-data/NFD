@@ -31,8 +31,7 @@
 
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class StrategyChoiceManagerFixture : public ManagerFixtureWithAuthenticator
 {
@@ -239,5 +238,4 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyChoiceManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

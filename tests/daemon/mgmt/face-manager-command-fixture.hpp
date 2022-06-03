@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,7 @@
 
 #include "manager-common-fixture.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class FaceManagerCommandNode
 {
@@ -70,7 +69,6 @@ public:
   FaceManagerCommandNode node2; // acts as a remote endpoint
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_MGMT_FACE_MANAGER_COMMAND_FIXTURE_HPP

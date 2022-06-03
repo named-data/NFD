@@ -28,10 +28,7 @@
 #include "execute-command-fixture.hpp"
 #include "status-fixture.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
-namespace tests {
+namespace nfd::tools::nfdc::tests {
 
 using ndn::nfd::FaceQueryFilter;
 
@@ -1162,7 +1159,4 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
 BOOST_AUTO_TEST_SUITE_END() // TestFaceModule
 BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
-} // namespace tests
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc::tests

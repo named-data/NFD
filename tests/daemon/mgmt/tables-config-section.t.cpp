@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,8 +35,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class TablesConfigSectionFixture : public GlobalIoFixture
 {
@@ -485,5 +484,4 @@ BOOST_AUTO_TEST_SUITE_END() // NetworkRegion
 BOOST_AUTO_TEST_SUITE_END() // TestTablesConfigSection
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

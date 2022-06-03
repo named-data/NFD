@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,7 @@
 
 #include "core/common.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 enum class RetxSuppressionResult {
   /** \brief Interest is new (not a retransmission)
@@ -45,7 +44,6 @@ enum class RetxSuppressionResult {
   SUPPRESS
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_RETX_SUPPRESSION_HPP

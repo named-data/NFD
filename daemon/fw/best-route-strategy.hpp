@@ -30,8 +30,7 @@
 #include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief Best Route strategy
  *
@@ -75,7 +74,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   friend ProcessNackTraits<BestRouteStrategy>;
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP

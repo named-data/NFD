@@ -29,8 +29,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class StrategyChoiceFixture : public GlobalIoFixture
 {
@@ -335,5 +334,4 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyChoice
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

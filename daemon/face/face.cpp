@@ -25,8 +25,7 @@
 
 #include "face.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 Face::Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport)
   : afterReceiveInterest(service->afterReceiveInterest)
@@ -51,5 +50,4 @@ operator<<(std::ostream& os, const FaceLogHelper<Face>& flh)
   return os;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

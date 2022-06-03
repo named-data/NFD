@@ -28,13 +28,11 @@
 
 #include "fib-nexthop.hpp"
 
-namespace nfd {
-
-namespace name_tree {
+namespace nfd::name_tree {
 class Entry;
-} // namespace name_tree
+} // namespace nfd::name_tree
 
-namespace fib {
+namespace nfd::fib {
 
 class Fib;
 
@@ -121,7 +119,6 @@ private:
   friend Fib;
 };
 
-} // namespace fib
-} // namespace nfd
+} // namespace nfd::fib
 
 #endif // NFD_DAEMON_TABLE_FIB_ENTRY_HPP

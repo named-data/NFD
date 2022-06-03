@@ -29,8 +29,7 @@
 #include "forwarder.hpp"
 #include "table/measurements-accessor.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 class StrategyParameters;
 
@@ -480,8 +479,7 @@ public:
   }
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 /** \brief Registers a strategy
  *

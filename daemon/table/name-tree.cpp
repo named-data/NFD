@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,8 +30,7 @@
 #include <boost/concept_check.hpp>
 #include <type_traits>
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 NFD_LOG_INIT(NameTree);
 
@@ -236,5 +235,4 @@ NameTree::partialEnumerate(const Name& prefix,
   return {Iterator(make_shared<PartialEnumerationImpl>(*this, entrySubTreeSelector), entry), end()};
 }
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree

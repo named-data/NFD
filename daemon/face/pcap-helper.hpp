@@ -36,8 +36,7 @@
 struct pcap;
 typedef pcap pcap_t;
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /**
  * @brief Helper class for dealing with libpcap handles.
@@ -139,7 +138,6 @@ private:
   pcap_t* m_pcap;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_PCAP_HELPER_HPP

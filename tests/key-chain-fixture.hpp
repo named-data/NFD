@@ -31,8 +31,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 /**
  * @brief A fixture providing an in-memory KeyChain.
@@ -85,7 +84,6 @@ private:
   std::vector<std::string> m_certFiles;
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_KEY_CHAIN_FIXTURE_HPP

@@ -39,9 +39,9 @@
 
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::fw;
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyInstantiation)
@@ -202,6 +202,4 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SuppressionParameters, S, StrategiesWithRetxSup
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyInstantiation
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

@@ -28,10 +28,7 @@
 
 #include "tests/test-common.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
-namespace tests {
+namespace nfd::tools::nfdc::tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_AUTO_TEST_SUITE(TestCommandDefinition)
@@ -383,7 +380,4 @@ BOOST_AUTO_TEST_SUITE_END() // ParseValue
 BOOST_AUTO_TEST_SUITE_END() // TestCommandDefinition
 BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
-} // namespace tests
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc::tests

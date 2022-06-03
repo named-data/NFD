@@ -35,11 +35,9 @@
 #include <cstring>
 #include <unordered_set>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::face;
 
 class DummyLpReliabilityLinkService : public GenericLinkService
 {
@@ -1043,6 +1041,4 @@ BOOST_AUTO_TEST_CASE(DropDuplicateAckForRetx)
 BOOST_AUTO_TEST_SUITE_END() // TestLpReliability
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

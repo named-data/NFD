@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,11 +35,10 @@
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using rib::FibUpdate;
+using rib::FibUpdater;
 
 class MockFibUpdater : public FibUpdater
 {
@@ -113,10 +112,10 @@ public:
               uint64_t cost,
               std::underlying_type_t<ndn::nfd::RouteFlags> flags)
   {
-    Route route = createRoute(faceId, origin, cost, flags);
+    auto route = createRoute(faceId, origin, cost, flags);
 
-    RibUpdate update;
-    update.setAction(RibUpdate::REGISTER)
+    rib::RibUpdate update;
+    update.setAction(rib::RibUpdate::REGISTER)
           .setName(name)
           .setRoute(route);
 
@@ -128,10 +127,10 @@ public:
   eraseRoute(const Name& name, uint64_t faceId,
              std::underlying_type_t<ndn::nfd::RouteOrigin> origin)
   {
-    Route route = createRoute(faceId, origin, 0, 0);
+    auto route = createRoute(faceId, origin, 0, 0);
 
-    RibUpdate update;
-    update.setAction(RibUpdate::UNREGISTER)
+    rib::RibUpdate update;
+    update.setAction(rib::RibUpdate::UNREGISTER)
           .setName(name)
           .setRoute(route);
 
@@ -169,12 +168,10 @@ public:
   ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
 
-  Rib rib;
+  rib::Rib rib;
   MockFibUpdater fibUpdater;
 };
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_RIB_FIB_UPDATES_COMMON_HPP

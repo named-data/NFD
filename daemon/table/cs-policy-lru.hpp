@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,8 +32,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 namespace lru {
 
 using Queue = boost::multi_index_container<
@@ -84,7 +83,6 @@ private:
 
 using lru::LruPolicy;
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs
 
 #endif // NFD_DAEMON_TABLE_CS_POLICY_LRU_HPP

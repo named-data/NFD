@@ -25,9 +25,7 @@
 
 #include "canonizer.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 std::pair<std::optional<FaceUri>, std::string>
 canonize(ExecuteContext& ctx, const FaceUri& uri)
@@ -56,6 +54,4 @@ canonizeErrorHelper(const FaceUri& uri,
   return {FindFace::Code::CANONIZE_ERROR, msg};
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

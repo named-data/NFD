@@ -33,13 +33,9 @@
 
 #include <cstring>
 
-namespace nfd {
-namespace cs {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
-
-#define CHECK_CS_FIND(expected) find([&] (uint32_t found) { BOOST_CHECK_EQUAL(expected, found); });
+#define CHECK_CS_FIND(expected) find([&] (uint32_t found) { BOOST_CHECK_EQUAL(expected, found); })
 
 class CsFixture : public GlobalIoTimeFixture
 {
@@ -105,8 +101,6 @@ protected:
   shared_ptr<Interest> interest;
 };
 
-} // namespace tests
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_TABLE_CS_FIXTURE_HPP

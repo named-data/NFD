@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 
 #include <ndn-cxx/mgmt/nfd/cs-info.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class CsManagerFixture : public ManagerFixtureWithAuthenticator
 {
@@ -226,5 +225,4 @@ BOOST_AUTO_TEST_CASE(Info)
 BOOST_AUTO_TEST_SUITE_END() // TestCsManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

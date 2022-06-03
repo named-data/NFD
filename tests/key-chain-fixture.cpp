@@ -29,8 +29,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 using namespace ndn::security;
 
@@ -95,5 +94,4 @@ KeyChainFixture::saveIdentityCert(const Name& identityName, const std::string& f
   return saveIdentityCert(id, filename);
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

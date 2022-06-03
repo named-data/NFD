@@ -30,8 +30,7 @@
 #include "transport.hpp"
 #include "common/counter.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief counters provided by LinkService
  *  \note The type name 'LinkServiceCounters' is implementation detail.
@@ -258,7 +257,6 @@ operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
   return os << FaceLogHelper<LinkService>(flh.obj);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_LINK_SERVICE_HPP

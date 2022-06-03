@@ -32,8 +32,7 @@
 
 #include <queue>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Implements Transport for stream-based protocols.
  *
@@ -333,7 +332,6 @@ StreamTransport<T>::getSendQueueBytes() const
   return m_sendQueueBytes;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_STREAM_TRANSPORT_HPP

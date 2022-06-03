@@ -25,8 +25,7 @@
 
 #include "rib-update.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 std::ostream&
 operator<<(std::ostream& os, RibUpdate::Action action)
@@ -55,5 +54,4 @@ operator<<(std::ostream& os, const RibUpdate& update)
             << "}";
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

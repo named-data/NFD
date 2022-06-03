@@ -28,8 +28,7 @@
 
 #include "name-tree-entry.hpp"
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 class Entry;
 
@@ -246,7 +245,6 @@ private:
   size_t m_shrinkThreshold;
 };
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree
 
 #endif // NFD_DAEMON_TABLE_NAME_TREE_HASHTABLE_HPP

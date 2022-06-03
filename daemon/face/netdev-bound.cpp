@@ -27,8 +27,7 @@
 #include "face-system.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(NetdevBound);
 
@@ -141,5 +140,4 @@ NetdevBound::parseRule(int index, const ConfigSection& confRule) const
   return rule;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

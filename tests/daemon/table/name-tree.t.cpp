@@ -30,11 +30,9 @@
 
 #include <unordered_set>
 
-namespace nfd {
-namespace name_tree {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::name_tree;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestNameTree, GlobalIoFixture)
@@ -764,6 +762,4 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
 BOOST_AUTO_TEST_SUITE_END() // TestNameTree
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::tests

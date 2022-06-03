@@ -39,8 +39,7 @@
 #include <ndn-cxx/net/network-monitor-stub.hpp>
 #include <ndn-cxx/util/random.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class FaceManagerFixture : public ManagerFixtureWithAuthenticator
 {
@@ -369,7 +368,7 @@ BOOST_AUTO_TEST_CASE(FaceEventDownUp)
   FaceId faceId = face->getId();
 
   // trigger FACE_EVENT_DOWN notification
-  dynamic_cast<face::tests::DummyTransport*>(face->getTransport())->setState(face::FaceState::DOWN);
+  dynamic_cast<DummyTransport*>(face->getTransport())->setState(face::FaceState::DOWN);
   advanceClocks(1_ms, 10);
   BOOST_CHECK_EQUAL(face->getState(), face::FaceState::DOWN);
 
@@ -390,7 +389,7 @@ BOOST_AUTO_TEST_CASE(FaceEventDownUp)
   }
 
   // trigger FACE_EVENT_UP notification
-  dynamic_cast<face::tests::DummyTransport*>(face->getTransport())->setState(face::FaceState::UP);
+  dynamic_cast<DummyTransport*>(face->getTransport())->setState(face::FaceState::UP);
   advanceClocks(1_ms, 10);
   BOOST_CHECK_EQUAL(face->getState(), face::FaceState::UP);
 
@@ -445,5 +444,4 @@ BOOST_AUTO_TEST_SUITE_END() // Notifications
 BOOST_AUTO_TEST_SUITE_END() // TestFaceManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

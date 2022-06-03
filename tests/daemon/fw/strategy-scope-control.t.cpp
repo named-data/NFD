@@ -41,9 +41,9 @@
 
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::fw;
 
 template<typename S>
 class StrategyScopeControlFixture : public GlobalIoTimeFixture
@@ -275,6 +275,4 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
 BOOST_AUTO_TEST_SUITE_END() // TestStrategyScopeControl
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

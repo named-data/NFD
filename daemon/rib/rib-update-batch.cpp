@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,7 @@
 
 #include "rib-update-batch.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 RibUpdateBatch::RibUpdateBatch(uint64_t faceId)
   : m_faceId(faceId)
@@ -59,5 +58,4 @@ RibUpdateBatch::size() const
   return m_updates.size();
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

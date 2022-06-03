@@ -33,10 +33,7 @@
 
 #include <boost/test/tools/output_test_stream.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
-namespace tests {
+namespace nfd::tools::nfdc::tests {
 
 using ndn::Face;
 using ndn::KeyChain;
@@ -152,9 +149,6 @@ stripXmlSpaces(const std::string& xml)
   return s;
 }
 
-} // namespace tests
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc::tests
 
 #endif // NFD_TESTS_TOOLS_NFDC_STATUS_FIXTURE_HPP

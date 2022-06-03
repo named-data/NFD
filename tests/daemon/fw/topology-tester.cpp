@@ -30,9 +30,7 @@
 
 #include <ndn-cxx/encoding/encoding-buffer-fwd.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
 using face::GenericLinkService;
 using face::InternalClientTransport;
@@ -324,6 +322,4 @@ TopologyTester::addIntervalConsumer(ndn::Face& face, const Name& prefix,
   }
 }
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

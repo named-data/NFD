@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,7 @@
  *  This file contains common algorithms used by forwarding strategies.
  */
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
@@ -93,7 +92,6 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
                   bool wantUnused = false,
                   time::steady_clock::TimePoint now = time::steady_clock::TimePoint::min());
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_ALGORITHM_HPP

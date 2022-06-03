@@ -32,8 +32,7 @@
 #include <valgrind/callgrind.h>
 #endif
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class CsBenchmarkFixture
 {
@@ -210,5 +209,4 @@ BOOST_FIXTURE_TEST_CASE(FindCanBePrefixHit, CsBenchmarkFixture)
   std::cout << "find(CanBePrefix-hit) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

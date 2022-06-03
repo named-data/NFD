@@ -29,8 +29,7 @@
 #include "common/global.hpp"
 #include "fw/face-table.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(FaceSystem);
 
@@ -163,5 +162,4 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   }
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

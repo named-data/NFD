@@ -28,9 +28,7 @@
 
 #include "core/common.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 namespace xml {
 
@@ -266,8 +264,6 @@ formatTimestamp(time::system_clock::time_point t);
 
 } // namespace text
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_FORMAT_HELPERS_HPP

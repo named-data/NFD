@@ -29,9 +29,7 @@
 
 #include <ndn-cxx/util/logger.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 NDN_LOG_INIT(nfdc.FindFace);
 
@@ -180,6 +178,4 @@ FindFace::printDisambiguation(std::ostream& os, DisambiguationStyle style) const
   }
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

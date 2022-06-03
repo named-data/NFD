@@ -33,8 +33,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <pcap/pcap.h>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(EthernetChannel);
 
@@ -234,5 +233,4 @@ EthernetChannel::updateFilter()
   m_pcap.setPacketFilter(filter.data());
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

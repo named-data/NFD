@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #include "algorithm.hpp"
 #include "scope-prefix.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 bool
 wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace)
@@ -151,5 +150,4 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
   return true;
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

@@ -33,11 +33,9 @@
 
 namespace bdata = boost::unit_test::data;
 
-namespace nfd {
-namespace pit {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::pit;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestPitEntry, GlobalIoFixture)
@@ -239,6 +237,4 @@ BOOST_AUTO_TEST_CASE(OutRecordNack)
 BOOST_AUTO_TEST_SUITE_END() // TestPitEntry
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::tests

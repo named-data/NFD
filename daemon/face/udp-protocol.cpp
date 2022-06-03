@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,7 @@
 
 #include "udp-protocol.hpp"
 
-namespace nfd {
-namespace udp {
+namespace nfd::udp {
 
 ssize_t
 computeMtu(const Endpoint& localEndpoint)
@@ -43,5 +42,4 @@ computeMtu(const Endpoint& localEndpoint)
   return mtu;
 }
 
-} // namespace udp
-} // namespace nfd
+} // namespace nfd::udp

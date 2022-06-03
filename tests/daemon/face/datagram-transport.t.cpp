@@ -30,9 +30,9 @@
 
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestDatagramTransport)
@@ -174,6 +174,4 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SendQueueLength, T, DatagramTransportFixtures, 
 BOOST_AUTO_TEST_SUITE_END() // TestDatagramTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

@@ -28,8 +28,7 @@
 
 #include "stream-transport.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);
 
@@ -99,7 +98,6 @@ private:
   time::milliseconds m_nextReconnectWait;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_TCP_TRANSPORT_HPP

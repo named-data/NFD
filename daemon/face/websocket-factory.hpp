@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "protocol-factory.hpp"
 #include "websocket-channel.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Protocol factory for WebSocket
  */
@@ -71,7 +70,6 @@ private:
   std::map<websocket::Endpoint, shared_ptr<WebSocketChannel>> m_channels;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_WEBSOCKET_FACTORY_HPP

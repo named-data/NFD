@@ -33,8 +33,7 @@
 
 #include <boost/endian/conversion.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(EthernetTransport);
 
@@ -230,5 +229,4 @@ EthernetTransport::handleError(const std::string& errorMessage)
   doClose();
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

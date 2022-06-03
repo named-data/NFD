@@ -31,8 +31,7 @@
 #include "asf-probing-module.hpp"
 #include "retx-suppression-exponential.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 namespace asf {
 
 /** \brief Adaptive SRTT-based Forwarding Strategy
@@ -97,7 +96,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 using asf::AsfStrategy;
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_ASF_STRATEGY_HPP

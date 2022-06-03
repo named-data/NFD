@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,9 +28,7 @@
 
 #include "face/link-service.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 enum PacketLoggingFlags : unsigned {
   LogNothing          = 0,      ///< disable packet logging
@@ -50,7 +48,7 @@ struct RxPacket
 
 /** \brief A dummy LinkService that logs all sent and received packets.
  */
-class DummyLinkService final : public LinkService
+class DummyLinkService final : public face::LinkService
 {
 public:
   /** \brief Emitted after a network-layer packet is sent through this link service.
@@ -94,8 +92,6 @@ private:
   PacketLoggingFlags m_loggingFlags = LogAllPackets;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_DUMMY_LINK_SERVICE_HPP

@@ -25,13 +25,11 @@
 
 #include "cs.hpp"
 #include "common/logger.hpp"
-#include "core/algorithm.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/concepts.hpp>
 
-namespace nfd {
-namespace cs {
+namespace nfd::cs {
 
 NFD_LOG_INIT(ContentStore);
 
@@ -178,5 +176,4 @@ Cs::enableServe(bool shouldServe)
   NFD_LOG_INFO((shouldServe ? "Enabling" : "Disabling") << " Data serving");
 }
 
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs

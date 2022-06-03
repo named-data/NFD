@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,11 +26,10 @@
 #ifndef NFD_TOOLS_NDN_AUTOCONFIG_DNS_SRV_HPP
 #define NFD_TOOLS_NDN_AUTOCONFIG_DNS_SRV_HPP
 
-#include "core/common.hpp"
+#include <stdexcept>
+#include <string>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 /** \file
  *  \brief provide synchronous DNS SRV record querying
@@ -39,13 +38,8 @@ namespace autoconfig {
 class DnsSrvError : public std::runtime_error
 {
 public:
-  explicit
-  DnsSrvError(const std::string& what)
-    : std::runtime_error(what)
-  {
-  }
+  using std::runtime_error::runtime_error;
 };
-
 
 /** \brief Send DNS SRV request for \p fqdn
  *  \param fqdn a fully qualified domain name
@@ -62,8 +56,6 @@ querySrvRr(const std::string& fqdn);
 std::string
 querySrvRrSearch();
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_DNS_SRV_HPP

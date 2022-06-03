@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,11 +31,7 @@
 #include "tests/daemon/fw/dummy-strategy.hpp"
 #include "tests/daemon/fw/choose-strategy.hpp"
 
-namespace nfd {
-namespace measurements {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 class MeasurementsAccessorTestStrategy : public DummyStrategy
 {
@@ -114,13 +110,13 @@ BOOST_AUTO_TEST_CASE(Get)
 
 BOOST_AUTO_TEST_CASE(GetParent)
 {
-  Entry& entryRoot = measurements.get("/");
+  auto& entryRoot = measurements.get("/");
   BOOST_CHECK(accessor1->getParent(entryRoot) == nullptr);
   BOOST_CHECK(accessor2->getParent(entryRoot) == nullptr);
 
-  Entry& entryA = measurements.get("/A");
+  auto& entryA = measurements.get("/A");
   BOOST_CHECK(accessor2->getParent(entryA) == nullptr);
-  Entry& entryAD = measurements.get("/A/D");
+  auto& entryAD = measurements.get("/A/D");
   BOOST_CHECK(accessor2->getParent(entryAD) != nullptr);
   // whether accessor1 and accessor3 can getParent(entryA) and getParent(entryAD) is undefined,
   // because they shouldn't have obtained those entries in the first place
@@ -176,6 +172,4 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
 BOOST_AUTO_TEST_SUITE_END() // TestMeasurementsAccessor
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace measurements
-} // namespace nfd
+} // namespace nfd::tests

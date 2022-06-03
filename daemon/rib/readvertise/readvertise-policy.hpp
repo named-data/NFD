@@ -30,8 +30,7 @@
 
 #include <ndn-cxx/security/signing-info.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief a decision made by readvertise policy
  */
@@ -60,7 +59,6 @@ public:
   getRefreshInterval() const = 0;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_READVERTISE_POLICY_HPP

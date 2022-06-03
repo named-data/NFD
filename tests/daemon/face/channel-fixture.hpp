@@ -34,16 +34,12 @@
 
 #include <type_traits>
 
-namespace nfd {
-namespace face {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 template<class ChannelT, class EndpointT>
 class ChannelFixture : public GlobalIoFixture
 {
-  static_assert(std::is_base_of_v<Channel, ChannelT>);
+  static_assert(std::is_base_of_v<face::Channel, ChannelT>);
 
 public:
   virtual
@@ -108,8 +104,6 @@ private:
   uint16_t m_nextPort = 7050;
 };
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_CHANNEL_FIXTURE_HPP

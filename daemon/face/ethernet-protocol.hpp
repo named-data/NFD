@@ -31,15 +31,13 @@
 #include <ndn-cxx/net/ethernet.hpp>
 #include <net/ethernet.h>
 
-namespace nfd {
-namespace ethernet {
+namespace nfd::ethernet {
 
 using namespace ndn::ethernet;
 
 std::tuple<const ether_header*, std::string>
 checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Address& destAddr);
 
-} // namespace ethernet
-} // namespace nfd
+} // namespace nfd::ethernet
 
 #endif // NFD_DAEMON_FACE_ETHERNET_PROTOCOL_HPP

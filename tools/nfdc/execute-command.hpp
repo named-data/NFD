@@ -37,9 +37,7 @@
 #include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 using ndn::Face;
 using ndn::KeyChain;
@@ -92,8 +90,6 @@ public:
  */
 using ExecuteCommand = std::function<void(ExecuteContext&)>;
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_EXECUTE_COMMAND_HPP

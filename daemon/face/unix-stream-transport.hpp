@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,8 +32,7 @@
 #error "Cannot include this file when UNIX sockets are not available"
 #endif
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::local::stream_protocol>);
 
@@ -47,7 +46,6 @@ public:
   UnixStreamTransport(protocol::socket&& socket);
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_UNIX_STREAM_TRANSPORT_HPP

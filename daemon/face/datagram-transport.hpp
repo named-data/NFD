@@ -32,8 +32,7 @@
 
 #include <array>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 struct Unicast {};
 struct Multicast {};
@@ -262,7 +261,6 @@ DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint&)
   return 0;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_DATAGRAM_TRANSPORT_HPP

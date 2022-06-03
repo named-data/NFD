@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,7 @@
 #include "table/measurements-entry.hpp"
 #include "table/strategy-choice-entry.hpp"
 
-namespace nfd {
-namespace name_tree {
+namespace nfd::name_tree {
 
 class Node;
 
@@ -207,7 +206,6 @@ private:
   Getter m_getter;
 };
 
-} // namespace name_tree
-} // namespace nfd
+} // namespace nfd::name_tree
 
 #endif // NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP

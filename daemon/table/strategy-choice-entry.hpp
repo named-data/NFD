@@ -28,17 +28,15 @@
 
 #include "core/common.hpp"
 
-namespace nfd {
-
-namespace fw {
+namespace nfd::fw {
 class Strategy;
-} // namespace fw
+} // namespace nfd::fw
 
-namespace name_tree {
+namespace nfd::name_tree {
 class Entry;
-} // namespace name_tree
+} // namespace nfd::name_tree
 
-namespace strategy_choice {
+namespace nfd::strategy_choice {
 
 /**
  * \brief Represents an entry in the %Strategy %Choice table.
@@ -85,7 +83,6 @@ private:
   friend name_tree::Entry;
 };
 
-} // namespace strategy_choice
-} // namespace nfd
+} // namespace nfd::strategy_choice
 
 #endif // NFD_DAEMON_TABLE_STRATEGY_CHOICE_ENTRY_HPP

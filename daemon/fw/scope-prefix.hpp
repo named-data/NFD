@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,7 @@
 /** \brief contain name prefixes that affect namespace-based scope control
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */
-namespace nfd {
-namespace scope_prefix {
+namespace nfd::scope_prefix {
 
 /** \brief ndn:/localhost
  *
@@ -58,7 +57,6 @@ extern const Name LOCALHOST;
  */
 extern const Name LOCALHOP;
 
-} // namespace scope_prefix
-} // namespace nfd
+} // namespace nfd::scope_prefix
 
 #endif // NFD_DAEMON_FW_SCOPE_PREFIX_HPP

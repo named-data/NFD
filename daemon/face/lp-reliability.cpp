@@ -28,8 +28,7 @@
 #include "transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(LpReliability);
 
@@ -426,5 +425,4 @@ operator<<(std::ostream& os, const FaceLogHelper<LpReliability>& flh)
   return os;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

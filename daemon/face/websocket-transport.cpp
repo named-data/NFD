@@ -26,8 +26,7 @@
 #include "websocket-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(WebSocketTransport);
 
@@ -174,5 +173,4 @@ WebSocketTransport::doClose()
   this->setState(TransportState::CLOSED);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

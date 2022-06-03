@@ -38,11 +38,7 @@
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/time.hpp>
 
-// ndn-autoconfig is an NDN tool not an NFD tool, so it uses ndn::tools::autoconfig namespace.
-// It lives in NFD repository because nfd-start can automatically start ndn-autoconfig in daemon mode.
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 namespace po = boost::program_options;
 
@@ -184,12 +180,10 @@ main(int argc, char** argv)
   return exitCode;
 }
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 int
 main(int argc, char** argv)
 {
-  return ndn::tools::autoconfig::main(argc, argv);
+  return ndn::autoconfig::main(argc, argv);
 }

@@ -28,8 +28,7 @@
 
 #include "readvertise-policy.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief a policy to readvertise routes registered by end hosts into NLSR
  */
@@ -48,7 +47,6 @@ public:
   getRefreshInterval() const override;
 };
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_CLIENT_TO_NLSR_READVERTISE_POLICY_HPP

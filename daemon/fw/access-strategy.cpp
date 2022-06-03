@@ -28,8 +28,7 @@
 #include "common/global.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_LOG_INIT(AccessStrategy);
 NFD_REGISTER_STRATEGY(AccessStrategy);
@@ -278,5 +277,4 @@ AccessStrategy::addPrefixMeasurements(const Data& data)
   return me->insertStrategyInfo<MtInfo>(m_rttEstimatorOpts).first;
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

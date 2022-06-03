@@ -26,9 +26,7 @@
 #include "cs-policy-lru.hpp"
 #include "cs.hpp"
 
-namespace nfd {
-namespace cs {
-namespace lru {
+namespace nfd::cs::lru {
 
 const std::string LruPolicy::POLICY_NAME = "lru";
 NFD_REGISTER_CS_POLICY(LruPolicy);
@@ -87,6 +85,4 @@ LruPolicy::insertToQueue(EntryRef i, bool isNewEntry)
   }
 }
 
-} // namespace lru
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::cs::lru

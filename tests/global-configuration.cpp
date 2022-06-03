@@ -31,8 +31,7 @@
 #include <fstream>
 #include <stdlib.h>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class GlobalConfiguration
 {
@@ -68,5 +67,4 @@ private:
 
 BOOST_TEST_GLOBAL_CONFIGURATION(GlobalConfiguration);
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

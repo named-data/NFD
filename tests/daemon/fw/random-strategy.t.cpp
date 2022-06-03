@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,11 +30,9 @@
 #include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using RandomStrategyTester = StrategyTester<RandomStrategy>;
+using RandomStrategyTester = StrategyTester<fw::RandomStrategy>;
 NFD_REGISTER_STRATEGY(RandomStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
@@ -100,6 +98,4 @@ BOOST_AUTO_TEST_CASE(Forward)
 BOOST_AUTO_TEST_SUITE_END() // TestRandomStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

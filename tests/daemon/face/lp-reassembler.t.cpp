@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,11 +28,9 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::face;
 
 class LpReassemblerFixture : public GlobalIoTimeFixture
 {
@@ -41,7 +39,7 @@ protected:
   {
     reassembler.beforeTimeout.connect(
       [this] (EndpointId remoteEp, size_t nDroppedFragments) {
-        timeoutHistory.push_back({remoteEp, nDroppedFragments});
+        timeoutHistory.emplace_back(remoteEp, nDroppedFragments);
       });
   }
 
@@ -49,12 +47,10 @@ protected:
   LpReassembler reassembler{{}};
   std::vector<std::pair<EndpointId, size_t>> timeoutHistory;
 
-  static const uint8_t data[10];
-};
-
-const uint8_t LpReassemblerFixture::data[10] = {
-  0x06, 0x08, // Data
-        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  static constexpr uint8_t data[] = {
+    0x06, 0x08, // Data
+          0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  };
 };
 
 BOOST_AUTO_TEST_SUITE(Face)
@@ -517,6 +513,4 @@ BOOST_AUTO_TEST_SUITE_END() // MultipleRemoteEndpoints
 BOOST_AUTO_TEST_SUITE_END() // TestLpReassembler
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

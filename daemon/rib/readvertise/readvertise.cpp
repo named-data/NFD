@@ -29,8 +29,7 @@
 
 #include <ndn-cxx/util/random.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(Readvertise);
 
@@ -193,5 +192,4 @@ Readvertise::withdraw(ReadvertisedRouteContainer::iterator rrIt)
     });
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

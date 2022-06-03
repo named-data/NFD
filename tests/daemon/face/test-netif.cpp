@@ -26,9 +26,7 @@
 #include "test-netif.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 std::vector<shared_ptr<const NetworkInterface>>
 enumerateNetworkInterfaces(NetworkMonitor& netmon)
@@ -52,6 +50,4 @@ collectNetworkInterfaces(bool allowCached)
   return *cached;
 }
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

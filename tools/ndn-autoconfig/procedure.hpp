@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,13 +28,13 @@
 
 #include "stage.hpp"
 
+#include "core/common.hpp"
+
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 struct Options
 {
@@ -89,8 +89,6 @@ private:
   nfd::Controller m_controller;
 };
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
 
 #endif // NFD_TOOLS_NDN_AUTOCONFIG_PROCEDURE_HPP

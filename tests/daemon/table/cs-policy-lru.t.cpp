@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,22 +27,20 @@
 
 #include "tests/daemon/table/cs-fixture.hpp"
 
-namespace nfd {
-namespace cs {
-namespace tests {
+namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_AUTO_TEST_SUITE(TestCsLru)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
-  std::set<std::string> policyNames = Policy::getPolicyNames();
+  std::set<std::string> policyNames = cs::Policy::getPolicyNames();
   BOOST_CHECK_EQUAL(policyNames.count("lru"), 1);
 }
 
 BOOST_FIXTURE_TEST_CASE(EvictOne, CsFixture)
 {
-  cs.setPolicy(make_unique<LruPolicy>());
+  cs.setPolicy(make_unique<cs::LruPolicy>());
   cs.setLimit(3);
 
   insert(1, "/A");
@@ -84,6 +82,4 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, CsFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestCsLru
 BOOST_AUTO_TEST_SUITE_END() // Table
 
-} // namespace tests
-} // namespace cs
-} // namespace nfd
+} // namespace nfd::tests

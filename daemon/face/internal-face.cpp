@@ -28,8 +28,7 @@
 #include "internal-transport.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 std::tuple<shared_ptr<Face>, shared_ptr<ndn::Face>>
 makeInternalFace(ndn::KeyChain& clientKeyChain)
@@ -49,5 +48,4 @@ makeInternalFace(ndn::KeyChain& clientKeyChain)
   return {face, clientFace};
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

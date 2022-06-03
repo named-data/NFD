@@ -29,8 +29,7 @@
 
 #include <boost/exception/diagnostic_information.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 LimitedIo::LimitedIo(GlobalIoTimeFixture* fixture)
   : m_fixture(fixture)
@@ -107,5 +106,4 @@ LimitedIo::afterTimeout()
   }
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

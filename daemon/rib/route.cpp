@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #include "route.hpp"
 #include <ndn-cxx/util/string-helper.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 const uint64_t PA_ROUTE_COST = 2048; ///< cost of route created by prefix announcement
 
@@ -92,5 +91,4 @@ operator<<(std::ostream& os, const Route& route)
   return os;
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

@@ -26,9 +26,7 @@
 #include "asf-measurements.hpp"
 #include "common/global.hpp"
 
-namespace nfd {
-namespace fw {
-namespace asf {
+namespace nfd::fw::asf {
 
 time::nanoseconds
 FaceInfo::scheduleTimeout(const Name& interestName, scheduler::EventCallback cb)
@@ -142,6 +140,4 @@ AsfMeasurements::extendLifetime(measurements::Entry& me)
   m_measurements.extendLifetime(me, MEASUREMENTS_LIFETIME);
 }
 
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw::asf

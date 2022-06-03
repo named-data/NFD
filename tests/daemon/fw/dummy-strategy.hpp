@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,15 +28,15 @@
 
 #include "fw/strategy.hpp"
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
-/** \brief Forwarding strategy for unit testing
+/**
+ * \brief Forwarding strategy for unit testing
  *
- *  Triggers are recorded but do nothing.
+ * Triggers are recorded but do nothing.
  *
- *  DummyStrategy registers itself as /dummy-strategy/<max-version>, so that it can be instantiated
- *  with any version number. Aliases can be created with the registerAs() function.
+ * DummyStrategy registers itself as `/dummy-strategy/<max-version>`, so that it can be instantiated
+ * with any version number. Aliases can be created with the registerAs() function.
  */
 class DummyStrategy : public fw::Strategy
 {
@@ -111,7 +111,8 @@ public:
   shared_ptr<Face> interestOutFace;
 };
 
-/** \brief DummyStrategy with specific version
+/**
+ * \brief DummyStrategy with specific version
  */
 template<uint64_t VERSION>
 class VersionedDummyStrategy : public DummyStrategy
@@ -141,7 +142,6 @@ public:
   }
 };
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FW_DUMMY_STRATEGY_HPP

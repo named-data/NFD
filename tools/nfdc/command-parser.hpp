@@ -31,9 +31,7 @@
 
 #include <type_traits>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 /** \brief indicates which modes is a command allowed
  */
@@ -125,8 +123,6 @@ private:
   std::vector<CommandContainer::const_iterator> m_commandOrder;
 };
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_COMMAND_PARSER_HPP

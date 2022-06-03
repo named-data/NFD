@@ -27,8 +27,7 @@
 #include "algorithm.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_LOG_INIT(BestRouteStrategy);
 NFD_REGISTER_STRATEGY(BestRouteStrategy);
@@ -126,5 +125,4 @@ BestRouteStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& in
   this->processNack(nack, ingress.face, pitEntry);
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

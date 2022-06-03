@@ -35,8 +35,7 @@
 
 #include <type_traits>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief represents a route for a name prefix
  */
@@ -116,7 +115,6 @@ operator!=(const Route& lhs, const Route& rhs)
 std::ostream&
 operator<<(std::ostream& os, const Route& route);
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_ROUTE_HPP

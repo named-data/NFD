@@ -32,9 +32,7 @@
 #include <cstring>
 #include <unistd.h>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 NDN_LOG_INIT(nfdc.Help);
 
@@ -98,6 +96,4 @@ help(std::ostream& os, const CommandParser& parser, std::vector<std::string> arg
   }
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

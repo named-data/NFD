@@ -30,8 +30,7 @@
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 const name::Component IGNORE_COMPONENT("nrd");
 const time::seconds DEFAULT_REFRESH_INTERVAL = 25_s;
@@ -85,5 +84,4 @@ HostToGatewayReadvertisePolicy::getRefreshInterval() const
   return m_refreshInterval;
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

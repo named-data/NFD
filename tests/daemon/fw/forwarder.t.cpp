@@ -34,8 +34,7 @@
 
 #include <ndn-cxx/lp/tags.hpp>
 
-namespace nfd {
-namespace tests {
+namespace nfd::tests {
 
 class ForwarderFixture : public GlobalIoTimeFixture
 {
@@ -881,5 +880,4 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 BOOST_AUTO_TEST_SUITE_END() // TestForwarder
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests

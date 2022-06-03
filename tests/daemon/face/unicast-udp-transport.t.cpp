@@ -30,9 +30,9 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/vector_c.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnicastUdpTransport, IpTransportFixture<UnicastUdpTransportFixture>)
@@ -177,6 +177,4 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
 BOOST_AUTO_TEST_SUITE_END() // TestUnicastUdpTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

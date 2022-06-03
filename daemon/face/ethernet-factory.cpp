@@ -30,8 +30,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(EthernetFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(EthernetFactory);
@@ -377,5 +376,4 @@ EthernetFactory::applyConfig(const FaceSystem::ConfigContext&)
   }
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

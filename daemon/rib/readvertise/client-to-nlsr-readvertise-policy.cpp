@@ -25,8 +25,7 @@
 
 #include "client-to-nlsr-readvertise-policy.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 std::optional<ReadvertiseAction>
 ClientToNlsrReadvertisePolicy::handleNewRoute(const RibRouteRef& ribRoute) const
@@ -45,5 +44,4 @@ ClientToNlsrReadvertisePolicy::getRefreshInterval() const
   return 1_h;
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

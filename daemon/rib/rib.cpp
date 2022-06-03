@@ -27,8 +27,7 @@
 #include "fib-updater.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(Rib);
 
@@ -496,5 +495,4 @@ operator<<(std::ostream& os, const Rib& rib)
   return os;
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

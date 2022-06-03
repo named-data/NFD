@@ -27,9 +27,7 @@
 #include "canonizer.hpp"
 #include "find-face.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 void
 FaceModule::registerCommands(CommandParser& parser)
@@ -557,6 +555,4 @@ FaceModule::printFaceParams(std::ostream& os, text::ItemAttributes& ia, const Co
   os << '\n';
 }
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc

@@ -31,12 +31,11 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 class Strategy;
-} // namespace fw
+} // namespace nfd::fw
 
-namespace tests {
+namespace nfd::tests {
 
 /** \brief choose the strategy for a namespace
  *  \tparam S strategy type, must be a complete type
@@ -60,7 +59,6 @@ choose(Forwarder& forwarder, const Name& prefix = "/",
   return dynamic_cast<S&>(sc.findEffectiveStrategy(prefix));
 }
 
-} // namespace tests
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FW_CHOOSE_STRATEGY_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,11 +32,9 @@
 #include <boost/property_tree/info_parser.hpp>
 #include <sstream>
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using rib::Service;
 
 class RibServiceFixture : public RibIoFixture
 {
@@ -147,6 +145,4 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_SUITE_END() // TestService
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

@@ -28,8 +28,7 @@
 
 #include <ndn-cxx/encoding/tlv.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(LpFragmenter);
 
@@ -153,5 +152,4 @@ operator<<(std::ostream& os, const FaceLogHelper<LpFragmenter>& flh)
   return os;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

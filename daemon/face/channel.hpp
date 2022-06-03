@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "channel-log.hpp"
 #include "face-common.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief Represents a channel that listens on a local endpoint.
  *  \sa FaceSystem
@@ -99,7 +98,6 @@ using FaceCreationFailedCallback = std::function<void(uint32_t status, const std
 void
 connectFaceClosedSignal(Face& face, std::function<void()> f);
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_CHANNEL_HPP

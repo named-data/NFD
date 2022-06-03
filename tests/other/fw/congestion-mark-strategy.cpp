@@ -25,8 +25,7 @@
 
 #include "congestion-mark-strategy.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 NFD_REGISTER_STRATEGY(CongestionMarkStrategy);
 
@@ -91,5 +90,4 @@ CongestionMarkStrategy::afterReceiveInterest(const Interest& interest, const Fac
   }
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

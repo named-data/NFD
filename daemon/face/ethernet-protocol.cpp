@@ -27,8 +27,7 @@
 
 #include <boost/endian/conversion.hpp>
 
-namespace nfd {
-namespace ethernet {
+namespace nfd::ethernet {
 
 std::tuple<const ether_header*, std::string>
 checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Address& destAddr)
@@ -57,5 +56,4 @@ checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Add
   return {eh, ""};
 }
 
-} // namespace ethernet
-} // namespace nfd
+} // namespace nfd::ethernet

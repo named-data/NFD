@@ -26,8 +26,7 @@
 #include "retx-suppression-exponential.hpp"
 #include "algorithm.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 namespace {
 
@@ -143,5 +142,4 @@ RetxSuppressionExponential::construct(const StrategyParameters& params)
   return make_unique<RetxSuppressionExponential>(Duration(init), Duration(max), mult);
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

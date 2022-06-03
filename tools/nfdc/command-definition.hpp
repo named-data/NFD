@@ -28,16 +28,14 @@
 
 #include "command-arguments.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 /** \brief indicates argument value type
  */
 enum class ArgValueType {
   /** \brief boolean argument without value
    *
-   *  The argument appears in CommandArguments as bool value 'true'.
+   *  The argument appears in CommandArguments as bool value `true`.
    *  It must not be declared as positional.
    */
   NONE,
@@ -212,8 +210,6 @@ private:
   std::vector<std::string> m_positionalArgs;
 };
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_COMMAND_DEFINITION_HPP

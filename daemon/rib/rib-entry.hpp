@@ -30,8 +30,7 @@
 
 #include <list>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /**
  * \brief Represents a RIB entry, which contains one or more Routes with the same prefix.
@@ -278,7 +277,6 @@ RibEntry::end()
 std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry);
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_RIB_ENTRY_HPP

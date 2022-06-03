@@ -26,8 +26,7 @@
 #include "retx-suppression-fixed.hpp"
 #include "algorithm.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 RetxSuppressionFixed::RetxSuppressionFixed(const time::milliseconds& minRetxInterval)
   : m_minRetxInterval(minRetxInterval)
@@ -50,5 +49,4 @@ RetxSuppressionFixed::decidePerPitEntry(pit::Entry& pitEntry) const
   return shouldSuppress ? RetxSuppressionResult::SUPPRESS : RetxSuppressionResult::FORWARD;
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

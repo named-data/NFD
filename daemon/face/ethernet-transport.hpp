@@ -32,8 +32,7 @@
 
 #include <ndn-cxx/net/network-interface.hpp>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /**
  * @brief Base class for Ethernet-based Transports
@@ -113,7 +112,6 @@ private:
 #endif
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP

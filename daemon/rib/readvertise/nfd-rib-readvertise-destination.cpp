@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include <ndn-cxx/mgmt/nfd/control-command.hpp>
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 NFD_LOG_INIT(NfdRibReadvertiseDestination);
 
@@ -85,5 +84,4 @@ NfdRibReadvertiseDestination::withdraw(const nfd::rib::ReadvertisedRoute& rr,
     getCommandOptions().setSigningInfo(rr.signer));
 }
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib

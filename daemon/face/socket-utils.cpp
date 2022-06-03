@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,7 @@
 #include <sys/socket.h>
 #endif
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 ssize_t
 getTxQueueLength(int fd)
@@ -53,5 +52,4 @@ getTxQueueLength(int fd)
   return queueLength;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

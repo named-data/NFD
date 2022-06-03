@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,9 +32,7 @@
 #include <ndn-cxx/net/network-interface.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
 using ndn::net::NetworkAddress;
 using ndn::net::NetworkInterface;
@@ -56,8 +54,6 @@ enumerateNetworkInterfaces(NetworkMonitor& netmon);
 std::vector<shared_ptr<const NetworkInterface>>
 collectNetworkInterfaces(bool allowCached = true);
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FACE_TEST_NETIF_HPP

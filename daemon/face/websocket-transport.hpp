@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "transport.hpp"
 #include "websocketpp.hpp"
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 /** \brief counters provided by WebSocketTransport
  *  \note The type name 'WebSocketTransportCounters' is implementation detail.
@@ -107,7 +106,6 @@ WebSocketTransport::getCounters() const
   return *this;
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_WEBSOCKET_TRANSPORT_HPP

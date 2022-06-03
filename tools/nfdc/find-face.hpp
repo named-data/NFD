@@ -28,9 +28,7 @@
 
 #include "execute-command.hpp"
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
+namespace nfd::tools::nfdc {
 
 using ndn::nfd::FaceQueryFilter;
 using ndn::nfd::FaceStatus;
@@ -139,8 +137,6 @@ private:
   std::string m_errorReason;
 };
 
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_FIND_FACE_HPP

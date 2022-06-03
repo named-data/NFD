@@ -28,8 +28,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 std::ostream&
 operator<<(std::ostream& os, UnsolicitedDataDecision d)
@@ -109,5 +108,4 @@ AdmitAllUnsolicitedDataPolicy::decide(const Face&, const Data&) const
   return UnsolicitedDataDecision::CACHE;
 }
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw

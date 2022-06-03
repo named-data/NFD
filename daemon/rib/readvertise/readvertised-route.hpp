@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,7 @@
 #include <ndn-cxx/security/signing-info.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
-namespace nfd {
-namespace rib {
+namespace nfd::rib {
 
 /** \brief state of a readvertised route
  */
@@ -63,7 +62,6 @@ operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
 
 using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
 
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::rib
 
 #endif // NFD_DAEMON_RIB_READVERTISE_READVERTISED_ROUTE_HPP

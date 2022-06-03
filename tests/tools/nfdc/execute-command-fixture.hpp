@@ -33,12 +33,10 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/test/tools/output_test_stream.hpp>
 
-namespace nfd {
-namespace tools {
-namespace nfdc {
-namespace tests {
+namespace nfd::tools::nfdc::tests {
 
-/** \brief fixture to test command execution
+/**
+ * \brief Fixture to test command execution.
  */
 class ExecuteCommandFixture : public MockNfdMgmtFixture
 {
@@ -65,9 +63,6 @@ protected:
   int exitCode = -1;
 };
 
-} // namespace tests
-} // namespace nfdc
-} // namespace tools
-} // namespace nfd
+} // namespace nfd::tools::nfdc::tests
 
 #endif // NFD_TESTS_TOOLS_NFDC_EXECUTE_COMMAND_FIXTURE_HPP

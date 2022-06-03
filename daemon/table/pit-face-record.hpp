@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,7 @@
 #include "face/face.hpp"
 #include "strategy-info-host.hpp"
 
-namespace nfd {
-namespace pit {
+namespace nfd::pit {
 
 /** \brief Contains information about an Interest on an incoming or outgoing face
  *  \note This is an implementation detail to extract common functionality
@@ -84,7 +83,6 @@ private:
   time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
 };
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit
 
 #endif // NFD_DAEMON_TABLE_PIT_FACE_RECORD_HPP

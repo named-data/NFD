@@ -34,8 +34,7 @@
 
 #include <queue>
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 class GenericLinkService;
 
@@ -221,7 +220,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LpReliability>& flh);
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_LP_RELIABILITY_HPP

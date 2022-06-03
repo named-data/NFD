@@ -28,9 +28,7 @@
 #include "common/global.hpp"
 #include "common/logger.hpp"
 
-namespace nfd {
-namespace fw {
-namespace asf {
+namespace nfd::fw::asf {
 
 NFD_LOG_INIT(AsfStrategy);
 NFD_REGISTER_STRATEGY(AsfStrategy);
@@ -326,6 +324,4 @@ AsfStrategy::sendNoRouteNack(Face& face, const shared_ptr<pit::Entry>& pitEntry)
   this->rejectPendingInterest(pitEntry);
 }
 
-} // namespace asf
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw::asf

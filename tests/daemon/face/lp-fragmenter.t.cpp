@@ -27,11 +27,9 @@
 
 #include "tests/test-common.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::face;
 
 class LpFragmenterFixture
 {
@@ -174,6 +172,4 @@ BOOST_AUTO_TEST_CASE(FragCountOverLimit)
 BOOST_AUTO_TEST_SUITE_END() // TestLpFragmentation
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

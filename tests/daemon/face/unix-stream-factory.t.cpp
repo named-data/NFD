@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,17 +28,17 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
-namespace nfd {
-namespace face {
-namespace tests {
+namespace nfd::tests {
+
+using face::UnixStreamFactory;
 
 using UnixStreamFactoryFixture = FaceSystemFactoryFixture<UnixStreamFactory>;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnixStreamFactory, UnixStreamFactoryFixture)
 
-static const std::string CHANNEL_PATH1("unix-stream-test.1.sock");
-static const std::string CHANNEL_PATH2("unix-stream-test.2.sock");
+const std::string CHANNEL_PATH1("unix-stream-test.1.sock");
+const std::string CHANNEL_PATH2("unix-stream-test.2.sock");
 
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
@@ -145,6 +145,4 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamFactory
 BOOST_AUTO_TEST_SUITE_END() // Face
 
-} // namespace tests
-} // namespace face
-} // namespace nfd
+} // namespace nfd::tests

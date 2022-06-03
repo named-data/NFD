@@ -29,8 +29,7 @@
 #include "strategy.hpp"
 #include "retx-suppression-exponential.hpp"
 
-namespace nfd {
-namespace fw {
+namespace nfd::fw {
 
 /** \brief A forwarding strategy that forwards Interests to all FIB nexthops
  */
@@ -55,7 +54,6 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
 };
 
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::fw
 
 #endif // NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP

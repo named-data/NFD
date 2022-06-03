@@ -33,11 +33,9 @@
 #include <boost/logic/tribool.hpp>
 #include <boost/mpl/vector.hpp>
 
-namespace nfd {
-namespace fw {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::fw;
 
 class UnsolicitedDataPolicyFixture : public GlobalIoTimeFixture
 {
@@ -131,6 +129,4 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
 BOOST_AUTO_TEST_SUITE_END() // TestUnsolicitedDataPolicy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests

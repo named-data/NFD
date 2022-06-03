@@ -29,8 +29,7 @@
 #include "name-tree.hpp"
 #include "pit-entry.hpp"
 
-namespace nfd {
-namespace pit {
+namespace nfd::pit {
 
 /** \brief PIT iterator
  */
@@ -87,7 +86,6 @@ private:
   size_t m_iPitEntry; ///< current PIT entry within m_ntIt->getPitEntries()
 };
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit
 
 #endif // NFD_DAEMON_TABLE_PIT_ITERATOR_HPP

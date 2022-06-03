@@ -29,11 +29,9 @@
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
-namespace nfd {
-namespace rib {
-namespace tests {
+namespace nfd::tests {
 
-using namespace nfd::tests;
+using namespace nfd::rib;
 
 class HostToGatewayReadvertisePolicyFixture : public GlobalIoFixture, public KeyChainFixture
 {
@@ -109,6 +107,4 @@ BOOST_AUTO_TEST_CASE(LoadRefreshInterval)
 BOOST_AUTO_TEST_SUITE_END() // TestHostToGatewayReadvertisePolicy
 BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
-} // namespace tests
-} // namespace rib
-} // namespace nfd
+} // namespace nfd::tests

@@ -29,13 +29,11 @@
 #include "channel.hpp"
 #include "websocketpp.hpp"
 
-namespace nfd {
-
-namespace websocket {
+namespace nfd::websocket {
 using Endpoint = boost::asio::ip::tcp::endpoint;
-} // namespace websocket
+} // namespace nfd::websocket
 
-namespace face {
+namespace nfd::face {
 
 /**
  * \brief Class implementing WebSocket-based channel to create faces
@@ -111,7 +109,6 @@ private:
   time::milliseconds m_pingInterval;
 };
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face
 
 #endif // NFD_DAEMON_FACE_WEBSOCKET_CHANNEL_HPP

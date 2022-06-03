@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,7 @@
 #include "strategy-choice-entry.hpp"
 #include "fw/strategy.hpp"
 
-namespace nfd {
-namespace strategy_choice {
+namespace nfd::strategy_choice {
 
 Entry::Entry(const Name& prefix)
   : m_prefix(prefix)
@@ -48,5 +47,4 @@ Entry::setStrategy(unique_ptr<fw::Strategy> strategy)
   m_strategy = std::move(strategy);
 }
 
-} // namespace strategy_choice
-} // namespace nfd
+} // namespace nfd::strategy_choice

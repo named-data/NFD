@@ -28,8 +28,7 @@
 
 #include <cstdio>   // for snprintf()
 
-namespace nfd {
-namespace face {
+namespace nfd::face {
 
 NFD_LOG_INIT(UnicastEthernetTransport);
 
@@ -100,5 +99,4 @@ UnicastEthernetTransport::scheduleClosureWhenIdle()
   setExpirationTime(time::steady_clock::now() + m_idleTimeout);
 }
 
-} // namespace face
-} // namespace nfd
+} // namespace nfd::face

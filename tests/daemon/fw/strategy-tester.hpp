@@ -30,11 +30,7 @@
 
 #include "tests/daemon/limited-io.hpp"
 
-namespace nfd {
-namespace fw {
-namespace tests {
-
-using namespace nfd::tests;
+namespace nfd::tests {
 
 /** \brief Extends strategy S for unit testing.
  *
@@ -154,8 +150,6 @@ public:
   std::vector<SendNackArgs> sendNackHistory;
 };
 
-} // namespace tests
-} // namespace fw
-} // namespace nfd
+} // namespace nfd::tests
 
 #endif // NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP

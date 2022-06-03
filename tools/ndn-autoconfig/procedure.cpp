@@ -29,9 +29,7 @@
 #include "multicast-discovery.hpp"
 #include "ndn-fch-discovery.hpp"
 
-namespace ndn {
-namespace tools {
-namespace autoconfig {
+namespace ndn::autoconfig {
 
 using nfd::ControlParameters;
 using nfd::ControlResponse;
@@ -138,6 +136,4 @@ Procedure::registerPrefixes(uint64_t hubFaceId, size_t index)
     });
 }
 
-} // namespace autoconfig
-} // namespace tools
-} // namespace ndn
+} // namespace ndn::autoconfig
