@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <string.h>
 
+#include <boost/asio/signal_set.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>

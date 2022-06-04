@@ -23,23 +23,18 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "available-commands.hpp"
-#include "cs-module.hpp"
-#include "face-module.hpp"
-#include "rib-module.hpp"
-#include "status.hpp"
-#include "strategy-choice-module.hpp"
+#ifndef NFD_DAEMON_NFD_PCH_HPP
+#define NFD_DAEMON_NFD_PCH_HPP
 
-namespace nfd::tools::nfdc {
+#include "core/common.hpp"
 
-void
-registerCommands(CommandParser& parser)
-{
-  registerStatusCommands(parser);
-  FaceModule::registerCommands(parser);
-  RibModule::registerCommands(parser);
-  CsModule::registerCommands(parser);
-  StrategyChoiceModule::registerCommands(parser);
-}
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
 
-} // namespace nfd::tools::nfdc
+#include <ndn-cxx/lp/packet.hpp>
+#include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/security/validator.hpp>
+#include <ndn-cxx/util/logger.hpp>
+
+#endif // NFD_DAEMON_NFD_PCH_HPP

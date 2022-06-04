@@ -28,6 +28,8 @@
 
 #include "stream-transport.hpp"
 
+#include <boost/asio/local/stream_protocol.hpp>
+
 #ifndef NFD_HAVE_UNIX_SOCKETS
 #error "Cannot include this file when UNIX sockets are not available"
 #endif

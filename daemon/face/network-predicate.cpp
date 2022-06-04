@@ -29,6 +29,8 @@
 
 #include <fnmatch.h>
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::face {
 
 NetworkPredicateBase::NetworkPredicateBase()

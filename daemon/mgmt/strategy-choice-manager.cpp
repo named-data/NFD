@@ -30,6 +30,8 @@
 
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd {
 
 NFD_LOG_INIT(StrategyChoiceManager);

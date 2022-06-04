@@ -25,6 +25,8 @@
 
 #include "tcp-factory.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::face {
 
 namespace ip = boost::asio::ip;

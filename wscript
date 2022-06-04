@@ -155,12 +155,10 @@ def build(bld):
 
     bld.objects(
         target='core-objects',
-        features='pch',
         source=bld.path.find_node('core').ant_glob('*.cpp') + ['core/version.cpp'],
         use='version.cpp version.hpp NDN_CXX BOOST LIBRT',
         includes='.',
-        export_includes='.',
-        headers='core/common.hpp')
+        export_includes='.')
 
     nfd_objects = bld.objects(
         target='daemon-objects',
@@ -170,6 +168,8 @@ def build(bld):
                                        'daemon/face/unix*.cpp',
                                        'daemon/face/websocket*.cpp',
                                        'daemon/main.cpp']),
+        features='pch',
+        headers='daemon/nfd-pch.hpp',
         use='core-objects',
         includes='daemon',
         export_includes='daemon')

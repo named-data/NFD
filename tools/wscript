@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2018,  Regents of the University of California,
+Copyright (c) 2014-2022,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,49 +23,55 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-top = '..'
-
 from waflib import Context, Utils
 
-def build(bld):
-    commonDeps = 'core-objects NDN_CXX BOOST LIBRESOLV'
+top = '../'
 
+def build(bld):
     # Single object tools:
-    # tools/example-tool.cpp is a self-contained tool with a main() function
-    # and is built as build/bin/example-tool.
-    # These tools cannot be unit-tested.
+    # tools/foo.cpp is a self-contained tool with a main() function
+    # and is built as build/bin/foo. These tools cannot be unit-tested.
     for tool in bld.path.ant_glob('*.cpp'):
         name = tool.change_ext('').path_from(bld.path.get_bld())
         bld.program(name=name,
-                    target='../bin/%s' % name,
+                    target=top + 'bin/%s' % name,
                     source=[tool],
-                    use=commonDeps)
+                    use='core-objects')
 
     # Sub-directory tools:
-    # tools/example-tool/**/*.cpp is compiled and linked into build/bin/example-tool.
-    # tools/example-tool/main.cpp must exist and must contain the main() function.
+    # tools/foo/**/*.cpp are compiled and linked into build/bin/foo.
+    # tools/foo/main.cpp must exist and must contain the main() function.
     # All other objects are collected into 'tools-objects' and can be unit-tested.
     testableObjects = []
     for subdir in bld.path.ant_glob('*', dir=True, src=False):
+        name = subdir.path_from(bld.path)
+        subWscript = subdir.find_node('wscript')
+        if subWscript:
+            # if the subdir has a wscript, delegate to it
+            bld.recurse(name)
+            continue
+
         mainFile = subdir.find_node('main.cpp')
         if mainFile is None:
-            continue # not a C++ tool
+            # not a C++ tool, skip the subdir
+            continue
 
-        name = subdir.path_from(bld.path)
         srcFiles = subdir.ant_glob('**/*.cpp', excl=['main.cpp'])
         srcObjects = ''
         if srcFiles:
             srcObjects = 'tools-%s-objects' % name
             bld.objects(target=srcObjects,
                         source=srcFiles,
-                        use=commonDeps,
+                        features='pch',
+                        headers=subdir.find_node(name + '-pch.hpp'),
+                        use='core-objects LIBRESOLV',
                         includes=name)
             testableObjects.append(srcObjects)
 
         bld.program(name=name,
-                    target='../bin/%s' % name,
+                    target=top + 'bin/%s' % name,
                     source=[mainFile],
-                    use=commonDeps + ' ' + srcObjects,
+                    use='core-objects ' + srcObjects,
                     includes=name)
 
     bld.objects(target='tools-objects',
@@ -78,7 +84,7 @@ def build(bld):
         name = script.change_ext('').path_from(bld.path.get_bld())
         bld(features='subst',
             name=name,
-            target='../bin/%s' % name,
+            target=top + 'bin/%s' % name,
             source=[script],
             install_path='${BINDIR}',
             chmod=Utils.O755,

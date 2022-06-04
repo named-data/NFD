@@ -33,6 +33,7 @@
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
+#include <boost/asio/signal_set.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -41,6 +42,9 @@
 #include <iostream>
 
 namespace nfd::tools::autoreg {
+
+using ndn::FaceUri;
+using ndn::Name;
 
 class AutoregServer : boost::noncopyable
 {
@@ -101,7 +105,7 @@ public:
           .setFaceId(faceId)
           .setOrigin(ndn::nfd::ROUTE_ORIGIN_AUTOREG)
           .setCost(m_cost)
-          .setExpirationPeriod(time::milliseconds::max()),
+          .setExpirationPeriod(ndn::time::milliseconds::max()),
         [=] (auto&&...) { onRegisterCommandSuccess(faceId, prefix); },
         [=] (const auto& response) { onRegisterCommandFailure(faceId, prefix, response); });
     }

@@ -29,6 +29,8 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib/create-route.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::tests {
 
 using rib::Route;

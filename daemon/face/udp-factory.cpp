@@ -28,6 +28,7 @@
 #include "multicast-udp-transport.hpp"
 #include "common/global.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 

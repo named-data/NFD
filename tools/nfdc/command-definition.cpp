@@ -26,6 +26,7 @@
 #include "command-definition.hpp"
 #include "status-report.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd::tools::nfdc {

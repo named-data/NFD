@@ -28,6 +28,8 @@
 
 #include "name-tree-hashtable.hpp"
 
+#include <boost/range/iterator_range_core.hpp>
+
 namespace nfd::name_tree {
 
 class NameTree;

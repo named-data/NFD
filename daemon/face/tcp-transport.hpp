@@ -28,6 +28,8 @@
 
 #include "stream-transport.hpp"
 
+#include <boost/asio/ip/tcp.hpp>
+
 namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);

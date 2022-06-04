@@ -28,6 +28,7 @@
 
 #include "transport-test-common.hpp"
 
+#include <boost/asio/read.hpp>
 #include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {

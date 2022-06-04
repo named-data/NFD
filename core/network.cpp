@@ -25,9 +25,13 @@
 
 #include "network.hpp"
 
+#include <boost/lexical_cast.hpp>
 #include <boost/utility/value_init.hpp>
+
 #include <algorithm>
 #include <cctype>
+#include <istream>
+#include <ostream>
 
 namespace nfd {
 

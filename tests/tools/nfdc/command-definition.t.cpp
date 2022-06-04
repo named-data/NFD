@@ -28,6 +28,8 @@
 
 #include "tests/test-common.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::tools::nfdc::tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)

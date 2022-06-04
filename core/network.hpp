@@ -26,7 +26,8 @@
 #ifndef NFD_CORE_NETWORK_HPP
 #define NFD_CORE_NETWORK_HPP
 
-#include "common.hpp"
+#include <boost/asio/ip/address.hpp>
+#include <string_view>
 
 namespace nfd {
 

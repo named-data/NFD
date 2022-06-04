@@ -28,6 +28,8 @@
 
 #include "channel.hpp"
 
+#include <boost/asio/local/stream_protocol.hpp>
+
 namespace nfd::unix_stream {
 using Endpoint = boost::asio::local::stream_protocol::endpoint;
 } // namespace nfd::unix_stream

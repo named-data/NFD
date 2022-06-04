@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021  Regents of the University of California,
+ * Copyright (c) 2014-2022  Regents of the University of California,
  *                          Arizona Board of Regents,
  *                          Colorado State University,
  *                          University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,8 @@
 #define NFD_DAEMON_COMMON_GLOBAL_HPP
 
 #include "core/common.hpp"
+
+#include <boost/asio/io_service.hpp>
 
 namespace nfd {
 

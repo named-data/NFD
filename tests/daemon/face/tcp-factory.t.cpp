@@ -29,6 +29,8 @@
 #include "factory-test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::tests {
 
 using face::TcpChannel;

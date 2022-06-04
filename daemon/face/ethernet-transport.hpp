@@ -30,6 +30,7 @@
 #include "pcap-helper.hpp"
 #include "transport.hpp"
 
+#include <boost/asio/posix/stream_descriptor.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd::face {

@@ -27,7 +27,7 @@
 #define NFD_TESTS_TOOLS_NFDC_EXECUTE_COMMAND_FIXTURE_HPP
 
 #include "mock-nfd-mgmt-fixture.hpp"
-#include "nfdc/available-commands.hpp"
+#include "nfdc/command-parser.hpp"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>

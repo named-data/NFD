@@ -29,6 +29,8 @@
 #include "forwarder.hpp"
 #include "table/measurements-accessor.hpp"
 
+#include <boost/lexical_cast/try_lexical_convert.hpp>
+
 namespace nfd::fw {
 
 class StrategyParameters;

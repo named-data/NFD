@@ -29,6 +29,8 @@
 
 #include "common/privilege-helper.hpp"
 
+#include <boost/asio/ip/multicast.hpp>
+#include <boost/asio/ip/v6_only.hpp>
 #include <boost/functional/hash.hpp>
 
 #ifdef __linux__

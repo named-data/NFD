@@ -29,6 +29,8 @@
 #include "tcp-transport.hpp"
 #include "common/global.hpp"
 
+#include <boost/asio/ip/v6_only.hpp>
+
 namespace nfd::face {
 
 NFD_LOG_INIT(TcpChannel);

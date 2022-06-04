@@ -32,7 +32,6 @@
 #include <ndn-cxx/security/validation-policy.hpp>
 #include <ndn-cxx/security/validation-policy-accept-all.hpp>
 #include <ndn-cxx/security/validation-policy-command-interest.hpp>
-#include <ndn-cxx/security/validator.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 #include <boost/filesystem.hpp>

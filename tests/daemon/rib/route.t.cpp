@@ -28,6 +28,8 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::tests {
 
 using rib::Route;

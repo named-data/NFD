@@ -28,6 +28,8 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 namespace nfd::tests {
 
 using face::WebSocketChannel;

@@ -32,6 +32,8 @@
 
 #include <queue>
 
+#include <boost/asio/write.hpp>
+
 namespace nfd::face {
 
 /** \brief Implements Transport for stream-based protocols.

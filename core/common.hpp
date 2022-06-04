@@ -71,11 +71,8 @@
 #include <ndn-cxx/util/span.hpp>
 #include <ndn-cxx/util/time.hpp>
 
-#include <boost/asio.hpp>
 #include <boost/assert.hpp>
 #include <boost/core/noncopyable.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 namespace nfd {
 

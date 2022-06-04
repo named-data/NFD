@@ -23,16 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_AVAILABLE_COMMANDS_HPP
-#define NFD_TOOLS_NFDC_AVAILABLE_COMMANDS_HPP
+#ifndef NFD_TOOLS_NFDC_NFDC_PCH_HPP
+#define NFD_TOOLS_NFDC_NFDC_PCH_HPP
 
-#include "command-parser.hpp"
+#include "core/common.hpp"
 
-namespace nfd::tools::nfdc {
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
+#include <ndn-cxx/util/logger.hpp>
 
-void
-registerCommands(CommandParser& parser);
-
-} // namespace nfd::tools::nfdc
-
-#endif // NFD_TOOLS_NFDC_AVAILABLE_COMMANDS_HPP
+#endif // NFD_TOOLS_NFDC_NFDC_PCH_HPP

@@ -28,7 +28,9 @@
 #include "face/tcp-channel.hpp"
 #include "face/udp-channel.hpp"
 
+#include <boost/asio/signal_set.hpp>
 #include <boost/exception/diagnostic_information.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <fstream>
 #include <iostream>

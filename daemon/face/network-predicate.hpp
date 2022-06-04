@@ -28,6 +28,7 @@
 
 #include "core/common.hpp"
 
+#include <boost/property_tree/ptree_fwd.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd::face {

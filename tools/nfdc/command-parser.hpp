@@ -123,6 +123,9 @@ private:
   std::vector<CommandContainer::const_iterator> m_commandOrder;
 };
 
+void
+registerCommands(CommandParser& parser);
+
 } // namespace nfd::tools::nfdc
 
 #endif // NFD_TOOLS_NFDC_COMMAND_PARSER_HPP

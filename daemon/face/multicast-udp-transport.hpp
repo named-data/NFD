@@ -28,6 +28,7 @@
 
 #include "datagram-transport.hpp"
 
+#include <boost/asio/ip/udp.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd::face {

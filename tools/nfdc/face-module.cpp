@@ -27,6 +27,8 @@
 #include "canonizer.hpp"
 #include "find-face.hpp"
 
+#include <boost/lexical_cast/try_lexical_convert.hpp>
+
 namespace nfd::tools::nfdc {
 
 void

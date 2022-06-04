@@ -23,9 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "available-commands.hpp"
-#include "core/version.hpp"
+#include "command-parser.hpp"
 #include "help.hpp"
+
+#include "core/version.hpp"
 
 #include <boost/tokenizer.hpp>
 #include <fstream>

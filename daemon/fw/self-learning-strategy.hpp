@@ -28,7 +28,7 @@
 
 #include "fw/strategy.hpp"
 
-#include <ndn-cxx/lp/prefix-announcement-header.hpp>
+#include <ndn-cxx/prefix-announcement.hpp>
 
 namespace nfd::fw {
 

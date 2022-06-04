@@ -28,6 +28,8 @@
 
 #include "channel.hpp"
 
+#include <boost/asio/ip/tcp.hpp>
+
 namespace nfd::tcp {
 using Endpoint = boost::asio::ip::tcp::endpoint;
 } // namespace nfd::tcp

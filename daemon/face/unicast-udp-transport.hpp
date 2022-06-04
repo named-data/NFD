@@ -28,6 +28,8 @@
 
 #include "datagram-transport.hpp"
 
+#include <boost/asio/ip/udp.hpp>
+
 namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Unicast>));

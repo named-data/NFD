@@ -28,9 +28,11 @@
 
 #include "core/common.hpp"
 
+#include <boost/asio/ip/udp.hpp>
+
 namespace nfd::udp {
 
-typedef boost::asio::ip::udp::endpoint Endpoint;
+using Endpoint = boost::asio::ip::udp::endpoint;
 
 /** \brief computes maximum payload size in a UDP packet
  */

@@ -24,7 +24,12 @@
  */
 
 #include "command-parser.hpp"
-#include "format-helpers.hpp"
+
+#include "cs-module.hpp"
+#include "face-module.hpp"
+#include "rib-module.hpp"
+#include "status.hpp"
+#include "strategy-choice-module.hpp"
 
 #include <ndn-cxx/util/logger.hpp>
 
@@ -125,6 +130,16 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
 
   size_t nConsumed = std::min<size_t>(2, tokens.size());
   return {def.getNoun(), def.getVerb(), def.parse(tokens, nConsumed), i->second->execute};
+}
+
+void
+registerCommands(CommandParser& parser)
+{
+  registerStatusCommands(parser);
+  FaceModule::registerCommands(parser);
+  RibModule::registerCommands(parser);
+  CsModule::registerCommands(parser);
+  StrategyChoiceModule::registerCommands(parser);
 }
 
 } // namespace nfd::tools::nfdc
