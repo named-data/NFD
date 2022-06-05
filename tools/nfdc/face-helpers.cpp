@@ -23,8 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "find-face.hpp"
-#include "canonizer.hpp"
+#include "face-helpers.hpp"
 #include "format-helpers.hpp"
 
 #include <ndn-cxx/util/logger.hpp>
@@ -127,11 +126,11 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& uri)
 void
 FindFace::query()
 {
-  auto datasetCb = [this] (const std::vector<ndn::nfd::FaceStatus>& result) {
+  auto datasetCb = [this] (const auto& result) {
     m_res = Code::OK;
     m_results = result;
   };
-  auto failureCb = [this] (uint32_t code, const std::string& reason) {
+  auto failureCb = [this] (uint32_t code, const auto& reason) {
     m_res = Code::ERROR;
     m_errorReason = "Error " + to_string(code) + " when querying face: " + reason;
   };
@@ -176,6 +175,33 @@ FindFace::printDisambiguation(std::ostream& os, DisambiguationStyle style) const
         break;
     }
   }
+}
+
+std::pair<std::optional<FaceUri>, std::string>
+canonize(ExecuteContext& ctx, const FaceUri& uri)
+{
+  std::optional<FaceUri> result;
+  std::string error;
+  uri.canonize(
+    [&result] (const auto& canonicalUri) { result = canonicalUri; },
+    [&error] (const auto& errorReason) { error = errorReason; },
+    ctx.face.getIoService(), ctx.getTimeout());
+  ctx.face.processEvents();
+
+  return {result, error};
+}
+
+std::pair<FindFace::Code, std::string>
+canonizeErrorHelper(const FaceUri& uri,
+                    const std::string& error,
+                    const std::string& field)
+{
+  std::string msg = "Error during canonization of ";
+  if (!field.empty()) {
+    msg += field + " ";
+  }
+  msg += "'" + uri.toString() + "': " + error;
+  return {FindFace::Code::CANONIZE_ERROR, msg};
 }
 
 } // namespace nfd::tools::nfdc

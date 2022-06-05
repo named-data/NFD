@@ -24,8 +24,7 @@
  */
 
 #include "face-module.hpp"
-#include "canonizer.hpp"
-#include "find-face.hpp"
+#include "face-helpers.hpp"
 
 #include <boost/lexical_cast/try_lexical_convert.hpp>
 
@@ -368,7 +367,7 @@ FaceModule::fetchStatus(Controller& controller,
                         const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::FaceDataset>(
-    [this, onSuccess] (const std::vector<FaceStatus>& result) {
+    [this, onSuccess] (const auto& result) {
       m_status = result;
       onSuccess();
     },

@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_FIND_FACE_HPP
-#define NFD_TOOLS_NFDC_FIND_FACE_HPP
+#ifndef NFD_TOOLS_NFDC_FACE_HELPERS_HPP
+#define NFD_TOOLS_NFDC_FACE_HELPERS_HPP
 
 #include "execute-command.hpp"
 
@@ -33,7 +33,8 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::FaceQueryFilter;
 using ndn::nfd::FaceStatus;
 
-/** \brief procedure to find a face
+/**
+ * \brief Procedure to find a face
  */
 class FindFace : noncopyable
 {
@@ -137,6 +138,25 @@ private:
   std::string m_errorReason;
 };
 
+/**
+ * \brief Canonize a FaceUri
+ * \return canonical FaceUri (nullopt on failure) and error string
+ */
+std::pair<std::optional<FaceUri>, std::string>
+canonize(ExecuteContext& ctx, const FaceUri& uri);
+
+/**
+ * \brief Helper to generate exit code and error message for face canonization failures
+ * \param uri The FaceUri
+ * \param error The error string returned by the canonization process
+ * \param field An optional field identifier to include with the message
+ * \return exit code and error message
+ */
+std::pair<FindFace::Code, std::string>
+canonizeErrorHelper(const FaceUri& uri,
+                    const std::string& error,
+                    const std::string& field = "");
+
 } // namespace nfd::tools::nfdc
 
-#endif // NFD_TOOLS_NFDC_FIND_FACE_HPP
+#endif // NFD_TOOLS_NFDC_FACE_HELPERS_HPP

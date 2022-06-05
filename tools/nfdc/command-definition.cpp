@@ -228,6 +228,18 @@ parseBoolean(const std::string& s)
   NDN_THROW(std::invalid_argument("unrecognized boolean value '" + s + "'"));
 }
 
+static ReportFormat
+parseReportFormat(const std::string& s)
+{
+  if (s == "xml") {
+    return ReportFormat::XML;
+  }
+  if (s == "text") {
+    return ReportFormat::TEXT;
+  }
+  NDN_THROW(std::invalid_argument("unrecognized ReportFormat '" + s + "'"));
+}
+
 static FacePersistency
 parseFacePersistency(const std::string& s)
 {

@@ -40,11 +40,8 @@ using ndn::security::Validator;
 
 enum class ReportFormat {
   XML = 1,
-  TEXT = 2
+  TEXT = 2,
 };
-
-ReportFormat
-parseReportFormat(const std::string& s);
 
 std::ostream&
 operator<<(std::ostream& os, ReportFormat fmt);

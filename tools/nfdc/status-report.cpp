@@ -28,18 +28,6 @@
 
 namespace nfd::tools::nfdc {
 
-ReportFormat
-parseReportFormat(const std::string& s)
-{
-  if (s == "xml") {
-    return ReportFormat::XML;
-  }
-  if (s == "text") {
-    return ReportFormat::TEXT;
-  }
-  NDN_THROW(std::invalid_argument("unrecognized ReportFormat '" + s + "'"));
-}
-
 std::ostream&
 operator<<(std::ostream& os, ReportFormat fmt)
 {

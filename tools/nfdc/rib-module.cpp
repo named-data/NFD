@@ -24,9 +24,8 @@
  */
 
 #include "rib-module.hpp"
-#include "canonizer.hpp"
 #include "face-module.hpp"
-#include "find-face.hpp"
+#include "face-helpers.hpp"
 #include "format-helpers.hpp"
 
 namespace nfd::tools::nfdc {
@@ -97,7 +96,7 @@ RibModule::list(ExecuteContext& ctx)
     nexthops = findFace.getFaceIds();
   }
 
-  listRoutesImpl(ctx, [&] (const RibEntry& entry, const Route& route) {
+  listRoutesImpl(ctx, [&] (const RibEntry&, const Route& route) {
     return (nexthops.empty() || nexthops.count(route.getFaceId()) > 0) &&
            (!origin || route.getOrigin() == *origin);
   });
@@ -108,7 +107,7 @@ RibModule::show(ExecuteContext& ctx)
 {
   auto prefix = ctx.args.get<Name>("prefix");
 
-  listRoutesImpl(ctx, [&] (const RibEntry& entry, const Route& route) {
+  listRoutesImpl(ctx, [&] (const RibEntry& entry, const Route&) {
     return entry.getName() == prefix;
   });
 }
@@ -117,7 +116,7 @@ void
 RibModule::listRoutesImpl(ExecuteContext& ctx, const RoutePredicate& filter)
 {
   ctx.controller.fetch<ndn::nfd::RibDataset>(
-    [&] (const std::vector<RibEntry>& dataset) {
+    [&] (const auto& dataset) {
       bool hasRoute = false;
       for (const RibEntry& entry : dataset) {
         for (const Route& route : entry.getRoutes()) {
@@ -307,7 +306,7 @@ RibModule::fetchStatus(Controller& controller,
                        const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::RibDataset>(
-    [this, onSuccess] (const std::vector<RibEntry>& result) {
+    [this, onSuccess] (const auto& result) {
       m_status = result;
       onSuccess();
     },
