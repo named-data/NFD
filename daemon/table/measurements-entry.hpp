@@ -62,8 +62,8 @@ private:
 
   name_tree::Entry* m_nameTreeEntry = nullptr;
 
+  friend ::nfd::name_tree::Entry;
   friend Measurements;
-  friend name_tree::Entry;
 };
 
 } // namespace nfd::measurements

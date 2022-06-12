@@ -115,7 +115,7 @@ private:
 
   name_tree::Entry* m_nameTreeEntry = nullptr;
 
-  friend name_tree::Entry;
+  friend ::nfd::name_tree::Entry;
   friend Fib;
 };
 

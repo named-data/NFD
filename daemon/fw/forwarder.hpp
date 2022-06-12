@@ -251,7 +251,7 @@ private:
   NetworkRegionTable m_networkRegionTable;
 
   // allow Strategy (base class) to enter pipelines
-  friend fw::Strategy;
+  friend ::nfd::fw::Strategy;
 };
 
 } // namespace nfd
