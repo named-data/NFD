@@ -10,8 +10,7 @@ fi
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
 fi
-if has CentOS-8 $NODE_LABELS; then
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1721553
+if [[ -n $DISABLE_PCH ]]; then
     PCH="--without-pch"
 fi
 

@@ -8,8 +8,6 @@ if has OSX $NODE_LABELS; then
     security unlock-keychain -p named-data
 fi
 
-ndnsec key-gen "/tmp/jenkins/$NODE_NAME" | ndnsec cert-install -
-
 # https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
 ASAN_OPTIONS="color=always"
 ASAN_OPTIONS+=":check_initialization_order=1"

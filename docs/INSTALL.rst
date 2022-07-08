@@ -10,9 +10,9 @@ following platforms:
 -  Ubuntu 18.04 (amd64, armhf, i386)
 -  Ubuntu 20.04 (amd64)
 -  Ubuntu 21.10 (amd64)
+-  CentOS Stream 9
 -  macOS 10.15
 -  macOS 11 (Intel only)
--  CentOS 8
 
 NFD is known to work on the following platforms, although they are not officially
 supported:
@@ -110,7 +110,6 @@ On Linux, NFD needs the following dependencies to enable optional features:
 
   .. code-block:: sh
 
-    sudo dnf config-manager --enable powertools  # on CentOS only
     sudo dnf install libpcap-devel systemd-devel
 
 Build
@@ -120,7 +119,7 @@ The following commands can be used to build and install NFD from source:
 
 .. code-block:: sh
 
-    ./waf configure  # on CentOS, add --without-pch
+    ./waf configure
     ./waf
     sudo ./waf install
 
