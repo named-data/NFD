@@ -108,7 +108,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
 
   auto f = [&] {
-    this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3, 0), pitEntry);
+    this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3), pitEntry);
   };
   BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo, 2));
 
@@ -144,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
 
   lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
-  this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3, 0), pitEntry);
+  this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3), pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0); // don't send Nack until all upstreams have Nacked
 
@@ -152,7 +152,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
   pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
 
   auto f = [&] {
-    this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4, 0), pitEntry);
+    this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4), pitEntry);
   };
   BOOST_REQUIRE(this->strategy.waitForAction(f, this->limitedIo));
 
@@ -186,7 +186,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
 
   lp::Nack nack4 = makeNack(*interest2, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
-  this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4, 0), pitEntry);
+  this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4), pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0);
 }
@@ -319,13 +319,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
 
   lp::Nack nack3 = makeNack(*interest1, Combination::firstReason);
   pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
-  strategy.afterReceiveNack(nack3, FaceEndpoint(*face3, 0), pitEntry);
+  strategy.afterReceiveNack(nack3, FaceEndpoint(*face3), pitEntry);
 
   BOOST_CHECK_EQUAL(strategy.sendNackHistory.size(), 0);
 
   lp::Nack nack4 = makeNack(*interest1, Combination::secondReason);
   pitEntry->getOutRecord(*face4)->setIncomingNack(nack4);
-  strategy.afterReceiveNack(nack4, FaceEndpoint(*face4, 0), pitEntry);
+  strategy.afterReceiveNack(nack4, FaceEndpoint(*face4), pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest.wireEncode(),

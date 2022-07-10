@@ -166,8 +166,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
   BOOST_REQUIRE_EQUAL(this->serverReceivedPackets->size(), 2);
   BOOST_CHECK(this->serverReceivedPackets->at(0).packet == pkt1);
   BOOST_CHECK(this->serverReceivedPackets->at(1).packet == pkt2);
-  BOOST_CHECK_EQUAL(this->serverReceivedPackets->at(0).endpoint, 0);
-  BOOST_CHECK_EQUAL(this->serverReceivedPackets->at(1).endpoint, 0);
+  BOOST_CHECK(this->serverReceivedPackets->at(0).endpoint == EndpointId{});
+  BOOST_CHECK(this->serverReceivedPackets->at(1).endpoint == EndpointId{});
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures, T)

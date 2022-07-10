@@ -23,39 +23,31 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
-#define NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
+#include "face-endpoint.hpp"
 
-#include "face.hpp"
+#include <boost/hana/functional/overload.hpp>
 
 namespace nfd {
 
-/**
- * \brief Represents a face-endpoint pair in the forwarder.
- * \sa face::Face, face::EndpointId
- */
-class FaceEndpoint
+FaceEndpoint::FaceEndpoint(Face& face, const EndpointId& endpoint)
+  : face(face)
+  , endpoint(endpoint)
 {
-public:
-  explicit
-  FaceEndpoint(Face& face, const EndpointId& endpoint = {});
+}
 
-private:
-  void
-  print(std::ostream& os) const;
-
-  friend std::ostream&
-  operator<<(std::ostream& os, const FaceEndpoint& fe)
-  {
-    fe.print(os);
-    return os;
-  }
-
-public:
-  Face& face;
-  const EndpointId endpoint;
-};
+void
+FaceEndpoint::print(std::ostream& os) const
+{
+  std::visit(boost::hana::overload(
+    [&] (std::monostate) {
+      os << face.getId();
+    },
+    [&] (const ethernet::Address& ep) {
+      os << '(' << face.getId() << ", " << ep << ')';
+    },
+    [&] (const udp::Endpoint& ep) {
+      os << '(' << face.getId() << ", " << ep << ')';
+    }), endpoint);
+}
 
 } // namespace nfd
-
-#endif // NFD_DAEMON_FACE_FACE_ENDPOINT_HPP

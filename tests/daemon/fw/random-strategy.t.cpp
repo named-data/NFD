@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     auto pitEntry = pit.insert(*interest).first;
 
     pitEntry->insertOrUpdateInRecord(*face1, *interest);
-    strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+    strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
   }
 
   // Map outFaceId -> SentInterests

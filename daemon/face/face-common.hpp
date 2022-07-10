@@ -26,12 +26,14 @@
 #ifndef NFD_DAEMON_FACE_FACE_COMMON_HPP
 #define NFD_DAEMON_FACE_FACE_COMMON_HPP
 
-#include "core/common.hpp"
+#include "ethernet-protocol.hpp"
+#include "udp-protocol.hpp"
 #include "common/logger.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 
 #include <boost/logic/tribool.hpp>
+#include <variant>
 
 namespace nfd {
 namespace face {
@@ -62,15 +64,17 @@ constexpr FaceId FACEID_RESERVED_MAX = 255;
  */
 constexpr ssize_t MIN_MTU = 64;
 
-/** \brief Identifies a remote endpoint on the link.
+/**
+ * \brief Identifies a remote endpoint on the link.
  *
- *  This ID is only meaningful in the context of the same Transport.
- *  Incoming packets from the same remote endpoint have the same EndpointId,
- *  and incoming packets from different remote endpoints have different EndpointIds.
+ * This ID is only meaningful in the context of the same Transport.
+ * Incoming packets from the same remote endpoint have the same EndpointId,
+ * and incoming packets from different remote endpoints have different EndpointIds.
  *
- *  Typically, a point-to-point Transport has only one meaningful EndpointId (usually 0).
+ * Typically, a point-to-point Transport has only one meaningful EndpointId,
+ * represented by `std::monostate`.
  */
-using EndpointId = uint64_t;
+using EndpointId = std::variant<std::monostate, ethernet::Address, udp::Endpoint>;
 
 /** \brief Parameters used to set Transport properties or LinkService options on a newly created face.
  *

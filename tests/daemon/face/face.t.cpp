@@ -104,16 +104,16 @@ BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
   face1->afterReceiveNack.connect([&] (auto&&...) { ++nReceivedNacks; });
 
   for (size_t i = 0; i < nInInterests; ++i) {
-    face1->receiveInterest(*makeInterest("/JSQdqward4"), 0);
+    face1->receiveInterest(*makeInterest("/JSQdqward4"));
   }
 
   for (size_t i = 0; i < nInData; ++i) {
-    face1->receiveData(*makeData("/hT8FDigWn1"), 0);
+    face1->receiveData(*makeData("/hT8FDigWn1"));
   }
 
   for (size_t i = 0; i < nInNacks; ++i) {
     face1->receiveNack(makeNack(*makeInterest("/StnEVTj4Ex", false, std::nullopt, 561),
-                                lp::NackReason::CONGESTION), 0);
+                                lp::NackReason::CONGESTION));
   }
 
   for (size_t i = 0; i < nOutInterests; ++i) {

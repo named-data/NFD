@@ -79,19 +79,20 @@ public:
    *  \throw tlv::Error packet is malformed
    */
   std::tuple<bool, Block, lp::Packet>
-  receiveFragment(EndpointId remoteEndpoint, const lp::Packet& packet);
+  receiveFragment(const EndpointId& remoteEndpoint, const lp::Packet& packet);
 
   /** \brief count of partial packets
    */
   size_t
   size() const;
 
-  /** \brief signals before a partial packet is dropped due to timeout
+  /**
+   * \brief Notifies before a partial packet is dropped due to timeout.
    *
-   *  If a partial packet is incomplete and no new fragment is received
-   *  within Options::reassemblyTimeout, it would be dropped due to timeout.
-   *  Before it's erased, this signal is emitted with the remote endpoint,
-   *  and the number of fragments being dropped.
+   * If a partial packet is incomplete and no new fragments are received within
+   * Options::reassemblyTimeout, the partial packet is dropped due to timeout.
+   * Before dropping the packet, this signal is emitted with the remote endpoint
+   * and the number of fragments being dropped.
    */
   signal::Signal<LpReassembler, EndpointId, size_t> beforeTimeout;
 

@@ -37,15 +37,18 @@ namespace nfd::face {
 struct Unicast {};
 struct Multicast {};
 
-/** \brief Implements Transport for datagram-based protocols.
+/**
+ * \brief Implements Transport for datagram-based protocols.
  *
- *  \tparam Protocol a datagram-based protocol in Boost.Asio
+ * \tparam Protocol A datagram-based protocol in Boost.Asio
+ * \tparam Addressing The addressing mode, either Unicast or Multicast
  */
-template<class Protocol, class Addressing = Unicast>
+template<class Protocol, class Addressing>
 class DatagramTransport : public Transport
 {
 public:
   using protocol = Protocol;
+  using addressing = Addressing;
 
   /** \brief Construct datagram transport.
    *
@@ -84,9 +87,6 @@ protected:
 
   void
   resetRecentlyReceived();
-
-  static EndpointId
-  makeEndpointId(const typename protocol::endpoint& ep);
 
 protected:
   typename protocol::socket m_socket;
@@ -190,7 +190,10 @@ DatagramTransport<T, U>::receiveDatagram(span<const uint8_t> buffer,
   }
   m_hasRecentlyReceived = true;
 
-  this->receive(element, makeEndpointId(m_sender));
+  if constexpr (std::is_same_v<addressing, Multicast>)
+    this->receive(element, m_sender);
+  else
+    this->receive(element);
 }
 
 template<class T, class U>
@@ -252,13 +255,6 @@ void
 DatagramTransport<T, U>::resetRecentlyReceived()
 {
   m_hasRecentlyReceived = false;
-}
-
-template<class T, class U>
-EndpointId
-DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint&)
-{
-  return 0;
 }
 
 } // namespace nfd::face

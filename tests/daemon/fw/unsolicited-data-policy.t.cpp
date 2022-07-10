@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
   faceTable.add(face1);
 
   auto data1 = makeData("/unsolicited-from-local");
-  forwarder.onIncomingData(*data1, FaceEndpoint(*face1, 0));
+  forwarder.onIncomingData(*data1, FaceEndpoint(*face1));
   BOOST_CHECK_EQUAL(isInCs(*data1), T::ShouldAdmitLocal::value);
 
   auto face2 = make_shared<DummyFace>("dummy://", "dummy://",
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
   faceTable.add(face2);
 
   auto data2 = makeData("/unsolicited-from-non-local");
-  forwarder.onIncomingData(*data2, FaceEndpoint(*face2, 0));
+  forwarder.onIncomingData(*data2, FaceEndpoint(*face2));
   BOOST_CHECK_EQUAL(isInCs(*data2), T::ShouldAdmitNonLocal::value);
 }
 

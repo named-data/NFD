@@ -29,8 +29,6 @@
 
 #include <pcap/pcap.h>
 
-#include <cstring> // for memcpy()
-
 #include <boost/endian/conversion.hpp>
 
 namespace nfd::face {
@@ -207,13 +205,7 @@ EthernetTransport::receivePayload(span<const uint8_t> payload, const ethernet::A
   }
   m_hasRecentlyReceived = true;
 
-  static_assert(sizeof(EndpointId) >= ethernet::ADDR_LEN, "EndpointId is too small");
-  EndpointId endpoint = 0;
-  if (m_destAddress.isMulticast()) {
-    std::memcpy(&endpoint, sender.data(), sender.size());
-  }
-
-  this->receive(element, endpoint);
+  this->receive(element, m_destAddress.isMulticast() ? sender : EndpointId{});
 }
 
 void

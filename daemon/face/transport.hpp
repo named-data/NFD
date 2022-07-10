@@ -31,7 +31,8 @@
 
 namespace nfd::face {
 
-/** \brief Indicates the state of a transport.
+/**
+ * \brief Indicates the state of a transport.
  */
 enum class TransportState {
   NONE,
@@ -263,13 +264,14 @@ public: // dynamic properties
   }
 
 protected: // upper interface to be invoked by subclass
-  /** \brief Pass a received link-layer packet to the upper layer for further processing
-   *  \param packet the received packet, must be a valid and well-formed TLV block
-   *  \param endpoint the source endpoint
-   *  \warning Behavior is undefined if packet size exceeds the MTU limit
+  /**
+   * \brief Pass a received link-layer packet to the upper layer for further processing.
+   * \param packet The received packet, must be a valid and well-formed TLV block
+   * \param endpoint The source endpoint, optional for unicast transports
+   * \warning Behavior is undefined if packet size exceeds the MTU limit.
    */
   void
-  receive(const Block& packet, const EndpointId& endpoint = 0);
+  receive(const Block& packet, const EndpointId& endpoint = {});
 
 protected: // properties to be set by subclass
   void

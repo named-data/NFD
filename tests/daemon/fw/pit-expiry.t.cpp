@@ -132,8 +132,8 @@ BOOST_AUTO_TEST_CASE(UnsatisfiedInterest)
   interest1->setInterestLifetime(90_ms);
   interest2->setInterestLifetime(90_ms);
 
-  face1->receiveInterest(*interest1, 0);
-  face2->receiveInterest(*interest2, 0);
+  face1->receiveInterest(*interest1);
+  face2->receiveInterest(*interest2);
   BOOST_CHECK_EQUAL(pit.size(), 2);
 
   this->advanceClocks(100_ms);
@@ -156,10 +156,10 @@ BOOST_AUTO_TEST_CASE(SatisfiedInterest)
   interest->setInterestLifetime(90_ms);
   auto data = makeData("/A/0");
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
 
   this->advanceClocks(30_ms);
-  face2->receiveData(*data, 0);
+  face2->receiveData(*data);
 
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
@@ -191,14 +191,14 @@ BOOST_AUTO_TEST_CASE(CsHit)
   Cs& cs = forwarder.getCs();
   cs.insert(*data);
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   this->advanceClocks(190_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
@@ -224,13 +224,13 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
   auto interest = makeInterest("/A/0", false, 90_ms, 562);
   lp::Nack nack = makeNack(*interest, lp::NackReason::CONGESTION);
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
   auto entry = pit.find(*interest);
   entry->insertOrUpdateOutRecord(*face2, *interest);
   entry->insertOrUpdateOutRecord(*face3, *interest);
 
   this->advanceClocks(10_ms);
-  face2->receiveNack(nack, 0);
+  face2->receiveNack(nack);
 
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveInterest)
 
   auto interest = makeInterest("/A/0", false, 90_ms);
 
-  face->receiveInterest(*interest, 0);
+  face->receiveInterest(*interest);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   this->advanceClocks(100_ms);
@@ -289,30 +289,30 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
   auto interest2 = makeInterest("/A/0", false, 90_ms);
   auto data = makeData("/A/0");
 
-  face1->receiveInterest(*interest1, 0);
-  face2->receiveInterest(*interest2, 0);
+  face1->receiveInterest(*interest1);
+  face2->receiveInterest(*interest2);
   BOOST_CHECK_EQUAL(pit.size(), 2);
 
   // beforeSatisfyInterest: the first Data prolongs PIT expiry timer by 190 ms
   this->advanceClocks(30_ms);
-  face3->receiveData(*data, 0);
+  face3->receiveData(*data);
   this->advanceClocks(189_ms);
   BOOST_CHECK_EQUAL(pit.size(), 2);
   this->advanceClocks(2_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  face1->receiveInterest(*interest1, 0);
-  face2->receiveInterest(*interest2, 0);
+  face1->receiveInterest(*interest1);
+  face2->receiveInterest(*interest2);
 
   // beforeSatisfyInterest: the second Data prolongs PIT expiry timer
   // and the third one sets the timer to now
   this->advanceClocks(30_ms);
-  face3->receiveData(*data, 0);
+  face3->receiveData(*data);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 2);
 
   this->advanceClocks(30_ms);
-  face3->receiveData(*data, 0);
+  face3->receiveData(*data);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
@@ -341,27 +341,27 @@ BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
   auto interest = makeInterest("/A/0", false, 90_ms);
   auto data = makeData("/A/0");
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
 
   // afterReceiveData: the first Data prolongs PIT expiry timer by 290 ms
   this->advanceClocks(30_ms);
-  face2->receiveData(*data, 0);
+  face2->receiveData(*data);
   this->advanceClocks(289_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
   this->advanceClocks(2_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
 
   // afterReceiveData: the second Data prolongs PIT expiry timer
   // and the third one sets the timer to now
   this->advanceClocks(30_ms);
-  face2->receiveData(*data, 0);
+  face2->receiveData(*data);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   this->advanceClocks(30_ms);
-  face2->receiveData(*data, 0);
+  face2->receiveData(*data);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
@@ -390,20 +390,20 @@ BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
   auto interest = makeInterest("/A/0", false, 90_ms, 562);
   lp::Nack nack = makeNack(*interest, lp::NackReason::CONGESTION);
 
-  face1->receiveInterest(*interest, 0);
+  face1->receiveInterest(*interest);
   auto entry = pit.find(*interest);
   entry->insertOrUpdateOutRecord(*face2, *interest);
   entry->insertOrUpdateOutRecord(*face3, *interest);
 
   //pitEntry is not erased after receiving the first Nack
   this->advanceClocks(10_ms);
-  face2->receiveNack(nack, 0);
+  face2->receiveNack(nack);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   //pitEntry is erased after receiving the second Nack
   this->advanceClocks(10_ms);
-  face3->receiveNack(nack, 0);
+  face3->receiveNack(nack);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }

@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 }
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdpTransportFixtures, T)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveFromMultipleEndpoints, T, MulticastUdpTransportFixtures, T)
 {
   TRANSPORT_TEST_INIT();
 
@@ -93,8 +93,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
 
   BOOST_REQUIRE_EQUAL(this->receivedPackets->size(), 2);
-  BOOST_CHECK_EQUAL(this->receivedPackets->at(0).endpoint,
-                    this->receivedPackets->at(1).endpoint);
+  BOOST_CHECK(this->receivedPackets->at(0).endpoint == this->receivedPackets->at(1).endpoint);
+  BOOST_CHECK(std::holds_alternative<nfd::udp::Endpoint>(this->receivedPackets->at(0).endpoint));
 
   this->sendToGroup(remoteSockTx2, buf1);
   this->sendToGroup(remoteSockTx2, buf2);
@@ -105,10 +105,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
 
   BOOST_REQUIRE_EQUAL(this->receivedPackets->size(), 4);
-  BOOST_CHECK_EQUAL(this->receivedPackets->at(2).endpoint,
-                    this->receivedPackets->at(3).endpoint);
-  BOOST_CHECK_NE(this->receivedPackets->at(0).endpoint,
-                 this->receivedPackets->at(2).endpoint);
+  EndpointId epId2(remoteSockTx2.local_endpoint());
+  BOOST_CHECK(this->receivedPackets->at(0).endpoint != epId2);
+  BOOST_CHECK(this->receivedPackets->at(1).endpoint != epId2);
+  BOOST_CHECK(this->receivedPackets->at(2).endpoint == epId2);
+  BOOST_CHECK(this->receivedPackets->at(3).endpoint == epId2);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastUdpTransport

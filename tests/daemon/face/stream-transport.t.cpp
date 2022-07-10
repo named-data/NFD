@@ -93,8 +93,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, StreamTransportFixtures, T)
   BOOST_REQUIRE_EQUAL(this->receivedPackets->size(), 2);
   BOOST_CHECK(this->receivedPackets->at(0).packet == pkt1);
   BOOST_CHECK(this->receivedPackets->at(1).packet == pkt2);
-  BOOST_CHECK_EQUAL(this->receivedPackets->at(0).endpoint, 0);
-  BOOST_CHECK_EQUAL(this->receivedPackets->at(1).endpoint, 0);
+  BOOST_CHECK(this->receivedPackets->at(0).endpoint == EndpointId{});
+  BOOST_CHECK(this->receivedPackets->at(1).endpoint == EndpointId{});
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleSegments, T, StreamTransportFixtures, T)

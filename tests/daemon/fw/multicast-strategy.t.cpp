@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(Bug5123)
   auto pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 1);
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(Bug5123)
   pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face2, *interest);
 
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face2, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face2), pitEntry);
   // Since the interest is the same as the one sent out earlier, the PIT entry should not be
   // rejected, as any data coming back must be able to satisfy the original interest from face 1
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   auto pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face3, *interest);
 
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3), pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
   BOOST_TEST(didSendInterestTo(*face1));
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
     pitEntry->insertOrUpdateInRecord(*face3, *interest);
-    strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3, 0), pitEntry);
+    strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3), pitEntry);
 
     size_t nSent = strategy.sendInterestHistory.size();
     if (nSent > nSentLast) {
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
   auto pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(RetxSuppression)
   auto interest = makeInterest("/t8ZiSOi3");
   auto pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
 
   // forwarded to faces 2 and 3
   BOOST_TEST(strategy.sendInterestHistory.size() == 2);
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(RetxSuppression)
   interest->refreshNonce();
   pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face2, *interest);
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face2, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face2), pitEntry);
 
   // forwarded only to face 1, suppressed on face 3
   BOOST_TEST(strategy.sendInterestHistory.size() == 1);
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(RetxSuppression)
   interest->refreshNonce();
   pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face3, *interest);
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3), pitEntry);
 
   // suppressed on face 1, forwarded on face 2 (and suppression window doubles)
   BOOST_TEST(strategy.sendInterestHistory.size() == 1);
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(RetxSuppression)
   interest->refreshNonce();
   pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face3, *interest);
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face3), pitEntry);
 
   // forwarded only to face 1, suppressed on face 2
   BOOST_TEST(strategy.sendInterestHistory.size() == 1);
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(RetxSuppression)
   interest->refreshNonce();
   pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
 
   // forwarded to faces 2 and 3
   BOOST_TEST(strategy.sendInterestHistory.size() == 2);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(NewNextHop)
   auto pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
-  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1, 0), pitEntry);
+  strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 1);
 
@@ -491,12 +491,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ForwardAsync, T, Tests, T)
   auto interest = makeInterest("ndn:/localhop/H0D6i5fc");
   auto pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->inFace1, *interest);
-  this->strategy.afterReceiveInterest(*interest, FaceEndpoint(*this->inFace1, 0), pitEntry);
+  this->strategy.afterReceiveInterest(*interest, FaceEndpoint(*this->inFace1), pitEntry);
 
   if (this->inFace2 != nullptr) {
     auto interest2 = makeInterest("ndn:/localhop/H0D6i5fc");
     pitEntry->insertOrUpdateInRecord(*this->inFace2, *interest2);
-    this->strategy.afterReceiveInterest(*interest2, FaceEndpoint(*this->inFace2, 0), pitEntry);
+    this->strategy.afterReceiveInterest(*interest2, FaceEndpoint(*this->inFace2), pitEntry);
   }
 
   this->strategy.sendInterestHistory.clear();

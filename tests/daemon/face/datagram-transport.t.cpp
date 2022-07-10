@@ -82,8 +82,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
   BOOST_REQUIRE_EQUAL(this->receivedPackets->size(), 2);
   BOOST_CHECK(this->receivedPackets->at(0).packet == pkt1);
   BOOST_CHECK(this->receivedPackets->at(1).packet == pkt2);
-  BOOST_CHECK_EQUAL(this->receivedPackets->at(0).endpoint,
-                    this->receivedPackets->at(1).endpoint);
+  BOOST_CHECK(this->receivedPackets->at(0).endpoint == this->receivedPackets->at(1).endpoint);
+  // check that the endpoint is empty (monostate) if and only if the transport is unicast
+  constexpr bool isUnicast = std::is_same_v<typename std::remove_pointer_t<decltype(T::transport)>::addressing,
+                                            face::Unicast>;
+  BOOST_CHECK_EQUAL(std::holds_alternative<std::monostate>(this->receivedPackets->at(0).endpoint),
+                    isUnicast);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures, T)

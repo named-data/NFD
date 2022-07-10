@@ -31,7 +31,6 @@
 
 #include <boost/asio/ip/multicast.hpp>
 #include <boost/asio/ip/v6_only.hpp>
-#include <boost/functional/hash.hpp>
 
 #ifdef __linux__
 #include <cerrno>       // for errno
@@ -188,23 +187,6 @@ MulticastUdpTransport::openTxSocket(protocol::socket& sock,
     sock.bind(localEndpoint);
     if (netif)
       sock.set_option(boost::asio::ip::multicast::outbound_interface(netif->getIndex()));
-  }
-}
-
-template<>
-EndpointId
-DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep)
-{
-  if (ep.address().is_v4()) {
-    return (static_cast<uint64_t>(ep.port()) << 32) |
-            static_cast<uint64_t>(ep.address().to_v4().to_ulong());
-  }
-  else {
-    size_t seed = 0;
-    const auto& addrBytes = ep.address().to_v6().to_bytes();
-    boost::hash_range(seed, addrBytes.begin(), addrBytes.end());
-    boost::hash_combine(seed, ep.port());
-    return seed;
   }
 }
 

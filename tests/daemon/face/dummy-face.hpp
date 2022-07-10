@@ -60,17 +60,17 @@ public:
   /** \brief causes the face to receive an Interest
    */
   void
-  receiveInterest(const Interest& interest, const EndpointId& endpointId);
+  receiveInterest(const Interest& interest, const EndpointId& endpointId = {});
 
   /** \brief causes the face to receive a Data
    */
   void
-  receiveData(const Data& data, const EndpointId& endpointId);
+  receiveData(const Data& data, const EndpointId& endpointId = {});
 
   /** \brief causes the face to receive a Nack
    */
   void
-  receiveNack(const lp::Nack& nack, const EndpointId& endpointId);
+  receiveNack(const lp::Nack& nack, const EndpointId& endpointId = {});
 
   /** \brief Emitted after a network-layer packet is sent.
    *
