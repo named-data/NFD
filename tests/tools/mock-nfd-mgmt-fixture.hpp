@@ -210,14 +210,15 @@ protected:
 
 } // namespace nfd::tests
 
-/** \brief require the command in \p interest has expected prefix
- *  \note This must be used in processInterest lambda, and the Interest must be named 'interest'.
- *  \return ControlParameters, or nullopt if \p interest does match \p expectedPrefix
+/**
+ * \brief Require the command in \p interest to have the expected prefix
+ * \note This must be used in the `processInterest` lambda, and the Interest must be named `interest`.
+ * \return ControlParameters. The test case will fail if \p interest does not match \p expectedPrefix.
  */
 #define MOCK_NFD_MGMT_REQUIRE_COMMAND_IS(expectedPrefix) \
-  [interest] { \
+  [&interest] { \
     auto params = parseCommand(interest, (expectedPrefix)); \
-    BOOST_REQUIRE_MESSAGE(params, "Interest " << interest.getName() << \
+    BOOST_REQUIRE_MESSAGE(params.has_value(), "Interest " << interest.getName() << \
                           " does not match command prefix " << (expectedPrefix)); \
     return *params; \
   } ()

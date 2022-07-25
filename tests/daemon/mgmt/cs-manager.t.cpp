@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(Config)
   m_cs.enableServe(true);
 
   // send empty cs/config command
-  auto req = makeControlCommandRequest(cmdPrefix, ControlParameters());
+  auto req = makeControlCommandRequest(cmdPrefix);
   receiveInterest(req);
 
   // response shall reflect current config

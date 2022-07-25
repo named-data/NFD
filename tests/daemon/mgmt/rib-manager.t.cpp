@@ -135,12 +135,14 @@ public:
     ndn::security::MakeCertificateOptions opts;
     opts.validity = derivedSelfSigned.getValidityPeriod();
     auto derivedCert = m_keyChain.makeCertificate(derivedSelfSigned,
-                       ndn::security::signingByIdentity(anchorIdentity), opts);
+                                                  ndn::security::signingByIdentity(anchorIdentity),
+                                                  opts);
     m_keyChain.setDefaultCertificate(derivedKey, derivedCert);
 
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
     }
+
     if (m_status.isLocalhopConfigured) {
       m_manager.enableLocalhop(getLocalhopValidatorConfigSection(), "test");
     }
@@ -173,19 +175,20 @@ private:
     auto replyFibAddCommand = [this] (const Interest& interest) {
       ControlParameters params(interest.getName().get(-5).blockFromValue());
       BOOST_CHECK(params.getName() == "/localhost/nfd/rib" || params.getName() == "/localhop/nfd/rib");
-      params.setFaceId(1).setCost(0);
+      params.setFaceId(1)
+            .setCost(0);
       ControlResponse resp;
+      resp.setCode(200)
+          .setBody(params.wireEncode());
 
-      resp.setCode(200).setBody(params.wireEncode());
-      shared_ptr<Data> data = make_shared<Data>(interest.getName());
+      auto data = make_shared<Data>(interest.getName());
       data->setContent(resp.wireEncode());
-
       m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
 
       m_face.getIoService().post([this, data] { m_face.receive(*data); });
     };
 
-    Name commandPrefix("/localhost/nfd/fib/add-nexthop");
+    const Name commandPrefix("/localhost/nfd/fib/add-nexthop");
     for (const auto& command : m_face.sentInterests) {
       if (commandPrefix.isPrefixOf(command.getName())) {
         replyFibAddCommand(command);

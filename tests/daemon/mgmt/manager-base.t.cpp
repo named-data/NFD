@@ -27,11 +27,6 @@
 
 #include "manager-common-fixture.hpp"
 
-#include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/security/pib/identity.hpp>
-#include <ndn-cxx/security/pib/key.hpp>
-#include <ndn-cxx/security/pib/pib.hpp>
-
 namespace nfd::tests {
 
 class TestCommandVoidParameters : public ControlCommand
@@ -86,35 +81,35 @@ BOOST_FIXTURE_TEST_SUITE(TestManagerBase, ManagerBaseFixture)
 
 BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 {
-  bool wasCommandHandlerCalled = false;
-  auto handler = [&] (auto&&...) { wasCommandHandlerCalled = true; };
+  bool wasHandlerCalled = false;
+  auto handler = [&] (auto&&...) { wasHandlerCalled = true; };
 
   m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
   m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
   setTopPrefix();
 
-  auto testRegisterCommandHandler = [&wasCommandHandlerCalled, this] (const Name& commandName) {
-    wasCommandHandlerCalled = false;
-    receiveInterest(makeControlCommandRequest(commandName, ControlParameters()));
+  auto testRegisterCommandHandler = [&] (const Name& commandName) {
+    wasHandlerCalled = false;
+    receiveInterest(makeControlCommandRequest(commandName));
   };
 
   testRegisterCommandHandler("/localhost/nfd/test-module/test-void");
-  BOOST_CHECK(wasCommandHandlerCalled);
+  BOOST_CHECK(wasHandlerCalled);
 
   testRegisterCommandHandler("/localhost/nfd/test-module/test-require-name");
-  BOOST_CHECK(!wasCommandHandlerCalled);
+  BOOST_CHECK(!wasHandlerCalled);
 }
 
 BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
 {
-  bool isStatusDatasetCalled = false;
-  auto handler = [&] (auto&&...) { isStatusDatasetCalled = true; };
+  bool wasHandlerCalled = false;
+  auto handler = [&] (auto&&...) { wasHandlerCalled = true; };
 
   m_manager.registerStatusDatasetHandler("test-status", handler);
   setTopPrefix();
 
   receiveInterest(*makeInterest("/localhost/nfd/test-module/test-status", true));
-  BOOST_CHECK(isStatusDatasetCalled);
+  BOOST_CHECK(wasHandlerCalled);
 }
 
 BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
@@ -136,13 +131,13 @@ BOOST_AUTO_TEST_CASE(ExtractRequester)
   auto testAccept = [&] (const std::string& requester) { requesterName = requester; };
 
   m_manager.extractRequester(Interest("/test/interest/unsigned"), testAccept);
-  BOOST_CHECK(requesterName.empty());
+  BOOST_CHECK_EQUAL(requesterName, "");
 
-  requesterName = "";
-  m_manager.extractRequester(makeControlCommandRequest("/test/interest/signed", ControlParameters()), testAccept);
+  requesterName.clear();
+  m_manager.extractRequester(makeControlCommandRequest("/test/interest/signed"), testAccept);
   BOOST_CHECK_EQUAL(requesterName,
-    m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
-      .getDefaultKey().getDefaultCertificate().getName().toUri());
+                    m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
+                    .getDefaultKey().getDefaultCertificate().getName().toUri());
 }
 
 BOOST_AUTO_TEST_CASE(ValidateParameters)

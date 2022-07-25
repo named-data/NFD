@@ -57,12 +57,12 @@ public:
   FaceManager manager;
 };
 
-class FaceManagerCommandFixture : public CommandInterestSignerFixture
+class FaceManagerCommandFixture : public InterestSignerFixture
 {
 public:
   FaceManagerCommandFixture();
 
-  ~FaceManagerCommandFixture();
+  ~FaceManagerCommandFixture() override;
 
 public:
   FaceManagerCommandNode node1; // used to test FaceManager

@@ -27,22 +27,15 @@
 
 #include "manager-common-fixture.hpp"
 
-#include <boost/filesystem.hpp>
-
 namespace nfd::tests {
 
-class CommandAuthenticatorFixture : public CommandInterestSignerFixture
+class CommandAuthenticatorFixture : public InterestSignerFixture
 {
 protected:
-  CommandAuthenticatorFixture()
-    : authenticator(CommandAuthenticator::create())
-  {
-  }
-
   void
   makeModules(std::initializer_list<std::string> modules)
   {
-    for (const std::string& module : modules) {
+    for (const auto& module : modules) {
       authorizations.emplace(module, authenticator->makeAuthorization(module, "verb"));
     }
   }
@@ -50,10 +43,9 @@ protected:
   void
   loadConfig(const std::string& config)
   {
-    auto configPath = boost::filesystem::current_path() / "command-authenticator-test.conf";
     ConfigFile cf;
     authenticator->setConfigFile(cf);
-    cf.parse(config, false, configPath.c_str());
+    cf.parse(config, false, "command-authenticator-test.conf");
   }
 
   bool
@@ -66,7 +58,7 @@ protected:
       modifyInterest(interest);
     }
 
-    ndn::mgmt::Authorization authorization = authorizations.at(module);
+    const auto& authorization = authorizations.at(module);
 
     bool isAccepted = false;
     bool isRejected = false;
@@ -91,7 +83,7 @@ protected:
   }
 
 protected:
-  shared_ptr<CommandAuthenticator> authenticator;
+  shared_ptr<CommandAuthenticator> authenticator = CommandAuthenticator::create();
   std::unordered_map<std::string, ndn::mgmt::Authorization> authorizations;
   std::string lastRequester;
   ndn::mgmt::RejectReply lastRejectReply;
@@ -110,7 +102,7 @@ BOOST_AUTO_TEST_CASE(Certs)
   BOOST_REQUIRE(saveIdentityCert(id2, "2.ndncert", true));
 
   makeModules({"module0", "module1", "module2", "module3", "module4", "module5", "module6", "module7"});
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
@@ -199,7 +191,7 @@ BOOST_AUTO_TEST_CASE(Requester)
   BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
 
   makeModules({"module0", "module1"});
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
@@ -238,12 +230,11 @@ class IdentityAuthorizedFixture : public CommandAuthenticatorFixture
 {
 protected:
   IdentityAuthorizedFixture()
-    : id1("/localhost/CommandAuthenticator/1")
   {
     BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
 
     makeModules({"module1"});
-    const std::string& config = R"CONFIG(
+    const std::string config = R"CONFIG(
       authorizations
       {
         authorize
@@ -266,10 +257,10 @@ protected:
   }
 
 protected:
-  Name id1;
+  const Name id1{"/localhost/CommandAuthenticator/1"};
 };
 
-BOOST_FIXTURE_TEST_SUITE(Rejects, IdentityAuthorizedFixture)
+BOOST_FIXTURE_TEST_SUITE(Reject, IdentityAuthorizedFixture)
 
 BOOST_AUTO_TEST_CASE(BadKeyLocator_NameTooShort)
 {
@@ -281,7 +272,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_NameTooShort)
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
 }
 
-BOOST_AUTO_TEST_CASE(BadKeyLocator_BadSigInfo)
+BOOST_AUTO_TEST_CASE(BadSigInfo)
 {
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
@@ -291,7 +282,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_BadSigInfo)
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
 }
 
-BOOST_AUTO_TEST_CASE(BadKeyLocator_MissingKeyLocator)
+BOOST_AUTO_TEST_CASE(MissingKeyLocator)
 {
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
@@ -302,7 +293,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_MissingKeyLocator)
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
 }
 
-BOOST_AUTO_TEST_CASE(BadKeyLocator_BadKeyLocatorType)
+BOOST_AUTO_TEST_CASE(BadKeyLocatorType)
 {
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
@@ -364,13 +355,13 @@ BOOST_FIXTURE_TEST_CASE(MissingAuthorizationsSection, CommandAuthenticatorFixtur
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // Rejects
+BOOST_AUTO_TEST_SUITE_END() // Reject
 
 BOOST_AUTO_TEST_SUITE(BadConfig)
 
 BOOST_AUTO_TEST_CASE(EmptyAuthorizationsSection)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
     }
@@ -381,7 +372,7 @@ BOOST_AUTO_TEST_CASE(EmptyAuthorizationsSection)
 
 BOOST_AUTO_TEST_CASE(UnrecognizedKey)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       unrecognized_key
@@ -395,7 +386,7 @@ BOOST_AUTO_TEST_CASE(UnrecognizedKey)
 
 BOOST_AUTO_TEST_CASE(CertfileMissing)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
@@ -412,7 +403,7 @@ BOOST_AUTO_TEST_CASE(CertfileMissing)
 
 BOOST_AUTO_TEST_CASE(CertUnreadable)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
@@ -430,7 +421,7 @@ BOOST_AUTO_TEST_CASE(CertUnreadable)
 
 BOOST_AUTO_TEST_CASE(PrivilegesMissing)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
@@ -445,7 +436,7 @@ BOOST_AUTO_TEST_CASE(PrivilegesMissing)
 
 BOOST_AUTO_TEST_CASE(UnregisteredModule)
 {
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize

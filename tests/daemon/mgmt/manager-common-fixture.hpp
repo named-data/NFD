@@ -38,12 +38,13 @@
 
 namespace nfd::tests {
 
-/** \brief A fixture that wraps an InterestSigner.
+/**
+ * \brief A fixture that wraps an InterestSigner.
  */
-class CommandInterestSignerFixture : public GlobalIoTimeFixture, public KeyChainFixture
+class InterestSignerFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 protected:
-  CommandInterestSignerFixture();
+  InterestSignerFixture();
 
   /** \brief sign a command Interest
    *  \param name command name include prefix and parameters
@@ -60,24 +61,23 @@ protected:
    *  \return a command Interest
    */
   Interest
-  makeControlCommandRequest(Name commandName, const ControlParameters& params,
+  makeControlCommandRequest(Name commandName,
+                            const ControlParameters& params = {},
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
-  static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/CommandInterestSignerFixture-identity"};
+  static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/InterestSignerFixture-identity"};
 
 private:
-  ndn::security::InterestSigner m_signer;
+  ndn::security::InterestSigner m_signer{m_keyChain};
 };
 
 /**
  * @brief A collection of common functions shared by all manager's test fixtures.
  */
-class ManagerCommonFixture : public CommandInterestSignerFixture
+class ManagerCommonFixture : public InterestSignerFixture
 {
 public: // initialize
-  ManagerCommonFixture();
-
   /**
    * @brief Add `/localhost/nfd` as a top prefix to the dispatcher.
    *
@@ -99,11 +99,10 @@ public: // test
   receiveInterest(const Interest& interest);
 
 public: // verify
-  ControlResponse
+  static ControlResponse
   makeResponse(uint32_t code, const std::string& text, const ControlParameters& parameters);
 
-  enum class CheckResponseResult
-  {
+  enum class CheckResponseResult {
     OK,
     OUT_OF_BOUNDARY,
     WRONG_NAME,
@@ -153,9 +152,9 @@ public: // verify
   concatenateResponses(size_t startIndex = 0, size_t nResponses = 0);
 
 protected:
-  ndn::util::DummyClientFace m_face;
-  Dispatcher m_dispatcher;
-  std::vector<Data>& m_responses; ///< a reference to m_face.sentData
+  ndn::util::DummyClientFace m_face{g_io, m_keyChain, {true, true}};
+  Dispatcher m_dispatcher{m_face, m_keyChain};
+  std::vector<Data>& m_responses{m_face.sentData};
 };
 
 std::ostream&

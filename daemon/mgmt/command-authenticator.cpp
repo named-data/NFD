@@ -128,11 +128,10 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
   }
 
   int authSectionIndex = 0;
-  for (const auto& kv : section) {
-    if (kv.first != "authorize") {
-      NDN_THROW(ConfigFile::Error("'" + kv.first + "' section is not permitted under 'authorizations'"));
+  for (const auto& [sectionName, authSection] : section) {
+    if (sectionName != "authorize") {
+      NDN_THROW(ConfigFile::Error("'" + sectionName + "' section is not permitted under 'authorizations'"));
     }
-    const ConfigSection& authSection = kv.second;
 
     std::string certfile;
     try {

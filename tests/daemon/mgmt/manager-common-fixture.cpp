@@ -27,32 +27,24 @@
 
 namespace nfd::tests {
 
-CommandInterestSignerFixture::CommandInterestSignerFixture()
-  : m_signer(m_keyChain)
+InterestSignerFixture::InterestSignerFixture()
 {
   BOOST_REQUIRE(m_keyChain.createIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY));
 }
 
 Interest
-CommandInterestSignerFixture::makeCommandInterest(const Name& name, const Name& identity)
+InterestSignerFixture::makeCommandInterest(const Name& name, const Name& identity)
 {
   return m_signer.makeCommandInterest(name, ndn::security::signingByIdentity(identity));
 }
 
 Interest
-CommandInterestSignerFixture::makeControlCommandRequest(Name commandName,
-                                                        const ControlParameters& params,
-                                                        const Name& identity)
+InterestSignerFixture::makeControlCommandRequest(Name commandName,
+                                                 const ControlParameters& params,
+                                                 const Name& identity)
 {
   commandName.append(tlv::GenericNameComponent, params.wireEncode());
   return this->makeCommandInterest(commandName, identity);
-}
-
-ManagerCommonFixture::ManagerCommonFixture()
-  : m_face(g_io, m_keyChain, {true, true})
-  , m_dispatcher(m_face, m_keyChain, ndn::security::SigningInfo())
-  , m_responses(m_face.sentData)
-{
 }
 
 void
@@ -192,7 +184,7 @@ ManagerFixtureWithAuthenticator::setPrivilege(const std::string& privilege)
 {
   saveIdentityCert(DEFAULT_COMMAND_SIGNER_IDENTITY, "ManagerCommonFixture.ndncert");
 
-  const std::string& config = R"CONFIG(
+  const std::string config = R"CONFIG(
     authorizations
     {
       authorize
