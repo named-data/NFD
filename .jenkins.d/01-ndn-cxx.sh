@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-set -ex
+set -exo pipefail
 
 pushd "$CACHE_DIR" >/dev/null
 
 INSTALLED_VERSION=
-if has OSX $NODE_LABELS; then
-    BOOST=$(brew ls --versions boost)
+if [[ $ID == macos ]]; then
+    BOOST=$(brew list --formula --versions boost)
     OLD_BOOST=$(cat boost.txt || :)
     if [[ $OLD_BOOST != $BOOST ]]; then
         echo "$BOOST" > boost.txt
@@ -35,16 +35,16 @@ sudo rm -f /usr/local/lib{,64}/pkgconfig/libndn-cxx.pc
 
 pushd ndn-cxx >/dev/null
 
-./waf --color=yes configure --disable-static --enable-shared --without-osx-keychain
-./waf --color=yes build -j$WAF_JOBS
-sudo_preserve_env PATH -- ./waf --color=yes install
+./waf --color=yes configure --without-osx-keychain
+./waf --color=yes build
+sudo ./waf --color=yes install
 
 popd >/dev/null
 popd >/dev/null
 
-if has CentOS $NODE_LABELS; then
+if [[ $ID_LIKE == *fedora* ]]; then
     sudo tee /etc/ld.so.conf.d/ndn.conf >/dev/null <<< /usr/local/lib64
 fi
-if has Linux $NODE_LABELS; then
+if [[ $ID_LIKE == *linux* ]]; then
     sudo ldconfig
 fi

@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       JOB_NAME: Docs
-      WAF_JOBS: 3
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -26,10 +25,6 @@ jobs:
           submodules: true
       - name: Install dependencies
         run: |
-          case ${RUNNER_OS} in
-            Linux) export NODE_LABELS="Linux Ubuntu" ;;
-            macOS) export NODE_LABELS="OSX" ;;
-          esac
           find .jenkins.d/ -type f -name '[1-9]*.sh' -exec chmod -x '{}' +
           ./.jenkins
       - name: Build documentation

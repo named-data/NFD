@@ -27,8 +27,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CXX: ${{ matrix.compiler }}
-      NODE_LABELS: Linux Ubuntu
-      WAF_JOBS: 2
     steps:
       - name: Install C++ compiler
         run: |
@@ -52,9 +50,6 @@ jobs:
           - xcode: '13.2'
             os: macos-11
     runs-on: ${{ matrix.os }}
-    env:
-      NODE_LABELS: OSX
-      WAF_JOBS: 3
     steps:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1

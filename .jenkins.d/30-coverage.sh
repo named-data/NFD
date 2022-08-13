@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -exo pipefail
 
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     # Generate an XML report (Cobertura format) and a detailed HTML report using gcovr

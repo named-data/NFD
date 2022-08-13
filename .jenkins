@@ -1,12 +1,25 @@
 #!/usr/bin/env bash
-set -e
-source .jenkins.d/util.sh
+set -eo pipefail
 
-if has Linux $NODE_LABELS; then
-    export PATH="${HOME}/.local/bin${PATH:+:}${PATH}"
-fi
+case $(uname) in
+    Linux)
+        if [[ -e /etc/os-release ]]; then
+            source /etc/os-release
+        else
+            source /usr/lib/os-release
+        fi
+        export ID VERSION_ID
+        export ID_LIKE="${ID} ${ID_LIKE} linux"
+        export PATH="${HOME}/.local/bin${PATH:+:}${PATH}"
+        ;;
+    Darwin)
+        # Emulate a subset of os-release(5)
+        export ID=macos
+        export VERSION_ID=$(sw_vers -productVersion)
+        ;;
+esac
+
 export CACHE_DIR=${CACHE_DIR:-/tmp}
-export WAF_JOBS=${WAF_JOBS:-1}
 [[ $JOB_NAME == *"code-coverage" ]] && export DISABLE_ASAN=yes
 
 for file in .jenkins.d/*; do

@@ -1,28 +1,36 @@
-# CONTINUOUS INTEGRATION SCRIPTS
+# Continuous Integration Scripts
 
-## Environment Variables Used in Build Scripts
+## Environment Variables
 
-- `NODE_LABELS`: space-separated list of platform properties. The included values are used by
-  the build scripts to select the proper behavior for different operating systems and versions.
+- `ID`: lower-case string that identifies the operating system, for example: `ID=ubuntu`,
+  `ID=centos`. See [os-release(5)] for more information. On macOS, where `os-release` is
+  not available, we emulate it by setting `ID=macos`.
 
-  The list should normally contain `[OS_TYPE]`, `[DISTRO_TYPE]`, and `[DISTRO_VERSION]`.
+- `ID_LIKE`: space-separated list of operating system identifiers that are closely related
+  to the running OS. See [os-release(5)] for more information. The listed values are used
+  by the CI scripts to select the proper behavior for different platforms and OS flavors.
 
-  Example values:
+  Examples:
 
-  - `[OS_TYPE]`: `Linux`, `OSX`
-  - `[DISTRO_TYPE]`: `Ubuntu`, `CentOS`
-  - `[DISTRO_VERSION]`: `Ubuntu-16.04`, `Ubuntu-18.04`, `CentOS-8`, `OSX-10.14`, `OSX-10.15`
+  - On CentOS, `ID_LIKE="centos rhel fedora linux"`
+  - On Ubuntu, `ID_LIKE="ubuntu debian linux"`
 
-- `JOB_NAME`: optional variable that defines the type of build job. Depending on the job type,
-  the build scripts can perform different tasks.
+- `VERSION_ID`: identifies the operating system version, excluding any release code names.
+  See [os-release(5)] for more information. Examples: `VERSION_ID=42`, `VERSION_ID=22.04`.
 
-  Possible values:
+- `JOB_NAME`: defines the type of the current CI job. Depending on the job type, the CI
+  scripts can perform different tasks.
+
+  Supported values:
 
   - empty: default build task
-  - `code-coverage`: debug build with tests and code coverage analysis (Ubuntu Linux is assumed)
+  - `code-coverage`: debug build with tests and code coverage analysis
   - `limited-build`: only a single debug build with tests
 
-- `CACHE_DIR`: directory containing cached files from previous builds, e.g., a compiled version
-  of ndn-cxx. If not set, `/tmp` is used.
+- `CACHE_DIR`: directory containing cached files from previous builds, e.g., a compiled
+  version of ndn-cxx. If not set, `/tmp` is used.
 
-- `WAF_JOBS`: number of parallel build threads used by waf, defaults to 1.
+- `DISABLE_ASAN`: disable building with AddressSanitizer. This is automatically set for
+  the `code-coverage` job type.
+
+[os-release(5)]: https://www.freedesktop.org/software/systemd/man/os-release.html
