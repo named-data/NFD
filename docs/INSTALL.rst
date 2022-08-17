@@ -7,23 +7,23 @@ Supported platforms
 NFD is built against a continuous integration system and has been tested on the
 following platforms:
 
--  Ubuntu 18.04 (amd64, armhf, i386)
--  Ubuntu 20.04 (amd64)
--  Ubuntu 21.10 (amd64)
--  CentOS Stream 9
--  macOS 10.15
--  macOS 11 (Intel only)
+- Ubuntu 18.04
+- Ubuntu 20.04
+- Ubuntu 22.04
+- Debian 11
+- CentOS Stream 9
+- macOS 10.15
+- macOS 11
+- macOS 12
 
 NFD is known to work on the following platforms, although they are not officially
 supported:
 
--  Alpine >= 3.12
--  Debian >= 10
--  Fedora >= 29
--  Gentoo Linux
--  Raspberry Pi OS (formerly Raspbian) >= 2019-06-20
--  FreeBSD >= 12.0
--  macOS 10.14
+- Alpine >= 3.12
+- Fedora >= 29
+- Gentoo Linux
+- Raspberry Pi OS (formerly Raspbian) >= 2019-06-20
+- FreeBSD >= 12.0
 
 .. _Install NFD on Ubuntu Linux using the NDN PPA repository:
 
@@ -76,7 +76,7 @@ Downloading from git
 
 The first step is to obtain the source code for NFD and its main dependency, the
 *ndn-cxx* library. If you do not want a development version of NFD, make sure you
-checkout the correct release tag (e.g., ``*-0.7.1``) from both repositories.
+checkout the correct release tag (e.g., ``*-0.8.0``) from both repositories.
 
 .. code-block:: sh
 
@@ -100,7 +100,7 @@ and its prerequisites.
 
 On Linux, NFD needs the following dependencies to enable optional features:
 
-- On **Ubuntu**:
+- On **Debian** and **Ubuntu**:
 
   .. code-block:: sh
 

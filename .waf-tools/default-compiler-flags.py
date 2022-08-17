@@ -33,7 +33,7 @@ def configure(conf):
                       'The minimum supported clang version is 6.0.')
         conf.flags = ClangFlags()
     else:
-        warnmsg = '%s compiler is unsupported' % cxx
+        warnmsg = f'{cxx} compiler is unsupported'
         conf.flags = CompilerFlags()
 
     if errmsg:
@@ -200,7 +200,8 @@ class ClangFlags(GccBasicFlags):
         flags = super(ClangFlags, self).getGeneralFlags(conf)
         if Utils.unversioned_sys_platform() == 'darwin':
             # Bug #4296
-            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
+            brewdir = '/opt/homebrew' if platform.machine() == 'arm64' else '/usr/local'
+            flags['CXXFLAGS'] += [['-isystem', f'{brewdir}/include'], # for Homebrew
                                   ['-isystem', '/opt/local/include']] # for MacPorts
         elif Utils.unversioned_sys_platform() == 'freebsd':
             # Bug #4790

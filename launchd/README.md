@@ -1,13 +1,12 @@
-Starting NFD on OSX >= 10.8
-===========================
+# Starting NFD on macOS
 
-OSX provides a standard way to start system daemons, monitor their health, and restart
-when they die.
+macOS provides a standard way to start system daemons, monitor their health, and restart
+them when they die.
 
-Initial setup
--------------
+## Initial setup
 
-Edit `net.named-data.nfd` correcting paths for `nfd` binary, configuration and log files.
+Edit `net.named-data.nfd.plist` as needed, adjusting the paths for the `nfd` binary,
+configuration, and log files.
 
     # Copy launchd.plist for NFD
     sudo cp net.named-data.nfd.plist /Library/LaunchDaemons/
@@ -58,8 +57,8 @@ Folder `/usr/local/var/log/ndn` should be created and assigned proper user and g
 
 `HOME` directory for `nfd` should be created and configured with correct library's config file
 and contain proper NDN security credentials for signing Data packets.  This is necessary since
-default private key storage on OSX (`osx-keychain`) does not support non-interactive access,
-and file-based private key storage needs to be used:
+the default private key storage on macOS (`tpm-osxkeychain`) does not support non-interactive
+access, and file-based private key storage needs to be used:
 
     # Create HOME and generate self-signed NDN certificate for nfd
     sudo -s -- ' \
@@ -115,13 +114,10 @@ be exported into `localhost_daemons_nfd.ndncert` file:
         /usr/local/etc/ndn/certs/localhost_daemons_nfd.ndncert; \
       '
 
-
-Enable auto-start
------------------
+## Enable auto-start
 
     sudo launchctl load -w /Library/LaunchDaemons/net.named-data.nfd.plist
 
-Disable auto-start
-------------------
+## Disable auto-start
 
     sudo launchctl unload -w /Library/LaunchDaemons/net.named-data.nfd.plist

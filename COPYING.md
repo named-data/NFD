@@ -9,10 +9,10 @@ NFD relies on third-party software, licensed under the following licenses:
 - The Boost libraries are licensed under the
   [Boost Software License 1.0](https://www.boost.org/users/license.html)
 
-- CityHash is licensed under a
+- CityHash is licensed under the
   [MIT license](https://github.com/google/cityhash/blob/master/COPYING)
 
-- Libpcap is licensed under a
+- Libpcap is licensed under the
   [3-clause BSD license](https://github.com/the-tcpdump-group/libpcap/blob/master/LICENSE)
 
 - The WebSocket++ library is licensed under the terms of the

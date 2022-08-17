@@ -423,17 +423,25 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpointV6, UdpFactoryMcastFixture)
   parseConfig(CONFIG1, false);
   auto udpMcastFaces = this->listUdp6McastFaces();
   BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV6.size());
-  auto expectedAddr = boost::asio::ip::address_v6::from_string("ff02::1101");
-  expectedAddr.scope_id(netifsV6.front()->getIndex());
-  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri(udp::Endpoint(expectedAddr, 7011)));
+  auto uri = udpMcastFaces.front()->getRemoteUri();
+  BOOST_CHECK_EQUAL(uri.getScheme(), "udp6");
+  // check the address ignoring the scope id
+  auto addr = boost::asio::ip::address_v6::from_string(uri.getHost());
+  addr.scope_id(0);
+  BOOST_CHECK_EQUAL(addr, boost::asio::ip::address_v6::from_string("ff02::1101"));
+  BOOST_CHECK_EQUAL(uri.getPort(), "7011");
 
   parseConfig(CONFIG2, false);
   g_io.poll();
   udpMcastFaces = this->listUdp6McastFaces();
   BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV6.size());
-  expectedAddr = boost::asio::ip::address_v6::from_string("ff02::1102");
-  expectedAddr.scope_id(netifsV6.front()->getIndex());
-  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri(udp::Endpoint(expectedAddr, 7012)));
+  uri = udpMcastFaces.front()->getRemoteUri();
+  BOOST_CHECK_EQUAL(uri.getScheme(), "udp6");
+  // check the address ignoring the scope id
+  addr = boost::asio::ip::address_v6::from_string(uri.getHost());
+  addr.scope_id(0);
+  BOOST_CHECK_EQUAL(addr, boost::asio::ip::address_v6::from_string("ff02::1102"));
+  BOOST_CHECK_EQUAL(uri.getPort(), "7012");
 }
 
 BOOST_FIXTURE_TEST_CASE(Whitelist, UdpFactoryMcastFixture)
