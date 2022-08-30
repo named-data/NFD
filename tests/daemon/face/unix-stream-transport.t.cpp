@@ -23,8 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "transport-test-common.hpp"
-
 #include "unix-stream-transport-fixture.hpp"
 
 namespace nfd::tests {

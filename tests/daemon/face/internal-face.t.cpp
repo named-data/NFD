@@ -25,9 +25,9 @@
 
 #include "face/internal-face.hpp"
 
-#include "transport-test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 

@@ -61,29 +61,35 @@ class IpTransportFixture : public TransportFixtureBase
 protected:
   IpTransportFixture()
   {
+    std::tie(interface, address) = getTestInterfaceAndIp(AF, AS, MC);
+
     BOOST_TEST_MESSAGE("Testing with AddressFamily=" << AF <<
                        " AddressScope=" << AS <<
                        " MulticastInterface=" << MC <<
-                       " TestIp=" << address);
+                       " TestInterface=" << (interface == nullptr ? "N/A" : interface->getName()) <<
+                       " TestIp=" << (address.is_unspecified() ? "N/A" : address.to_string()));
   }
 
-  [[nodiscard]] std::pair<bool, std::string>
+  [[nodiscard]] std::tuple<bool, std::string>
   checkPreconditions() const
   {
-    return {!address.is_unspecified(), "no appropriate IP address available"};
+    return {interface != nullptr && !address.is_unspecified(),
+            "no appropriate interface or IP address available"};
   }
 
   template<typename... Args>
   void
   initialize(Args&&... args)
   {
-    TransportFixtureBase::initialize(address, std::forward<Args>(args)...);
+    TransportFixtureBase::initialize(interface, address, std::forward<Args>(args)...);
   }
 
 protected:
   static constexpr AddressFamily addressFamily = AF;
   static constexpr AddressScope addressScope = AS;
-  const boost::asio::ip::address address = getTestIp(AF, AS, MC);
+
+  shared_ptr<const ndn::net::NetworkInterface> interface;
+  boost::asio::ip::address address;
 };
 
 } // namespace nfd::tests

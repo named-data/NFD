@@ -23,8 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "transport-test-common.hpp"
-
 #include "multicast-udp-transport-fixture.hpp"
 
 #include <boost/mpl/vector.hpp>
@@ -34,12 +32,7 @@ namespace nfd::tests {
 using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
-
-using MulticastUdpTransportFixtureWithAddress =
-  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::Any,
-                     AddressScope::Global, MulticastInterface::Yes>;
-
-BOOST_FIXTURE_TEST_SUITE(TestMulticastUdpTransport, MulticastUdpTransportFixtureWithAddress)
+BOOST_AUTO_TEST_SUITE(TestMulticastUdpTransport)
 
 using MulticastUdpTransportFixtures = boost::mpl::vector<
   IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>,
@@ -63,7 +56,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, MulticastUdpTransportFixtu
   BOOST_CHECK_GT(this->transport->getSendQueueCapacity(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(PersistencyChange)
+using MulticastUdpTransportFixtureWithAddress = IpTransportFixture<MulticastUdpTransportFixture,
+                                                                   AddressFamily::Any,
+                                                                   AddressScope::LinkLocal,
+                                                                   MulticastInterface::Yes>;
+
+BOOST_FIXTURE_TEST_CASE(PersistencyChange, MulticastUdpTransportFixtureWithAddress)
 {
   TRANSPORT_TEST_INIT();
 

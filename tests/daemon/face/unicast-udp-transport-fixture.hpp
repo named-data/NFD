@@ -32,6 +32,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 
@@ -43,7 +44,7 @@ class UnicastUdpTransportFixture : public GlobalIoFixture
 {
 protected:
   void
-  initialize(ip::address address,
+  initialize(const shared_ptr<const ndn::net::NetworkInterface>&, const ip::address& address,
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   {
     udp::socket sock(g_io);
@@ -61,7 +62,7 @@ protected:
   }
 
   void
-  remoteConnect(ip::address address = ip::address_v4::loopback())
+  remoteConnect(const ip::address& address = ip::address_v4::loopback())
   {
     udp::endpoint remoteEp(address, 7070);
     remoteSocket.open(remoteEp.protocol());

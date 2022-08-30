@@ -28,6 +28,9 @@
 
 namespace nfd::tests {
 
+using ndn::net::NetworkInterface;
+using ndn::net::NetworkMonitor;
+
 std::vector<shared_ptr<const NetworkInterface>>
 enumerateNetworkInterfaces(NetworkMonitor& netmon)
 {

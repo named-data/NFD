@@ -32,6 +32,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 
@@ -64,7 +65,7 @@ protected:
   }
 
   void
-  initialize(ip::address address,
+  initialize(const shared_ptr<const ndn::net::NetworkInterface>&, const ip::address& address,
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   {
     tcp::endpoint remoteEp(address, 7070);

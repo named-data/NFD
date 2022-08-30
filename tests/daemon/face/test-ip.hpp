@@ -30,6 +30,7 @@
 
 #include <boost/asio/ip/address.hpp>
 #include <ndn-cxx/net/network-address.hpp>
+#include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd::tests {
 
@@ -61,8 +62,6 @@ enum class MulticastInterface {
 std::ostream&
 operator<<(std::ostream& os, MulticastInterface mcast);
 
-/** \brief Derives IP address type from AddressFamily
- */
 template<AddressFamily AF>
 struct IpAddressFromFamily;
 
@@ -78,17 +77,35 @@ struct IpAddressFromFamily<AddressFamily::V6>
   using type = boost::asio::ip::address_v6;
 };
 
-/** \brief Get an IP address from any available network interface
- *  \param family the desired address family
- *  \param scope the desired address scope
- *  \param mcast specifies if the address can, must, or must not be chosen from a multicast-capable interface
- *  \return an IP address, either boost::asio::ip::address_v4 or boost::asio::ip::address_v6
- *  \retval unspecified address, if no appropriate address is available
+/**
+ * \brief Derives IP address type from AddressFamily
  */
-boost::asio::ip::address
+template<AddressFamily AF>
+using IpAddressTypeFromFamily = typename IpAddressFromFamily<AF>::type;
+
+/**
+ * \brief Get an IP address from any available network interface, satisfying the given requirements
+ * \param family the desired address family
+ * \param scope the desired address scope
+ * \param mcast specifies if the address can, must, or must not be chosen from a multicast-capable interface
+ * \return an IP address, either boost::asio::ip::address_v4 or boost::asio::ip::address_v6
+ * \retval unspecified address, if no appropriate address is available
+ */
+[[nodiscard]] boost::asio::ip::address
 getTestIp(AddressFamily family = AddressFamily::Any,
           AddressScope scope = AddressScope::Any,
           MulticastInterface mcast = MulticastInterface::Any);
+
+/**
+ * \brief Get a network interface and an IP address on it that satisfy the given requirements
+ * \param family the desired address family
+ * \param scope the desired address scope
+ * \param mcast specifies if the address can, must, or must not be chosen from a multicast-capable interface
+ */
+[[nodiscard]] std::tuple<shared_ptr<const ndn::net::NetworkInterface>, boost::asio::ip::address>
+getTestInterfaceAndIp(AddressFamily family = AddressFamily::Any,
+                      AddressScope scope = AddressScope::Any,
+                      MulticastInterface mcast = MulticastInterface::Any);
 
 } // namespace nfd::tests
 

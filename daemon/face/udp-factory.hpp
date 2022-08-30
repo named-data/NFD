@@ -90,7 +90,7 @@ public:
    * \throw UdpFactory::Error
    */
   shared_ptr<Face>
-  createMulticastFace(const shared_ptr<const ndn::net::NetworkInterface>& netif,
+  createMulticastFace(const ndn::net::NetworkInterface& netif,
                       const boost::asio::ip::address& localAddress,
                       const udp::Endpoint& multicastEndpoint);
 

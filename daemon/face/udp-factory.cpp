@@ -324,7 +324,7 @@ UdpFactory::doGetChannels() const
 }
 
 shared_ptr<Face>
-UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& netif,
+UdpFactory::createMulticastFace(const net::NetworkInterface& netif,
                                 const ip::address& localAddress,
                                 const udp::Endpoint& multicastEndpoint)
 {
@@ -337,7 +337,7 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   if (mcastEp.address().is_v6()) {
     // in IPv6, a scope id on the multicast address is always required
     auto mcastAddress = mcastEp.address().to_v6();
-    mcastAddress.scope_id(netif->getIndex());
+    mcastAddress.scope_id(netif.getIndex());
     mcastEp.address(mcastAddress);
   }
 
@@ -358,9 +358,9 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   }
 
   ip::udp::socket rxSock(getGlobalIoService());
-  MulticastUdpTransport::openRxSocket(rxSock, mcastEp, localAddress, netif);
+  MulticastUdpTransport::openRxSocket(rxSock, mcastEp, localAddress, &netif);
   ip::udp::socket txSock(getGlobalIoService());
-  MulticastUdpTransport::openTxSocket(txSock, udp::Endpoint(localAddress, 0), netif);
+  MulticastUdpTransport::openTxSocket(txSock, udp::Endpoint(localAddress, 0), &netif);
 
   GenericLinkService::Options options;
   options.allowCongestionMarking = m_wantCongestionMarking;
@@ -442,7 +442,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
 
   std::vector<shared_ptr<Face>> faces;
   for (const auto& addr : addrs) {
-    auto face = this->createMulticastFace(netif, addr,
+    auto face = this->createMulticastFace(*netif, addr,
                                           addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
     if (face->getId() == INVALID_FACEID) {
       // new face: register with forwarding

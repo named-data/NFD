@@ -28,30 +28,25 @@
 
 #include "core/common.hpp"
 
-#include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
 
 namespace nfd::tests {
-
-using ndn::net::NetworkAddress;
-using ndn::net::NetworkInterface;
-using ndn::net::NetworkMonitor;
 
 /** \brief Enumerate network interfaces using the given NetworkMonitor
  *  \param netmon a NetworkMonitor constructed on the global io_service.
  *  \note This function is blocking
  *  \note Signals are supported if caller keeps \p netmon running
  */
-std::vector<shared_ptr<const NetworkInterface>>
-enumerateNetworkInterfaces(NetworkMonitor& netmon);
+std::vector<shared_ptr<const ndn::net::NetworkInterface>>
+enumerateNetworkInterfaces(ndn::net::NetworkMonitor& netmon);
 
 /** \brief Collect information about network interfaces
  *  \param allowCached if true, previously collected information can be returned
  *  \note This function is blocking if \p allowCached is false or no previous information exists
  *  \warning Signals are not triggered on returned NetworkInterfaces because NetworkMonitor is not running
  */
-std::vector<shared_ptr<const NetworkInterface>>
+std::vector<shared_ptr<const ndn::net::NetworkInterface>>
 collectNetworkInterfaces(bool allowCached = true);
 
 } // namespace nfd::tests

@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, F, AddressFamilies)
   SKIP_IF_IP_UNAVAILABLE(address);
   // do not listen
 
-  auto channel = this->makeChannel(typename IpAddressFromFamily<F::value>::type());
+  auto channel = this->makeChannel(IpAddressTypeFromFamily<F::value>());
   channel->connect(tcp::Endpoint(address, 7040), {},
     [this] (const shared_ptr<nfd::Face>&) {
       BOOST_FAIL("Connect succeeded when it should have failed");

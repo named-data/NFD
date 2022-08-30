@@ -32,6 +32,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 
@@ -86,10 +87,12 @@ protected:
     client.connect(con);
   }
 
-  /** \brief initialize both server and client, and have each other connected, create Transport
+  /**
+   * \brief Initialize both server and client, and have each other connected, create Transport
    */
   void
-  initialize(ip::address address,
+  initialize(const shared_ptr<const ndn::net::NetworkInterface>&,
+             const ip::address& address,
              time::milliseconds pingInterval = 10_s,
              time::milliseconds pongTimeout = 1_s)
   {

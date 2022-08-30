@@ -34,6 +34,7 @@ namespace nfd::tests {
 
 using face::UdpChannel;
 using face::UdpFactory;
+using ndn::net::NetworkInterface;
 
 class UdpFactoryFixture : public FaceSystemFactoryFixture<UdpFactory>
 {
@@ -79,11 +80,11 @@ protected:
 
     if (localAddress.is_v4()) {
       BOOST_ASSERT(!netifsV4.empty());
-      return factory.createMulticastFace(netifsV4.front(), localAddress, mcastEndpoint);
+      return factory.createMulticastFace(*netifsV4.front(), localAddress, mcastEndpoint);
     }
     else {
       BOOST_ASSERT(!netifsV6.empty());
-      return factory.createMulticastFace(netifsV6.front(), localAddress, mcastEndpoint);
+      return factory.createMulticastFace(*netifsV6.front(), localAddress, mcastEndpoint);
     }
   }
 
@@ -120,7 +121,7 @@ protected:
   hasAddressFamily(const NetworkInterface& netif, ndn::net::AddressFamily af)
   {
     return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
-                       [af] (const NetworkAddress& a) { return a.getFamily() == af; });
+                       [af] (const auto& a) { return a.getFamily() == af; });
   }
 
   /** \brief determine whether a UDP multicast face is created on \p netif
@@ -130,7 +131,7 @@ protected:
   {
     auto ip = boost::asio::ip::address::from_string(face.getLocalUri().getHost());
     return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
-                       [ip] (const NetworkAddress& a) { return a.getIp() == ip; });
+                       [ip] (const auto& a) { return a.getIp() == ip; });
   }
 
 protected:

@@ -26,8 +26,6 @@
 #include "unicast-udp-transport-fixture.hpp"
 #include "multicast-udp-transport-fixture.hpp"
 
-#include "transport-test-common.hpp"
-
 #include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {

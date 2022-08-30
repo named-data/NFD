@@ -32,6 +32,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -87,7 +88,7 @@ protected:
   {
   }
 
-  std::pair<bool, std::string>
+  [[nodiscard]] std::tuple<bool, std::string>
   checkPreconditions() const
   {
     return {true, ""};

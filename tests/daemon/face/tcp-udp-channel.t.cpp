@@ -40,7 +40,7 @@ struct FixtureAndAddress
 {
   using Fixture = F;
   static constexpr AddressFamily ADDRESS_FAMILY = AF;
-  using Address = typename IpAddressFromFamily<AF>::type;
+  using Address = IpAddressTypeFromFamily<AF>;
 };
 
 using FixtureAndAddressList = boost::mpl::vector<

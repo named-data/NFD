@@ -41,16 +41,14 @@ using AddressFamilies = boost::mpl::vector<
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Uri, F, AddressFamilies)
 {
-  using Address = typename IpAddressFromFamily<F::value>::type;
-  websocket::Endpoint ep(Address::loopback(), 20070);
+  websocket::Endpoint ep(IpAddressTypeFromFamily<F::value>::loopback(), 20070);
   auto channel = this->makeChannel(ep.address(), ep.port());
   BOOST_CHECK_EQUAL(channel->getUri(), FaceUri(ep, "ws"));
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Listen, F, AddressFamilies)
 {
-  using Address = typename IpAddressFromFamily<F::value>::type;
-  auto channel = this->makeChannel(Address());
+  auto channel = this->makeChannel(IpAddressTypeFromFamily<F::value>());
   BOOST_CHECK_EQUAL(channel->isListening(), false);
 
   channel->listen(nullptr);

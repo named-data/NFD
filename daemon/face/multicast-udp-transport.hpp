@@ -62,16 +62,22 @@ public:
   ssize_t
   getSendQueueLength() final;
 
+  /**
+   * \brief Opens and configures the receive-side socket
+   */
   static void
   openRxSocket(protocol::socket& sock,
                const protocol::endpoint& multicastGroup,
-               const boost::asio::ip::address& localAddress,
-               const shared_ptr<const ndn::net::NetworkInterface>& netif = nullptr);
+               const boost::asio::ip::address& localAddress = {},
+               const ndn::net::NetworkInterface* netif = nullptr);
 
+  /**
+   * \brief Opens and configures the transmit-side socket
+   */
   static void
   openTxSocket(protocol::socket& sock,
                const protocol::endpoint& localEndpoint,
-               const shared_ptr<const ndn::net::NetworkInterface>& netif = nullptr,
+               const ndn::net::NetworkInterface* netif = nullptr,
                bool enableLoopback = false);
 
 private:

@@ -134,7 +134,7 @@ void
 MulticastUdpTransport::openRxSocket(protocol::socket& sock,
                                     const protocol::endpoint& multicastGroup,
                                     const boost::asio::ip::address& localAddress,
-                                    const shared_ptr<const ndn::net::NetworkInterface>& netif)
+                                    const ndn::net::NetworkInterface* netif)
 {
   BOOST_ASSERT(!sock.is_open());
 
@@ -148,16 +148,9 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
                                                            localAddress.to_v4()));
   }
   else {
-    BOOST_ASSERT(localAddress.is_v6());
+    BOOST_ASSERT(multicastGroup.address().to_v6().scope_id() != 0);
     sock.set_option(boost::asio::ip::v6_only(true));
-#ifdef NFD_WITH_TESTS
-    // To simplify unit tests, we bind to the "any" IPv6 address if the supplied multicast
-    // address lacks a scope id. Calling bind() without a scope id would otherwise fail.
-    if (multicastGroup.address().to_v6().scope_id() == 0)
-      sock.bind(protocol::endpoint(boost::asio::ip::address_v6::any(), multicastGroup.port()));
-    else
-#endif
-      sock.bind(multicastGroup);
+    sock.bind(multicastGroup);
     sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v6()));
   }
 
@@ -168,7 +161,7 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
 void
 MulticastUdpTransport::openTxSocket(protocol::socket& sock,
                                     const protocol::endpoint& localEndpoint,
-                                    const shared_ptr<const ndn::net::NetworkInterface>& netif,
+                                    const ndn::net::NetworkInterface* netif,
                                     bool enableLoopback)
 {
   BOOST_ASSERT(!sock.is_open());

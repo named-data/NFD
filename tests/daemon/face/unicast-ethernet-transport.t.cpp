@@ -23,11 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "transport-test-common.hpp"
-
 #include "ethernet-fixture.hpp"
 
 #include "common/global.hpp"
+
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 

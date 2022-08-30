@@ -27,7 +27,7 @@
 #include "face/null-transport.hpp"
 
 #include "tests/daemon/global-io-fixture.hpp"
-#include "transport-test-common.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 

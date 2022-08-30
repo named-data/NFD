@@ -23,8 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "transport-test-common.hpp"
-
 #include "websocket-transport-fixture.hpp"
 
 #include <boost/mpl/vector.hpp>
@@ -67,7 +65,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticPropertiesV4Mapped, T, StaticPropertiesV4
   TRANSPORT_TEST_CHECK_PRECONDITIONS();
   auto mappedAddr = ip::address_v6::v4_mapped(this->address.to_v4());
   BOOST_REQUIRE(mappedAddr.is_v4_mapped());
-  WebSocketTransportFixture::initialize(mappedAddr);
+  WebSocketTransportFixture::initialize(this->interface, mappedAddr);
 
   checkStaticPropertiesInitialized(*this->transport);
 

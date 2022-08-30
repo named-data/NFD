@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(DefaultMtu, F, AddressFamilies)
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address,1452);
 
-  auto ch1 = this->makeChannel(typename IpAddressFromFamily<F::value>::type(), 0, 1232);
+  auto ch1 = this->makeChannel(IpAddressTypeFromFamily<F::value>(), 0, 1232);
   connect(*ch1);
 
   BOOST_CHECK_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);

@@ -32,6 +32,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 #include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/transport-test-common.hpp"
 
 namespace nfd::tests {
 
@@ -43,7 +44,7 @@ class MulticastUdpTransportFixture : public GlobalIoFixture
 {
 protected:
   void
-  initialize(ip::address address)
+  initialize(const shared_ptr<const ndn::net::NetworkInterface>& netif, const ip::address& address)
   {
     ip::address mcastAddr;
     if (address.is_v4()) {
@@ -53,19 +54,19 @@ protected:
     else {
       // the group FF0X::114 is reserved for experimentation at all scope levels (RFC 4727)
       auto v6Addr = ip::address_v6::from_string("FF01::114");
-      v6Addr.scope_id(address.to_v6().scope_id());
+      v6Addr.scope_id(netif->getIndex());
       mcastAddr = v6Addr;
     }
     mcastEp = udp::endpoint(mcastAddr, 7373);
     remoteMcastEp = udp::endpoint(mcastAddr, 8383);
 
     MulticastUdpTransport::openRxSocket(remoteSockRx, mcastEp, address);
-    MulticastUdpTransport::openTxSocket(remoteSockTx, udp::endpoint(address, 0), nullptr, true);
+    MulticastUdpTransport::openTxSocket(remoteSockTx, udp::endpoint(address, 0), &*netif, true);
 
     udp::socket sockRx(g_io);
     udp::socket sockTx(g_io);
     MulticastUdpTransport::openRxSocket(sockRx, remoteMcastEp, address);
-    MulticastUdpTransport::openTxSocket(sockTx, udp::endpoint(address, txPort), nullptr, true);
+    MulticastUdpTransport::openTxSocket(sockTx, udp::endpoint(address, txPort), &*netif, true);
 
     face = make_unique<Face>(make_unique<DummyLinkService>(),
                              make_unique<MulticastUdpTransport>(mcastEp, std::move(sockRx), std::move(sockTx),
