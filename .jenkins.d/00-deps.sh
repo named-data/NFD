@@ -40,7 +40,7 @@ elif [[ $ID_LIKE == *debian* ]]; then
     fi
 
 elif [[ $ID_LIKE == *fedora* ]]; then
-    sudo dnf -y install gcc-c++ libasan pkgconf-pkg-config python3 \
+    sudo dnf -y install gcc-c++ libasan lld pkgconf-pkg-config python3 \
                         boost-devel openssl-devel sqlite-devel \
                         libpcap-devel systemd-devel
 fi

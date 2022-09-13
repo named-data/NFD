@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,22 +58,20 @@ ManagerBase::registerNotificationStream(const std::string& verb)
   return m_dispatcher.addNotificationStream(makeRelPrefix(verb));
 }
 
-void
-ManagerBase::extractRequester(const Interest& interest,
-                              const ndn::mgmt::AcceptContinuation& accept)
+std::string
+ManagerBase::extractSigner(const Interest& interest)
 {
-  const Name& interestName = interest.getName();
-
   try {
-    ndn::SignatureInfo sigInfo(interestName.at(ndn::signed_interest::POS_SIG_INFO).blockFromValue());
-    if (!sigInfo.hasKeyLocator() || sigInfo.getKeyLocator().getType() != tlv::Name) {
-      return accept("");
+    // try v0.3 format first
+    auto sigInfo = interest.getSignatureInfo();
+    if (!sigInfo) {
+      // fallback to v0.2 format
+      sigInfo.emplace(interest.getName().at(ndn::signed_interest::POS_SIG_INFO).blockFromValue());
     }
-
-    accept(sigInfo.getKeyLocator().getName().toUri());
+    return sigInfo->getKeyLocator().getName().toUri();
   }
   catch (const tlv::Error&) {
-    accept("");
+    return "";
   }
 }
 

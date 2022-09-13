@@ -313,7 +313,7 @@ RibManager::makeAuthorization(const std::string&)
 
     auto& validator = prefix == LOCALHOST_TOP_PREFIX ? m_localhostValidator : m_localhopValidator;
     validator.validate(interest,
-                       [&interest, accept] (auto&&...) { extractRequester(interest, accept); },
+                       [&interest, accept] (auto&&...) { accept(extractSigner(interest)); },
                        [reject] (auto&&...) { reject(ndn::mgmt::RejectReply::STATUS403); });
   };
 }

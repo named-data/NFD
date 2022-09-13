@@ -23,7 +23,7 @@ supported:
 - Fedora >= 29
 - Gentoo Linux
 - Raspberry Pi OS (formerly Raspbian) >= 2019-06-20
-- FreeBSD >= 12.0
+- FreeBSD >= 12.2
 
 .. _Install NFD on Ubuntu Linux using the NDN PPA repository:
 

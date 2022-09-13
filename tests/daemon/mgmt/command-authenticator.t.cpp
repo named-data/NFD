@@ -50,11 +50,12 @@ protected:
 
   bool
   authorize(const std::string& module, const Name& identity,
-            const std::function<void(Interest&)>& modifyInterest = nullptr)
+            const std::function<void(Interest&)>& modifyInterest = nullptr,
+            ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V02)
   {
-    Interest interest = this->makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
-                                                        ControlParameters(), identity);
-    if (modifyInterest != nullptr) {
+    Interest interest = makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
+                                                  {}, format, identity);
+    if (modifyInterest) {
       modifyInterest(interest);
     }
 

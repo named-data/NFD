@@ -33,18 +33,23 @@ InterestSignerFixture::InterestSignerFixture()
 }
 
 Interest
-InterestSignerFixture::makeCommandInterest(const Name& name, const Name& identity)
-{
-  return m_signer.makeCommandInterest(name, ndn::security::signingByIdentity(identity));
-}
-
-Interest
 InterestSignerFixture::makeControlCommandRequest(Name commandName,
                                                  const ControlParameters& params,
+                                                 ndn::security::SignedInterestFormat format,
                                                  const Name& identity)
 {
   commandName.append(tlv::GenericNameComponent, params.wireEncode());
-  return this->makeCommandInterest(commandName, identity);
+
+  switch (format) {
+    case ndn::security::SignedInterestFormat::V02:
+      return m_signer.makeCommandInterest(commandName, ndn::security::signingByIdentity(identity));
+    case ndn::security::SignedInterestFormat::V03: {
+      Interest interest(commandName);
+      m_signer.makeSignedInterest(interest, ndn::security::signingByIdentity(identity));
+      return interest;
+    }
+  }
+  NDN_CXX_UNREACHABLE;
 }
 
 void

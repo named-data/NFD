@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -92,15 +92,13 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // helpers
   /**
-   * @brief Extracts the requester from a ControlCommand request.
+   * @brief Extracts the name from the %KeyLocator of a ControlCommand request.
    *
    * This is called after the signature has been validated.
-   *
-   * @param interest a request for ControlCommand
-   * @param accept callback of successful validation, takes the requester string as argument
+   * Returns an empty string if %SignatureInfo or %KeyLocator are missing or malformed.
    */
-  static void
-  extractRequester(const Interest& interest, const ndn::mgmt::AcceptContinuation& accept);
+  static std::string
+  extractSigner(const Interest& interest);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**

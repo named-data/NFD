@@ -125,17 +125,26 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
                     Name("/localhost/nfd/test-module/test-notification").appendSequenceNumber(0));
 }
 
-BOOST_AUTO_TEST_CASE(ExtractRequester)
+BOOST_AUTO_TEST_CASE(ExtractSigner)
 {
-  std::string requesterName;
-  auto testAccept = [&] (const std::string& requester) { requesterName = requester; };
+  std::string signer = ManagerBase::extractSigner(Interest("/test/interest/unsigned"));
+  BOOST_CHECK_EQUAL(signer, ""); // missing SignatureInfo
 
-  m_manager.extractRequester(Interest("/test/interest/unsigned"), testAccept);
-  BOOST_CHECK_EQUAL(requesterName, "");
+  auto signedV03 = makeControlCommandRequest("/test/interest/signed", {},
+                                             ndn::security::SignedInterestFormat::V03);
+  signer = ManagerBase::extractSigner(signedV03);
+  BOOST_CHECK_EQUAL(signer,
+                    m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
+                    .getDefaultKey().getDefaultCertificate().getName().toUri());
 
-  requesterName.clear();
-  m_manager.extractRequester(makeControlCommandRequest("/test/interest/signed"), testAccept);
-  BOOST_CHECK_EQUAL(requesterName,
+  signedV03.setSignatureInfo(ndn::SignatureInfo(tlv::SignatureSha256WithEcdsa));
+  signer = ManagerBase::extractSigner(signedV03);
+  BOOST_CHECK_EQUAL(signer, ""); // missing KeyLocator
+
+  auto signedV02 = makeControlCommandRequest("/test/interest/signed", {},
+                                             ndn::security::SignedInterestFormat::V02);
+  signer = ManagerBase::extractSigner(signedV02);
+  BOOST_CHECK_EQUAL(signer,
                     m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
                     .getDefaultKey().getDefaultCertificate().getName().toUri());
 }

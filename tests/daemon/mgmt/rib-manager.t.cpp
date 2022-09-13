@@ -173,7 +173,7 @@ private:
     advanceClocks(1_ms);
 
     auto replyFibAddCommand = [this] (const Interest& interest) {
-      ControlParameters params(interest.getName().get(-5).blockFromValue());
+      ControlParameters params(interest.getName().at(4).blockFromValue());
       BOOST_CHECK(params.getName() == "/localhost/nfd/rib" || params.getName() == "/localhop/nfd/rib");
       params.setFaceId(1)
             .setCost(0);
@@ -315,6 +315,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
   auto parameters  = this->makeRegisterParameters("/test-authorization", 9527);
   auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters);
   auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters,
+                                                     ndn::security::SignedInterestFormat::V03,
                                                      this->m_derivedId);
   if (this->m_status.isLocalhopConfigured) {
     commandHop.setTag(make_shared<lp::IncomingFaceIdTag>(123));

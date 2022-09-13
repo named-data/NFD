@@ -46,23 +46,17 @@ class InterestSignerFixture : public GlobalIoTimeFixture, public KeyChainFixture
 protected:
   InterestSignerFixture();
 
-  /** \brief sign a command Interest
-   *  \param name command name include prefix and parameters
-   *  \param identity signing identity
-   *  \return a command Interest
-   */
-  Interest
-  makeCommandInterest(const Name& name, const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
-
-  /** \brief create a ControlCommand request
-   *  \param commandName command name including prefix, such as `/localhost/nfd/fib/add-nexthop`
-   *  \param params command parameters
-   *  \param identity signing identity
-   *  \return a command Interest
+  /**
+   * \brief Create a ControlCommand request
+   * \param commandName Command name including prefix, such as `/localhost/nfd/fib/add-nexthop`
+   * \param params Command parameters
+   * \param format Signed Interest format
+   * \param identity Signing identity
    */
   Interest
   makeControlCommandRequest(Name commandName,
                             const ControlParameters& params = {},
+                            ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
