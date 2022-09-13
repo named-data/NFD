@@ -51,7 +51,7 @@ protected:
   bool
   authorize(const std::string& module, const Name& identity,
             const std::function<void(Interest&)>& modifyInterest = nullptr,
-            ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V02)
+            ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03)
   {
     Interest interest = makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
                                                   {}, format, identity);
@@ -252,9 +252,15 @@ protected:
   }
 
   bool
-  authorize1(const std::function<void(Interest&)>& modifyInterest)
+  authorize1_V02(const std::function<void(Interest&)>& modifyInterest)
   {
-    return authorize("module1", id1, modifyInterest);
+    return authorize("module1", id1, modifyInterest, ndn::security::SignedInterestFormat::V02);
+  }
+
+  bool
+  authorize1_V03(const std::function<void(Interest&)>& modifyInterest)
+  {
+    return authorize("module1", id1, modifyInterest, ndn::security::SignedInterestFormat::V03);
   }
 
 protected:
@@ -263,9 +269,9 @@ protected:
 
 BOOST_FIXTURE_TEST_SUITE(Reject, IdentityAuthorizedFixture)
 
-BOOST_AUTO_TEST_CASE(BadKeyLocator_NameTooShort)
+BOOST_AUTO_TEST_CASE(NameTooShort)
 {
-  BOOST_CHECK_EQUAL(authorize1(
+  BOOST_CHECK_EQUAL(authorize1_V02(
     [] (Interest& interest) {
       interest.setName("/prefix");
     }
@@ -275,9 +281,18 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_NameTooShort)
 
 BOOST_AUTO_TEST_CASE(BadSigInfo)
 {
-  BOOST_CHECK_EQUAL(authorize1(
+  BOOST_CHECK_EQUAL(authorize1_V02(
     [] (Interest& interest) {
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO, "not-SignatureInfo");
+      setNameComponent(interest, ndn::command_interest::POS_SIG_INFO, "not-sig-info");
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
+
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [] (Interest& interest) {
+      auto sigInfo = interest.getSignatureInfo().value();
+      sigInfo.addCustomTlv("7F00"_block);
+      interest.setSignatureInfo(sigInfo);
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
@@ -285,10 +300,20 @@ BOOST_AUTO_TEST_CASE(BadSigInfo)
 
 BOOST_AUTO_TEST_CASE(MissingKeyLocator)
 {
-  BOOST_CHECK_EQUAL(authorize1(
+  BOOST_CHECK_EQUAL(authorize1_V02(
     [] (Interest& interest) {
-      ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO, ndn::make_span(sigInfo.wireEncode()));
+      ndn::SignatureInfo sigInfo(interest.getName().at(ndn::command_interest::POS_SIG_INFO).blockFromValue());
+      sigInfo.setKeyLocator(ndn::nullopt);
+      setNameComponent(interest, ndn::command_interest::POS_SIG_INFO, span(sigInfo.wireEncode()));
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
+
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [] (Interest& interest) {
+      auto sigInfo = interest.getSignatureInfo().value();
+      sigInfo.setKeyLocator(ndn::nullopt);
+      interest.setSignatureInfo(sigInfo);
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
@@ -296,17 +321,92 @@ BOOST_AUTO_TEST_CASE(MissingKeyLocator)
 
 BOOST_AUTO_TEST_CASE(BadKeyLocatorType)
 {
-  BOOST_CHECK_EQUAL(authorize1(
-    [] (Interest& interest) {
-      ndn::KeyLocator kl;
-      kl.setKeyDigest(ndn::makeBinaryBlock(tlv::KeyDigest,
-                                           {0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD}));
-      ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
-      sigInfo.setKeyLocator(kl);
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO, ndn::make_span(sigInfo.wireEncode()));
+  ndn::KeyLocator kl;
+  kl.setKeyDigest(ndn::makeBinaryBlock(tlv::KeyDigest, {0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD}));
+
+  BOOST_CHECK_EQUAL(authorize1_V02(
+    [&kl] (Interest& interest) {
+      ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithEcdsa, kl);
+      setNameComponent(interest, ndn::command_interest::POS_SIG_INFO, span(sigInfo.wireEncode()));
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
+
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [&kl] (Interest& interest) {
+      auto sigInfo = interest.getSignatureInfo().value();
+      sigInfo.setKeyLocator(kl);
+      interest.setSignatureInfo(sigInfo);
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::SILENT);
+}
+
+BOOST_AUTO_TEST_CASE(BadSigValue)
+{
+  BOOST_CHECK_EQUAL(authorize1_V02(
+    [] (Interest& interest) {
+      setNameComponent(interest, ndn::command_interest::POS_SIG_VALUE, "bad-signature");
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [] (Interest& interest) {
+      interest.setSignatureValue({0xBA, 0xAD});
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+}
+
+BOOST_AUTO_TEST_CASE(MissingTimestamp)
+{
+  BOOST_CHECK_EQUAL(authorize1_V02(
+    [] (Interest& interest) {
+      setNameComponent(interest, ndn::command_interest::POS_TIMESTAMP, "not-timestamp");
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [] (Interest& interest) {
+      auto sigInfo = interest.getSignatureInfo().value();
+      sigInfo.setTime(ndn::nullopt);
+      interest.setSignatureInfo(sigInfo);
+    }
+  ), false);
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+}
+
+BOOST_AUTO_TEST_CASE(ReplayedTimestamp)
+{
+  name::Component timestampComp;
+  BOOST_CHECK_EQUAL(authorize1_V02(
+    [&timestampComp] (const Interest& interest) {
+      timestampComp = interest.getName().at(ndn::command_interest::POS_TIMESTAMP);
+    }
+  ), true); // accept first command
+  BOOST_CHECK_EQUAL(authorize1_V02(
+    [&timestampComp] (Interest& interest) {
+      setNameComponent(interest, ndn::command_interest::POS_TIMESTAMP, timestampComp);
+    }
+  ), false); // reject second command because timestamp equals first command
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+
+  time::system_clock::time_point tp;
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [&tp] (const Interest& interest) {
+      tp = interest.getSignatureInfo().value().getTime().value();
+    }
+  ), true); // accept first command
+  BOOST_CHECK_EQUAL(authorize1_V03(
+    [&tp] (Interest& interest) {
+      auto sigInfo = interest.getSignatureInfo().value();
+      sigInfo.setTime(tp);
+      interest.setSignatureInfo(sigInfo);
+    }
+  ), false); // reject second command because timestamp equals first command
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
 }
 
 BOOST_AUTO_TEST_CASE(NotAuthorized)
@@ -315,32 +415,6 @@ BOOST_AUTO_TEST_CASE(NotAuthorized)
   BOOST_REQUIRE(m_keyChain.createIdentity(id0));
 
   BOOST_CHECK_EQUAL(authorize("module1", id0), false);
-  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
-}
-
-BOOST_AUTO_TEST_CASE(BadSig)
-{
-  BOOST_CHECK_EQUAL(authorize1(
-    [] (Interest& interest) {
-      setNameComponent(interest, ndn::command_interest::POS_SIG_VALUE, "bad-signature-bits");
-    }
-  ), false);
-  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
-}
-
-BOOST_AUTO_TEST_CASE(InvalidTimestamp)
-{
-  name::Component timestampComp;
-  BOOST_CHECK_EQUAL(authorize1(
-    [&timestampComp] (const Interest& interest) {
-      timestampComp = interest.getName().at(ndn::command_interest::POS_TIMESTAMP);
-    }
-  ), true); // accept first command
-  BOOST_CHECK_EQUAL(authorize1(
-    [&timestampComp] (Interest& interest) {
-      setNameComponent(interest, ndn::command_interest::POS_TIMESTAMP, timestampComp);
-    }
-  ), false); // reject second command because timestamp equals first command
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
 }
 

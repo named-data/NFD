@@ -159,7 +159,7 @@ public:
     m_face.onSendInterest.connect([=] (const Interest& interest) {
       if (interest.matchesData(derivedCert) &&
           m_status.isLocalhopConfigured &&
-          interest.template getTag<lp::NextHopFaceIdTag>() != nullptr) {
+          interest.getTag<lp::NextHopFaceIdTag>() != nullptr) {
         m_face.put(derivedCert);
       }
     });
@@ -257,7 +257,7 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(AddTopPrefix, AddTopPrefixFixture)
 {
-  BOOST_CHECK_EQUAL(m_rib.size(), 2);
+  BOOST_REQUIRE_EQUAL(m_rib.size(), 2);
 
   std::vector<Name> ribEntryNames;
   for (auto&& entry : m_rib) {
@@ -303,22 +303,32 @@ public:
   }
 };
 
+template<typename Fixture, auto Format>
+struct FixtureWithFormat : public Fixture
+{
+  static constexpr ndn::security::SignedInterestFormat signedInterestFmt = Format;
+};
+
 using AllFixtures = boost::mpl::vector<
-  UnauthorizedRibManagerFixture,
-  LocalhostAuthorizedRibManagerFixture,
-  LocalhopAuthorizedRibManagerFixture,
-  AuthorizedRibManagerFixture
+  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
 {
   auto parameters  = this->makeRegisterParameters("/test-authorization", 9527);
-  auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters);
+  auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters,
+                                                     T::signedInterestFmt);
   auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters,
-                                                     ndn::security::SignedInterestFormat::V03,
-                                                     this->m_derivedId);
+                                                     T::signedInterestFmt, this->m_derivedId);
   if (this->m_status.isLocalhopConfigured) {
-    commandHop.setTag(make_shared<lp::IncomingFaceIdTag>(123));
+    commandHop.setTag(std::make_shared<lp::IncomingFaceIdTag>(123));
   }
   auto successResp = this->makeResponse(200, "Success", parameters);
   auto failureResp = ControlResponse(403, "authorization rejected");

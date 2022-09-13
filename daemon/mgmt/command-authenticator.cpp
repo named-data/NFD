@@ -44,11 +44,13 @@ NFD_LOG_INIT(CommandAuthenticator);
 // INFO: configuration change, etc
 // DEBUG: per authentication request result
 
-/** \brief an Interest tag to indicate command signer
+/**
+ * \brief An Interest tag to store the command signer.
  */
 using SignerTag = ndn::SimpleTag<Name, 20>;
 
-/** \brief obtain signer from SignerTag attached to Interest, if available
+/**
+ * \brief Obtain signer from a SignerTag attached to \p interest, if available.
  */
 static std::optional<std::string>
 getSignerFromTag(const Interest& interest)
@@ -62,7 +64,8 @@ getSignerFromTag(const Interest& interest)
   }
 }
 
-/** \brief a validation policy that only permits Interest signed by a trust anchor
+/**
+ * \brief A validation policy that only permits Interests signed by a trust anchor.
  */
 class CommandAuthenticatorValidationPolicy final : public security::ValidationPolicy
 {
@@ -71,7 +74,11 @@ public:
   checkPolicy(const Interest& interest, const shared_ptr<security::ValidationState>& state,
               const ValidationContinuation& continueValidation) final
   {
-    Name klName = getKeyLocatorName(interest, *state);
+    auto sigInfo = getSignatureInfo(interest, *state);
+    if (!state->getOutcome()) { // already failed
+      return;
+    }
+    Name klName = getKeyLocatorName(sigInfo, *state);
     if (!state->getOutcome()) { // already failed
       return;
     }
@@ -205,11 +212,10 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
 {
   m_validators[module]; // declares module, so that privilege is recognized
 
-  auto self = this->shared_from_this();
-  return [=] (const Name&, const Interest& interest,
-              const ndn::mgmt::ControlParameters*,
-              const ndn::mgmt::AcceptContinuation& accept,
-              const ndn::mgmt::RejectContinuation& reject) {
+  return [module, self = shared_from_this()] (const Name&, const Interest& interest,
+                                              const ndn::mgmt::ControlParameters*,
+                                              const ndn::mgmt::AcceptContinuation& accept,
+                                              const ndn::mgmt::RejectContinuation& reject) {
     auto validator = self->m_validators.at(module);
 
     auto successCb = [accept, validator] (const Interest& interest1) {
@@ -221,19 +227,13 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
       accept(signer);
     };
 
-    auto failureCb = [reject] (const Interest& interest1, const security::ValidationError& err) {
-      using ndn::mgmt::RejectReply;
-      RejectReply reply = RejectReply::STATUS403;
-      switch (err.getCode()) {
-      case security::ValidationError::NO_SIGNATURE:
-      case security::ValidationError::INVALID_KEY_LOCATOR:
-        reply = RejectReply::SILENT;
-        break;
-      case security::ValidationError::POLICY_ERROR:
-        if (interest1.getName().size() < ndn::command_interest::MIN_SIZE) { // "name too short"
-          reply = RejectReply::SILENT;
-        }
-        break;
+    using ndn::security::ValidationError;
+    auto failureCb = [reject] (const Interest& interest1, const ValidationError& err) {
+      auto reply = ndn::mgmt::RejectReply::STATUS403;
+      if (err.getCode() == ValidationError::MALFORMED_SIGNATURE ||
+          err.getCode() == ValidationError::INVALID_KEY_LOCATOR) {
+        // do not waste cycles signing and sending a reply if the command is clearly malformed
+        reply = ndn::mgmt::RejectReply::SILENT;
       }
       NFD_LOG_DEBUG("reject " << interest1.getName() << " signer=" <<
                     getSignerFromTag(interest1).value_or("?") << " reason=" << err);
