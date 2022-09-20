@@ -33,9 +33,9 @@
 
 namespace ndn::autoconfig_server {
 
-const Name HUB_DATA_NAME("/localhop/ndn-autoconf/hub");
-const Name ROUTABLE_PREFIXES_DATA_PREFIX("/localhop/nfd");
-const PartialName ROUTABLE_PREFIXES_DATA_SUFFIX("rib/routable-prefixes");
+const Name HUB_DATA_NAME{"/localhop/ndn-autoconf/hub"};
+const Name ROUTABLE_PREFIXES_DATA_PREFIX{"/localhop/nfd"};
+const PartialName ROUTABLE_PREFIXES_DATA_SUFFIX{"rib/routable-prefixes"};
 
 Program::Program(const Options& options, Face& face, KeyChain& keyChain)
   : m_face(face)

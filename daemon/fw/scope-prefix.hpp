@@ -41,7 +41,7 @@ namespace nfd::scope_prefix {
  *  \li Interest can come from and go to local faces only.
  *  \li Data can come from and go to local faces only.
  */
-extern const Name LOCALHOST;
+inline const Name LOCALHOST{"/localhost"};
 
 /** \brief ndn:/localhop
  *
@@ -55,7 +55,7 @@ extern const Name LOCALHOST;
  *
  *  Data packets under prefix ndn:/localhop are unrestricted.
  */
-extern const Name LOCALHOP;
+inline const Name LOCALHOP{"/localhop"};
 
 } // namespace nfd::scope_prefix
 

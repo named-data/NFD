@@ -33,8 +33,8 @@ namespace ndn::autoconfig {
 
 using nfd::ControlParameters;
 
-const Name HUB_DISCOVERY_PREFIX("/localhop/ndn-autoconf/hub");
-constexpr uint64_t HUB_DISCOVERY_ROUTE_COST(1);
+const Name HUB_DISCOVERY_PREFIX{"/localhop/ndn-autoconf/hub"};
+constexpr uint64_t HUB_DISCOVERY_ROUTE_COST = 1;
 constexpr time::milliseconds HUB_DISCOVERY_ROUTE_EXPIRATION = 30_s;
 constexpr time::milliseconds HUB_DISCOVERY_INTEREST_LIFETIME = 4_s;
 
