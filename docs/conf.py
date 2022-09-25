@@ -35,12 +35,15 @@ extensions = [
     'sphinx.ext.todo',
 ]
 
-def addExtensionIfExists(extension):
-    if importlib.util.find_spec(extension) is not None:
-        extensions.append(extension)
-    else:
+def addExtensionIfExists(extension: str):
+    try:
+        if importlib.util.find_spec(extension) is None:
+            raise ModuleNotFoundError(extension)
+    except (ImportError, ValueError):
         sys.stderr.write(f'WARNING: Extension {extension!r} not found. '
-                          'Some documentation may not build correctly.\n')
+                         'Some documentation may not build correctly.\n')
+    else:
+        extensions.append(extension)
 
 addExtensionIfExists('sphinxcontrib.doxylink')
 
