@@ -89,22 +89,22 @@ public:
 /**
  * \brief Indicates that the transport has no limit on payload size
  */
-constexpr ssize_t MTU_UNLIMITED = -1;
+inline constexpr ssize_t MTU_UNLIMITED = -1;
 
 /**
  * \brief (for internal use) Indicates that the MTU field is unset
  */
-constexpr ssize_t MTU_INVALID = -2;
+inline constexpr ssize_t MTU_INVALID = -2;
 
 /**
  * \brief Indicates that the transport does not support reading the queue capacity/length
  */
-constexpr ssize_t QUEUE_UNSUPPORTED = -1;
+inline constexpr ssize_t QUEUE_UNSUPPORTED = -1;
 
 /**
  * \brief Indicates that the transport was unable to retrieve the queue capacity/length
  */
-constexpr ssize_t QUEUE_ERROR = -2;
+inline constexpr ssize_t QUEUE_ERROR = -2;
 
 /**
  * \brief The lower half of a Face.

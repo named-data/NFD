@@ -41,7 +41,7 @@ static_assert(lp::tlv::Fragment < 253, "Fragment TLV-TYPE must fit in 1 octet");
 /**
  * \brief Maximum overhead on a single fragment, not counting other NDNLPv2 headers.
  */
-const size_t MAX_SINGLE_FRAG_OVERHEAD =
+constexpr size_t MAX_SINGLE_FRAG_OVERHEAD =
   1 + 9 + // LpPacket TLV-TYPE and TLV-LENGTH
   1 + 1 + 8 + // Sequence TLV
   1 + 9; // Fragment TLV-TYPE and TLV-LENGTH
@@ -49,7 +49,7 @@ const size_t MAX_SINGLE_FRAG_OVERHEAD =
 /**
  * \brief Maximum overhead of adding fragmentation to payload, not counting other NDNLPv2 headers.
  */
-const size_t MAX_FRAG_OVERHEAD =
+constexpr size_t MAX_FRAG_OVERHEAD =
   1 + 9 + // LpPacket TLV-TYPE and TLV-LENGTH
   1 + 1 + 8 + // Sequence TLV
   1 + 1 + 8 + // FragIndex TLV

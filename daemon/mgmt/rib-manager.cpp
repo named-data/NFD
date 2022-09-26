@@ -44,7 +44,7 @@ NFD_LOG_INIT(RibManager);
 
 const std::string MGMT_MODULE_NAME = "rib";
 const Name LOCALHOST_TOP_PREFIX = "/localhost/nfd";
-const time::seconds ACTIVE_FACE_FETCH_INTERVAL = 5_min;
+constexpr time::seconds ACTIVE_FACE_FETCH_INTERVAL = 5_min;
 
 RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
                        ndn::nfd::Controller& nfdController, Dispatcher& dispatcher)

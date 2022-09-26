@@ -47,22 +47,22 @@ class LinkService;
 using FaceId = uint64_t;
 
 /// Indicates an invalid FaceId
-constexpr FaceId INVALID_FACEID = ndn::nfd::INVALID_FACE_ID;
+inline constexpr FaceId INVALID_FACEID = ndn::nfd::INVALID_FACE_ID;
 /// Identifies the InternalFace used in management
-constexpr FaceId FACEID_INTERNAL_FACE = 1;
+inline constexpr FaceId FACEID_INTERNAL_FACE = 1;
 /// Identifies a packet comes from the ContentStore
-constexpr FaceId FACEID_CONTENT_STORE = 254;
+inline constexpr FaceId FACEID_CONTENT_STORE = 254;
 /// Identifies the NullFace that drops every packet
-constexpr FaceId FACEID_NULL = 255;
+inline constexpr FaceId FACEID_NULL = 255;
 /// Upper bound of reserved FaceIds
-constexpr FaceId FACEID_RESERVED_MAX = 255;
+inline constexpr FaceId FACEID_RESERVED_MAX = 255;
 
 /**
  * \brief Minimum MTU that may be set.
  *
  * This is done to ensure the NDNLPv2 fragmentation feature functions properly.
  */
-constexpr ssize_t MIN_MTU = 64;
+inline constexpr ssize_t MIN_MTU = 64;
 
 /**
  * \brief Identifies a remote endpoint on the link.

@@ -24,11 +24,12 @@
  */
 
 #include "route.hpp"
+
 #include <ndn-cxx/util/string-helper.hpp>
 
 namespace nfd::rib {
 
-const uint64_t PA_ROUTE_COST = 2048; ///< cost of route created by prefix announcement
+constexpr uint64_t PA_ROUTE_COST = 2048; // cost of route created by prefix announcement
 
 static time::steady_clock::time_point
 computeExpiration(const ndn::PrefixAnnouncement& ann)
