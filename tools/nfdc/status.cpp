@@ -92,7 +92,7 @@ reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
   }
 }
 
-/** \brief single-section status command
+/** \brief Single-section status command.
  */
 static void
 reportStatusSingleSection(ExecuteContext& ctx, bool StatusReportOptions::*wantSection)
@@ -102,7 +102,7 @@ reportStatusSingleSection(ExecuteContext& ctx, bool StatusReportOptions::*wantSe
   reportStatus(ctx, options);
 }
 
-/** \brief the 'status report' command
+/** \brief The 'status report' command.
  */
 static void
 reportStatusComprehensive(ExecuteContext& ctx)

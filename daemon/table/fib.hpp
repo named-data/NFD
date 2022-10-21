@@ -43,7 +43,9 @@ class Entry;
 
 namespace fib {
 
-/** \brief Represents the Forwarding Information Base (FIB)
+/**
+ * \brief Represents the Forwarding Information Base (FIB).
+ * \sa fib::Entry
  */
 class Fib : noncopyable
 {
@@ -52,32 +54,32 @@ public:
   Fib(NameTree& nameTree);
 
   size_t
-  size() const
+  size() const noexcept
   {
     return m_nItems;
   }
 
 public: // lookup
-  /** \brief Performs a longest prefix match
+  /** \brief Performs a longest prefix match.
    */
   const Entry&
   findLongestPrefixMatch(const Name& prefix) const;
 
-  /** \brief Performs a longest prefix match
+  /** \brief Performs a longest prefix match.
    *
    *  This is equivalent to `findLongestPrefixMatch(pitEntry.getName())`
    */
   const Entry&
   findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
-  /** \brief Performs a longest prefix match
+  /** \brief Performs a longest prefix match.
    *
    *  This is equivalent to `findLongestPrefixMatch(measurementsEntry.getName())`
    */
   const Entry&
   findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const;
 
-  /** \brief Performs an exact match lookup
+  /** \brief Performs an exact match lookup.
    */
   Entry*
   findExactMatch(const Name& prefix);
@@ -91,7 +93,7 @@ public: // mutation
     return NameTree::getMaxDepth();
   }
 
-  /** \brief Find or insert a FIB entry
+  /** \brief Find or insert a FIB entry.
    *  \param prefix FIB entry name; it must not have more than \c getMaxDepth() components.
    *  \return the entry, and true for new entry or false for existing entry
    */
@@ -104,7 +106,7 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief Add a NextHop record
+  /** \brief Add a NextHop record.
    *
    *  If a NextHop record for \p face already exists in \p entry, its cost is set to \p cost.
    */
@@ -117,7 +119,7 @@ public: // mutation
     FIB_ENTRY_REMOVED ///< the nexthop is removed and the fib entry is removed
   };
 
-  /** \brief Remove the NextHop record for \p face from \p entry
+  /** \brief Remove the NextHop record for \p face from \p entry.
    */
   RemoveNextHopResult
   removeNextHop(Entry& entry, const Face& face);
@@ -147,7 +149,7 @@ public: // enumeration
   }
 
 public: // signal
-  /** \brief signals on Fib entry nexthop creation
+  /** \brief Signals on Fib entry nexthop creation.
    */
   signal::Signal<Fib, Name, NextHop> afterNewNextHop;
 

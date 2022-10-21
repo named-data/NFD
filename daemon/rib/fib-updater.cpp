@@ -554,7 +554,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
 
 void
 FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& route,
-                                               const bool captureWasTurnedOff)
+                                           bool captureWasTurnedOff)
 {
   addFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), route.faceId));
 

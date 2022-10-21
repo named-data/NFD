@@ -43,7 +43,7 @@ using Queue = boost::multi_index_container<
                 >
               >;
 
-/** \brief Least-Recently-Used (LRU) replacement policy
+/** \brief Least-Recently-Used (LRU) replacement policy.
  */
 class LruPolicy final : public Policy
 {
@@ -70,7 +70,7 @@ private:
   evictEntries() final;
 
 private:
-  /** \brief moves an entry to the end of queue
+  /** \brief Moves an entry to the end of queue.
    */
   void
   insertToQueue(EntryRef i, bool isNewEntry);

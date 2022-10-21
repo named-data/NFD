@@ -39,12 +39,12 @@ namespace nfd::tests {
 namespace ip = boost::asio::ip;
 using face::WebSocketTransport;
 
-/** \brief a fixture that accepts a single WebSocket connection from a client
+/** \brief A fixture that accepts a single WebSocket connection from a client.
  */
 class WebSocketTransportFixture : public GlobalIoFixture
 {
 protected:
-  /** \brief initialize server and start listening
+  /** \brief Initialize server and start listening.
    */
   void
   serverListen(const ip::tcp::endpoint& ep,
@@ -67,7 +67,7 @@ protected:
     server.start_accept();
   }
 
-  /** \brief initialize client and connect to server
+  /** \brief Initialize client and connect to server.
    */
   void
   clientConnect(const std::string& uri)
@@ -88,7 +88,7 @@ protected:
   }
 
   /**
-   * \brief Initialize both server and client, and have each other connected, create Transport
+   * \brief Initialize both server and client, and have each other connected, create Transport.
    */
   void
   initialize(const shared_ptr<const ndn::net::NetworkInterface>&,

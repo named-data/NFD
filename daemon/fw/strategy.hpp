@@ -36,16 +36,17 @@ namespace nfd::fw {
 class StrategyParameters;
 
 /**
- * \brief Represents a forwarding strategy
+ * \brief Base class of all forwarding strategies.
  */
 class Strategy : noncopyable
 {
 public: // registry
-  /** \brief Register a strategy type
-   *  \tparam S subclass of Strategy
-   *  \param strategyName strategy program name, must contain version
-   *  \note It is permitted to register the same strategy type under multiple names,
-   *        which is useful in tests and for creating aliases.
+  /**
+   * \brief Register a strategy type.
+   * \tparam S subclass of Strategy
+   * \param strategyName strategy program name, must contain version
+   * \note It is permitted to register the same strategy type under multiple names,
+   *       which is useful in tests and for creating aliases.
    */
   template<typename S>
   static void
@@ -59,30 +60,34 @@ public: // registry
     BOOST_VERIFY(r.second);
   }
 
-  /** \return Whether a strategy instance can be created from \p instanceName
-   *  \param instanceName strategy instance name, may contain version and parameters
-   *  \note This function finds a strategy type using same rules as \p create ,
-   *        but does not attempt to construct an instance.
+  /**
+   * \brief Returns whether a strategy instance can be created from \p instanceName.
+   * \param instanceName strategy instance name, may contain version and parameters
+   * \note This function finds a strategy type using the same rules as create(),
+   *       but does not attempt to construct an instance.
    */
   static bool
   canCreate(const Name& instanceName);
 
-  /** \return A strategy instance created from \p instanceName
-   *  \retval nullptr if `canCreate(instanceName) == false`
-   *  \throw std::invalid_argument strategy type constructor does not accept
-   *                               specified version or parameters
+  /**
+   * \brief Returns a strategy instance created from \p instanceName.
+   * \retval nullptr if `canCreate(instanceName) == false`
+   * \throw std::invalid_argument strategy type constructor does not accept the
+   *                              specified version or parameters
    */
   static unique_ptr<Strategy>
   create(const Name& instanceName, Forwarder& forwarder);
 
-  /** \return Whether \p instanceNameA and \p instanceNameA will initiate same strategy type
+  /**
+   * \brief Returns whether two names will instantiate the same strategy type.
    */
   static bool
   areSameType(const Name& instanceNameA, const Name& instanceNameB);
 
-  /** \return Registered versioned strategy names
+  /**
+   * \brief Returns all registered versioned strategy names.
    */
-  static std::set<Name>
+  [[nodiscard]] static std::set<Name>
   listRegistered();
 
 public: // constructor, destructor, strategy info
@@ -97,22 +102,24 @@ public: // constructor, destructor, strategy info
   ~Strategy();
 
 #ifdef DOXYGEN
-  /** \return Strategy program name
+  /**
+   * \brief Returns the strategy's program name.
    *
-   *  The strategy name is defined by the strategy program.
-   *  It must end with a version component.
+   * The strategy name is defined by the strategy program.
+   * It must end with a version component.
    */
   static const Name&
   getStrategyName();
 #endif
 
-  /** \return Strategy instance name
+  /**
+   * \brief Returns the strategy's instance name.
    *
-   *  The instance name is assigned during instantiation.
-   *  It contains a version component, and may have extra parameter components.
+   * The instance name is assigned during instantiation.
+   * It contains a version component and may have extra parameter components.
    */
   const Name&
-  getInstanceName() const
+  getInstanceName() const noexcept
   {
     return m_name;
   }
@@ -356,19 +363,19 @@ protected: // accessors
   lookupFib(const pit::Entry& pitEntry) const;
 
   MeasurementsAccessor&
-  getMeasurements()
+  getMeasurements() noexcept
   {
     return m_measurements;
   }
 
   Face*
-  getFace(FaceId id) const
+  getFace(FaceId id) const noexcept
   {
     return getFaceTable().get(id);
   }
 
   const FaceTable&
-  getFaceTable() const
+  getFaceTable() const noexcept
   {
     return m_forwarder.m_faceTable;
   }
@@ -405,7 +412,7 @@ protected: // instance name
    *  \note This must be called by strategy subclass constructor.
    */
   void
-  setInstanceName(const Name& name)
+  setInstanceName(const Name& name) noexcept
   {
     m_name = name;
   }

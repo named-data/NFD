@@ -79,7 +79,7 @@ UnicastEthernetTransport::afterChangePersistency(ndn::nfd::FacePersistency oldPe
   }
   else {
     m_closeIfIdleEvent.cancel();
-    setExpirationTime(time::steady_clock::TimePoint::max());
+    setExpirationTime(time::steady_clock::time_point::max());
   }
 }
 

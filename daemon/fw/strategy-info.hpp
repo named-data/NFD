@@ -30,7 +30,8 @@
 
 namespace nfd::fw {
 
-/** \brief Contains arbitrary information placed by the forwarding strategy on table entries
+/**
+ * \brief Contains arbitrary information placed by the forwarding strategy on table entries.
  */
 class StrategyInfo
 {

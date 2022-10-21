@@ -28,12 +28,12 @@
 
 #include "core/common.hpp"
 
-/** \brief contain name prefixes that affect namespace-based scope control
+/** \brief Contain name prefixes that affect namespace-based scope control.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */
 namespace nfd::scope_prefix {
 
-/** \brief ndn:/localhost
+/** \brief The localhost scope `ndn:/localhost`.
  *
  *  The localhost scope limits propagation to the applications on the originating host.
  *
@@ -43,7 +43,7 @@ namespace nfd::scope_prefix {
  */
 inline const Name LOCALHOST{"/localhost"};
 
-/** \brief ndn:/localhop
+/** \brief The localhop scope `ndn:/localhop`.
  *
  *  The localhop scope limits propagation to no further than the next node.
  *

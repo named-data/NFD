@@ -39,7 +39,7 @@ namespace nfd::tools::nfdc::tests {
 class MockNfdMgmtFixture : public nfd::tests::MockNfdMgmtFixture
 {
 protected:
-  /** \brief respond to FaceQuery requests
+  /** \brief Respond to FaceQuery requests.
    *  \retval true the Interest matches one of the defined patterns and is responded
    *  \retval false the Interest is not responded
    */

@@ -68,13 +68,13 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->persistencyHistory.back(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 }
 
-/** \brief a macro to declare a TransportState as a integral constant
+/** \brief A macro to declare a TransportState as a integral constant.
  *  \note we cannot use mpl::integral_c because TransportState is not an integral type
  */
 #define TRANSPORT_STATE_C(X) mpl::int_<static_cast<int>(TransportState::X)>
 
-/** \brief a map from every TransportState to a valid state transition sequence
- *         for entering this state from UP
+/** \brief A map from every TransportState to a valid state transition sequence
+ *         for entering this state from UP.
  */
 typedef mpl::map<
   mpl::pair<TRANSPORT_STATE_C(UP),
@@ -98,14 +98,14 @@ typedef mpl::map<
     >>
 > StateEntering;
 
-/** \brief a sequence of all valid TransportStates
+/** \brief A sequence of all valid TransportStates.
  */
 typedef mpl::fold<StateEntering,
   mpl::vector<>,
   mpl::push_back<mpl::_1, mpl::first<mpl::_2>>
 >::type States;
 
-/** \brief a set of all valid state transitions
+/** \brief A set of all valid state transitions.
  */
 typedef mpl::set<
   mpl::pair<TRANSPORT_STATE_C(UP), TRANSPORT_STATE_C(DOWN)>,
@@ -118,8 +118,8 @@ typedef mpl::set<
   mpl::pair<TRANSPORT_STATE_C(FAILED), TRANSPORT_STATE_C(CLOSED)>
 > ValidStateTransitions;
 
-/** \brief a metafunction to generate a sequence of all state transitions
- *         from a specified state
+/** \brief A metafunction to generate a sequence of all state transitions
+ *         from a specified state.
  */
 template<typename FromState, typename Result>
 struct StateTransitionsFrom : mpl::fold<
@@ -129,7 +129,7 @@ struct StateTransitionsFrom : mpl::fold<
 {
 };
 
-/** \brief a sequence of all state transitions
+/** \brief A sequence of all state transitions.
  */
 typedef mpl::fold<
   States,

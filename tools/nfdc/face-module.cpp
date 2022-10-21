@@ -131,7 +131,7 @@ FaceModule::show(ExecuteContext& ctx)
   }
 }
 
-/** \brief order persistency in NONE < ON_DEMAND < PERSISTENCY < PERMANENT
+/** \brief Order persistency in NONE < ON_DEMAND < PERSISTENCY < PERMANENT.
  */
 static bool
 persistencyLessThan(FacePersistency x, FacePersistency y)

@@ -56,144 +56,146 @@ public:
   explicit
   Forwarder(FaceTable& faceTable);
 
-  NFD_VIRTUAL_WITH_TESTS
-  ~Forwarder();
+#ifdef NFD_WITH_TESTS
+  virtual
+  ~Forwarder() = default;
+#endif
 
   const ForwarderCounters&
-  getCounters() const
+  getCounters() const noexcept
   {
     return m_counters;
   }
 
   fw::UnsolicitedDataPolicy&
-  getUnsolicitedDataPolicy() const
+  getUnsolicitedDataPolicy() const noexcept
   {
     return *m_unsolicitedDataPolicy;
   }
 
   void
-  setUnsolicitedDataPolicy(unique_ptr<fw::UnsolicitedDataPolicy> policy)
+  setUnsolicitedDataPolicy(unique_ptr<fw::UnsolicitedDataPolicy> policy) noexcept
   {
     BOOST_ASSERT(policy != nullptr);
     m_unsolicitedDataPolicy = std::move(policy);
   }
 
   NameTree&
-  getNameTree()
+  getNameTree() noexcept
   {
     return m_nameTree;
   }
 
   Fib&
-  getFib()
+  getFib() noexcept
   {
     return m_fib;
   }
 
   Pit&
-  getPit()
+  getPit() noexcept
   {
     return m_pit;
   }
 
   Cs&
-  getCs()
+  getCs() noexcept
   {
     return m_cs;
   }
 
   Measurements&
-  getMeasurements()
+  getMeasurements() noexcept
   {
     return m_measurements;
   }
 
   StrategyChoice&
-  getStrategyChoice()
+  getStrategyChoice() noexcept
   {
     return m_strategyChoice;
   }
 
   DeadNonceList&
-  getDeadNonceList()
+  getDeadNonceList() noexcept
   {
     return m_deadNonceList;
   }
 
   NetworkRegionTable&
-  getNetworkRegionTable()
+  getNetworkRegionTable() noexcept
   {
     return m_networkRegionTable;
   }
 
-  /** \brief register handler for forwarder section of NFD configuration file
+  /** \brief Register handler for forwarder section of NFD configuration file.
    */
   void
   setConfigFile(ConfigFile& configFile);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
-  /** \brief incoming Interest pipeline
+  /** \brief Incoming Interest pipeline.
    *  \param interest the incoming Interest, must be well-formed and created with make_shared
    *  \param ingress face on which \p interest was received and endpoint of the sender
    */
   NFD_VIRTUAL_WITH_TESTS void
   onIncomingInterest(const Interest& interest, const FaceEndpoint& ingress);
 
-  /** \brief Interest loop pipeline
+  /** \brief Interest loop pipeline.
    */
   NFD_VIRTUAL_WITH_TESTS void
   onInterestLoop(const Interest& interest, const FaceEndpoint& ingress);
 
-  /** \brief Content Store miss pipeline
+  /** \brief Content Store miss pipeline.
   */
   NFD_VIRTUAL_WITH_TESTS void
   onContentStoreMiss(const Interest& interest, const FaceEndpoint& ingress,
                      const shared_ptr<pit::Entry>& pitEntry);
 
-  /** \brief Content Store hit pipeline
+  /** \brief Content Store hit pipeline.
   */
   NFD_VIRTUAL_WITH_TESTS void
   onContentStoreHit(const Interest& interest, const FaceEndpoint& ingress,
                     const shared_ptr<pit::Entry>& pitEntry, const Data& data);
 
-  /** \brief outgoing Interest pipeline
+  /** \brief Outgoing Interest pipeline.
    *  \return A pointer to the out-record created or nullptr if the Interest was dropped
    */
   NFD_VIRTUAL_WITH_TESTS pit::OutRecord*
   onOutgoingInterest(const Interest& interest, Face& egress,
                      const shared_ptr<pit::Entry>& pitEntry);
 
-  /** \brief Interest finalize pipeline
+  /** \brief Interest finalize pipeline.
    */
   NFD_VIRTUAL_WITH_TESTS void
   onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry);
 
-  /** \brief incoming Data pipeline
+  /** \brief Incoming Data pipeline.
    *  \param data the incoming Data, must be well-formed and created with make_shared
    *  \param ingress face on which \p data was received and endpoint of the sender
    */
   NFD_VIRTUAL_WITH_TESTS void
   onIncomingData(const Data& data, const FaceEndpoint& ingress);
 
-  /** \brief Data unsolicited pipeline
+  /** \brief Data unsolicited pipeline.
    */
   NFD_VIRTUAL_WITH_TESTS void
   onDataUnsolicited(const Data& data, const FaceEndpoint& ingress);
 
-  /** \brief outgoing Data pipeline
+  /** \brief Outgoing Data pipeline.
    *  \return Whether the Data was transmitted (true) or dropped (false)
    */
   NFD_VIRTUAL_WITH_TESTS bool
   onOutgoingData(const Data& data, Face& egress);
 
-  /** \brief incoming Nack pipeline
+  /** \brief Incoming Nack pipeline.
    *  \param nack the incoming Nack, must be well-formed
    *  \param ingress face on which \p nack is received and endpoint of the sender
    */
   NFD_VIRTUAL_WITH_TESTS void
   onIncomingNack(const lp::Nack& nack, const FaceEndpoint& ingress);
 
-  /** \brief outgoing Nack pipeline
+  /** \brief Outgoing Nack pipeline.
    *  \return Whether the Nack was transmitted (true) or dropped (false)
    */
   NFD_VIRTUAL_WITH_TESTS bool
@@ -207,12 +209,12 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);
 
 private:
-  /** \brief set a new expiry timer (now + \p duration) on a PIT entry
+  /** \brief Set a new expiry timer (now + \p duration) on a PIT entry.
    */
   void
   setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::milliseconds duration);
 
-  /** \brief insert Nonce to Dead Nonce List if necessary
+  /** \brief Insert Nonce to Dead Nonce List if necessary.
    *  \param upstream if null, insert Nonces from all out-records;
    *                  if not null, insert Nonce only on the out-records of this face
    */
@@ -225,7 +227,7 @@ private:
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
-   * \brief Configuration options from "forwarder" section
+   * \brief Configuration options from the `forwarder` section.
    */
   struct Config
   {

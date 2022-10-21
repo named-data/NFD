@@ -33,7 +33,7 @@
 
 namespace nfd::tools::nfdc {
 
-/** \brief indicates which modes is a command allowed
+/** \brief Indicates which modes is a command allowed.
  */
 enum AvailableIn : uint8_t {
   AVAILABLE_IN_NONE     = 0,
@@ -46,7 +46,7 @@ enum AvailableIn : uint8_t {
 std::ostream&
 operator<<(std::ostream& os, AvailableIn modes);
 
-/** \brief indicates which mode is the parser operated in
+/** \brief Indicates which mode is the parser operated in.
  */
 enum class ParseMode : uint8_t {
   ONE_SHOT = AVAILABLE_IN_ONE_SHOT, ///< one-shot mode
@@ -56,7 +56,7 @@ enum class ParseMode : uint8_t {
 std::ostream&
 operator<<(std::ostream& os, ParseMode mode);
 
-/** \brief parses a command
+/** \brief Parses a command.
  */
 class CommandParser : noncopyable
 {
@@ -70,7 +70,7 @@ public:
     }
   };
 
-  /** \brief add an available command
+  /** \brief Add an available command.
    *  \param def command semantics definition
    *  \param execute a function to execute the command
    *  \param modes parse modes this command should be available in, must not be AVAILABLE_IN_NONE
@@ -79,13 +79,13 @@ public:
   addCommand(const CommandDefinition& def, const ExecuteCommand& execute,
              std::underlying_type_t<AvailableIn> modes = AVAILABLE_IN_ALL);
 
-  /** \brief add an alias "noun verb2" to existing command "noun verb"
+  /** \brief Add an alias "noun verb2" to existing command "noun verb".
    *  \throw std::out_of_range "noun verb" does not exist
    */
   CommandParser&
   addAlias(const std::string& noun, const std::string& verb, const std::string& verb2);
 
-  /** \brief list known commands for help
+  /** \brief List known commands for help.
    *  \param noun if not empty, filter results by this noun
    *  \param mode include commands for the specified parse mode
    *  \return commands in insertion order
@@ -93,7 +93,7 @@ public:
   std::vector<const CommandDefinition*>
   listCommands(std::string_view noun, ParseMode mode) const;
 
-  /** \brief parse a command line
+  /** \brief Parse a command line.
    *  \param tokens command line
    *  \param mode parser mode, must be ParseMode::ONE_SHOT, other modes are not implemented
    *  \throw NoSuchCommandError command not found
@@ -113,12 +113,12 @@ private:
     AvailableIn modes;
   };
 
-  /** \brief map from command name or alias to command definition
+  /** \brief Map from command name or alias to command definition.
    */
   using CommandContainer = std::map<CommandName, shared_ptr<Command>>;
   CommandContainer m_commands;
 
-  /** \brief commands in insertion order
+  /** \brief Commands in insertion order.
    */
   std::vector<CommandContainer::const_iterator> m_commandOrder;
 };

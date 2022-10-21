@@ -31,13 +31,13 @@ namespace nfd::face {
 Channel::~Channel() = default;
 
 void
-Channel::setUri(const FaceUri& uri)
+Channel::setUri(const FaceUri& uri) noexcept
 {
   m_uri = uri;
 }
 
 void
-Channel::setDefaultMtu(size_t mtu)
+Channel::setDefaultMtu(size_t mtu) noexcept
 {
   m_defaultMtu = mtu;
 }

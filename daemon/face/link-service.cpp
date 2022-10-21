@@ -30,18 +30,10 @@ namespace nfd::face {
 
 NFD_LOG_INIT(LinkService);
 
-LinkService::LinkService()
-  : m_face(nullptr)
-  , m_transport(nullptr)
-{
-}
-
-LinkService::~LinkService()
-{
-}
+LinkService::~LinkService() = default;
 
 void
-LinkService::setFaceAndTransport(Face& face, Transport& transport)
+LinkService::setFaceAndTransport(Face& face, Transport& transport) noexcept
 {
   BOOST_ASSERT(m_face == nullptr);
   BOOST_ASSERT(m_transport == nullptr);

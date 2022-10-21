@@ -35,13 +35,13 @@
 
 namespace nfd::fw {
 
-/** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
+/** \brief Determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */
 bool
 wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace);
 
-/** \brief indicates where duplicate Nonces are found
+/** \brief Indicates where duplicate Nonces are found.
  */
 enum DuplicateNonceWhere {
   DUPLICATE_NONCE_NONE      = 0,        ///< no duplicate Nonce is found
@@ -51,13 +51,13 @@ enum DuplicateNonceWhere {
   DUPLICATE_NONCE_OUT_OTHER = (1 << 3), ///< out-record of other face
 };
 
-/** \brief determine whether \p pitEntry has duplicate Nonce \p nonce
+/** \brief Determine whether \p pitEntry has duplicate Nonce \p nonce.
  *  \return OR'ed DuplicateNonceWhere
  */
 int
 findDuplicateNonce(const pit::Entry& pitEntry, Interest::Nonce nonce, const Face& face);
 
-/** \brief determine whether \p pitEntry has any pending out-records
+/** \brief Determine whether \p pitEntry has any pending out-records.
  *  \return true if there is at least one out-record waiting for Data
  */
 bool
@@ -66,10 +66,10 @@ hasPendingOutRecords(const pit::Entry& pitEntry);
 /** \return last out-record time
  *  \pre pitEntry has one or more unexpired out-records
  */
-time::steady_clock::TimePoint
+time::steady_clock::time_point
 getLastOutgoing(const pit::Entry& pitEntry);
 
-/** \brief pick an eligible NextHop with earliest out-record
+/** \brief Pick an eligible NextHop with earliest out-record.
  *  \note It is assumed that every nexthop has an out-record.
  */
 fib::NextHopList::const_iterator
@@ -77,20 +77,20 @@ findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& int
                                          const fib::NextHopList& nexthops,
                                          const shared_ptr<pit::Entry>& pitEntry);
 
-/** \brief determines whether a NextHop is eligible i.e. not the same inFace
+/** \brief Determines whether a NextHop is eligible, i.e., not the same \p inFace.
  *  \param inFace incoming face of current Interest
  *  \param interest incoming Interest
  *  \param nexthop next hop
  *  \param pitEntry PIT entry
  *  \param wantUnused if true, NextHop must not have unexpired out-record
- *  \param now time::steady_clock::now(), ignored if !wantUnused
+ *  \param now the current time, ignored if `wantUnused == false`
  */
 bool
 isNextHopEligible(const Face& inFace, const Interest& interest,
                   const fib::NextHop& nexthop,
                   const shared_ptr<pit::Entry>& pitEntry,
                   bool wantUnused = false,
-                  time::steady_clock::TimePoint now = time::steady_clock::TimePoint::min());
+                  time::steady_clock::time_point now = time::steady_clock::time_point::min());
 
 } // namespace nfd::fw
 

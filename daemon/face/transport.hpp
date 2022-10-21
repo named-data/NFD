@@ -53,7 +53,7 @@ operator<<(std::ostream& os, TransportState state);
 class TransportCounters
 {
 public:
-  /** \brief count of incoming packets
+  /** \brief Count of incoming packets.
    *
    *  A 'packet' typically means a top-level TLV block.
    *  For a datagram-based transport, an incoming packet that cannot be parsed as TLV
@@ -61,14 +61,14 @@ public:
    */
   PacketCounter nInPackets;
 
-  /** \brief count of outgoing packets
+  /** \brief Count of outgoing packets.
    *
    *  A 'packet' typically means a top-level TLV block.
    *  This counter is incremented only if transport is UP.
    */
   PacketCounter nOutPackets;
 
-  /** \brief total incoming bytes
+  /** \brief Total incoming bytes.
    *
    *  This counter includes headers imposed by NFD (such as NDNLP),
    *  but excludes overhead of underlying protocol (such as IP header).
@@ -77,7 +77,7 @@ public:
    */
   ByteCounter nInBytes;
 
-  /** \brief total outgoing bytes
+  /** \brief Total outgoing bytes.
    *
    *  This counter includes headers imposed by NFD (such as NDNLP),
    *  but excludes overhead of underlying protocol (such as IP header).
@@ -87,28 +87,28 @@ public:
 };
 
 /**
- * \brief Indicates that the transport has no limit on payload size
+ * \brief Indicates that the transport has no limit on payload size.
  */
 inline constexpr ssize_t MTU_UNLIMITED = -1;
 
 /**
- * \brief (for internal use) Indicates that the MTU field is unset
+ * \brief (for internal use) Indicates that the MTU field is unset.
  */
 inline constexpr ssize_t MTU_INVALID = -2;
 
 /**
- * \brief Indicates that the transport does not support reading the queue capacity/length
+ * \brief Indicates that the transport does not support reading the queue capacity/length.
  */
 inline constexpr ssize_t QUEUE_UNSUPPORTED = -1;
 
 /**
- * \brief Indicates that the transport was unable to retrieve the queue capacity/length
+ * \brief Indicates that the transport was unable to retrieve the queue capacity/length.
  */
 inline constexpr ssize_t QUEUE_ERROR = -2;
 
 /**
  * \brief The lower half of a Face.
- * \sa Face
+ * \sa Face, LinkService
  */
 class Transport : protected virtual TransportCounters, noncopyable
 {
@@ -132,32 +132,48 @@ public:
   ~Transport();
 
 public:
-  /** \brief set Face and LinkService for Transport
-   *  \pre setFaceAndLinkService has not been called
+  /**
+   * \brief Set Face and LinkService for this transport.
+   * \pre setFaceAndLinkService() has not been called.
    */
   void
-  setFaceAndLinkService(Face& face, LinkService& service);
+  setFaceAndLinkService(Face& face, LinkService& service) noexcept;
 
-  /** \return Face to which this Transport is attached
+  /**
+   * \brief Returns the Face to which this transport is attached.
    */
   const Face*
-  getFace() const;
+  getFace() const noexcept
+  {
+    return m_face;
+  }
 
-  /** \return LinkService to which this Transport is attached
+  /**
+   * \brief Returns the LinkService to which this transport is attached.
    */
   const LinkService*
-  getLinkService() const;
+  getLinkService() const noexcept
+  {
+    return m_service;
+  }
 
-  /** \return LinkService to which this Transport is attached
+  /**
+   * \brief Returns the LinkService to which this transport is attached.
    */
   LinkService*
-  getLinkService();
+  getLinkService() noexcept
+  {
+    return m_service;
+  }
 
   virtual const Counters&
-  getCounters() const;
+  getCounters() const
+  {
+    return *this;
+  }
 
 public: // upper interface
-  /** \brief Request the transport to be closed
+  /** \brief Request the transport to be closed.
    *
    *  This operation is effective only if transport is in UP or DOWN state,
    *  otherwise it has no effect.
@@ -168,7 +184,7 @@ public: // upper interface
   void
   close();
 
-  /** \brief Send a link-layer packet
+  /** \brief Send a link-layer packet.
    *  \param packet the packet to be sent, must be a valid and well-formed TLV block
    *  \note This operation has no effect if getState() is neither UP nor DOWN
    *  \warning Behavior is undefined if packet size exceeds the MTU limit
@@ -177,85 +193,125 @@ public: // upper interface
   send(const Block& packet);
 
 public: // static properties
-  /** \return a FaceUri representing local endpoint
+  /**
+   * \brief Returns a FaceUri representing the local endpoint.
    */
   FaceUri
-  getLocalUri() const;
+  getLocalUri() const noexcept
+  {
+    return m_localUri;
+  }
 
-  /** \return a FaceUri representing remote endpoint
+  /**
+   * \brief Returns a FaceUri representing the remote endpoint.
    */
   FaceUri
-  getRemoteUri() const;
+  getRemoteUri() const noexcept
+  {
+    return m_remoteUri;
+  }
 
-  /** \return whether face is local or non-local for scope control purpose
+  /**
+   * \brief Returns whether the transport is local or non-local for scope control purposes.
    */
   ndn::nfd::FaceScope
-  getScope() const;
+  getScope() const noexcept
+  {
+    return m_scope;
+  }
 
-  /** \return face persistency setting
+  /**
+   * \brief Returns the current persistency setting of the transport.
    */
   ndn::nfd::FacePersistency
-  getPersistency() const;
+  getPersistency() const noexcept
+  {
+    return m_persistency;
+  }
 
-  /** \brief check whether the face persistency can be changed to \p newPersistency
+  /**
+   * \brief Check whether the persistency can be changed to \p newPersistency.
    *
-   *  This function serves as the external API, and invokes the protected function
-   *  canChangePersistencyToImpl to perform further checks if \p newPersistency differs
-   *  from the current persistency.
+   * This function serves as the external API, and invokes the protected function
+   * canChangePersistencyToImpl() to perform further checks if \p newPersistency differs
+   * from the current persistency.
    *
-   *  \return true if the change can be performed, false otherwise
+   * \return true if the change can be performed, false otherwise
    */
   bool
   canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const;
 
-  /** \brief changes face persistency setting
+  /**
+   * \brief Changes the persistency setting of the transport.
    */
   void
   setPersistency(ndn::nfd::FacePersistency newPersistency);
 
-  /** \return the link type of the transport
+  /**
+   * \brief Returns the link type of the transport.
    */
   ndn::nfd::LinkType
-  getLinkType() const;
+  getLinkType() const noexcept
+  {
+    return m_linkType;
+  }
 
-  /** \return maximum payload size
-   *  \retval MTU_UNLIMITED transport has no limit on payload size
+  /**
+   * \brief Returns the maximum payload size.
+   * \retval MTU_UNLIMITED The transport has no limit on payload size.
    *
-   *  This size is the maximum packet size that can be sent or received through this transport.
+   * This size is the maximum packet size that can be sent or received through this transport.
    *
-   *  For a datagram-based transport, this is typically the Maximum Transmission Unit (MTU),
-   *  after the overhead of headers introduced by the transport has been accounted for.
-   *  For a stream-based transport, this is typically unlimited (MTU_UNLIMITED).
+   * For a datagram-based transport, this is typically the Maximum Transmission Unit (MTU),
+   * after the overhead of headers introduced by the transport has been accounted for.
+   * For a stream-based transport, this is typically unlimited (MTU_UNLIMITED).
    */
   ssize_t
-  getMtu() const;
+  getMtu() const noexcept
+  {
+    return m_mtu;
+  }
 
-  /** \return capacity of the send queue (in bytes)
-   *  \retval QUEUE_UNSUPPORTED transport does not support queue capacity retrieval
-   *  \retval QUEUE_ERROR transport was unable to retrieve the queue capacity
+  /**
+   * \brief Returns the capacity of the send queue (in bytes).
+   * \retval QUEUE_UNSUPPORTED The transport does not support queue capacity retrieval.
+   * \retval QUEUE_ERROR The transport was unable to retrieve the queue capacity.
    */
   ssize_t
-  getSendQueueCapacity() const;
+  getSendQueueCapacity() const noexcept
+  {
+    return m_sendQueueCapacity;
+  }
 
 public: // dynamic properties
-  /** \return transport state
+  /**
+   * \brief Returns the current transport state.
    */
   TransportState
-  getState() const;
+  getState() const noexcept
+  {
+    return m_state;
+  }
 
-  /** \brief signals when transport state changes
+  /**
+   * \brief Signals when the transport state changes.
    */
   signal::Signal<Transport, TransportState/*old*/, TransportState/*new*/> afterStateChange;
 
-  /** \return expiration time of the transport
-   *  \retval time::steady_clock::TimePoint::max() the transport has indefinite lifetime
+  /**
+   * \brief Returns the expiration time of the transport.
+   * \retval time::steady_clock::time_point::max() The transport has an indefinite lifetime.
    */
-  time::steady_clock::TimePoint
-  getExpirationTime() const;
+  time::steady_clock::time_point
+  getExpirationTime() const noexcept
+  {
+    return m_expirationTime;
+  }
 
-  /** \return current send queue length of the transport (in octets)
-   *  \retval QUEUE_UNSUPPORTED transport does not support queue length retrieval
-   *  \retval QUEUE_ERROR transport was unable to retrieve the queue length
+  /**
+   * \brief Returns the current send queue length of the transport (in octets).
+   * \retval QUEUE_UNSUPPORTED The transport does not support queue length retrieval.
+   * \retval QUEUE_ERROR The transport was unable to retrieve the queue length.
    */
   virtual ssize_t
   getSendQueueLength()
@@ -275,24 +331,39 @@ protected: // upper interface to be invoked by subclass
 
 protected: // properties to be set by subclass
   void
-  setLocalUri(const FaceUri& uri);
+  setLocalUri(const FaceUri& uri) noexcept
+  {
+    m_localUri = uri;
+  }
 
   void
-  setRemoteUri(const FaceUri& uri);
+  setRemoteUri(const FaceUri& uri) noexcept
+  {
+    m_remoteUri = uri;
+  }
 
   void
-  setScope(ndn::nfd::FaceScope scope);
+  setScope(ndn::nfd::FaceScope scope) noexcept
+  {
+    m_scope = scope;
+  }
 
   void
-  setLinkType(ndn::nfd::LinkType linkType);
+  setLinkType(ndn::nfd::LinkType linkType) noexcept
+  {
+    m_linkType = linkType;
+  }
 
   void
-  setMtu(ssize_t mtu);
+  setMtu(ssize_t mtu) noexcept;
 
   void
-  setSendQueueCapacity(ssize_t sendQueueCapacity);
+  setSendQueueCapacity(ssize_t sendQueueCapacity) noexcept
+  {
+    m_sendQueueCapacity = sendQueueCapacity;
+  }
 
-  /** \brief set transport state
+  /** \brief Set transport state.
    *
    *  Only the following transitions are valid:
    *  UP->DOWN, DOWN->UP, UP/DOWN->CLOSING/FAILED, CLOSING/FAILED->CLOSED
@@ -303,10 +374,13 @@ protected: // properties to be set by subclass
   setState(TransportState newState);
 
   void
-  setExpirationTime(const time::steady_clock::TimePoint& expirationTime);
+  setExpirationTime(const time::steady_clock::time_point& expirationTime) noexcept
+  {
+    m_expirationTime = expirationTime;
+  }
 
 protected: // to be overridden by subclass
-  /** \brief invoked by canChangePersistencyTo to perform the check
+  /** \brief Invoked by canChangePersistencyTo to perform the check.
    *
    *  Base class implementation returns false.
    *
@@ -315,7 +389,7 @@ protected: // to be overridden by subclass
   virtual bool
   canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const;
 
-  /** \brief invoked after the persistency has been changed
+  /** \brief Invoked after the persistency has been changed.
    *
    *  The base class implementation does nothing.
    *  When overridden in a subclass, the function should update internal states
@@ -324,9 +398,9 @@ protected: // to be overridden by subclass
   virtual void
   afterChangePersistency(ndn::nfd::FacePersistency oldPersistency);
 
-  /** \brief performs Transport specific operations to close the transport
+  /** \brief Performs Transport specific operations to close the transport.
    *
-   *  This is invoked once by \p close() after changing state to CLOSING.
+   *  This is invoked once by close() after changing state to CLOSING.
    *  It will not be invoked by Transport class if the transport is already CLOSING or CLOSED.
    *
    *  When the cleanup procedure is complete, this method should change state to CLOSED.
@@ -336,7 +410,7 @@ protected: // to be overridden by subclass
   doClose() = 0;
 
 private: // to be overridden by subclass
-  /** \brief performs Transport specific operations to send a packet
+  /** \brief Performs Transport specific operations to send a packet.
    *  \param packet the packet to be sent, can be assumed to be valid and well-formed
    *  \pre transport state is either UP or DOWN
    */
@@ -344,132 +418,18 @@ private: // to be overridden by subclass
   doSend(const Block& packet) = 0;
 
 private:
-  Face* m_face;
-  LinkService* m_service;
+  Face* m_face = nullptr;
+  LinkService* m_service = nullptr;
   FaceUri m_localUri;
   FaceUri m_remoteUri;
-  ndn::nfd::FaceScope m_scope;
-  ndn::nfd::FacePersistency m_persistency;
-  ndn::nfd::LinkType m_linkType;
-  ssize_t m_mtu;
-  ssize_t m_sendQueueCapacity;
-  TransportState m_state;
-  time::steady_clock::TimePoint m_expirationTime;
+  ndn::nfd::FaceScope m_scope = ndn::nfd::FACE_SCOPE_NONE;
+  ndn::nfd::FacePersistency m_persistency = ndn::nfd::FACE_PERSISTENCY_NONE;
+  ndn::nfd::LinkType m_linkType = ndn::nfd::LINK_TYPE_NONE;
+  ssize_t m_mtu = MTU_INVALID;
+  ssize_t m_sendQueueCapacity = QUEUE_UNSUPPORTED;
+  TransportState m_state = TransportState::UP;
+  time::steady_clock::time_point m_expirationTime = time::steady_clock::time_point::max();
 };
-
-inline const Face*
-Transport::getFace() const
-{
-  return m_face;
-}
-
-inline const LinkService*
-Transport::getLinkService() const
-{
-  return m_service;
-}
-
-inline LinkService*
-Transport::getLinkService()
-{
-  return m_service;
-}
-
-inline const Transport::Counters&
-Transport::getCounters() const
-{
-  return *this;
-}
-
-inline FaceUri
-Transport::getLocalUri() const
-{
-  return m_localUri;
-}
-
-inline void
-Transport::setLocalUri(const FaceUri& uri)
-{
-  m_localUri = uri;
-}
-
-inline FaceUri
-Transport::getRemoteUri() const
-{
-  return m_remoteUri;
-}
-
-inline void
-Transport::setRemoteUri(const FaceUri& uri)
-{
-  m_remoteUri = uri;
-}
-
-inline ndn::nfd::FaceScope
-Transport::getScope() const
-{
-  return m_scope;
-}
-
-inline void
-Transport::setScope(ndn::nfd::FaceScope scope)
-{
-  m_scope = scope;
-}
-
-inline ndn::nfd::FacePersistency
-Transport::getPersistency() const
-{
-  return m_persistency;
-}
-
-inline ndn::nfd::LinkType
-Transport::getLinkType() const
-{
-  return m_linkType;
-}
-
-inline void
-Transport::setLinkType(ndn::nfd::LinkType linkType)
-{
-  m_linkType = linkType;
-}
-
-inline ssize_t
-Transport::getMtu() const
-{
-  return m_mtu;
-}
-
-inline ssize_t
-Transport::getSendQueueCapacity() const
-{
-  return m_sendQueueCapacity;
-}
-
-inline void
-Transport::setSendQueueCapacity(ssize_t sendQueueCapacity)
-{
-  m_sendQueueCapacity = sendQueueCapacity;
-}
-
-inline TransportState
-Transport::getState() const
-{
-  return m_state;
-}
-
-inline time::steady_clock::TimePoint
-Transport::getExpirationTime() const
-{
-  return m_expirationTime;
-}
-
-inline void
-Transport::setExpirationTime(const time::steady_clock::TimePoint& expirationTime)
-{
-  m_expirationTime = expirationTime;
-}
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<Transport>& flh);

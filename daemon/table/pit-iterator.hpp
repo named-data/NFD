@@ -31,7 +31,8 @@
 
 namespace nfd::pit {
 
-/** \brief PIT iterator
+/**
+ * \brief PIT iterator.
  */
 class Iterator
 {
@@ -42,7 +43,7 @@ public:
   using pointer           = value_type*;
   using reference         = value_type&;
 
-  /** \brief constructor
+  /** \brief Constructor.
    *  \param ntIt a name tree iterator that visits name tree entries with one or more PIT entries
    *  \param iPitEntry make this iterator to dereference to the i-th PIT entry in name tree entry
    */

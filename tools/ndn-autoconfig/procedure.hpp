@@ -52,7 +52,7 @@ public:
   void
   initialize(const Options& options);
 
-  /** \brief run HUB discovery procedure once
+  /** \brief Run HUB discovery procedure once.
    */
   void
   runOnce();
@@ -74,7 +74,7 @@ private:
   registerPrefixes(uint64_t hubFaceId, size_t index = 0);
 
 public:
-  /** \brief signal when procedure completes
+  /** \brief Signal when procedure completes.
    *
    *  Argument indicates whether the procedure succeeds (true) or fails (false).
    */

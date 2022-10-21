@@ -24,7 +24,7 @@
  */
 
 /** \file
- *  \brief allows testing forwarding in a network topology
+ *  \brief Allows testing forwarding in a network topology.
  */
 
 #ifndef NFD_TESTS_DAEMON_FW_TOPOLOGY_TESTER_HPP
@@ -40,11 +40,11 @@
 
 namespace nfd::tests {
 
-/** \brief identifies a node (forwarder) in the topology
+/** \brief Identifies a node (forwarder) in the topology.
  */
 typedef size_t TopologyNode;
 
-/** \brief represents a network link in the topology which connects two or more nodes
+/** \brief Represents a network link in the topology which connects two or more nodes.
  */
 class TopologyLink : noncopyable
 {
@@ -52,7 +52,7 @@ public:
   explicit
   TopologyLink(time::nanoseconds delay);
 
-  /** \brief fail the link, cause packets to be dropped silently
+  /** \brief Fail the link, cause packets to be dropped silently.
    */
   void
   fail()
@@ -60,7 +60,7 @@ public:
     m_isUp = false;
   }
 
-  /** \brief recover the link from a failure
+  /** \brief Recover the link from a failure.
    */
   void
   recover()
@@ -68,7 +68,7 @@ public:
     m_isUp = true;
   }
 
-  /** \brief block transmission from i to j
+  /** \brief Block transmission from i to j.
    *
    *  Packets transmitted by i would not be delivered to j. Packets from j to i are unaffected.
    *  This can be used to simulate a wireless channel.
@@ -76,18 +76,18 @@ public:
   void
   block(TopologyNode i, TopologyNode j);
 
-  /** \brief unblock transmission from i to j
+  /** \brief Unblock transmission from i to j.
    */
   void
   unblock(TopologyNode i, TopologyNode j);
 
-  /** \brief change the link delay
+  /** \brief Change the link delay.
    *  \param delay link delay, must be positive
    */
   void
   setDelay(time::nanoseconds delay);
 
-  /** \brief attach a face to the link
+  /** \brief Attach a face to the link.
    *  \param i forwarder index
    *  \param face a Face with InternalForwarderTransport
    */
@@ -146,12 +146,12 @@ private:
   std::unordered_map<TopologyNode, NodeTransport> m_transports;
 };
 
-/** \brief represents a link on a single forwarder
+/** \brief Represents a link on a single forwarder.
  */
 class TopologySingleLink : noncopyable
 {
 public:
-  /** \brief constructor
+  /** \brief Constructor.
    *  \param forwarderFace a Face with InternalForwarderTransport
    */
   explicit
@@ -170,23 +170,23 @@ protected:
   face::InternalForwarderTransport* m_forwarderTransport;
 };
 
-/** \brief represents a link to a local application
+/** \brief Represents a link to a local application.
  */
 class TopologyAppLink : public TopologySingleLink
 {
 public:
-  /** \brief constructor
+  /** \brief Constructor.
    *  \param forwarderFace a Face with InternalForwarderTransport
    */
   explicit
   TopologyAppLink(shared_ptr<Face> forwarderFace);
 
-  /** \brief fail the link, cause packets to be dropped silently
+  /** \brief Fail the link, cause packets to be dropped silently.
    */
   void
   fail();
 
-  /** \brief recover the link from a failure
+  /** \brief Recover the link from a failure.
    */
   void
   recover();
@@ -204,12 +204,12 @@ private:
   shared_ptr<ndn::Face> m_client;
 };
 
-/** \brief allows the test case to inject and observe L2 packets on a link
+/** \brief Allows the test case to inject and observe L2 packets on a link.
  */
 class TopologyBareLink : public TopologySingleLink
 {
 public:
-  /** \brief constructor
+  /** \brief Constructor.
    *  \param forwarderFace a Face with InternalForwarderTransport
    */
   explicit
@@ -226,7 +226,7 @@ private:
   unique_ptr<Observer> m_observer;
 };
 
-/** \brief captured packets on a face
+/** \brief Captured packets on a face.
  */
 class TopologyPcap : noncopyable
 {
@@ -236,16 +236,16 @@ public:
   std::vector<lp::Nack> sentNacks;
 };
 
-/** \brief captured packet timestamp tag
+/** \brief Captured packet timestamp tag.
  */
 using TopologyPcapTimestamp = ndn::SimpleTag<time::steady_clock::time_point, 0>;
 
-/** \brief builds a topology for forwarding tests
+/** \brief Builds a topology for forwarding tests.
  */
 class TopologyTester : noncopyable
 {
 public:
-  /** \brief creates a forwarder
+  /** \brief Creates a forwarder.
    *  \return index of new forwarder
    */
   TopologyNode
@@ -259,7 +259,7 @@ public:
     return m_forwarders.at(i)->forwarder;
   }
 
-  /** \brief sets strategy on forwarder \p i
+  /** \brief Sets strategy on forwarder \p i.
    *  \tparam S the strategy type
    *  \note Test scenario can also access StrategyChoice table directly.
    */
@@ -272,38 +272,38 @@ public:
     choose<S>(forwarder, prefix, instanceName);
   }
 
-  /** \brief makes a link that interconnects two or more forwarders
-   *  \brief linkType desired link type; LINK_TYPE_NONE to use point-to-point for two forwarders
+  /** \brief Makes a link that interconnects two or more forwarders.
+   *  \param linkType Desired link type; LINK_TYPE_NONE to use point-to-point for two forwarders
    *                  and multi-access for more than two forwarders; it's an error to specify
-   *                  point-to-point when there are more than two forwarders
+   *                  point-to-point when there are more than two forwarders.
    *
-   *  A face is created on each of \p forwarders .
-   *  When a packet is sent onto one of the faces on this link,
-   *  this packet will be received by all other faces on this link after \p delay .
+   *  A face is created on each of \p forwarders.
+   *  When a packet is sent onto one of the faces on this link, the packet will be
+   *  received by all other faces on this link after the specified delay.
    */
   shared_ptr<TopologyLink>
   addLink(const std::string& label, time::nanoseconds delay,
           std::initializer_list<TopologyNode> forwarders,
           ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_NONE);
 
-  /** \brief makes a link to local application
+  /** \brief Makes a link to a local application.
    */
   shared_ptr<TopologyAppLink>
   addAppFace(const std::string& label, TopologyNode i);
 
-  /** \brief makes a link to local application, and register a prefix
+  /** \brief Makes a link to a local application and registers a prefix.
    */
   shared_ptr<TopologyAppLink>
   addAppFace(const std::string& label, TopologyNode i, const Name& prefix, uint64_t cost = 0);
 
-  /** \brief makes a link that allows the test case to inject and observe L2 packets
+  /** \brief Makes a link that allows the test case to inject and observe layer-2 packets.
    */
   shared_ptr<TopologyBareLink>
   addBareLink(const std::string& label, TopologyNode i,
               ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_LOCAL,
               ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
-  /** \brief enables packet capture on every forwarder face
+  /** \brief Enables packet capture on every forwarder face.
    */
   void
   enablePcap(bool isEnabled = true)
@@ -317,17 +317,17 @@ public:
   TopologyPcap&
   getPcap(const Face& face);
 
-  /** \brief registers a prefix on a forwarder face
+  /** \brief Registers a prefix on a forwarder face.
    */
   void
   registerPrefix(TopologyNode i, const Face& face, const Name& prefix, uint64_t cost = 0);
 
-  /** \brief creates a producer application that answers every Interest with Data of same Name
+  /** \brief Creates a producer application that answers every Interest with Data of same Name.
    */
   void
   addEchoProducer(ndn::Face& face, const Name& prefix = "/", time::nanoseconds replyDelay = 0_ns);
 
-  /** \brief creates a consumer application that sends \p n Interests under \p prefix
+  /** \brief Creates a consumer application that sends \p n Interests under \p prefix
    *         at \p interval fixed rate.
    *  \param seq if non-negative, append sequence number instead of timestamp
    */

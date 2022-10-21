@@ -33,7 +33,7 @@
 
 namespace ndn::autoconfig {
 
-/** \brief a discovery stage
+/** \brief A discovery stage.
  */
 class Stage : boost::noncopyable
 {
@@ -47,20 +47,20 @@ public:
   virtual
   ~Stage() = default;
 
-  /** \brief get stage name
+  /** \brief Get stage name.
    *  \return stage name as a phrase, typically starting with lower case
    */
   virtual const std::string&
   getName() const = 0;
 
-  /** \brief start running this stage
+  /** \brief Start running this stage.
    *  \throw Error stage is already running
    */
   void
   start();
 
 protected:
-  /** \brief parse HUB FaceUri from string and declare success
+  /** \brief Parse HUB FaceUri from string and declare success.
    */
   void
   provideHubFaceUri(const std::string& s);
@@ -76,13 +76,13 @@ private:
   doStart() = 0;
 
 public:
-  /** \brief signal when a HUB FaceUri is found
+  /** \brief Signal when a HUB FaceUri is found.
    *
    *  Argument is HUB FaceUri, may not be canonical.
    */
   util::Signal<Stage, FaceUri> onSuccess;
 
-  /** \brief signal when discovery fails
+  /** \brief Signal when discovery fails.
    *
    *  Argument is error message.
    */

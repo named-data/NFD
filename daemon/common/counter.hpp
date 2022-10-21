@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,24 +30,27 @@
 
 namespace nfd {
 
-/** \brief represents a counter that encloses an integer value
+/**
+ * \brief Represents a counter that encloses an integer value.
  *
- *  SimpleCounter is noncopyable, because increment should be called on the counter,
- *  not a copy of it; it's implicitly convertible to an integral type to be observed
+ * SimpleCounter is noncopyable, because increment should be called on the counter,
+ * not a copy of it; it's implicitly convertible to an integral type to be observed.
  */
 class SimpleCounter : noncopyable
 {
 public:
   typedef uint64_t rep;
 
-  /** \brief observe the counter
+  /**
+   * \brief Observe the counter's value.
    */
   operator rep() const noexcept
   {
     return m_value;
   }
 
-  /** \brief replace the counter value
+  /**
+   * \brief Replace the counter's value.
    */
   void
   set(rep value) noexcept
@@ -59,14 +62,14 @@ protected:
   rep m_value = 0;
 };
 
-/** \brief represents a counter of number of packets
+/** \brief Represents a counter of number of packets.
  *
  *  \warning The counter value may wrap after exceeding the range of underlying integer type.
  */
 class PacketCounter : public SimpleCounter
 {
 public:
-  /** \brief increment the counter by one
+  /** \brief Increment the counter by one.
    */
   PacketCounter&
   operator++() noexcept
@@ -77,14 +80,14 @@ public:
   // postfix ++ operator is not provided because it's not needed
 };
 
-/** \brief represents a counter of number of bytes
+/** \brief Represents a counter of number of bytes.
  *
  *  \warning The counter value may wrap after exceeding the range of underlying integer type.
  */
 class ByteCounter : public SimpleCounter
 {
 public:
-  /** \brief increase the counter
+  /** \brief Increase the counter.
    */
   ByteCounter&
   operator+=(rep n) noexcept
@@ -94,7 +97,7 @@ public:
   }
 };
 
-/** \brief provides a counter that observes the size of a table
+/** \brief Provides a counter that observes the size of a table.
  *  \tparam T a type that provides a size() const member function
  *
  *  if table not specified in constructor, it can be added later by invoking observe()
@@ -117,7 +120,7 @@ public:
     m_table = table;
   }
 
-  /** \brief observe the counter
+  /** \brief Observe the counter.
    */
   operator Rep() const
   {

@@ -51,8 +51,8 @@ public:
   }
 };
 
-/** \brief fixture to test status fetching routines in a \p Module
- *  \tparam M a subclass of \p Module
+/** \brief Fixture to test status fetching routines in a Module.
+ *  \tparam M a subclass of Module
  *  \tparam MakeValidator a callable to make a Validator for use in \p controller;
  *                        MakeValidator()(Face&, KeyChain&) should return a unique_ptr
  *                        to Validator or its subclass
@@ -71,7 +71,7 @@ protected:
   }
 
 protected: // status fetching
-  /** \brief start fetching status
+  /** \brief Start fetching status.
    *
    *  A test case should call \p fetchStatus, \p sendDataset, and \p prepareStatusOutput
    *  in this order, and then check \p statusXml and \p statusText contain the correct outputs.
@@ -90,7 +90,7 @@ protected: // status fetching
     this->advanceClocks(1_ms);
   }
 
-  /** \brief prepare status output as XML and text
+  /** \brief Prepare status output as XML and text.
    *  \pre sendDataset has been invoked
    */
   void
@@ -116,7 +116,7 @@ protected:
   output_test_stream statusText;
 };
 
-/** \brief strips leading spaces on every line in expected XML
+/** \brief Strips leading spaces on every line in expected XML.
  *
  *  This allows expected XML to be written as:
  *  \code

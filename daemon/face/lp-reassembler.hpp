@@ -33,23 +33,23 @@
 namespace nfd::face {
 
 /**
- * \brief Reassembles fragmented network-layer packets
+ * \brief Reassembles fragmented network-layer packets.
  * \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpReassembler : noncopyable
 {
 public:
-  /** \brief Options that control the behavior of LpReassembler
+  /** \brief %Options that control the behavior of LpReassembler.
    */
   struct Options
   {
-    /** \brief maximum number of fragments in a packet
+    /** \brief Maximum number of fragments in a packet.
      *
      *  LpPackets with FragCount over this limit are dropped.
      */
     size_t nMaxFragments = 400;
 
-    /** \brief timeout before a partially reassembled packet is dropped
+    /** \brief Timeout before a partially reassembled packet is dropped.
      */
     time::nanoseconds reassemblyTimeout = 500_ms;
   };
@@ -57,7 +57,7 @@ public:
   explicit
   LpReassembler(const Options& options, const LinkService* linkService = nullptr);
 
-  /** \brief set options for reassembler
+  /** \brief Set options for reassembler.
    */
   void
   setOptions(const Options& options);
@@ -69,7 +69,7 @@ public:
   const LinkService*
   getLinkService() const;
 
-  /** \brief adds received fragment to the buffer
+  /** \brief Adds received fragment to the buffer.
    *  \param remoteEndpoint endpoint that sent the packet
    *  \param packet received fragment; must have Fragment field
    *  \return a tuple containing:
@@ -81,7 +81,7 @@ public:
   std::tuple<bool, Block, lp::Packet>
   receiveFragment(const EndpointId& remoteEndpoint, const lp::Packet& packet);
 
-  /** \brief count of partial packets
+  /** \brief Count of partial packets.
    */
   size_t
   size() const;
@@ -98,7 +98,7 @@ public:
 
 private:
   /**
-   * \brief Holds all fragments of packet until reassembled
+   * \brief Holds all fragments of a packet until reassembled.
    */
   struct PartialPacket
   {
@@ -109,11 +109,11 @@ private:
   };
 
   /**
-   * \brief Index key for PartialPackets
+   * \brief Index key for PartialPackets.
    */
   using Key = std::tuple<
-    EndpointId, // remoteEndpoint
-    lp::Sequence // message identifier (sequence of the first fragment)
+    EndpointId, // remote endpoint
+    lp::Sequence // message identifier (sequence number of the first fragment)
   >;
 
   Block

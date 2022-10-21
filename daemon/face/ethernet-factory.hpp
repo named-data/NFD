@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for Ethernet
+/** \brief Protocol factory for Ethernet.
  */
 class EthernetFactory final : public ProtocolFactory
 {
@@ -43,7 +43,7 @@ public:
   EthernetFactory(const CtorParams& params);
 
   /**
-   * \brief Create Ethernet-based channel on the specified network interface
+   * \brief Create Ethernet-based channel on the specified network interface.
    *
    * If this method is called twice with the same endpoint, only one channel
    * will be created. The second call will just return the existing channel.
@@ -57,7 +57,7 @@ public:
                 time::nanoseconds idleTimeout);
 
   /**
-   * \brief Create a face to communicate on the given Ethernet multicast group
+   * \brief Create a face to communicate on the given Ethernet multicast group.
    *
    * If this method is called twice with the same arguments, only one face
    * will be created. The second call will just return the existing face.
@@ -72,8 +72,6 @@ public:
                       const ethernet::Address& group);
 
 private:
-  /** \brief process face_system.ether config section
-   */
   void
   doProcessConfig(OptionalConfigSection configSection,
                   FaceSystem::ConfigContext& context) final;
@@ -121,7 +119,7 @@ private:
   };
   MulticastConfig m_mcastConfig;
 
-  /// (ifname, group) => face
+  // [ifname, group] => face
   std::map<std::pair<std::string, ethernet::Address>, shared_ptr<Face>> m_mcastFaces;
 
   signal::ScopedConnection m_netifAddConn;

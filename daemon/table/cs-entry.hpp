@@ -30,12 +30,12 @@
 
 namespace nfd::cs {
 
-/** \brief a ContentStore entry
+/** \brief A ContentStore entry.
  */
 class Entry
 {
 public: // exposed through ContentStore enumeration
-  /** \brief return the stored Data
+  /** \brief Return the stored Data.
    */
   const Data&
   getData() const
@@ -43,7 +43,7 @@ public: // exposed through ContentStore enumeration
     return *m_data;
   }
 
-  /** \brief return stored Data name
+  /** \brief Return stored Data name.
    */
   const Name&
   getName() const
@@ -51,7 +51,7 @@ public: // exposed through ContentStore enumeration
     return m_data->getName();
   }
 
-  /** \brief return full name (including implicit digest) of the stored Data
+  /** \brief Return full name (including implicit digest) of the stored Data.
    */
   const Name&
   getFullName() const
@@ -59,7 +59,7 @@ public: // exposed through ContentStore enumeration
     return m_data->getFullName();
   }
 
-  /** \brief return whether the stored Data is unsolicited
+  /** \brief Return whether the stored Data is unsolicited.
    */
   bool
   isUnsolicited() const
@@ -67,12 +67,12 @@ public: // exposed through ContentStore enumeration
     return m_isUnsolicited;
   }
 
-  /** \brief check if the stored Data is fresh now
+  /** \brief Check if the stored Data is fresh now.
    */
   bool
   isFresh() const;
 
-  /** \brief determine whether Interest can be satisified by the stored Data
+  /** \brief Determine whether Interest can be satisified by the stored Data.
    */
   bool
   canSatisfy(const Interest& interest) const;
@@ -80,12 +80,12 @@ public: // exposed through ContentStore enumeration
 public: // used by ContentStore implementation
   Entry(shared_ptr<const Data> data, bool isUnsolicited);
 
-  /** \brief recalculate when the entry would become non-fresh, relative to current time
+  /** \brief Recalculate when the entry would become non-fresh, relative to current time.
    */
   void
   updateFreshUntil();
 
-  /** \brief clear 'unsolicited' flag
+  /** \brief Clear 'unsolicited' flag.
    */
   void
   clearUnsolicited()
@@ -96,7 +96,7 @@ public: // used by ContentStore implementation
 private:
   shared_ptr<const Data> m_data;
   bool m_isUnsolicited;
-  time::steady_clock::TimePoint m_freshUntil;
+  time::steady_clock::time_point m_freshUntil;
 };
 
 bool
@@ -108,7 +108,7 @@ operator<(const Name& queryName, const Entry& entry);
 bool
 operator<(const Entry& lhs, const Entry& rhs);
 
-/** \brief an ordered container of ContentStore entries
+/** \brief An ordered container of ContentStore entries.
  *
  *  This container uses std::less<> comparator to enable lookup with queryName.
  */

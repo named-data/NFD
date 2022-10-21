@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for stream-oriented Unix sockets
+/** \brief Protocol factory for stream-oriented Unix sockets.
  */
 class UnixStreamFactory final : public ProtocolFactory
 {
@@ -42,7 +42,7 @@ public:
   using ProtocolFactory::ProtocolFactory;
 
   /**
-   * \brief Create stream-oriented Unix channel using specified socket path
+   * \brief Create stream-oriented Unix channel using specified socket path.
    *
    * If this method is called twice with the same path, only one channel
    * will be created.  The second call will just retrieve the existing
@@ -55,8 +55,6 @@ public:
   createChannel(const std::string& unixSocketPath);
 
 private:
-  /** \brief process face_system.unix config section
-   */
   void
   doProcessConfig(OptionalConfigSection configSection,
                   FaceSystem::ConfigContext& context) final;

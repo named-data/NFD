@@ -32,7 +32,7 @@ namespace nfd::face {
 
 class FaceSystem;
 
-/** \brief manages netdev-bound faces
+/** \brief Manages netdev-bound faces.
  */
 class NetdevBound : noncopyable
 {
@@ -54,7 +54,7 @@ public:
 
   NetdevBound(const ProtocolFactoryCtorParams& params, const FaceSystem& faceSystem);
 
-  /** \brief process face_system.netdev_bound config section
+  /** \brief Process `face_system.netdev_bound` config section.
    */
   void
   processConfig(OptionalConfigSection configSection,

@@ -36,20 +36,15 @@ NDN_CXX_ASSERT_FORWARD_ITERATOR(FaceTable::const_iterator);
 
 NFD_LOG_INIT(FaceTable);
 
-FaceTable::FaceTable()
-  : m_lastFaceId(face::FACEID_RESERVED_MAX)
-{
-}
-
 Face*
-FaceTable::get(FaceId id) const
+FaceTable::get(FaceId id) const noexcept
 {
   auto i = m_faces.find(id);
   return i == m_faces.end() ? nullptr : i->second.get();
 }
 
 size_t
-FaceTable::size() const
+FaceTable::size() const noexcept
 {
   return m_faces.size();
 }

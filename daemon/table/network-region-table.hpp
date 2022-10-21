@@ -30,7 +30,7 @@
 
 namespace nfd {
 
-/** \brief stores a collection of producer region names
+/** \brief Stores a collection of producer region names.
  *
  *  This table is used in forwarding to process Interests with Link objects.
  *
@@ -40,7 +40,7 @@ namespace nfd {
 class NetworkRegionTable : public std::set<Name>
 {
 public:
-  /** \brief determines whether an Interest has reached a producer region
+  /** \brief Determines whether an Interest has reached a producer region.
    *  \param forwardingHint forwarding hint of an Interest
    *  \retval true the Interest has reached a producer region
    *  \retval false the Interest has not reached a producer region

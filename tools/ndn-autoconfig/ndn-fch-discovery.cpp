@@ -127,11 +127,7 @@ private:
 class HttpException : public std::runtime_error
 {
 public:
-  explicit
-  HttpException(const std::string& what)
-    : std::runtime_error(what)
-  {
-  }
+  using std::runtime_error::runtime_error;
 };
 
 NdnFchDiscovery::NdnFchDiscovery(const std::string& url)

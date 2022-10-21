@@ -54,7 +54,7 @@ public:
     EXCEPTION
   };
 
-  /** \brief g_io.run() with operation count and/or time limit
+  /** \brief `g_io.run()` with operation count and/or time limit.
    *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
    *  \param timeLimit time limit, pass UNLIMITED_TIME for no limit
    *  \param tick if this LimitedIo is constructed with GlobalIoTimeFixture,
@@ -68,7 +68,7 @@ public:
   afterOp();
 
   /**
-   * \brief Defer for the specified duration
+   * \brief Defer for the specified duration.
    *
    * Equivalent to run(UNLIMITED_OPS, d)
    */
@@ -85,7 +85,7 @@ public:
   }
 
 private:
-  /** \brief an exception to stop IO operation
+  /** \brief An exception to stop IO operation.
    */
   class StopException : public std::exception
   {

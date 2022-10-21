@@ -44,35 +44,38 @@ public:
   ~Channel();
 
   const FaceUri&
-  getUri() const
+  getUri() const noexcept
   {
     return m_uri;
   }
 
-  /** \brief Returns the default MTU for all faces created by this channel
+  /**
+   * \brief Returns the default MTU for all faces created by this channel.
    */
   size_t
-  getDefaultMtu() const
+  getDefaultMtu() const noexcept
   {
     return m_defaultMtu;
   }
 
-  /** \brief Returns whether the channel is listening
+  /**
+   * \brief Returns whether the channel is listening.
    */
   virtual bool
   isListening() const = 0;
 
-  /** \brief Returns the number of faces in the channel
+  /**
+   * \brief Returns the number of faces in the channel.
    */
   virtual size_t
   size() const = 0;
 
 protected:
   void
-  setUri(const FaceUri& uri);
+  setUri(const FaceUri& uri) noexcept;
 
   void
-  setDefaultMtu(size_t mtu);
+  setDefaultMtu(size_t mtu) noexcept;
 
 private:
   FaceUri m_uri;

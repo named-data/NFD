@@ -47,11 +47,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
   /**
@@ -62,7 +58,7 @@ public:
   explicit
   PcapHelper(const std::string& interfaceName);
 
-  ~PcapHelper();
+  ~PcapHelper() noexcept;
 
   /**
    * @brief Start capturing packets.
@@ -135,7 +131,7 @@ public:
   }
 
 private:
-  pcap_t* m_pcap;
+  pcap_t* m_pcap = nullptr;
 };
 
 } // namespace nfd::face

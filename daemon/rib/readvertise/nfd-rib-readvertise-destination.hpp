@@ -35,7 +35,7 @@
 
 namespace nfd::rib {
 
-/** \brief a readvertise destination using NFD RIB management protocol
+/** \brief A readvertise destination using NFD RIB management protocol.
  */
 class NfdRibReadvertiseDestination : public ReadvertiseDestination
 {
@@ -46,14 +46,14 @@ public:
                                const ndn::nfd::ControlParameters& parameters =
                                  ndn::nfd::ControlParameters().setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT));
 
-  /** \brief add a name prefix into NFD RIB
+  /** \brief Add a name prefix into NFD RIB.
    */
   void
   advertise(const ReadvertisedRoute& rr,
             std::function<void()> successCb,
             std::function<void(const std::string&)> failureCb) override;
 
-  /** \brief remove a name prefix from NFD RIB
+  /** \brief Remove a name prefix from NFD RIB.
    */
   void
   withdraw(const ReadvertisedRoute& rr,

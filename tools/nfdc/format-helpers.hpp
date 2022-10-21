@@ -43,12 +43,12 @@ struct Text
   const std::string& s;
 };
 
-/** \brief print XML text with special character represented as predefined entities
+/** \brief Print XML text with special character represented as predefined entities.
  */
 std::ostream&
 operator<<(std::ostream& os, const Text& text);
 
-/** \brief print true as an empty element and false as nothing
+/** \brief Print true as an empty element and false as nothing.
  */
 struct Flag
 {
@@ -77,7 +77,7 @@ formatTimestamp(time::system_clock::time_point t);
 
 namespace text {
 
-/** \brief print a number of whitespaces
+/** \brief Print a number of whitespaces.
  */
 struct Spaces
 {
@@ -87,7 +87,7 @@ struct Spaces
 std::ostream&
 operator<<(std::ostream& os, const Spaces& spaces);
 
-/** \brief print different string on first and subsequent usage
+/** \brief Print different string on first and subsequent usage.
  *
  *  \code
  *  Separator sep(",");
@@ -122,7 +122,7 @@ private:
 std::ostream&
 operator<<(std::ostream& os, Separator& sep);
 
-/** \brief print attributes of an item
+/** \brief Print attributes of an item.
  *
  *  \code
  *  ItemAttributes ia(wantMultiLine, 3);
@@ -141,7 +141,7 @@ operator<<(std::ostream& os, Separator& sep);
 class ItemAttributes : noncopyable
 {
 public:
-  /** \brief constructor
+  /** \brief Constructor.
    *  \param wantMultiLine true to select multi-line style, false to use single-line style
    *  \param maxAttributeWidth maximum width of attribute names, for alignment in multi-line style
    */
@@ -174,7 +174,7 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 
-/** \brief print boolean as 'on' or 'off'
+/** \brief Print boolean as 'on' or 'off'.
  */
 struct OnOff
 {
@@ -184,7 +184,7 @@ struct OnOff
 std::ostream&
 operator<<(std::ostream& os, OnOff v);
 
-/** \brief print boolean as 'yes' or 'no'
+/** \brief Print boolean as 'yes' or 'no'.
  */
 struct YesNo
 {

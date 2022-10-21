@@ -82,7 +82,7 @@ public:
   hasNextHop(const Face& face) const;
 
 private:
-  /** \brief adds a NextHop record to the entry
+  /** \brief Adds a NextHop record to the entry.
    *
    *  If a NextHop record for \p face already exists in the entry, its cost is set to \p cost.
    *
@@ -92,7 +92,7 @@ private:
   std::pair<NextHopList::iterator, bool>
   addOrUpdateNextHop(Face& face, uint64_t cost);
 
-  /** \brief removes a NextHop record
+  /** \brief Removes a NextHop record.
    *
    *  If no NextHop record for face exists, do nothing.
    */
@@ -104,7 +104,7 @@ private:
   NextHopList::iterator
   findNextHop(const Face& face);
 
-  /** \brief sorts the nexthop list
+  /** \brief Sorts the nexthop list.
    */
   void
   sortNextHops();

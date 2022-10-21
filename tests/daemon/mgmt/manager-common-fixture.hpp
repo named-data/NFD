@@ -47,7 +47,7 @@ protected:
   InterestSignerFixture();
 
   /**
-   * \brief Create a ControlCommand request
+   * \brief Create a ControlCommand request.
    * \param commandName Command name including prefix, such as `/localhost/nfd/fib/add-nexthop`
    * \param params Command parameters
    * \param format Signed Interest format
@@ -82,7 +82,7 @@ public: // initialize
 
 public: // test
   /**
-   * @brief cause management to receive an Interest
+   * @brief Cause management to receive an Interest.
    *
    * call DummyClientFace::receive to receive Interest and then call advanceClocks to ensure
    * the Interest dispatched
@@ -109,7 +109,7 @@ public: // verify
   };
 
   /**
-   * @brief check a specified response data with the expected ControlResponse
+   * @brief Check a specified response data with the expected ControlResponse.
    *
    * @param idx the index of the specified Data in m_responses
    * @param expectedDataName the expected name of this Data
@@ -135,7 +135,7 @@ public: // verify
                 int expectedContentType = -1);
 
   /**
-   * @brief concatenate specified response Data into a single block
+   * @brief Concatenate specified response Data into a single block.
    *
    * @param startIndex the start index in m_responses
    * @param nResponses the number of response to concatenate
@@ -157,7 +157,7 @@ operator<<(std::ostream& os, ManagerCommonFixture::CheckResponseResult result);
 class ManagerFixtureWithAuthenticator : public ManagerCommonFixture
 {
 public:
-  /** \brief grant m_identityName privilege to sign commands for the management module
+  /** \brief Grant m_identityName privilege to sign commands for the management module.
    */
   void
   setPrivilege(const std::string& privilege);

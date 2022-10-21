@@ -35,10 +35,12 @@ namespace nfd {
 class PrivilegeHelper
 {
 public:
-  /** \brief represents a serious seteuid/gid failure
+  /**
+   * \brief Indicates a serious seteuid/setegid failure.
    *
-   *  This should only be caught by main as part of a graceful program termination.
-   *  \note This is not an std::exception and NDN_THROW should not be used.
+   * This should only be caught by main as part of a graceful program termination.
+   *
+   * \note This is not an std::exception and NDN_THROW should not be used.
    */
   class Error
   {

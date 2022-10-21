@@ -38,12 +38,12 @@ class Entry;
 namespace nfd::pit {
 
 /**
- * \brief An unordered collection of in-records
+ * \brief An unordered collection of in-records.
  */
 using InRecordCollection = std::list<InRecord>;
 
 /**
- * \brief An unordered collection of out-records
+ * \brief An unordered collection of out-records.
  */
 using OutRecordCollection = std::list<OutRecord>;
 
@@ -134,24 +134,24 @@ public: // in-record
     return m_inRecords.end();
   }
 
-  /** \brief get the in-record for \p face
+  /** \brief Get the in-record for \p face.
    *  \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
   getInRecord(const Face& face);
 
-  /** \brief insert or update an in-record
+  /** \brief Insert or update an in-record.
    *  \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
   insertOrUpdateInRecord(Face& face, const Interest& interest);
 
-  /** \brief delete the in-record for \p face if it exists
+  /** \brief Delete the in-record for \p face if it exists.
    */
   void
   deleteInRecord(const Face& face);
 
-  /** \brief delete all in-records
+  /** \brief Delete all in-records.
    */
   void
   clearInRecords();
@@ -201,35 +201,35 @@ public: // out-record
     return m_outRecords.end();
   }
 
-  /** \brief get the out-record for \p face
+  /** \brief Get the out-record for \p face.
    *  \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
   getOutRecord(const Face& face);
 
-  /** \brief insert or update an out-record
+  /** \brief Insert or update an out-record.
    *  \return an iterator to the new or updated out-record
    */
   OutRecordCollection::iterator
   insertOrUpdateOutRecord(Face& face, const Interest& interest);
 
-  /** \brief delete the out-record for \p face if it exists
+  /** \brief Delete the out-record for \p face if it exists.
    */
   void
   deleteOutRecord(const Face& face);
 
 public:
-  /** \brief Expiry timer
+  /** \brief Expiry timer.
    *
    *  This timer is used in forwarding pipelines to delete the entry
    */
   scheduler::EventId expiryTimer;
 
-  /** \brief Indicates whether this PIT entry is satisfied
+  /** \brief Indicates whether this PIT entry is satisfied.
    */
   bool isSatisfied = false;
 
-  /** \brief Data freshness period
+  /** \brief Data freshness period.
    *  \note This field is meaningful only if isSatisfied is true
    */
   time::milliseconds dataFreshnessPeriod = 0_ms;

@@ -33,23 +33,23 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::CsInfo;
 
-/** \brief provides access to NFD CS management
+/** \brief Provides access to NFD CS management.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
 class CsModule : public Module, noncopyable
 {
 public:
-  /** \brief register 'cs config' command
+  /** \brief Register 'cs config' command.
    */
   static void
   registerCommands(CommandParser& parser);
 
-  /** \brief the 'cs config' command
+  /** \brief The 'cs config' command.
    */
   static void
   config(ExecuteContext& ctx);
 
-  /** \brief the 'cs erase' command
+  /** \brief The 'cs erase' command.
    */
   static void
   erase(ExecuteContext& ctx);

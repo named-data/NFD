@@ -38,7 +38,7 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::FacePersistency;
 using ndn::nfd::RouteOrigin;
 
-/** \brief contains named command arguments
+/** \brief Contains named command arguments.
  */
 class CommandArguments : public std::map<std::string, std::any, std::less<>>
 {
@@ -62,7 +62,7 @@ public:
     return getOptional<T>(key).value_or(defaultValue);
   }
 
-  /** \brief get an optional boolean argument as tribool
+  /** \brief Get an optional boolean argument as tribool.
    *  \return the argument value, or boost::logic::indeterminate if the argument is omitted on command line
    */
   boost::logic::tribool

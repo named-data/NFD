@@ -113,7 +113,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * @param parameters the original ControlParameters
    * @return whether the original ControlParameters can be validated
    */
-  static bool
+  [[nodiscard]] static bool
   validateParameters(const ControlCommand& command,
                      const ndn::mgmt::ControlParameters& parameters);
 

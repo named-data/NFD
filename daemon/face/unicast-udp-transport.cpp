@@ -94,7 +94,7 @@ UnicastUdpTransport::afterChangePersistency(ndn::nfd::FacePersistency oldPersist
   }
   else {
     m_closeIfIdleEvent.cancel();
-    setExpirationTime(time::steady_clock::TimePoint::max());
+    setExpirationTime(time::steady_clock::time_point::max());
   }
 }
 

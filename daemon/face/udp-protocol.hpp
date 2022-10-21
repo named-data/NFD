@@ -34,12 +34,14 @@ namespace nfd::udp {
 
 using Endpoint = boost::asio::ip::udp::endpoint;
 
-/** \brief computes maximum payload size in a UDP packet
+/**
+ * \brief Computes the maximum payload size in a UDP packet.
  */
 ssize_t
 computeMtu(const Endpoint& localEndpoint);
 
-/** \return default IPv4 multicast group: 224.0.23.170:56363
+/**
+ * \brief Returns the default IPv4 multicast group: `224.0.23.170:56363`
  */
 inline Endpoint
 getDefaultMulticastGroup()
@@ -47,7 +49,8 @@ getDefaultMulticastGroup()
   return {boost::asio::ip::address_v4(0xE00017AA), 56363};
 }
 
-/** \return default IPv6 multicast group: [FF02::1234]:56363
+/**
+ * \brief Returns the default IPv6 multicast group: `[FF02::1234]:56363`
  */
 inline Endpoint
 getDefaultMulticastGroupV6()

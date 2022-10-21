@@ -43,12 +43,12 @@ struct StatusReportOptions
   bool wantStrategyChoice = false;
 };
 
-/** \brief collect a status report and write to stdout
+/** \brief Collect a status report and write to stdout.
  */
 void
 reportStatus(ExecuteContext& ctx, const StatusReportOptions& options);
 
-/** \brief registers status commands
+/** \brief Registers status commands.
  *
  *  Providing the following commands:
  *  \li status report

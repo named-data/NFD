@@ -37,18 +37,11 @@ BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
 
 NFD_LOG_INIT(NameTreeIterator);
 
-Iterator::Iterator()
-  : m_entry(nullptr)
-  , m_ref(nullptr)
-  , m_state(0)
-{
-}
+Iterator::Iterator() = default;
 
 Iterator::Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref)
   : m_impl(std::move(impl))
-  , m_entry(nullptr)
   , m_ref(ref)
-  , m_state(0)
 {
   m_impl->advance(*this);
   NFD_LOG_TRACE("initialized " << *this);

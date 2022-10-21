@@ -157,7 +157,7 @@ Cs::setPolicyImpl(unique_ptr<Policy> policy)
 }
 
 void
-Cs::enableAdmit(bool shouldAdmit)
+Cs::enableAdmit(bool shouldAdmit) noexcept
 {
   if (m_shouldAdmit == shouldAdmit) {
     return;
@@ -167,7 +167,7 @@ Cs::enableAdmit(bool shouldAdmit)
 }
 
 void
-Cs::enableServe(bool shouldServe)
+Cs::enableServe(bool shouldServe) noexcept
 {
   if (m_shouldServe == shouldServe) {
     return;

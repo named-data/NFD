@@ -35,7 +35,7 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::CommandOptions;
 using ndn::nfd::Controller;
 
-/** \brief provides access to an NFD management module
+/** \brief Provides access to an NFD management module.
  *  \note This type is an interface. It should not have member fields.
  */
 class Module
@@ -44,7 +44,7 @@ public:
   virtual
   ~Module() = default;
 
-  /** \brief collect status from NFD
+  /** \brief Collect status from NFD.
    *  \pre no other fetchStatus is in progress
    *  \param controller a controller through which StatusDataset can be requested
    *  \param onSuccess invoked when status has been collected into this instance
@@ -57,14 +57,14 @@ public:
               const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) = 0;
 
-  /** \brief format collected status as XML
+  /** \brief Format collected status as XML.
    *  \pre fetchStatus has been successful
    *  \param os output stream
    */
   virtual void
   formatStatusXml(std::ostream& os) const = 0;
 
-  /** \brief format collected status as text
+  /** \brief Format collected status as text.
    *  \pre fetchStatus has been successful
    *  \param os output stream
    */

@@ -63,7 +63,7 @@ protected:
     }
   }
 
-  /** \brief returns the first running interface
+  /** \brief Returns the first running interface.
    */
   shared_ptr<ndn::net::NetworkInterface>
   getRunningNetif() const
@@ -77,7 +77,7 @@ protected:
     return nullptr;
   }
 
-  /** \brief create a UnicastEthernetTransport
+  /** \brief Create a UnicastEthernetTransport.
    */
   void
   initializeUnicast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
@@ -93,7 +93,7 @@ protected:
     transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, 2_s);
   }
 
-  /** \brief create a MulticastEthernetTransport
+  /** \brief Create a MulticastEthernetTransport.
    */
   void
   initializeMulticast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
@@ -112,7 +112,7 @@ protected:
 protected:
   LimitedIo limitedIo;
 
-  /** \brief EthernetTransport-capable network interfaces
+  /** \brief EthernetTransport-capable network interfaces.
    */
   std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
 

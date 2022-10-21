@@ -33,7 +33,7 @@
 
 namespace nfd::rib {
 
-/** \brief a policy to readvertise routes registered by local applications into remote gateway
+/** \brief A policy to readvertise routes registered by local applications into remote gateway.
  */
 class HostToGatewayReadvertisePolicy : public ReadvertisePolicy
 {

@@ -34,7 +34,7 @@ using ndn::nfd::FaceQueryFilter;
 using ndn::nfd::FaceStatus;
 
 /**
- * \brief Procedure to find a face
+ * \brief Procedure to find a face.
  */
 class FindFace : noncopyable
 {
@@ -57,19 +57,19 @@ public:
   explicit
   FindFace(ExecuteContext& ctx);
 
-  /** \brief find face by FaceUri
+  /** \brief Find face by FaceUri.
    *  \pre execute has not been invoked
    */
   Code
   execute(const FaceUri& faceUri, bool allowMulti = false);
 
-  /** \brief find face by FaceId
+  /** \brief Find face by FaceId.
    *  \pre execute has not been invoked
    */
   Code
   execute(uint64_t faceId);
 
-  /** \brief find face by FaceId or FaceUri
+  /** \brief Find face by FaceId or FaceUri.
    *  \param faceIdOrUri either a FaceId (uint64_t) or a FaceUri
    *  \param allowMulti effective only if \p faceIdOrUri contains a FaceUri
    *  \throw ndn::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
@@ -77,7 +77,7 @@ public:
   Code
   execute(const std::any& faceIdOrUri, bool allowMulti = false);
 
-  /** \brief find face by FaceQueryFilter
+  /** \brief Find face by FaceQueryFilter.
    *  \pre execute has not been invoked
    */
   Code
@@ -114,7 +114,7 @@ public:
     return m_errorReason;
   }
 
-  /** \brief print results for disambiguation
+  /** \brief Print results for disambiguation.
    */
   void
   printDisambiguation(std::ostream& os, DisambiguationStyle style) const;
@@ -123,7 +123,7 @@ private:
   std::optional<FaceUri>
   canonize(const std::string& fieldName, const FaceUri& uri);
 
-  /** \brief retrieve FaceStatus from filter
+  /** \brief Retrieve FaceStatus from filter.
    *  \post m_res == Code::OK and m_results is populated if retrieval succeeds
    *  \post m_res == Code::ERROR and m_errorReason is set if retrieval fails
    */
@@ -139,14 +139,14 @@ private:
 };
 
 /**
- * \brief Canonize a FaceUri
+ * \brief Canonize a FaceUri.
  * \return canonical FaceUri (nullopt on failure) and error string
  */
 std::pair<std::optional<FaceUri>, std::string>
 canonize(ExecuteContext& ctx, const FaceUri& uri);
 
 /**
- * \brief Helper to generate exit code and error message for face canonization failures
+ * \brief Helper to generate exit code and error message for face canonization failures.
  * \param uri The FaceUri
  * \param error The error string returned by the canonization process
  * \param field An optional field identifier to include with the message

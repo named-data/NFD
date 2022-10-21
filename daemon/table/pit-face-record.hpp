@@ -31,9 +31,10 @@
 
 namespace nfd::pit {
 
-/** \brief Contains information about an Interest on an incoming or outgoing face
- *  \note This is an implementation detail to extract common functionality
- *        of InRecord and OutRecord
+/**
+ * \brief Contains information about an Interest on an incoming or outgoing face.
+ * \note This class is an implementation detail to extract common functionality
+ *       of InRecord and OutRecord.
  */
 class FaceRecord : public StrategyInfoHost
 {
@@ -45,33 +46,33 @@ public:
   }
 
   Face&
-  getFace() const
+  getFace() const noexcept
   {
     return m_face;
   }
 
   Interest::Nonce
-  getLastNonce() const
+  getLastNonce() const noexcept
   {
     return m_lastNonce;
   }
 
-  time::steady_clock::TimePoint
-  getLastRenewed() const
+  time::steady_clock::time_point
+  getLastRenewed() const noexcept
   {
     return m_lastRenewed;
   }
 
-  /** \brief Returns the time point at which this record expires
+  /** \brief Returns the time point at which this record expires.
    *  \return getLastRenewed() + InterestLifetime
    */
-  time::steady_clock::TimePoint
-  getExpiry() const
+  time::steady_clock::time_point
+  getExpiry() const noexcept
   {
     return m_expiry;
   }
 
-  /** \brief updates lastNonce, lastRenewed, expiry fields
+  /** \brief Updates lastNonce, lastRenewed, expiry fields.
    */
   void
   update(const Interest& interest);
@@ -79,8 +80,8 @@ public:
 private:
   Face& m_face;
   Interest::Nonce m_lastNonce{0, 0, 0, 0};
-  time::steady_clock::TimePoint m_lastRenewed = time::steady_clock::TimePoint::min();
-  time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
+  time::steady_clock::time_point m_lastRenewed = time::steady_clock::time_point::min();
+  time::steady_clock::time_point m_expiry = time::steady_clock::time_point::min();
 };
 
 } // namespace nfd::pit

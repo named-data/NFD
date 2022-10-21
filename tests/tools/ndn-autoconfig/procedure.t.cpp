@@ -107,7 +107,7 @@ private:
   boost::asio::io_service& m_io;
 };
 
-/** \brief two-stage Procedure where the first stage succeeds and the second stage fails
+/** \brief Two-stage Procedure where the first stage succeeds and the second stage fails.
  *
  *  But the second stage shouldn't be invoked after the first stage succeeds.
  */
@@ -136,7 +136,7 @@ private:
   boost::asio::io_service& m_io;
 };
 
-/** \brief two-stage Procedure where the first stage fails and the second stage succeeds
+/** \brief Two-stage Procedure where the first stage fails and the second stage succeeds.
  */
 class ProcedureFailureSuccess : public Procedure
 {

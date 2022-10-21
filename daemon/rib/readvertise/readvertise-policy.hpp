@@ -32,7 +32,7 @@
 
 namespace nfd::rib {
 
-/** \brief a decision made by readvertise policy
+/** \brief A decision made by readvertise policy.
  */
 struct ReadvertiseAction
 {
@@ -40,7 +40,7 @@ struct ReadvertiseAction
   ndn::security::SigningInfo signer; ///< credentials for command signing
 };
 
-/** \brief a policy to decide whether to readvertise a route, and what prefix to readvertise
+/** \brief A policy to decide whether to readvertise a route, and what prefix to readvertise.
  */
 class ReadvertisePolicy : noncopyable
 {
@@ -48,7 +48,7 @@ public:
   virtual
   ~ReadvertisePolicy() = default;
 
-  /** \brief decide whether to readvertise a route, and what prefix to readvertise
+  /** \brief Decide whether to readvertise a route, and what prefix to readvertise.
    */
   virtual std::optional<ReadvertiseAction>
   handleNewRoute(const RibRouteRef& ribRoute) const = 0;

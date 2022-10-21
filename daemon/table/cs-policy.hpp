@@ -33,7 +33,7 @@ namespace nfd::cs {
 class Cs;
 
 /**
- * \brief Represents a CS replacement policy
+ * \brief Represents a CS replacement policy.
  */
 class Policy : noncopyable
 {
@@ -47,13 +47,15 @@ public: // registry
     BOOST_VERIFY(r.second);
   }
 
-  /** \return a cs::Policy identified by \p policyName,
-   *          or nullptr if \p policyName is unknown
+  /**
+   * \brief Returns a cs::Policy identified by \p policyName,
+   *        or nullptr if \p policyName is unknown.
    */
   static unique_ptr<Policy>
   create(const std::string& policyName);
 
-  /** \return a list of available policy names
+  /**
+   * \brief Returns a list of available policy names.
    */
   static std::set<std::string>
   getPolicyNames();
@@ -63,36 +65,39 @@ public:
   ~Policy() = default;
 
   const std::string&
-  getName() const
+  getName() const noexcept
   {
     return m_policyName;
   }
 
-  /** \brief gets cs
+  /**
+   * \brief Returns a pointer to the associated CS instance.
    */
   Cs*
-  getCs() const
+  getCs() const noexcept
   {
     return m_cs;
   }
 
-  /** \brief sets cs
+  /**
+   * \brief Sets the associated CS instance.
    */
   void
-  setCs(Cs* cs)
+  setCs(Cs* cs) noexcept
   {
     m_cs = cs;
   }
 
-  /** \brief gets hard limit (in number of entries)
+  /**
+   * \brief Gets hard limit (in number of entries).
    */
   size_t
-  getLimit() const
+  getLimit() const noexcept
   {
     return m_limit;
   }
 
-  /** \brief sets hard limit (in number of entries)
+  /** \brief Sets hard limit (in number of entries).
    *  \post getLimit() == nMaxEntries
    *  \post cs.size() <= getLimit()
    *
@@ -102,19 +107,19 @@ public:
   setLimit(size_t nMaxEntries);
 
 public:
-  /** \brief a reference to an CS entry
-   *  \note operator< of EntryRef compares the Data name enclosed in the Entry.
+  /** \brief A reference to a CS entry.
+   *  \note `operator<` of EntryRef compares the Data name enclosed in the Entry.
    */
   using EntryRef = Table::const_iterator;
 
-  /** \brief emits when an entry is being evicted
+  /** \brief %Signal emitted when an entry is being evicted.
    *
    *  A policy implementation should emit this signal to cause CS to erase an entry from its index.
    *  CS should connect to this signal and erase the entry upon signal emission.
    */
   signal::Signal<Policy, EntryRef> beforeEvict;
 
-  /** \brief invoked by CS after a new entry is inserted
+  /** \brief Invoked by CS after a new entry is inserted.
    *  \post cs.size() <= getLimit()
    *
    *  The policy may evict entries if necessary.
@@ -123,20 +128,20 @@ public:
   void
   afterInsert(EntryRef i);
 
-  /** \brief invoked by CS after an existing entry is refreshed by same Data
+  /** \brief Invoked by CS after an existing entry is refreshed by same Data.
    *
    *  The policy may witness this refresh to make better eviction decisions in the future.
    */
   void
   afterRefresh(EntryRef i);
 
-  /** \brief invoked by CS before an entry is erased due to management command
+  /** \brief Invoked by CS before an entry is erased due to management command.
    *  \warning CS must not invoke this method if an entry is erased due to eviction.
    */
   void
   beforeErase(EntryRef i);
 
-  /** \brief invoked by CS before an entry is used to match a lookup
+  /** \brief Invoked by CS before an entry is used to match a lookup.
    *
    *  The policy may witness this usage to make better eviction decisions in the future.
    */
@@ -144,7 +149,7 @@ public:
   beforeUse(EntryRef i);
 
 protected:
-  /** \brief invoked after a new entry is created in CS
+  /** \brief Invoked after a new entry is created in CS.
    *
    *  When overridden in a subclass, a policy implementation should decide whether to accept \p i.
    *  If \p i is accepted, it should be inserted into a cleanup index.
@@ -155,7 +160,7 @@ protected:
   virtual void
   doAfterInsert(EntryRef i) = 0;
 
-  /** \brief invoked after an existing entry is refreshed by same Data
+  /** \brief Invoked after an existing entry is refreshed by same Data.
    *
    *  When overridden in a subclass, a policy implementation may witness this operation
    *  and adjust its cleanup index.
@@ -163,7 +168,7 @@ protected:
   virtual void
   doAfterRefresh(EntryRef i) = 0;
 
-  /** \brief invoked before an entry is erased due to management command
+  /** \brief Invoked before an entry is erased due to management command.
    *  \note This will not be invoked for an entry being evicted by policy.
    *
    *  When overridden in a subclass, a policy implementation should erase \p i
@@ -172,7 +177,7 @@ protected:
   virtual void
   doBeforeErase(EntryRef i) = 0;
 
-  /** \brief invoked before an entry is used to match a lookup
+  /** \brief Invoked before an entry is used to match a lookup.
    *
    *  When overridden in a subclass, a policy implementation may witness this operation
    *  and adjust its cleanup index.
@@ -180,7 +185,7 @@ protected:
   virtual void
   doBeforeUse(EntryRef i) = 0;
 
-  /** \brief evicts zero or more entries
+  /** \brief Evicts zero or more entries.
    *  \post CS size does not exceed hard limit
    */
   virtual void
@@ -207,7 +212,7 @@ private:
 
 } // namespace nfd::cs
 
-/** \brief registers a CS policy
+/** \brief Registers a CS policy.
  *  \param P a subclass of nfd::cs::Policy
  */
 #define NFD_REGISTER_CS_POLICY(P)                      \

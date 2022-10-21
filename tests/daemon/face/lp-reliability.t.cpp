@@ -116,7 +116,7 @@ public:
                        [txSeq] (auto fragIt) { return fragIt->first == txSeq; });
   }
 
-  /** \brief make an LpPacket with fragment of specified size
+  /** \brief Make an LpPacket with fragment of specified size.
    *  \param pktNum packet identifier, which can be extracted with \p getPktNum
    *  \param payloadSize total payload size; must be >= 4 and <= 255
    */
@@ -131,7 +131,7 @@ public:
     return pkt;
   }
 
-  /** \brief extract packet identifier from LpPacket made with \p makeFrag
+  /** \brief Extract packet identifier from LpPacket made with \p makeFrag.
    *  \retval 0 packet identifier cannot be extracted
    */
   static uint32_t

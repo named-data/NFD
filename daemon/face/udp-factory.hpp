@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for UDP over IPv4 and IPv6
+/** \brief Protocol factory for UDP over IPv4 and IPv6.
  */
 class UdpFactory final : public ProtocolFactory
 {
@@ -49,7 +49,7 @@ public:
   UdpFactory(const CtorParams& params);
 
   /**
-   * \brief Create UDP-based channel using udp::Endpoint
+   * \brief Create UDP-based channel using udp::Endpoint.
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
@@ -68,7 +68,7 @@ public:
                 time::nanoseconds idleTimeout);
 
   /**
-   * \brief Create a multicast UDP face
+   * \brief Create a multicast UDP face.
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
@@ -95,8 +95,6 @@ public:
                       const udp::Endpoint& multicastEndpoint);
 
 private:
-  /** \brief process face_system.udp config section
-   */
   void
   doProcessConfig(OptionalConfigSection configSection,
                   FaceSystem::ConfigContext& context) final;
@@ -109,13 +107,13 @@ private:
   std::vector<shared_ptr<const Channel>>
   doGetChannels() const final;
 
-  /** \brief Create UDP multicast faces on \p netif if needed by \p m_mcastConfig
+  /** \brief Create UDP multicast faces on \p netif if needed by \p m_mcastConfig.
    *  \return list of faces (just created or already existing) on \p netif
    */
   std::vector<shared_ptr<Face>>
   applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
-  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig
+  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig.
    */
   void
   applyMcastConfig(const FaceSystem::ConfigContext& context);

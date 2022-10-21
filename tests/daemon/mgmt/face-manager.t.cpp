@@ -60,7 +60,7 @@ public:
     RANDOMIZE_COUNTERS       = 1 << 3,
   };
 
-  /** \brief adds a face to the FaceTable
+  /** \brief Adds a face to the FaceTable.
    *  \param options bitwise OR'ed AddFaceFlags
    */
   shared_ptr<Face>

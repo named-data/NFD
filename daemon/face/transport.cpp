@@ -49,23 +49,12 @@ operator<<(std::ostream& os, TransportState state)
   }
 }
 
-Transport::Transport()
-  : m_face(nullptr)
-  , m_service(nullptr)
-  , m_scope(ndn::nfd::FACE_SCOPE_NONE)
-  , m_persistency(ndn::nfd::FACE_PERSISTENCY_NONE)
-  , m_linkType(ndn::nfd::LINK_TYPE_NONE)
-  , m_mtu(MTU_INVALID)
-  , m_sendQueueCapacity(QUEUE_UNSUPPORTED)
-  , m_state(TransportState::UP)
-  , m_expirationTime(time::steady_clock::TimePoint::max())
-{
-}
+Transport::Transport() = default;
 
 Transport::~Transport() = default;
 
 void
-Transport::setFaceAndLinkService(Face& face, LinkService& service)
+Transport::setFaceAndLinkService(Face& face, LinkService& service) noexcept
 {
   BOOST_ASSERT(m_face == nullptr);
   BOOST_ASSERT(m_service == nullptr);
@@ -122,7 +111,7 @@ Transport::receive(const Block& packet, const EndpointId& endpoint)
 }
 
 void
-Transport::setMtu(ssize_t mtu)
+Transport::setMtu(ssize_t mtu) noexcept
 {
   BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu >= 0);
 

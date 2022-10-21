@@ -34,33 +34,36 @@ namespace nfd::name_tree {
 
 class NameTree;
 
-/** \brief a predicate to accept or reject an Entry in find operations
+/**
+ * \brief A predicate to accept or reject an Entry in find operations.
  */
 using EntrySelector = std::function<bool(const Entry&)>;
 
-/** \brief an EntrySelector that accepts every Entry
+/**
+ * \brief An #EntrySelector that accepts every Entry.
  */
 struct AnyEntry
 {
-  bool
-  operator()(const Entry&) const
+  constexpr bool
+  operator()(const Entry&) const noexcept
   {
     return true;
   }
 };
 
-/** \brief a predicate to accept or reject an Entry and its children
+/** \brief A predicate to accept or reject an Entry and its children.
  *  \return `.first` indicates whether entry should be accepted;
  *          `.second` indicates whether entry's children should be visited
  */
 using EntrySubTreeSelector = std::function<std::pair<bool, bool>(const Entry&)>;
 
-/** \brief an EntrySubTreeSelector that accepts every Entry and its children
+/**
+ * \brief An #EntrySubTreeSelector that accepts every Entry and its children.
  */
 struct AnyEntrySubTree
 {
-  std::pair<bool, bool>
-  operator()(const Entry&) const
+  constexpr std::pair<bool, bool>
+  operator()(const Entry&) const noexcept
   {
     return {true, true};
   }
@@ -68,7 +71,8 @@ struct AnyEntrySubTree
 
 class EnumerationImpl;
 
-/** \brief NameTree iterator
+/**
+ * \brief NameTree iterator.
  */
 class Iterator
 {
@@ -113,21 +117,21 @@ public:
   }
 
 private:
-  /** \brief enumeration implementation; nullptr for end iterator
+  /** \brief Enumeration implementation; nullptr for end iterator.
    */
   shared_ptr<EnumerationImpl> m_impl;
 
-  /** \brief current entry; nullptr for uninitialized iterator
+  /** \brief Current entry; nullptr for uninitialized iterator.
    */
-  const Entry* m_entry;
+  const Entry* m_entry = nullptr;
 
-  /** \brief reference entry used by enumeration implementation
+  /** \brief Reference entry used by enumeration implementation.
    */
-  const Entry* m_ref;
+  const Entry* m_ref = nullptr;
 
-  /** \brief state used by enumeration implementation
+  /** \brief State used by enumeration implementation.
    */
-  int m_state;
+  int m_state = 0;
 
   friend std::ostream& operator<<(std::ostream&, const Iterator&);
   friend class FullEnumerationImpl;
@@ -138,7 +142,7 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const Iterator& i);
 
-/** \brief enumeration operation implementation
+/** \brief Enumeration operation implementation.
  */
 class EnumerationImpl
 {
@@ -157,7 +161,7 @@ protected:
   const Hashtable& ht;
 };
 
-/** \brief full enumeration implementation
+/** \brief Full enumeration implementation.
  */
 class FullEnumerationImpl final : public EnumerationImpl
 {
@@ -171,7 +175,7 @@ private:
   EntrySelector m_pred;
 };
 
-/** \brief partial enumeration implementation
+/** \brief Partial enumeration implementation.
  *
  *  Iterator::m_ref should be initialized to subtree root.
  *  Iterator::m_state LSB indicates whether to visit children of m_entry.
@@ -188,7 +192,7 @@ private:
   EntrySubTreeSelector m_pred;
 };
 
-/** \brief partial enumeration implementation
+/** \brief Partial enumeration implementation.
  *
  *  Iterator::m_ref should be initialized to longest prefix matched entry.
  */
@@ -205,7 +209,7 @@ private:
   EntrySelector m_pred;
 };
 
-/** \brief a Forward Range of name tree entries
+/** \brief A Forward Range of name tree entries.
  *
  *  This type has .begin() and .end() methods which return Iterator.
  *  This type is usable with range-based for.

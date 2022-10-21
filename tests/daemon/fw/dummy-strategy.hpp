@@ -31,7 +31,7 @@
 namespace nfd::tests {
 
 /**
- * \brief Forwarding strategy for unit testing
+ * \brief Forwarding strategy for unit testing.
  *
  * Triggers are recorded but do nothing.
  *
@@ -48,7 +48,7 @@ public:
   getStrategyName(uint64_t version = std::numeric_limits<uint64_t>::max());
 
   /**
-   * \brief Constructor
+   * \brief Constructor.
    *
    * \p name is recorded unchanged as getInstanceName(), and will not automatically
    * gain a version number when instantiated without a version number.
@@ -57,7 +57,7 @@ public:
   DummyStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
 
   /**
-   * \brief After receive Interest trigger
+   * \brief After receive Interest trigger.
    *
    * If interestOutFace is not null, \p interest is forwarded to that face;
    * otherwise, rejectPendingInterest() is invoked.
@@ -86,7 +86,7 @@ public:
   afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry) override;
 
 protected:
-  /** \brief register an alias
+  /** \brief Register an alias.
    *  \tparam S subclass of DummyStrategy
    */
   template<typename S>
@@ -112,7 +112,7 @@ public:
 };
 
 /**
- * \brief DummyStrategy with specific version
+ * \brief DummyStrategy with specific version.
  */
 template<uint64_t VERSION>
 class VersionedDummyStrategy : public DummyStrategy
@@ -130,7 +130,7 @@ public:
     return DummyStrategy::getStrategyName(VERSION);
   }
 
-  /** \brief constructor
+  /** \brief Constructor.
    *
    *  The strategy instance name is taken from \p name ; if it does not contain a version component,
    *  \p VERSION will be appended.

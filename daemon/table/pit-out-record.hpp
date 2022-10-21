@@ -30,42 +30,43 @@
 
 namespace nfd::pit {
 
-/** \brief Contains information about an Interest toward an outgoing face
+/**
+ * \brief Contains information about an Interest toward an outgoing face.
  */
 class OutRecord : public FaceRecord
 {
 public:
   using FaceRecord::FaceRecord;
 
-  /** \return last NACK returned by \p getFace()
+  /** \brief Returns the last NACK returned by getFace().
    *
    *  A nullptr return value means the Interest is still pending or has timed out.
    *  A non-null return value means the last outgoing Interest has been NACKed.
    */
   const lp::NackHeader*
-  getIncomingNack() const
+  getIncomingNack() const noexcept
   {
     return m_incomingNack.get();
   }
 
-  /** \brief sets a NACK received from \p getFace()
+  /** \brief Sets a NACK received from getFace().
    *  \return whether incoming NACK is accepted
    *
    *  This is invoked in incoming NACK pipeline.
-   *  An incoming NACK is accepted if its Nonce matches \p getLastNonce().
-   *  If accepted, \p nack.getHeader() will be copied,
-   *  and any pointer previously returned by \p .getIncomingNack() .
+   *  An incoming NACK is accepted if its Nonce matches getLastNonce().
+   *  If accepted, `nack.getHeader()` will be copied,
+   *  and any pointer previously returned by getIncomingNack().
    */
   bool
   setIncomingNack(const lp::Nack& nack);
 
-  /** \brief clears last NACK
+  /** \brief Clears last NACK.
    *
    *  This is invoked in outgoing Interest pipeline.
-   *  This invalidates any pointer previously returned by \p .getIncomingNack() .
+   *  This invalidates any pointer previously returned by getIncomingNack().
    */
   void
-  clearIncomingNack()
+  clearIncomingNack() noexcept
   {
     m_incomingNack.reset();
   }

@@ -37,16 +37,16 @@
 
 namespace nfd::rib {
 
-/** \brief represents a route for a name prefix
+/** \brief Represents a route for a name prefix.
  */
 class Route : public ndn::nfd::RouteFlagsTraits<Route>
 {
 public:
-  /** \brief default constructor
+  /** \brief Default constructor.
    */
   Route() = default;
 
-  /** \brief construct from a prefix announcement
+  /** \brief Construct from a prefix announcement.
    *  \param ann a prefix announcement that has passed verification
    *  \param faceId the face on which \p ann arrived
    */

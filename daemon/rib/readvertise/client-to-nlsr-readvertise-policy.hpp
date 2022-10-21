@@ -30,12 +30,12 @@
 
 namespace nfd::rib {
 
-/** \brief a policy to readvertise routes registered by end hosts into NLSR
+/** \brief A policy to readvertise routes registered by end hosts into NLSR.
  */
 class ClientToNlsrReadvertisePolicy : public ReadvertisePolicy
 {
 public:
-  /** \brief advertise if the route's origin is client
+  /** \brief Advertise if the route's origin is client.
    *
    *  If the route origin is "client" (typically from auto prefix propagation), readvertise it
    *  using the default signing identity.

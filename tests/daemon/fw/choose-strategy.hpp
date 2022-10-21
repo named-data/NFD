@@ -37,7 +37,7 @@ class Strategy;
 
 namespace nfd::tests {
 
-/** \brief choose the strategy for a namespace
+/** \brief Choose the strategy for a namespace.
  *  \tparam S strategy type, must be a complete type
  *  \param forwarder the forwarder
  *  \param prefix namespace to choose the strategy for

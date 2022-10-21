@@ -35,7 +35,8 @@ namespace nfd::name_tree {
 
 class Node;
 
-/** \brief An entry in the name tree
+/**
+ * \brief An entry in the name tree.
  */
 class Entry : noncopyable
 {
@@ -43,7 +44,7 @@ public:
   Entry(const Name& prefix, Node* node);
 
   const Name&
-  getName() const
+  getName() const noexcept
   {
     return m_name;
   }
@@ -52,12 +53,12 @@ public:
    *  \retval nullptr this entry is the root entry, i.e. getName() == Name()
    */
   Entry*
-  getParent() const
+  getParent() const noexcept
   {
     return m_parent;
   }
 
-  /** \brief Set parent of this entry
+  /** \brief Set parent of this entry.
    *  \param entry entry of getName().getPrefix(-1)
    *  \pre getParent() == nullptr
    *  \post getParent() == &entry
@@ -66,14 +67,15 @@ public:
   void
   setParent(Entry& entry);
 
-  /** \brief Unset parent of this entry
+  /** \brief Unset parent of this entry.
    *  \post getParent() == nullptr
    *  \post parent.getChildren() does not contain this
    */
   void
   unsetParent();
 
-  /** \brief Check whether this entry has any children
+  /**
+   * \brief Check whether this entry has any children.
    */
   bool
   hasChildren() const
@@ -81,10 +83,11 @@ public:
     return !m_children.empty();
   }
 
-  /** \return children of this entry
+  /**
+   * \brief Returns the children of this entry.
    */
   const std::vector<Entry*>&
-  getChildren() const
+  getChildren() const noexcept
   {
     return m_children;
   }
@@ -176,14 +179,14 @@ private:
   friend Node* getNode(const Entry& entry);
 };
 
-/** \brief a functor to get a table entry from a name tree entry
+/** \brief A functor to get a table entry from a name tree entry.
  *  \tparam ENTRY type of single table entry attached to name tree entry, such as fib::Entry
  */
 template<typename ENTRY>
 class GetTableEntry
 {
 public:
-  /** \brief A function pointer to the getter on Entry class that returns ENTRY
+  /** \brief A function pointer to the getter on Entry class that returns ENTRY.
    */
   using Getter = ENTRY* (Entry::*)() const;
 

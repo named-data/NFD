@@ -46,9 +46,7 @@ public:
   }
 
 public:
-  /** \brief if last transmission occurred within suppressionInterval,
-   *         retransmission will be suppressed
-   */
+  // If the last transmission occurred within this interval, retx will be suppressed
   RetxSuppressionExponential::Duration suppressionInterval;
 };
 

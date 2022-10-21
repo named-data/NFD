@@ -31,8 +31,9 @@
 
 namespace nfd::fw {
 
-/** \brief a retransmission suppression decision algorithm that
- *         suppresses retransmissions within a fixed duration
+/**
+ * \brief A retransmission suppression decision algorithm that
+ *        suppresses retransmissions within a fixed duration.
  */
 class RetxSuppressionFixed
 {
@@ -40,8 +41,8 @@ public:
   explicit
   RetxSuppressionFixed(const time::milliseconds& minRetxInterval = DEFAULT_MIN_RETX_INTERVAL);
 
-  /** \brief determines whether Interest is a retransmission,
-   *         and if so, whether it shall be forwarded or suppressed
+  /** \brief Determines whether Interest is a retransmission,
+   *         and if so, whether it shall be forwarded or suppressed.
    */
   RetxSuppressionResult
   decidePerPitEntry(pit::Entry& pitEntry) const;

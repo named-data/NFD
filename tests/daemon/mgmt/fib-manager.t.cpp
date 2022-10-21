@@ -79,7 +79,7 @@ public: // for check
   };
 
   /**
-   * @brief check whether the nexthop record is added / removed properly
+   * @brief Check whether the nexthop record is added / removed properly.
    *
    * @param expectedNNextHops use nullopt to skip this check
    * @param faceId use nullopt to skip NextHopRecord checks

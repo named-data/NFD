@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,7 @@
 
 namespace nfd {
 
-/** \brief handles 'tables' config section
+/** \brief Handles the `tables` configuration file section.
  *
  *  This class recognizes a config section that looks like
  *  \code{.unparsed}
@@ -63,7 +63,7 @@ namespace nfd {
  *  \li strategy_choice entries are inserted, but old entries are not deleted.
  *  \li network_region is applied; it's kept unchanged if the section is omitted.
  *
- *  It's necessary to call \p ensureConfigured() after initial configuration and
+ *  It's necessary to call ensureConfigured() after initial configuration and
  *  configuration reload, so that the correct defaults are applied in case
  *  tables section is omitted.
  */
@@ -76,7 +76,8 @@ public:
   void
   setConfigFile(ConfigFile& configFile);
 
-  /** \brief apply default configuration, if tables section was omitted in configuration file
+  /**
+   * \brief Apply default configuration, if tables section was omitted in configuration file.
    */
   void
   ensureConfigured();

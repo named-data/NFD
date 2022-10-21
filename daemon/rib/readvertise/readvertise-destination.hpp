@@ -30,7 +30,7 @@
 
 namespace nfd::rib {
 
-/** \brief a destination to readvertise into
+/** \brief A destination to readvertise into.
  */
 class ReadvertiseDestination : noncopyable
 {
@@ -59,7 +59,7 @@ protected:
   setAvailability(bool isAvailable);
 
 public:
-  /** \brief signals when the destination becomes available or unavailable
+  /** \brief Signals when the destination becomes available or unavailable.
    */
   signal::Signal<ReadvertiseDestination, bool> afterAvailabilityChange;
 

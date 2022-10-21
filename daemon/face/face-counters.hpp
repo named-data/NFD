@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief gives access to counters provided by Face
+/** \brief Gives access to counters provided by Face.
  *
  *  This type is a facade that exposes common counters of a Face.
  *
@@ -80,11 +80,11 @@ public:
   const ByteCounter& nInBytes;
   const ByteCounter& nOutBytes;
 
-  /** \brief count of incoming Interests dropped due to HopLimit == 0
+  /** \brief Count of incoming Interests dropped due to HopLimit == 0.
    */
   PacketCounter nInHopLimitZero;
 
-  /** \brief count of outgoing Interests dropped due to HopLimit == 0 on non-local faces
+  /** \brief Count of outgoing Interests dropped due to HopLimit == 0 on non-local faces.
    */
   PacketCounter nOutHopLimitZero;
 

@@ -66,10 +66,12 @@ public:
   bool
   hasChildren() const;
 
-  /** \brief inserts a new route into the entry's route list
+  /** \brief Inserts a new route into the entry's route list.
+   *
    *  If another route already exists with the same faceId and origin,
    *  the new route is not inserted.
-   *  \return a pair, whose first element is the iterator to the newly
+   *
+   *  \return A pair, whose first element is the iterator to the newly
    *  inserted element if the insert succeeds and to the
    *  previously-existing element otherwise, and whose second element
    *  is true if the insert succeeds and false otherwise.
@@ -77,13 +79,15 @@ public:
   std::pair<RibEntry::iterator, bool>
   insertRoute(const Route& route);
 
-  /** \brief erases a Route with the same faceId and origin
+  /**
+   * \brief Erases a Route with the same FaceId and origin.
    */
   void
   eraseRoute(const Route& route);
 
-  /** \brief erases a Route with the passed iterator
-   *  \return{ an iterator to the element that followed the erased iterator }
+  /**
+   * \brief Erases a Route with the passed iterator.
+   * \return An iterator to the element that followed the erased iterator
    */
   iterator
   eraseRoute(RouteList::iterator route);
@@ -112,23 +116,25 @@ public:
   void
   removeInheritedRoute(const Route& route);
 
-  /** \brief Returns the routes this namespace has inherited.
-   *  The inherited routes returned represent inherited routes this namespace has in the FIB.
-   *  \return{ routes inherited by this namespace }
+  /**
+   * \brief Returns the routes this namespace has inherited.
+   *
+   * The inherited routes returned represent inherited routes this namespace has in the FIB.
    */
   const RouteList&
   getInheritedRoutes() const;
 
-  /** \brief Finds an inherited route with a matching face ID.
-   *  \return{ An iterator to the matching route if one is found;
-   *           otherwise, an iterator to the end of the entry's
-   *           inherited route list }
+  /**
+   * \brief Finds an inherited route with a matching face ID.
+   * \return An iterator to the matching route if one is found;
+   *         otherwise, an iterator to the end of the entry's
+   *         inherited route list
    */
   RouteList::const_iterator
   findInheritedRoute(const Route& route) const;
 
   /** \brief Determines if the entry has an inherited route with a matching face ID.
-   *  \return{ True, if a matching inherited route is found; otherwise, false. }
+   *  \return True, if a matching inherited route is found; otherwise, false.
    */
   bool
   hasInheritedRoute(const Route& route) const;
@@ -138,13 +144,13 @@ public:
 
   /** \brief Determines if the entry has an inherited route with the passed
    *         face ID and its child inherit flag set.
-   *  \return{ True, if a matching inherited route is found; otherwise, false. }
+   *  \return True, if a matching inherited route is found; otherwise, false.
    */
   bool
   hasChildInheritOnFaceId(uint64_t faceId) const;
 
   /** \brief Returns the route with the lowest cost that has the passed face ID.
-   *  \return{ The route with the lowest cost that has the passed face ID}
+   *  \return The route with the lowest cost that has the passed face ID
    */
   const Route*
   getRouteWithLowestCostByFaceId(uint64_t faceId) const;
@@ -154,8 +160,6 @@ public:
 
   /** \brief Returns the route with the lowest cost that has the passed face ID
    *         and its child inherit flag set.
-   *  \return{ The route with the lowest cost that has the passed face ID
-   *           and its child inherit flag set }
    */
   const Route*
   getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const;
@@ -170,7 +174,7 @@ public:
    *  confined within [\p minExpiration, \p maxExpiration] range. The caller is expected to sign
    *  this announcement.
    *
-   *  \warning (minExpiration > maxExpiration) triggers undefined behavior.
+   *  \warning `minExpiration > maxExpiration` triggers undefined behavior.
    */
   ndn::PrefixAnnouncement
   getPrefixAnnouncement(time::milliseconds minExpiration = 15_s,

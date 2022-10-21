@@ -51,23 +51,23 @@ public:
             ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
             ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
-  /** \brief changes face state
+  /** \brief Changes face state.
    *  \throw std::runtime_error state transition is invalid
    */
   void
   setState(face::FaceState state);
 
-  /** \brief causes the face to receive an Interest
+  /** \brief Causes the face to receive an Interest.
    */
   void
   receiveInterest(const Interest& interest, const EndpointId& endpointId = {});
 
-  /** \brief causes the face to receive a Data
+  /** \brief Causes the face to receive a Data.
    */
   void
   receiveData(const Data& data, const EndpointId& endpointId = {});
 
-  /** \brief causes the face to receive a Nack
+  /** \brief Causes the face to receive a Nack.
    */
   void
   receiveNack(const lp::Nack& nack, const EndpointId& endpointId = {});

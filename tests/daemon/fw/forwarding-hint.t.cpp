@@ -102,7 +102,7 @@ public:
     topo.registerPrefix(nodeS, linkSQ->getFace(nodeS), "/net/ndnsim", 10);
   }
 
-  /** \brief express an Interest with Link object from consumerA
+  /** \brief Express an Interest with Link object from consumerA.
    */
   void
   consumerExpressInterest(int seq)

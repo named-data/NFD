@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,14 +33,13 @@
 
 namespace nfd {
 
-/** \brief container of all faces
+/**
+ * \brief Container of all faces.
  */
 class FaceTable : noncopyable
 {
 public:
-  FaceTable();
-
-  /** \brief add a face
+  /** \brief Add a face.
    *
    *  FaceTable obtains shared ownership of the face.
    *  The channel or protocol factory that creates the face may retain ownership.
@@ -48,29 +47,26 @@ public:
   void
   add(shared_ptr<Face> face);
 
-  /** \brief add a special face with a reserved FaceId
+  /** \brief Add a special face with a reserved FaceId.
    */
   void
   addReserved(shared_ptr<Face> face, FaceId faceId);
 
-  /** \brief get face by FaceId
-   *  \return a face if found, nullptr if not found;
-   *          face->shared_from_this() can be used if shared_ptr<Face> is desired
+  /** \brief Get face by FaceId.
+   *  \return A pointer to the face if found, nullptr otherwise;
+   *          `face->shared_from_this()` can be used if a `shared_ptr` is desired.
    */
   Face*
-  get(FaceId id) const;
+  get(FaceId id) const noexcept;
 
-  /** \return count of faces
+  /** \brief Return the total number of faces.
    */
   size_t
-  size() const;
+  size() const noexcept;
 
 public: // enumeration
   using FaceMap = std::map<FaceId, shared_ptr<Face>>;
   using ForwardRange = boost::indirected_range<const boost::select_second_const_range<FaceMap>>;
-
-  /** \brief ForwardIterator for Face&
-   */
   using const_iterator = boost::range_iterator<ForwardRange>::type;
 
   const_iterator
@@ -101,7 +97,7 @@ private:
   getForwardRange() const;
 
 private:
-  FaceId m_lastFaceId;
+  FaceId m_lastFaceId = face::FACEID_RESERVED_MAX;
   FaceMap m_faces;
 };
 

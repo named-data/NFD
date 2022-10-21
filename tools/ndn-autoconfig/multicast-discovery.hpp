@@ -33,7 +33,7 @@
 
 namespace ndn::autoconfig {
 
-/** \brief multicast discovery stage
+/** \brief Multicast discovery stage.
  *
  *  This stage locates an NDN gateway router, commonly known as a "hub", in the local network by
  *  sending a hub discovery Interest ndn:/localhop/ndn-autoconf/hub via multicast. This class

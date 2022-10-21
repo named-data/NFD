@@ -31,15 +31,15 @@
 namespace ndn::autoconfig {
 
 /**
- * @brief Discovery NDN hub using NDN-FCH protocol
+ * @brief Discover NDN hub using NDN-FCH protocol.
  *
- * @see https://github.com/cawka/ndn-fch/blob/master/README.md
+ * @see https://github.com/named-data/ndn-fch/blob/master/README.md
  */
 class NdnFchDiscovery : public Stage
 {
 public:
   /**
-   * @brief Create stage to discover NDN hub using NDN-FCH protocol
+   * @brief Create stage to discover NDN hub using NDN-FCH protocol.
    */
   explicit
   NdnFchDiscovery(const std::string& url);

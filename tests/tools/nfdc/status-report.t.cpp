@@ -53,9 +53,9 @@ public:
   {
   }
 
-  /** \brief cause fetchStatus to succeed or fail
+  /** \brief Cause fetchStatus() to succeed or fail.
    *  \param res zero to succeed, non-zero to fail with specific code
-   *  \param delay duration from fetchStatus invocation to succeed or fail; must be positive
+   *  \param delay duration from fetchStatus() invocation to succeed or fail; must be positive
    */
   void
   setResult(uint32_t res, time::nanoseconds delay)

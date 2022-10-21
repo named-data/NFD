@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for WebSocket
+/** \brief Protocol factory for WebSocket.
  */
 class WebSocketFactory final : public ProtocolFactory
 {
@@ -42,7 +42,7 @@ public:
   using ProtocolFactory::ProtocolFactory;
 
   /**
-   * \brief Create WebSocket-based channel using websocket::Endpoint
+   * \brief Create WebSocket-based channel using websocket::Endpoint.
    *
    * websocket::Endpoint is really an alias for boost::asio::ip::tcp::endpoint.
    *
@@ -57,8 +57,6 @@ public:
   createChannel(const websocket::Endpoint& localEndpoint);
 
 private:
-  /** \brief process face_system.websocket config section
-   */
   void
   doProcessConfig(OptionalConfigSection configSection,
                   FaceSystem::ConfigContext& context) final;

@@ -50,14 +50,14 @@ public:
   }
 
   const Name&
-  getName() const
+  getName() const noexcept
   {
     return m_name;
   }
 
 private:
   Name m_name;
-  time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
+  time::steady_clock::time_point m_expiry = time::steady_clock::time_point::min();
   scheduler::EventId m_cleanup;
 
   name_tree::Entry* m_nameTreeEntry = nullptr;

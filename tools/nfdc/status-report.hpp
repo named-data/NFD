@@ -46,7 +46,7 @@ enum class ReportFormat {
 std::ostream&
 operator<<(std::ostream& os, ReportFormat fmt);
 
-/** \brief collects and prints NFD status report
+/** \brief Collects and prints NFD status report.
  */
 class StatusReport : noncopyable
 {
@@ -56,7 +56,7 @@ public:
   ~StatusReport() = default;
 #endif
 
-  /** \brief collect status via chosen \p sections
+  /** \brief Collect status via chosen \p sections.
    *
    *  This function is blocking. It has exclusive use of \p face.
    *
@@ -66,13 +66,13 @@ public:
   uint32_t
   collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options);
 
-  /** \brief print an XML report
+  /** \brief Print an XML report.
    *  \param os output stream
    */
   void
   formatXml(std::ostream& os) const;
 
-  /** \brief print a text report
+  /** \brief Print a text report.
    *  \param os output stream
    */
   void
@@ -83,7 +83,7 @@ private:
   processEvents(Face& face);
 
 public:
-  /** \brief modules through which status is collected
+  /** \brief Modules through which status is collected.
    */
   std::vector<unique_ptr<Module>> sections;
 };

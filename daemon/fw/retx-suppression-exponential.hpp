@@ -51,19 +51,19 @@ public:
                              Duration maxInterval = DEFAULT_MAX_INTERVAL,
                              float multiplier = DEFAULT_MULTIPLIER);
 
-  /** \brief determines whether Interest is a retransmission per pit entry
-   *         and if so, whether it shall be forwarded or suppressed
+  /** \brief Determines whether Interest is a retransmission per pit entry
+   *         and if so, whether it shall be forwarded or suppressed.
    */
   RetxSuppressionResult
   decidePerPitEntry(pit::Entry& pitEntry);
 
-  /** \brief determines whether Interest is a retransmission per upstream
-   *         and if so, whether it shall be forwarded or suppressed
+  /** \brief Determines whether Interest is a retransmission per upstream
+   *         and if so, whether it shall be forwarded or suppressed.
    */
   RetxSuppressionResult
   decidePerUpstream(pit::Entry& pitEntry, Face& outFace);
 
-  /** \brief Increment the suppression interval for out record
+  /** \brief Increment the suppression interval for out record.
    */
   void
   incrementIntervalForOutRecord(pit::OutRecord& outRecord);

@@ -31,7 +31,8 @@
 
 namespace nfd::fw {
 
-/** \brief A forwarding strategy that forwards Interests to all FIB nexthops
+/**
+ * \brief A forwarding strategy that forwards Interests to all FIB nexthops.
  */
 class MulticastStrategy : public Strategy
 {

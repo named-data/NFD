@@ -38,7 +38,6 @@
 namespace nfd::face {
 
 PcapHelper::PcapHelper(const std::string& interfaceName)
-  : m_pcap(nullptr)
 {
   char errbuf[PCAP_ERRBUF_SIZE] = {};
   m_pcap = pcap_create(interfaceName.data(), errbuf);
@@ -56,7 +55,7 @@ PcapHelper::PcapHelper(const std::string& interfaceName)
   pcap_set_buffer_size(m_pcap, 4 * 1024 * 1024);
 }
 
-PcapHelper::~PcapHelper()
+PcapHelper::~PcapHelper() noexcept
 {
   close();
 }

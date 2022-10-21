@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,10 +32,10 @@
 
 namespace nfd {
 
-/** \brief cleanup tables when a face is destroyed
+/** \brief Cleanup tables when a face is destroyed.
  *
- *  This function enumerates the NameTree, calls Fib::removeNextHop for each FIB entry,
- *  calls Pit::deleteInOutRecords for each PIT entry, and finally
+ *  This function enumerates the NameTree, calls Fib::removeNextHop() for each FIB entry,
+ *  calls Pit::deleteInOutRecords() for each PIT entry, and finally
  *  deletes any name tree entries that have become empty.
  *
  *  \note It's a design choice to let Fib and Pit classes decide what to do with each entry.

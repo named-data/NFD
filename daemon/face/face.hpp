@@ -41,7 +41,7 @@ class Channel;
  */
 using FaceState = TransportState;
 
-/** \brief generalization of a network interface
+/** \brief Generalization of a network interface.
  *
  *  A face generalizes a network interface.
  *  It provides best-effort network-layer packet delivery services
@@ -58,12 +58,18 @@ public:
   Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport);
 
   LinkService*
-  getLinkService() const;
+  getLinkService() const noexcept
+  {
+    return m_service.get();
+  }
 
   Transport*
-  getTransport() const;
+  getTransport() const noexcept
+  {
+    return m_transport.get();
+  }
 
-  /** \brief Request that the face be closed
+  /** \brief Request that the face be closed.
    *
    *  This operation is effective only if face is in the UP or DOWN state; otherwise, it has no effect.
    *  The face will change state to CLOSING, and then perform a cleanup procedure.
@@ -76,115 +82,133 @@ public:
   close();
 
 public: // upper interface connected to forwarding
-  /** \brief send Interest
+  /** \brief Send Interest.
    */
   void
   sendInterest(const Interest& interest);
 
-  /** \brief send Data
+  /** \brief Send Data.
    */
   void
   sendData(const Data& data);
 
-  /** \brief send Nack
+  /** \brief Send Nack.
    */
   void
   sendNack(const lp::Nack& nack);
 
-  /** \brief signals on Interest received
+  /** \brief Signals on Interest received.
    */
   signal::Signal<LinkService, Interest, EndpointId>& afterReceiveInterest;
 
-  /** \brief signals on Data received
+  /** \brief Signals on Data received.
    */
   signal::Signal<LinkService, Data, EndpointId>& afterReceiveData;
 
-  /** \brief signals on Nack received
+  /** \brief Signals on Nack received.
    */
   signal::Signal<LinkService, lp::Nack, EndpointId>& afterReceiveNack;
 
-  /** \brief signals on Interest dropped by reliability system for exceeding allowed number of retx
+  /** \brief Signals on Interest dropped by reliability system for exceeding allowed number of retx.
    */
   signal::Signal<LinkService, Interest>& onDroppedInterest;
 
 public: // properties
-  /** \return face ID
+  /**
+   * \brief Returns the face ID.
    */
   FaceId
-  getId() const;
+  getId() const noexcept
+  {
+    return m_id;
+  }
 
-  /** \brief sets face ID
-   *  \note Normally, this should only be invoked by FaceTable.
+  /**
+   * \brief Sets the face ID.
+   * \note Normally, this should only be invoked by FaceTable.
    */
   void
-  setId(FaceId id);
+  setId(FaceId id) noexcept
+  {
+    m_id = id;
+  }
 
-  /** \return a FaceUri representing local endpoint
+  /**
+   * \brief Returns a FaceUri representing the local endpoint.
    */
   FaceUri
   getLocalUri() const;
 
-  /** \return a FaceUri representing remote endpoint
+  /**
+   * \brief Returns a FaceUri representing the remote endpoint.
    */
   FaceUri
   getRemoteUri() const;
 
-  /** \return whether face is local or non-local for scope control purpose
+  /**
+   * \brief Returns whether the face is local or non-local for scope control purposes.
    */
   ndn::nfd::FaceScope
   getScope() const;
 
-  /** \return face persistency setting
+  /**
+   * \brief Returns the current persistency setting of the face.
    */
   ndn::nfd::FacePersistency
   getPersistency() const;
 
-  /** \brief changes face persistency setting
+  /**
+   * \brief Changes the face persistency setting.
    */
   void
   setPersistency(ndn::nfd::FacePersistency persistency);
 
-  /** \return whether face is point-to-point or multi-access
+  /**
+   * \brief Returns the link type of the face (point-to-point, multi-access, ...).
    */
   ndn::nfd::LinkType
   getLinkType() const;
 
-  /** \brief Returns face effective MTU
+  /**
+   * \brief Returns the effective MTU of the face.
    *
-   *  This function is a wrapper. The effective MTU of a face is determined by the link service.
+   * This function is a wrapper. The effective MTU of a face is determined by the link service.
    */
   ssize_t
   getMtu() const;
 
-  /** \return face state
+  /**
+   * \brief Returns the face state.
    */
   FaceState
   getState() const;
 
-  /** \brief signals after face state changed
+  /**
+   * \brief Signals after face state changed.
    */
   signal::Signal<Transport, FaceState/*old*/, FaceState/*new*/>& afterStateChange;
 
-  /** \return expiration time of the face
-   *  \retval time::steady_clock::TimePoint::max() the face has an indefinite lifetime
+  /**
+   * \brief Returns the expiration time of the face.
+   * \retval time::steady_clock::time_point::max() The face has an indefinite lifetime.
    */
-  time::steady_clock::TimePoint
+  time::steady_clock::time_point
   getExpirationTime() const;
 
   const FaceCounters&
-  getCounters() const
+  getCounters() const noexcept
   {
     return m_counters;
   }
 
   FaceCounters&
-  getCounters()
+  getCounters() noexcept
   {
     return m_counters;
   }
 
   /**
-   * \brief Get channel on which face was created (unicast) or the associated channel (multicast)
+   * \brief Get channel on which face was created (unicast) or the associated channel (multicast).
    */
   weak_ptr<Channel>
   getChannel() const
@@ -193,7 +217,7 @@ public: // properties
   }
 
   /**
-   * \brief Set channel on which face was created (unicast) or the associated channel (multicast)
+   * \brief Set channel on which face was created (unicast) or the associated channel (multicast).
    */
   void
   setChannel(weak_ptr<Channel> channel)
@@ -208,18 +232,6 @@ private:
   FaceCounters m_counters;
   weak_ptr<Channel> m_channel;
 };
-
-inline LinkService*
-Face::getLinkService() const
-{
-  return m_service.get();
-}
-
-inline Transport*
-Face::getTransport() const
-{
-  return m_transport.get();
-}
 
 inline void
 Face::close()
@@ -243,18 +255,6 @@ inline void
 Face::sendNack(const lp::Nack& nack)
 {
   m_service->sendNack(nack);
-}
-
-inline FaceId
-Face::getId() const
-{
-  return m_id;
-}
-
-inline void
-Face::setId(FaceId id)
-{
-  m_id = id;
 }
 
 inline FaceUri
@@ -305,7 +305,7 @@ Face::getState() const
   return m_transport->getState();
 }
 
-inline time::steady_clock::TimePoint
+inline time::steady_clock::time_point
 Face::getExpirationTime() const
 {
   return m_transport->getExpirationTime();

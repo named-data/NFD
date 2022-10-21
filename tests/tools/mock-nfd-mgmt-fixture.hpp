@@ -58,7 +58,7 @@ protected:
   }
 
 protected: // ControlCommand
-  /** \brief check the Interest is a command with specified prefix
+  /** \brief Check the Interest is a command with specified prefix.
    *  \retval nullopt last Interest is not the expected command
    *  \return command parameters
    */
@@ -71,7 +71,7 @@ protected: // ControlCommand
     return ControlParameters(interest.getName().at(expectedPrefix.size()).blockFromValue());
   }
 
-  /** \brief send successful response to a command Interest
+  /** \brief Send successful response to a command Interest.
    */
   void
   succeedCommand(const Interest& interest, const ControlParameters& parameters)
@@ -79,7 +79,7 @@ protected: // ControlCommand
     this->sendCommandReply(interest, 200, "OK", parameters.wireEncode());
   }
 
-  /** \brief send failure response to a command Interest
+  /** \brief Send failure response to a command Interest.
    */
   void
   failCommand(const Interest& interest, uint32_t code, const std::string& text)
@@ -87,7 +87,7 @@ protected: // ControlCommand
     this->sendCommandReply(interest, {code, text});
   }
 
-  /** \brief send failure response to a command Interest
+  /** \brief Send failure response to a command Interest.
    */
   void
   failCommand(const Interest& interest, uint32_t code, const std::string& text, const ControlParameters& body)
@@ -96,7 +96,7 @@ protected: // ControlCommand
   }
 
 protected: // StatusDataset
-  /** \brief send an empty dataset in reply to StatusDataset request
+  /** \brief Send an empty dataset in reply to StatusDataset request.
    *  \param prefix dataset prefix without version and segment
    *  \pre Interest for dataset has been expressed, sendDataset has not been invoked
    */
@@ -106,7 +106,7 @@ protected: // StatusDataset
     this->sendDatasetReply(prefix, span<uint8_t>{});
   }
 
-  /** \brief send one WireEncodable in reply to StatusDataset request
+  /** \brief Send one WireEncodable in reply to StatusDataset request.
    *  \param prefix dataset prefix without version and segment
    *  \param payload payload block
    *  \note payload must fit in one Data
@@ -121,7 +121,7 @@ protected: // StatusDataset
     this->sendDatasetReply(prefix, payload.wireEncode());
   }
 
-  /** \brief send two WireEncodables in reply to StatusDataset request
+  /** \brief Send two WireEncodables in reply to StatusDataset request.
    *  \param prefix dataset prefix without version and segment
    *  \param payload1 first vector item
    *  \param payload2 second vector item
@@ -168,7 +168,7 @@ private:
     this->sendCommandReply(interest, ndn::nfd::ControlResponse(code, text).setBody(body));
   }
 
-  /** \brief send a payload in reply to StatusDataset request
+  /** \brief Send a payload in reply to StatusDataset request.
    *  \param name dataset prefix without version and segment
    *  \param contentArgs passed to Data::setContent
    */
@@ -211,7 +211,7 @@ protected:
 } // namespace nfd::tests
 
 /**
- * \brief Require the command in \p interest to have the expected prefix
+ * \brief Require the command in \p interest to have the expected prefix.
  * \note This must be used in the `processInterest` lambda, and the Interest must be named `interest`.
  * \return ControlParameters. The test case will fail if \p interest does not match \p expectedPrefix.
  */

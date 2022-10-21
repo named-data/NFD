@@ -32,12 +32,13 @@
 
 namespace nfd::fw {
 
-/** \brief Self-learning forwarding strategy
+/**
+ * \brief Self-learning forwarding strategy.
  *
- *  This strategy first broadcasts Interest to learn a single path towards data,
- *  then unicasts subsequent Interests along the learned path.
+ * This strategy first broadcasts Interest to learn a single path towards data,
+ * then unicasts subsequent Interests along the learned path.
  *
- *  \see https://redmine.named-data.net/attachments/864/Self-learning-strategy-v1.pdf
+ * \see https://redmine.named-data.net/attachments/864/Self-learning-strategy-v1.pdf
  */
 class SelfLearningStrategy : public Strategy
 {
@@ -90,7 +91,7 @@ public: // triggers
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 private: // operations
-  /** \brief Send an Interest to all possible faces
+  /** \brief Send an Interest to all possible faces.
    *
    *  This function is invoked when the forwarder has no matching FIB entries for
    *  an incoming discovery Interest, which will be forwarded to faces that
@@ -102,7 +103,7 @@ private: // operations
   broadcastInterest(const Interest& interest, const Face& inFace,
                     const shared_ptr<pit::Entry>& pitEntry);
 
-  /** \brief Send an Interest to \p nexthops
+  /** \brief Send an Interest to \p nexthops.
    */
   void
   multicastInterest(const Interest& interest, const Face& inFace,
@@ -110,12 +111,12 @@ private: // operations
                     const fib::NextHopList& nexthops);
 
   /** \brief Find a Prefix Announcement for the Data on the RIB thread, and forward
-   *         the Data with the Prefix Announcement on the main thread
+   *         the Data with the Prefix Announcement on the main thread.
    */
   void
   asyncProcessData(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data);
 
-  /** \brief Check whether a PrefixAnnouncement needs to be attached to an incoming Data
+  /** \brief Check whether a PrefixAnnouncement needs to be attached to an incoming Data.
    *
    *  The conditions that a Data packet requires a PrefixAnnouncement are
    *    - the incoming Interest was discovery and
@@ -125,13 +126,13 @@ private: // operations
   static bool
   needPrefixAnn(const shared_ptr<pit::Entry>& pitEntry);
 
-  /** \brief Add a route using RibManager::slAnnounce on the RIB thread
+  /** \brief Add a route using RibManager::slAnnounce on the RIB thread.
    */
   void
   addRoute(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace,
            const Data& data, const ndn::PrefixAnnouncement& pa);
 
-  /** \brief renew a route using RibManager::slRenew on the RIB thread
+  /** \brief Renew a route using RibManager::slRenew on the RIB thread.
    */
   void
   renewRoute(const Name& name, FaceId inFaceId, time::milliseconds maxLifetime);

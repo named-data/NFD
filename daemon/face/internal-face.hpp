@@ -32,11 +32,11 @@
 
 namespace nfd::face {
 
-/** \brief make a pair of forwarder-side face and client-side face
- *         that are connected with each other
+/** \brief Make a pair of forwarder-side face and client-side face
+ *         that are connected to each other.
  *
  *  Network-layer packets sent by one face will be received by the other face
- *  after io.poll().
+ *  after `io.poll()`.
  *
  *  \param clientKeyChain A KeyChain used by client-side face to sign
  *                        prefix registration commands.

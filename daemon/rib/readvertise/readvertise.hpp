@@ -33,7 +33,7 @@
 
 namespace nfd::rib {
 
-/** \brief readvertise a subset of routes to a destination according to a policy
+/** \brief Readvertise a subset of routes to a destination according to a policy.
  *
  *  The Readvertise class allows RIB routes to be readvertised to a destination such as a routing
  *  protocol daemon or another NFD-RIB. It monitors the RIB for route additions and removals,
@@ -72,7 +72,7 @@ private:
 
   ReadvertisedRouteContainer m_rrs;
   /**
-   * \brief maps from RIB route to readvertised route derived from RIB route(s)
+   * \brief Map from RIB route to readvertised route derived from RIB route(s).
    */
   std::map<RibRouteRef, ReadvertisedRouteContainer::iterator> m_routeToRr;
 

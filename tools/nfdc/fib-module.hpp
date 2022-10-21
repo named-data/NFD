@@ -33,7 +33,7 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::FibEntry;
 using ndn::nfd::NextHopRecord;
 
-/** \brief provides access to NFD FIB management
+/** \brief Provides access to NFD FIB management.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
 class FibModule : public Module, noncopyable
@@ -48,7 +48,7 @@ public:
   void
   formatStatusXml(std::ostream& os) const override;
 
-  /** \brief format a single status item as XML
+  /** \brief Format a single status item as XML.
    *  \param os output stream
    *  \param item status item
    */
@@ -58,7 +58,7 @@ public:
   void
   formatStatusText(std::ostream& os) const override;
 
-  /** \brief format a single status item as text
+  /** \brief Format a single status item as text.
    *  \param os output stream
    *  \param item status item
    */

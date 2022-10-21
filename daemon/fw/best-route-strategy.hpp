@@ -32,22 +32,23 @@
 
 namespace nfd::fw {
 
-/** \brief Best Route strategy
+/**
+ * \brief "Best route" forwarding strategy.
  *
- *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
- *  After that, if consumer retransmits the Interest (and is not suppressed according to
- *  exponential backoff algorithm), the strategy forwards the Interest again to
- *  the lowest-cost nexthop (except downstream) that is not previously used.
- *  If all nexthops have been used, the strategy starts over with the first nexthop.
+ * This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
+ * After that, if consumer retransmits the Interest (and is not suppressed according to
+ * exponential backoff algorithm), the strategy forwards the Interest again to
+ * the lowest-cost nexthop (except downstream) that is not previously used.
+ * If all nexthops have been used, the strategy starts over with the first nexthop.
  *
- *  This strategy returns Nack to all downstreams with reason NoRoute
- *  if there is no usable nexthop, which may be caused by:
+ * This strategy returns Nack to all downstreams with reason NoRoute
+ * if there is no usable nexthop, which may be caused by:
  *  (a) the FIB entry contains no nexthop;
  *  (b) the FIB nexthop happens to be the sole downstream;
  *  (c) the FIB nexthops violate scope.
  *
- *  This strategy returns Nack to all downstreams if all upstreams have returned Nacks.
- *  The reason of the sent Nack equals the least severe reason among received Nacks.
+ * This strategy returns Nack to all downstreams if all upstreams have returned Nacks.
+ * The reason of the sent Nack equals the least severe reason among received Nacks.
  */
 class BestRouteStrategy : public Strategy
                         , public ProcessNackTraits<BestRouteStrategy>

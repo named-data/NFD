@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,7 @@
 namespace nfd {
 namespace cs {
 
-/** \brief implements the Content Store
+/** \brief Implements the Content Store.
  *
  *  This Content Store implementation consists of a Table and a replacement policy.
  *
@@ -47,12 +47,12 @@ public:
   explicit
   Cs(size_t nMaxPackets = 10);
 
-  /** \brief inserts a Data packet
+  /** \brief Inserts a Data packet.
    */
   void
   insert(const Data& data, bool isUnsolicited = false);
 
-  /** \brief asynchronously erases entries under \p prefix
+  /** \brief Asynchronously erases entries under \p prefix.
    *  \tparam AfterEraseCallback `void f(size_t nErased)`
    *  \param prefix name prefix of entries
    *  \param limit max number of entries to erase
@@ -67,7 +67,7 @@ public:
     cb(nErased);
   }
 
-  /** \brief finds the best matching Data packet
+  /** \brief Finds the best matching Data packet.
    *  \tparam HitCallback `void f(const Interest&, const Data&)`
    *  \tparam MissCallback `void f(const Interest&)`
    *  \param interest the Interest for lookup
@@ -88,7 +88,7 @@ public:
     hit(interest, match->getData());
   }
 
-  /** \brief get number of stored packets
+  /** \brief Get number of stored packets.
    */
   size_t
   size() const
@@ -97,15 +97,15 @@ public:
   }
 
 public: // configuration
-  /** \brief get capacity (in number of packets)
+  /** \brief Get capacity (in number of packets).
    */
   size_t
-  getLimit() const
+  getLimit() const noexcept
   {
     return m_policy->getLimit();
   }
 
-  /** \brief change capacity (in number of packets)
+  /** \brief Change capacity (in number of packets).
    */
   void
   setLimit(size_t nMaxPackets)
@@ -113,49 +113,49 @@ public: // configuration
     return m_policy->setLimit(nMaxPackets);
   }
 
-  /** \brief get replacement policy
+  /** \brief Get replacement policy.
    */
   Policy*
-  getPolicy() const
+  getPolicy() const noexcept
   {
     return m_policy.get();
   }
 
-  /** \brief change replacement policy
+  /** \brief Change replacement policy.
    *  \pre size() == 0
    */
   void
   setPolicy(unique_ptr<Policy> policy);
 
-  /** \brief get CS_ENABLE_ADMIT flag
+  /** \brief Get CS_ENABLE_ADMIT flag.
    *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
    */
   bool
-  shouldAdmit() const
+  shouldAdmit() const noexcept
   {
     return m_shouldAdmit;
   }
 
-  /** \brief set CS_ENABLE_ADMIT flag
+  /** \brief Set CS_ENABLE_ADMIT flag.
    *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
    */
   void
-  enableAdmit(bool shouldAdmit);
+  enableAdmit(bool shouldAdmit) noexcept;
 
-  /** \brief get CS_ENABLE_SERVE flag
+  /** \brief Get CS_ENABLE_SERVE flag.
    *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
    */
   bool
-  shouldServe() const
+  shouldServe() const noexcept
   {
     return m_shouldServe;
   }
 
-  /** \brief set CS_ENABLE_SERVE flag
+  /** \brief Set CS_ENABLE_SERVE flag.
    *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
    */
   void
-  enableServe(bool shouldServe);
+  enableServe(bool shouldServe) noexcept;
 
 public: // enumeration
   using const_iterator = Table::const_iterator;

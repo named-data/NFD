@@ -40,7 +40,7 @@ protected:
     DummyStrategy::registerAs(strategyNameQ);
   }
 
-  /** \brief insert StrategyChoice entry at \p prefix for \p instanceName
+  /** \brief Insert StrategyChoice entry at \p prefix for \p instanceName.
    *  \return constructed instance name
    */
   Name
@@ -52,7 +52,7 @@ protected:
     return foundName;
   }
 
-  /** \brief determine whether the effective strategy type at \p prefix is \p S
+  /** \brief Determine whether the effective strategy type at \p prefix is \p S.
    *  \tparam S expected strategy type
    */
   template<typename S>

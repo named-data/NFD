@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,10 +37,11 @@ class Strategy;
 
 namespace measurements {
 
-/** \brief allows Strategy to access portion of Measurements table under its namespace
+/**
+ * \brief Allows fw::Strategy to access the portion of Measurements table under its namespace.
  *
- *  All public methods have the same semantics as the same method on \p Measurements,
- *  but would return nullptr if the entry falls out of the strategy's authority.
+ * All public methods have the same semantics as the corresponding methods on Measurements,
+ * but will return nullptr if the entry falls out of the strategy's authority.
  */
 class MeasurementsAccessor : noncopyable
 {
@@ -50,46 +51,44 @@ public:
 
   ~MeasurementsAccessor();
 
-  /** \brief find or insert a Measurements entry for \p name
+  /** \brief Find or insert a Measurements entry for \p name.
    */
   Entry*
   get(const Name& name);
 
-  /** \brief find or insert a Measurements entry for \p fibEntry->getPrefix()
+  /** \brief Find or insert a Measurements entry for \p fibEntry->getPrefix().
    */
   Entry*
   get(const fib::Entry& fibEntry);
 
-  /** \brief find or insert a Measurements entry for \p pitEntry->getName()
+  /** \brief Find or insert a Measurements entry for \p pitEntry->getName().
    */
   Entry*
   get(const pit::Entry& pitEntry);
 
-  /** \brief find or insert a Measurements entry for child's parent
+  /** \brief Find or insert a Measurements entry for child's parent.
    */
   Entry*
   getParent(const Entry& child);
 
-  /** \brief perform a longest prefix match for \p name
+  /** \brief Perform a longest prefix match for \p name.
    */
   Entry*
   findLongestPrefixMatch(const Name& name,
-                         const EntryPredicate& pred =
-                             AnyEntry()) const;
+                         const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief perform a longest prefix match for \p pitEntry.getName()
+  /** \brief Perform a longest prefix match for \p pitEntry.getName().
    */
   Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,
-                         const EntryPredicate& pred =
-                             AnyEntry()) const;
+                         const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief perform an exact match
+  /** \brief Perform an exact match.
    */
   Entry*
   findExactMatch(const Name& name) const;
 
-  /** \brief extend lifetime of an entry
+  /** \brief Extend lifetime of an entry.
    *
    *  The entry will be kept until at least now()+lifetime.
    */
@@ -97,7 +96,7 @@ public:
   extendLifetime(Entry& entry, const time::nanoseconds& lifetime);
 
 private:
-  /** \brief perform access control to Measurements entry
+  /** \brief Perform access control to Measurements entry.
    *  \return entry if strategy has access to namespace, otherwise nullptr
    */
   Entry*

@@ -30,7 +30,7 @@
 
 namespace nfd::face {
 
-/** \brief obtain send queue length from a specified system socket
+/** \brief Obtain send queue length from a specified system socket.
  *  \param fd file descriptor of the socket
  *  \retval QUEUE_UNSUPPORTED this operation is unsupported on the current platform
  *  \retval QUEUE_ERROR there was an error retrieving the send queue length

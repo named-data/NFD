@@ -68,11 +68,11 @@ public:
     return name;
   }
 
-  /** \brief Signal emitted after each action
+  /** \brief Signal emitted after each action.
    */
   signal::Signal<StrategyTester<S>> afterAction;
 
-  /** \brief execute f and wait for a number of strategy actions
+  /** \brief Execute f and wait for a number of strategy actions.
    *  \note The actions may occur either during f() invocation or afterwards.
    *  \return whether expected number of actions have occurred
    */

@@ -31,9 +31,10 @@
 
 namespace nfd::fw {
 
-/** \brief A forwarding strategy that randomly chooses a nexthop
+/**
+ * \brief A forwarding strategy that randomly chooses a nexthop.
  *
- *  Sends the incoming Interest to a random outgoing face, excluding the incoming face.
+ * Sends the incoming Interest to a random outgoing face, excluding the incoming face.
  */
 class RandomStrategy : public Strategy
                      , public ProcessNackTraits<RandomStrategy>

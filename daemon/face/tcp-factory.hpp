@@ -31,7 +31,7 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for TCP over IPv4 and IPv6
+/** \brief Protocol factory for TCP over IPv4 and IPv6.
  */
 class TcpFactory final : public ProtocolFactory
 {
@@ -42,7 +42,7 @@ public:
   using ProtocolFactory::ProtocolFactory;
 
   /**
-   * \brief Create TCP-based channel using tcp::Endpoint
+   * \brief Create TCP-based channel using tcp::Endpoint.
    *
    * tcp::Endpoint is really an alias for boost::asio::ip::tcp::endpoint.
    *
@@ -56,8 +56,6 @@ public:
   createChannel(const tcp::Endpoint& localEndpoint);
 
 private:
-  /** \brief process face_system.tcp config section
-   */
   void
   doProcessConfig(OptionalConfigSection configSection,
                   FaceSystem::ConfigContext& context) final;

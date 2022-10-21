@@ -88,7 +88,7 @@ protected:
     }
   }
 
-  /** \brief returns a non-loopback IP address suitable for the creation of a UDP multicast face
+  /** \brief Returns a non-loopback IP address suitable for the creation of a UDP multicast face.
    */
   boost::asio::ip::address
   findNonLoopbackAddressForMulticastFace(ndn::net::AddressFamily af) const
@@ -115,7 +115,7 @@ protected:
     return this->listFacesByScheme("udp6", linkType);
   }
 
-  /** \brief determine whether \p netif has at least one IP address of the given family
+  /** \brief Determine whether \p netif has at least one IP address of the given family.
    */
   static bool
   hasAddressFamily(const NetworkInterface& netif, ndn::net::AddressFamily af)
@@ -124,7 +124,7 @@ protected:
                        [af] (const auto& a) { return a.getFamily() == af; });
   }
 
-  /** \brief determine whether a UDP multicast face is created on \p netif
+  /** \brief Determine whether a UDP multicast face is created on \p netif.
    */
   static bool
   isFaceOnNetif(const Face& face, const NetworkInterface& netif)
@@ -135,17 +135,17 @@ protected:
   }
 
 protected:
-  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 + IPv6)
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 + IPv6).
    *
    *  This should be used in test cases that do not depend on a specific address family
    */
   std::vector<shared_ptr<const NetworkInterface>> netifs;
 
-  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 only)
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 only).
    */
   std::vector<shared_ptr<const NetworkInterface>> netifsV4;
 
-  /** \brief MulticastUdpTransport-capable network interfaces (IPv6 only)
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv6 only).
    */
   std::vector<shared_ptr<const NetworkInterface>> netifsV6;
 };

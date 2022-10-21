@@ -33,7 +33,7 @@
 
 namespace nfd::rib {
 
-/** \brief state of a readvertised route
+/** \brief State of a readvertised route.
  */
 class ReadvertisedRoute : noncopyable
 {

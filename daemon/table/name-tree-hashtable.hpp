@@ -32,27 +32,27 @@ namespace nfd::name_tree {
 
 class Entry;
 
-/** \brief a single hash value
+/** \brief A single hash value.
  */
 using HashValue = size_t;
 
-/** \brief a sequence of hash values
+/** \brief A sequence of hash values.
  *  \sa computeHashes
  */
 using HashSequence = std::vector<HashValue>;
 
-/** \brief computes hash value of \p name.getPrefix(prefixLen)
+/** \brief Computes hash value of \p name.getPrefix(prefixLen).
  */
 HashValue
 computeHash(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max());
 
-/** \brief computes hash values for each prefix of \p name.getPrefix(prefixLen)
+/** \brief Computes hash values for each prefix of \p name.getPrefix(prefixLen).
  *  \return a hash sequence, where the i-th hash value equals computeHash(name, i)
  */
 HashSequence
 computeHashes(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max());
 
-/** \brief a hashtable node
+/** \brief A hashtable node.
  *
  *  Zero or more nodes can be added to a hashtable bucket. They are organized as
  *  a doubly linked list through prev and next pointers.
@@ -83,7 +83,7 @@ public:
 Node*
 getNode(const Entry& entry);
 
-/** \brief invoke a function for each node in a doubly linked list
+/** \brief Invoke a function for each node in a doubly linked list.
  *  \tparam N either Node or const Node
  *  \tparam F a functor with signature void F(N*)
  *  \note It's safe to delete the node in the function.
@@ -100,50 +100,50 @@ foreachNode(N* head, const F& func)
   }
 }
 
-/** \brief provides options for Hashtable
+/**
+ * \brief Provides options for Hashtable.
  */
-class HashtableOptions
+struct HashtableOptions
 {
-public:
-  /** \brief constructor
+  /** \brief Constructor.
    *  \post initialSize == size
    *  \post minSize == size
    */
   explicit
   HashtableOptions(size_t size = 16);
 
-public:
-  /** \brief initial number of buckets
+  /** \brief Initial number of buckets.
    */
   size_t initialSize;
 
-  /** \brief minimal number of buckets
+  /** \brief Minimal number of buckets.
    */
   size_t minSize;
 
-  /** \brief if hashtable has more than nBuckets*expandLoadFactor nodes, it will be expanded
+  /** \brief If the hashtable has more than `nBuckets*expandLoadFactor` nodes, it will be expanded.
    */
   float expandLoadFactor = 0.5f;
 
-  /** \brief when hashtable is expanded, its new size is nBuckets*expandFactor
+  /** \brief When the hashtable is expanded, its new size will be `nBuckets*expandFactor`.
    */
   float expandFactor = 2.0f;
 
-  /** \brief if hashtable has less than nBuckets*shrinkLoadFactor nodes, it will be shrunk
+  /** \brief If the hashtable has less than `nBuckets*shrinkLoadFactor` nodes, it will be shrunk.
    */
   float shrinkLoadFactor = 0.1f;
 
-  /** \brief when hashtable is shrunk, its new size is max(nBuckets*shrinkFactor, minSize)
+  /** \brief When the hashtable is shrunk, its new size will be `max(nBuckets*shrinkFactor, minSize)`.
    */
   float shrinkFactor = 0.5f;
 };
 
-/** \brief a hashtable for fast exact name lookup
+/**
+ * \brief A hashtable for fast exact name lookup.
  *
- *  The Hashtable contains a number of buckets.
- *  Each node is placed into a bucket determined by a hash value computed from its name.
- *  Hash collision is resolved through a doubly linked list in each bucket.
- *  The number of buckets is adjusted according to how many nodes are stored.
+ * The Hashtable contains a number of buckets.
+ * Each node is placed into a bucket determined by a hash value computed from its name.
+ * Hash collision is resolved through a doubly linked list in each bucket.
+ * The number of buckets is adjusted according to how many nodes are stored.
  */
 class Hashtable
 {
@@ -153,7 +153,7 @@ public:
   explicit
   Hashtable(const Options& options);
 
-  /** \brief deallocates all nodes
+  /** \brief Deallocates all nodes.
    */
   ~Hashtable();
 
@@ -191,39 +191,39 @@ public:
     return m_buckets[bucket]; // don't use m_bucket.at() for better performance
   }
 
-  /** \brief find node for name.getPrefix(prefixLen)
+  /** \brief Find node for name.getPrefix(prefixLen).
    *  \pre name.size() > prefixLen
    */
   const Node*
   find(const Name& name, size_t prefixLen) const;
 
-  /** \brief find node for name.getPrefix(prefixLen)
+  /** \brief Find node for name.getPrefix(prefixLen).
    *  \pre name.size() > prefixLen
    *  \pre hashes == computeHashes(name)
    */
   const Node*
   find(const Name& name, size_t prefixLen, const HashSequence& hashes) const;
 
-  /** \brief find or insert node for name.getPrefix(prefixLen)
+  /** \brief Find or insert node for name.getPrefix(prefixLen).
    *  \pre name.size() > prefixLen
    *  \pre hashes == computeHashes(name)
    */
   std::pair<const Node*, bool>
   insert(const Name& name, size_t prefixLen, const HashSequence& hashes);
 
-  /** \brief delete node
+  /** \brief Delete node.
    *  \pre node exists in this hashtable
    */
   void
   erase(Node* node);
 
 private:
-  /** \brief attach node to bucket
+  /** \brief Attach node to bucket.
    */
   void
   attach(size_t bucket, Node* node);
 
-  /** \brief detach node from bucket
+  /** \brief Detach node from bucket.
    */
   void
   detach(size_t bucket, Node* node);

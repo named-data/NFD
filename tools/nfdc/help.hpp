@@ -30,7 +30,7 @@
 
 namespace nfd::tools::nfdc {
 
-/** \brief writes the list of available commands to a stream
+/** \brief Writes the list of available commands to a stream.
  *  \param os the output stream to write the list to
  *  \param parser instance of CommandParser containing the commands to list
  *  \param mode only the commands available in this mode are listed
@@ -40,7 +40,7 @@ void
 helpList(std::ostream& os, const CommandParser& parser,
          ParseMode mode = ParseMode::ONE_SHOT, std::string_view noun = "");
 
-/** \brief tries to help the user, if requested on the command line
+/** \brief Tries to help the user, if requested on the command line.
  *
  *  Depending on the provided command line arguments \p args, this function can either
  *  open the man page for a specific command, or list all commands available in \p parser.

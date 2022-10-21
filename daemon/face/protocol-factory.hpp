@@ -35,12 +35,14 @@
 
 namespace nfd::face {
 
-/** \brief Parameters to ProtocolFactory constructor
+/**
+ * \brief Parameters to ProtocolFactory constructor.
  *
- *  Every ProtocolFactory subclass is expected to have a constructor that accepts CtorParams,
- *  which in turn passes it to ProtocolFactory base class constructor. Parameters are passed as a
- *  struct rather than individually, so that a future change in list of parameters does not
- *  require updates to subclass constructors.
+ * Every ProtocolFactory subclass is expected to have a constructor that accepts
+ * ProtocolFactory::CtorParams, which in turn passes it to ProtocolFactory base class
+ * constructor. Parameters are passed as a struct rather than individually, so that
+ * any future changes in the list of parameters will not require updates to all subclass
+ * constructors.
  */
 struct ProtocolFactoryCtorParams
 {
@@ -48,21 +50,24 @@ struct ProtocolFactoryCtorParams
   shared_ptr<ndn::net::NetworkMonitor> netmon;
 };
 
-/** \brief Provides support for an underlying protocol
- *  \sa FaceSystem
+/**
+ * \brief Provides support for an underlying protocol.
  *
- *  A protocol factory provides support for an underlying protocol and owns Channel objects.
- *  It can process a subsection of face_system config section and create channels and multicast
- *  faces accordingly.
+ * A protocol factory provides support for an underlying protocol and owns Channel objects.
+ * It can process a subsection of the `face_system` configuration section and create channels
+ * and multicast faces accordingly.
+ *
+ * \sa FaceSystem
  */
 class ProtocolFactory : noncopyable
 {
 public: // registry
   using CtorParams = ProtocolFactoryCtorParams;
 
-  /** \brief Register a protocol factory type
-   *  \tparam PF subclass of ProtocolFactory
-   *  \param id factory identifier
+  /**
+   * \brief Register a protocol factory type.
+   * \tparam PF subclass of ProtocolFactory
+   * \param id factory identifier
    */
   template<typename PF>
   static void
@@ -75,19 +80,22 @@ public: // registry
     BOOST_VERIFY(r.second);
   }
 
-  /** \brief Create a protocol factory instance
-   *  \retval nullptr if a factory with the given \p id is not registered
+  /**
+   * \brief Create a protocol factory instance.
+   * \retval nullptr if a factory with the given \p id is not registered
    */
   static unique_ptr<ProtocolFactory>
   create(const std::string& id, const CtorParams& params);
 
-  /** \brief Get all registered protocol factory ids
+  /**
+   * \brief Get all registered protocol factory IDs.
    */
-  static std::set<std::string>
+  [[nodiscard]] static std::set<std::string>
   listRegistered();
 
 public:
-  /** \brief Base class for all exceptions thrown by ProtocolFactory subclasses
+  /**
+   * \brief Base class for all exceptions thrown by ProtocolFactory subclasses.
    */
   class Error : public std::runtime_error
   {
@@ -102,18 +110,20 @@ public:
   ~ProtocolFactory() = 0;
 
 #ifdef DOXYGEN
-  /** \brief Get id for this protocol factory
+  /**
+   * \brief Get the ID of this protocol factory.
    *
-   *  face_system.factory-id config section is processed by the protocol factory.
+   * `face_system.<factory-id>` config section is processed by the protocol factory.
    */
   static const std::string&
   getId() noexcept;
 #endif
 
-  /** \brief Get FaceUri schemes accepted by this protocol factory
+  /**
+   * \brief Get FaceUri schemes accepted by this protocol factory.
    */
   const std::set<std::string>&
-  getProvidedSchemes() const
+  getProvidedSchemes() const noexcept
   {
     return providedSchemes;
   }

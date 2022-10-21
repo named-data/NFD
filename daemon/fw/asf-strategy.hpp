@@ -34,12 +34,13 @@
 namespace nfd::fw {
 namespace asf {
 
-/** \brief Adaptive SRTT-based Forwarding Strategy
+/**
+ * \brief Adaptive SRTT-based forwarding strategy.
  *
- *  \see Vince Lehman, Ashlesh Gawande, Rodrigo Aldecoa, Dmitri Krioukov, Beichuan Zhang,
- *       Lixia Zhang, and Lan Wang, "An Experimental Investigation of Hyperbolic Routing
- *       with a Smart Forwarding Plane in NDN", NDN Technical Report NDN-0042, 2016.
- *       https://named-data.net/publications/techreports/ndn-0042-1-asf/
+ * \see Vince Lehman, Ashlesh Gawande, Rodrigo Aldecoa, Dmitri Krioukov, Beichuan Zhang,
+ *      Lixia Zhang, and Lan Wang, "An Experimental Investigation of Hyperbolic Routing
+ *      with a Smart Forwarding Plane in NDN", NDN Technical Report NDN-0042, 2016.
+ *      https://named-data.net/publications/techreports/ndn-0042-1-asf/
  */
 class AsfStrategy : public Strategy
 {

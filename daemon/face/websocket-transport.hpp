@@ -31,31 +31,31 @@
 
 namespace nfd::face {
 
-/** \brief counters provided by WebSocketTransport
- *  \note The type name 'WebSocketTransportCounters' is implementation detail.
- *        Use 'WebSocketTransport::Counters' in public API.
+/** \brief Counters provided by WebSocketTransport.
+ *  \note The type name WebSocketTransportCounters is an implementation detail.
+ *        Use WebSocketTransport::Counters in public API.
  */
 class WebSocketTransportCounters : public virtual Transport::Counters
 {
 public:
-  /** \brief count of outgoing Pings
+  /** \brief Count of outgoing pings.
    */
   PacketCounter nOutPings;
 
-  /** \brief count of incoming Pongs
+  /** \brief Count of incoming pongs.
    */
   PacketCounter nInPongs;
 };
 
-/** \brief A Transport that communicates on a WebSocket connection
+/** \brief A Transport that communicates on a WebSocket connection.
  */
 class WebSocketTransport final : public Transport
                                , protected virtual WebSocketTransportCounters
 {
 public:
-  /** \brief counters provided by WebSocketTransport
+  /** \brief %Counters provided by WebSocketTransport.
    */
-  typedef WebSocketTransportCounters Counters;
+  using Counters = WebSocketTransportCounters;
 
   WebSocketTransport(websocketpp::connection_hdl hdl,
                      websocket::Server& server,
@@ -64,8 +64,7 @@ public:
   const Counters&
   getCounters() const final;
 
-  /** \brief Translates a message into a Block
-   *         and delivers it to the link service
+  /** \brief Translates a message into a Block and delivers it to the link service.
    */
   void
   receiveMessage(const std::string& msg);

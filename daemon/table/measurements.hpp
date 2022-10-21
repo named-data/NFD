@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,23 +41,26 @@ class Entry;
 
 namespace measurements {
 
-/** \brief A predicate that accepts or rejects an entry
+/**
+ * \brief A predicate that accepts or rejects an entry.
  */
 using EntryPredicate = std::function<bool(const Entry&)>;
 
-/** \brief An \c EntryPredicate that accepts any entry
+/**
+ * \brief An #EntryPredicate that accepts any entry.
  */
 class AnyEntry
 {
 public:
-  bool
-  operator()(const Entry&) const
+  constexpr bool
+  operator()(const Entry&) const noexcept
   {
     return true;
   }
 };
 
-/** \brief An \c EntryPredicate that accepts an entry if it has StrategyInfo of type T
+/**
+ * \brief An #EntryPredicate that accepts an entry if it has StrategyInfo of type T.
  */
 template<typename T>
 class EntryWithStrategyInfo
@@ -70,11 +73,12 @@ public:
   }
 };
 
-/** \brief The Measurements table
+/**
+ * \brief The %Measurements table.
  *
- *  The Measurements table is a data structure for forwarding strategies to store per name prefix
- *  measurements. A strategy can access this table via \c Strategy::getMeasurements(), and then
- *  place any object that derive from \c StrategyInfo type onto Measurements entries.
+ * The %Measurements table is a data structure for forwarding strategies to store per name prefix
+ * measurements. A strategy can access this table via fw::Strategy::getMeasurements(), and then
+ * place any object that derive from StrategyInfo type onto %Measurements entries.
  */
 class Measurements : noncopyable
 {
@@ -82,7 +86,7 @@ public:
   explicit
   Measurements(NameTree& nameTree);
 
-  /** \brief maximum depth of a Measurements entry
+  /** \brief Maximum depth of a %Measurements entry.
    */
   static constexpr size_t
   getMaxDepth()
@@ -90,44 +94,44 @@ public:
     return NameTree::getMaxDepth();
   }
 
-  /** \brief Find or insert an entry by name
+  /** \brief Find or insert an entry by name.
    *
-   *  An entry name can have at most \c getMaxDepth() components. If \p name exceeds this limit,
-   *  it is truncated to the first \c getMaxDepth() components.
+   *  An entry name can have at most getMaxDepth() components. If \p name exceeds this limit,
+   *  it is truncated to the first getMaxDepth() components.
    */
   Entry&
   get(const Name& name);
 
-  /** \brief Equivalent to `get(fibEntry.getPrefix())`
+  /** \brief Equivalent to `get(fibEntry.getPrefix())`.
    */
   Entry&
   get(const fib::Entry& fibEntry);
 
-  /** \brief Equivalent to `get(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
+  /** \brief Equivalent to `get(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`.
    */
   Entry&
   get(const pit::Entry& pitEntry);
 
-  /** \brief Find or insert a parent entry
+  /** \brief Find or insert a parent entry.
    *  \retval nullptr child is the root entry
    *  \return get(child.getName().getPrefix(-1))
    */
   Entry*
   getParent(const Entry& child);
 
-  /** \brief Perform a longest prefix match for \p name
+  /** \brief Perform a longest prefix match for \p name.
    */
   Entry*
   findLongestPrefixMatch(const Name& name,
                          const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief Perform a longest prefix match for `pitEntry.getName()`
+  /** \brief Perform a longest prefix match for `pitEntry.getName()`.
    */
   Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,
                          const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief Perform an exact match
+  /** \brief Perform an exact match.
    */
   Entry*
   findExactMatch(const Name& name) const;
@@ -138,7 +142,7 @@ public:
     return 4_s;
   }
 
-  /** \brief Extend lifetime of an entry
+  /** \brief Extend lifetime of an entry.
    *
    *  The entry will be kept until at least now()+lifetime.
    */
@@ -158,7 +162,7 @@ private:
   Entry&
   get(name_tree::Entry& nte);
 
-  /** \tparam K a parameter acceptable to \c NameTree::findLongestPrefixMatch
+  /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch()
    */
   template<typename K>
   Entry*

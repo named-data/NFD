@@ -30,7 +30,8 @@
 
 namespace nfd::pit {
 
-/** \brief Contains information about an Interest from an incoming face
+/**
+ * \brief Contains information about an Interest from an incoming face.
  */
 class InRecord : public FaceRecord
 {
@@ -38,7 +39,7 @@ public:
   using FaceRecord::FaceRecord;
 
   const Interest&
-  getInterest() const
+  getInterest() const noexcept
   {
     BOOST_ASSERT(m_interest != nullptr);
     return *m_interest;

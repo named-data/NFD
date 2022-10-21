@@ -32,7 +32,7 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::ForwarderStatus;
 
-/** \brief provides access to NFD forwarder general status
+/** \brief Provides access to NFD forwarder general status.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
  */
 class ForwarderGeneralModule : public Module, noncopyable
@@ -47,7 +47,7 @@ public:
   void
   formatStatusXml(std::ostream& os) const override;
 
-  /** \brief format a single status item as XML
+  /** \brief Format a single status item as XML.
    *  \param os output stream
    *  \param item status item
    */
@@ -57,7 +57,7 @@ public:
   void
   formatStatusText(std::ostream& os) const override;
 
-  /** \brief format a single status item as text
+  /** \brief Format a single status item as text.
    *  \param os output stream
    *  \param item status item
    */

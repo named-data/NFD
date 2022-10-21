@@ -32,27 +32,32 @@
 
 namespace nfd {
 
-/** \brief a config file section
+/**
+ * \brief A configuration file section.
  */
 using ConfigSection = boost::property_tree::ptree;
 
-/** \brief an optional config file section
+/**
+ * \brief An optional configuration file section.
  */
 using OptionalConfigSection = boost::optional<const ConfigSection&>;
 
-/** \brief callback to process a config file section
+/**
+ * \brief Callback to process a configuration file section.
  */
 using ConfigSectionHandler = std::function<void(const ConfigSection& section, bool isDryRun,
                                                 const std::string& filename)>;
 
-/** \brief callback to process a config file section without a \p ConfigSectionHandler
+/**
+ * \brief Callback to process a configuration file section without a #ConfigSectionHandler.
  */
 using UnknownConfigSectionHandler = std::function<void(const std::string& filename,
                                                        const std::string& sectionName,
                                                        const ConfigSection& section,
                                                        bool isDryRun)>;
 
-/** \brief configuration file parsing utility
+/**
+ * \brief Configuration file parsing utility.
  */
 class ConfigFile : noncopyable
 {
@@ -80,7 +85,7 @@ public: // unknown section handlers
                        bool isDryRun);
 
 public: // parse helpers
-  /** \brief parse a config option that can be either "yes" or "no"
+  /** \brief Parse a config option that can be either "yes" or "no".
    *  \retval true "yes"
    *  \retval false "no"
    *  \throw Error the value is neither "yes" nor "no"
@@ -95,7 +100,7 @@ public: // parse helpers
   }
 
   /**
-   * \brief parse a numeric (integral or floating point) config option
+   * \brief Parse a numeric (integral or floating point) config option.
    * \tparam T an arithmetic type
    *
    * \return the numeric value of the parsed option
@@ -125,7 +130,7 @@ public: // parse helpers
   }
 
   /**
-   * \brief check that a value is within the inclusive range [min, max]
+   * \brief Check that a value is within the inclusive range [min, max].
    * \throw Error the value is out of the acceptable range
    */
   template<typename T>
@@ -142,7 +147,7 @@ public: // parse helpers
   }
 
 public: // setup and parsing
-  /// \brief setup notification of configuration file sections
+  /// \brief Setup notification of configuration file sections.
   void
   addSectionHandler(const std::string& sectionName,
                     ConfigSectionHandler subscriber);

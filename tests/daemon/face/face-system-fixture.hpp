@@ -50,7 +50,7 @@ public:
     faceSystem.setConfigFile(configFile);
   }
 
-  /** \brief Copy a snapshot of NetworkInterface information to \p netmon
+  /** \brief Copy a snapshot of NetworkInterface information to \p netmon.
    *  \pre netmon contains no NetworkInterface
    */
   void
@@ -81,7 +81,7 @@ public:
     configFile.parse(text, isDryRun, "test-config");
   }
 
-  /** \brief get ProtocolFactory from FaceSystem
+  /** \brief Get ProtocolFactory from FaceSystem.
    *  \tparam F ProtocolFactory subclass
    *
    *  If ProtocolFactory with \p scheme does not exist or has an incompatible type,
@@ -96,7 +96,7 @@ public:
     return *factory;
   }
 
-  /** \brief get ProtocolFactory from FaceSystem
+  /** \brief Get ProtocolFactory from FaceSystem.
    *  \tparam F ProtocolFactory subclass
    *
    *  If ProtocolFactory with \p scheme does not exist or has an incompatible type,
@@ -111,7 +111,7 @@ public:
     return *factory;
   }
 
-  /** \brief list faces of specified scheme from FaceTable
+  /** \brief List faces of specified scheme from FaceTable.
    *  \param scheme local or remote FaceUri scheme
    *  \param linkType if not NONE, filter by specified LinkType
    */
@@ -140,7 +140,7 @@ protected:
 };
 
 /**
- * \brief FaceSystemFixture with a ProtocolFactory reference
+ * \brief FaceSystemFixture with a ProtocolFactory reference.
  */
 template<typename FactoryType>
 class FaceSystemFactoryFixture : public FaceSystemFixture

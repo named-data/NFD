@@ -49,7 +49,7 @@ struct EntryInfo
   scheduler::EventId moveStaleEventId;
 };
 
-/** \brief Priority FIFO replacement policy
+/** \brief Priority First-In-First-Out (FIFO) replacement policy.
  *
  *  This policy maintains a set of cleanup queues to decide the eviction order of CS entries.
  *  The cleanup queues are three doubly linked lists that store EntryRefs.
@@ -88,25 +88,25 @@ private:
   evictEntries() final;
 
 private:
-  /** \brief evicts one entry
+  /** \brief Evicts one entry.
    *  \pre CS is not empty
    */
   void
   evictOne();
 
-  /** \brief attaches the entry to an appropriate queue
+  /** \brief Attaches the entry to an appropriate queue.
    *  \pre the entry is not in any queue
    */
   void
   attachQueue(EntryRef i);
 
-  /** \brief detaches the entry from its current queue
+  /** \brief Detaches the entry from its current queue.
    *  \post the entry is not in any queue
    */
   void
   detachQueue(EntryRef i);
 
-  /** \brief moves an entry from FIFO queue to STALE queue
+  /** \brief Moves an entry from FIFO queue to STALE queue.
    */
   void
   moveToStaleQueue(EntryRef i);

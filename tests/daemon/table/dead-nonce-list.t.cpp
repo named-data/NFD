@@ -125,7 +125,7 @@ protected:
     addNonceEvent = getScheduler().schedule(ADD_INTERVAL, [this] { addNonce(); });
   }
 
-  /** \brief advance clocks by LIFETIME*t
+  /** \brief Advance clocks by `LIFETIME*t`.
    */
   void
   advanceClocksByLifetime(double t)

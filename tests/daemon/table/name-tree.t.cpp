@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(nt.size(), 8);
 }
 
-/** \brief verify a NameTree enumeration contains expected entries
+/** \brief Verify a NameTree enumeration contains expected entries.
  *
  *  Example:
  *  \code
