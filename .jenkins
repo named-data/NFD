@@ -16,6 +16,7 @@ case $(uname) in
         # Emulate a subset of os-release(5)
         export ID=macos
         export VERSION_ID=$(sw_vers -productVersion)
+        export PATH="/usr/local/bin${PATH:+:}${PATH}"
         if [[ -x /opt/homebrew/bin/brew ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         elif [[ -x /usr/local/bin/brew ]]; then

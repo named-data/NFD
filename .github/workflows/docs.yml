@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, ubuntu-20.04]
+        os: [macos-latest, ubuntu-latest]
     env:
       JOB_NAME: Docs
     steps:
@@ -29,6 +29,8 @@ jobs:
           ./.jenkins
       - name: Build documentation
         run: |
+          pybindir=$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts", "posix_user"))')
+          export PATH="${pybindir}${PATH:+:}${PATH}"
           ./waf --color=yes configure
           ./waf --color=yes build --targets=version.hpp
           ./waf --color=yes build --targets=manpages

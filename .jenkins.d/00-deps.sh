@@ -26,21 +26,15 @@ if [[ $ID == macos ]]; then
     fi
     brew update
     brew install --formula "${FORMULAE[@]}"
-
-    if (( ${#PIP_PKGS[@]} )); then
-        pip3 install --upgrade --upgrade-strategy=eager "${PIP_PKGS[@]}"
-    fi
-
 elif [[ $ID_LIKE == *debian* ]]; then
     sudo apt-get -qq update
     sudo apt-get -qy install "${APT_PKGS[@]}"
-
-    if (( ${#PIP_PKGS[@]} )); then
-        pip3 install --user --upgrade --upgrade-strategy=eager "${PIP_PKGS[@]}"
-    fi
-
 elif [[ $ID_LIKE == *fedora* ]]; then
     sudo dnf -y install gcc-c++ libasan lld pkgconf-pkg-config python3 \
                         boost-devel openssl-devel sqlite-devel \
                         libpcap-devel systemd-devel
+fi
+
+if (( ${#PIP_PKGS[@]} )); then
+    pip3 install --user --upgrade --upgrade-strategy=eager "${PIP_PKGS[@]}"
 fi
