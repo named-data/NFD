@@ -19,7 +19,7 @@ Notable changes and new features
 
 - Add default ``HopLimit`` to Interests when missing (:issue:`5171`)
 
-- Allow batch command processing by ``nfdc`` to accomodate case when ``nfdc`` is used to
+- Allow batch command processing by ``nfdc`` to accommodate case when ``nfdc`` is used to
   create multiple faces/routes at once (:issue:`5169`)
 
 - Update ``Interest::ForwardingHint`` format (:issue:`5187`)
