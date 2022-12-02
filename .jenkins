@@ -26,7 +26,11 @@ case $(uname) in
 esac
 
 export CACHE_DIR=${CACHE_DIR:-/tmp}
-[[ $JOB_NAME == *"code-coverage" ]] && export DISABLE_ASAN=yes
+
+if [[ $JOB_NAME == *"code-coverage" ]]; then
+    export DISABLE_ASAN=yes
+    export DISABLE_HEADERS_CHECK=yes
+fi
 
 for file in .jenkins.d/*; do
     [[ -f $file && -x $file ]] || continue

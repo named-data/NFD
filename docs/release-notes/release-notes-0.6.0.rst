@@ -37,8 +37,7 @@ New features
 
 - Advisory limit of ``NameTree`` depth (:issue:`4262`)
 
-- `Contributing guide <https://github.com/named-data/NFD/>`__ and `code of conduct
-  <https://github.com/named-data/NFD/>`__ (:issue:`3898`)
+- Contributor's Guide and Code of Conduct (:issue:`3898`)
 
 Updates
 ^^^^^^^
