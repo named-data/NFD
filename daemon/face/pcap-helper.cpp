@@ -69,6 +69,10 @@ PcapHelper::activate(int dlt)
       NDN_THROW(Error("pcap_activate: " + std::string(pcap_statustostr(ret))));
   });
 
+  char errbuf[PCAP_ERRBUF_SIZE] = {};
+  if (pcap_setnonblock(m_pcap, 1, errbuf) < 0)
+    NDN_THROW(Error("pcap_setnonblock: " + std::string(errbuf)));
+
   if (pcap_set_datalink(m_pcap, dlt) < 0)
     NDN_THROW(Error("pcap_set_datalink: " + getLastError()));
 
@@ -136,7 +140,7 @@ PcapHelper::readNextPacket() const noexcept
   if (ret < 0)
     return {span<uint8_t>{}, getLastError()};
   else if (ret == 0)
-    return {span<uint8_t>{}, "timed out"};
+    return {span<uint8_t>{}, "Nothing to read"};
   else
     return {{packet, header->caplen}, ""};
 }

@@ -167,7 +167,7 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
 
   auto [pkt, readErr] = m_pcap.readNextPacket();
   if (pkt.empty()) {
-    NFD_LOG_FACE_WARN("Read error: " << readErr);
+    NFD_LOG_FACE_DEBUG("Read error: " << readErr);
   }
   else {
     auto [eh, frameErr] = ethernet::checkFrameHeader(pkt, m_srcAddress,
