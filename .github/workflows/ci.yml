@@ -55,7 +55,7 @@ jobs:
           - os: macos-12
             xcode: '13.4'
           - os: macos-12
-            xcode: '14.1'
+            xcode: '14.2'
     steps:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1

@@ -24,7 +24,7 @@ performance.  The intention is that performance optimizations are one type of ex
 that developers can conduct by trying out different data structures and different
 algorithms; over time, better implementations may emerge within the same design framework.
 To facilitate such experimentation with the forwarder, the NFD team has also written a
-`developer's guide <https://named-data.net/publications/techreports/ndn-0021-10-nfd-developer-guide/>`__,
+`developer's guide <https://named-data.net/publications/techreports/ndn-0021-11-nfd-guide/>`__,
 which details the current implementation and provides tips for extending all aspects of
 NFD.
 
@@ -69,7 +69,7 @@ NFD has the following major modules:
 
 - Management
     Implements the `NFD Management Protocol
-    <https://redmine.named-data.net/projects/nfd/wiki/Management>`_, which allows
+    <https://redmine.named-data.net/projects/nfd/wiki/Management>`__, which allows
     applications to configure NFD and set/query NFD's internal states.  Protocol interaction
     is done via NDN's Interest/Data exchange between applications and NFD.
 

@@ -7,14 +7,10 @@ Supported platforms
 NFD is built against a continuous integration system and has been tested on the
 following platforms:
 
-- Ubuntu 18.04
-- Ubuntu 20.04
-- Ubuntu 22.04
+- Ubuntu 18.04 / 20.04 / 22.04
 - Debian 11
 - CentOS Stream 9
-- macOS 10.15
-- macOS 11
-- macOS 12
+- macOS 10.15 / 11 / 12 / 13
 
 NFD is known to work on the following platforms, although they are not officially
 supported:
@@ -76,7 +72,7 @@ Downloading from git
 
 The first step is to obtain the source code for NFD and its main dependency, the
 *ndn-cxx* library. If you do not want a development version of NFD, make sure you
-checkout the correct release tag (e.g., ``*-0.8.0``) from both repositories.
+checkout the correct release tag (e.g., ``*-0.8.1``) from both repositories.
 
 .. code-block:: sh
 
@@ -283,12 +279,11 @@ of NDN using the following applications and libraries.
 Sample applications:
 
     + `Simple examples using the ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`__
-    + `Introductory examples of NDN-CCL
-      <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`__
+    + `Simple examples using the python-ndn library <https://python-ndn.readthedocs.io/en/latest/src/examples/basic_app.html>`__
 
 Real applications and libraries:
 
     + `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`__
-    + `ndn-traffic-generator - Traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`__
-    + `ChronoSync - Sync library for multi-user real-time applications <https://github.com/named-data/ChronoSync>`__
-    + `PSync - Partial and full synchronization library <https://github.com/named-data/PSync>`__
+    + `ndn-traffic-generator - Simple traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`__
+    + `ndn-svs - State Vector Sync library <https://github.com/named-data/ndn-svs>`__
+    + `PSync - Partial and full Sync library <https://github.com/named-data/PSync>`__

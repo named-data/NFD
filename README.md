@@ -1,4 +1,10 @@
+<div align="center">
+
+[<img alt height="70" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
+
 # NFD: Named Data Networking Forwarding Daemon
+
+</div>
 
 [![CI](https://github.com/named-data/NFD/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/ci.yml)
 [![Docs](https://github.com/named-data/NFD/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/docs.yml)

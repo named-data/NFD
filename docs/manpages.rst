@@ -1,9 +1,9 @@
-.. _Manpages:
-
-Manpages
-========
+Man pages
+=========
 
 .. toctree::
+   :maxdepth: 1
+
    manpages/nfd
    manpages/nfdc
    manpages/nfdc-status
@@ -20,4 +20,3 @@ Manpages
    manpages/ndn-autoconfig-server
    local-prefix-discovery
    manpages/nfd-autoreg
-   :maxdepth: 1

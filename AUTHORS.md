@@ -1,12 +1,12 @@
 # NFD Authors
 
-The following lists maintainers, primary developers, and all much-appreciated contributors to NFD in alphabetic order.
+The following lists maintainers, primary developers, and all much-appreciated contributors to NFD in alphabetical order.
 The specific contributions of individual authors can be obtained from the git history of the [official NFD repository](https://github.com/named-data/NFD).
-If you would like to become a contributor to the official repository, please follow the recommendations in https://github.com/named-data/.github/blob/master/CONTRIBUTING.md.
+If you would like to become a contributor to the official repository, please follow the recommendations in <https://github.com/named-data/.github/blob/master/CONTRIBUTING.md>.
 
 * Jerald Paul Abraham <https://cs.arizona.edu/~jeraldabraham>
 * ***(Maintainer)*** Alexander Afanasyev <https://users.cs.fiu.edu/~afanasyev>
-* Syed Obai Amin <http://obaidamin.weebly.com>
+* Syed Obaid Amin <http://obaidamin.weebly.com>
 * Hila Ben Abraham <https://sites.wustl.edu/hbabraham>
 * Muktadir R Chowdhury <https://github.com/alvyC>
 * Tai-Lin Chu <https://www.linkedin.com/pub/tai-lin-chu/55/5b2/669>
@@ -31,7 +31,7 @@ If you would like to become a contributor to the official repository, please fol
 * Eric Newberry <https://ericnewberry.com>
 * Ju Pan <https://cs-jupan.com>
 * João Pereira <http://website.jpereira.co.uk>
-* Davide Pesavento <https://github.com/Pesa>
+* ***(Maintainer)*** Davide Pesavento <https://github.com/Pesa>
 * Felix Rabe <https://twitter.com/felixrabe>
 * Md Ashiqur Rahman <https://ashiqrahman.com>
 * Matteo Sammarco <https://www.linkedin.com/in/matteo-sammarco-9b544530>
@@ -55,7 +55,7 @@ If you would like to become a contributor to the official repository, please fol
 
 * Patrick Crowley <https://www.arl.wustl.edu/~pcrowley>
 * Christos Papadopoulos <https://www.cs.colostate.edu/~christos>
-* Giovanni Pau <http://www.cs.ucla.edu/~gpau/Giovanni_Paus_Home_Page/Home.html>
+* Giovanni Pau <https://www.unibo.it/sitoweb/giovanni.pau/en>
 * Tian Song <http://www.bit-netlab.org/songtian>
 * Lan Wang <http://www.cs.memphis.edu/~lanwang>
 * Beichuan Zhang <https://cs.arizona.edu/~bzhang>

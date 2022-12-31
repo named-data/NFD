@@ -145,9 +145,9 @@ class GccBasicFlags(CompilerFlags):
         flags = super(GccBasicFlags, self).getDebugFlags(conf)
         flags['CXXFLAGS'] += ['-Og',
                               '-g3',
-                              '-pedantic',
                               '-Wall',
                               '-Wextra',
+                              '-Wpedantic',
                               '-Werror',
                               '-Wcatch-value=2',
                               '-Wextra-semi',
@@ -163,9 +163,9 @@ class GccBasicFlags(CompilerFlags):
         flags = super(GccBasicFlags, self).getOptimizedFlags(conf)
         flags['CXXFLAGS'] += ['-O2',
                               '-g',
-                              '-pedantic',
                               '-Wall',
                               '-Wextra',
+                              '-Wpedantic',
                               '-Wcatch-value=2',
                               '-Wextra-semi',
                               '-Wnon-virtual-dtor',

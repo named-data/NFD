@@ -1,13 +1,19 @@
-NFD Versions
-++++++++++++
+All NFD Releases
+================
 
 .. toctree::
-    :glob:
-    :hidden:
-    :maxdepth: 1
-    :reversed:
+   :glob:
+   :hidden:
+   :maxdepth: 1
+   :reversed:
 
-    release-notes/*
+   release-notes/*
+
+* **NFD version 22.12**
+  (:doc:`Release Notes <release-notes/release-notes-22.12>`, `Documentation <https://named-data.net/doc/NFD/22.12/>`__)
+
+  `src (git) <https://github.com/named-data/NFD/releases/tag/NFD-22.12>`__,
+  `src (tarball) <https://named-data.net/downloads/nfd-22.12.tar.bz2>`__ (`checksum <https://named-data.net/downloads/nfd-22.12.tar.bz2.sha256>`__)
 
 * **NFD version 22.02**
   (:doc:`Release Notes <release-notes/release-notes-22.02>`, `Documentation <https://named-data.net/doc/NFD/22.02/>`__)

@@ -26,8 +26,9 @@
 #ifndef NFD_CORE_VERSION_HPP
 #define NFD_CORE_VERSION_HPP
 
-// NFD version follows Semantic Versioning 2.0.0 based on year and month of the release
-// https://semver.org/spec/v2.0.0.html
+// The NFD version follows the approach of Calendar Versioning (https://calver.org/)
+// based on the year and month of the release, followed by an optional "patch" number,
+// i.e., `YY.0M[.MICRO]` using CalVer notation.
 //
 // To change version number, modify the VERSION variable in the top-level wscript.
 

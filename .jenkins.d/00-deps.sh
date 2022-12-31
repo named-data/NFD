@@ -22,7 +22,7 @@ set -x
 
 if [[ $ID == macos ]]; then
     if [[ -n $GITHUB_ACTIONS ]]; then
-        export HOMEBREW_NO_INSTALL_UPGRADE=1
+        export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
     fi
     brew update
     brew install --formula "${FORMULAE[@]}"
