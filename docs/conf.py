@@ -10,7 +10,7 @@ import sys
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Named Data Networking Forwarding Daemon (NFD)'
-copyright = 'Copyright © 2014-2022 Named Data Networking Project.'
+copyright = 'Copyright © 2014-2023 Named Data Networking Project.'
 author = 'Named Data Networking Project'
 
 # The short X.Y version.

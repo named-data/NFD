@@ -13,7 +13,7 @@ Important changes and new features
   - Either GCC >= 7.4.0 or Clang >= 6.0 is required on Linux
   - On macOS, Xcode 11.3 or later is recommended; older versions may still work but are not
     officially supported
-  - Boost >= 1.65.1 is required on all platforms
+  - Boost >= 1.65.1 and ndn-cxx >= 0.8.1 are required on all platforms
   - Sphinx 4.0 or later is required to build the documentation
 
 - CentOS Stream 9 is now officially supported; CentOS 8 has been dropped (:issue:`5181`)
