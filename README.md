@@ -1,6 +1,6 @@
 <div align="center">
 
-[<img alt height="70" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
+[<img alt height="65" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
 
 # NFD: Named Data Networking Forwarding Daemon
 
@@ -13,8 +13,8 @@
 
 ## Overview
 
-NFD is a network forwarder that implements and evolves together with the Named Data
-Networking (NDN) [protocol](https://named-data.net/doc/NDN-packet-spec/current/).
+NFD is a network forwarder that implements and evolves together with the Named
+Data Networking (NDN) [protocol](https://docs.named-data.net/NDN-packet-spec/).
 Since the initial public release in 2014, NFD has been a core component of the
 [NDN Platform](https://named-data.net/codebase/platform/).
 
@@ -34,13 +34,12 @@ various features, some of which may eventually work into the protocol spec.
 
 See [`docs/INSTALL.rst`](docs/INSTALL.rst) for compilation and installation instructions.
 
-Extensive documentation is available on NFD's [homepage](https://named-data.net/doc/NFD/).
+Extensive documentation is available on NFD's [homepage](https://docs.named-data.net/NFD/).
 
 ## Reporting bugs
 
-Bug reports and feedback are highly appreciated and can be submitted through the
-[NFD issue tracker](https://redmine.named-data.net/projects/nfd/issues) or the
-[ndn-interest mailing list](http://www.lists.cs.ucla.edu/mailman/listinfo/ndn-interest).
+Please submit any bug reports or feature requests to the
+[NFD issue tracker](https://redmine.named-data.net/projects/nfd/issues).
 
 ## Contributing
 
@@ -50,13 +49,13 @@ it already contains significant contributions from people outside the project te
 [`AUTHORS.md`](AUTHORS.md)).  We strongly encourage participation from all interested parties,
 since broader community support is key for NDN to succeed as a new Internet architecture.
 
-If you are new to the NDN software community, please read [`README-dev.md`](README-dev.md)
-and the [Contributor's Guide](https://github.com/named-data/.github/blob/master/CONTRIBUTING.md)
-to get started.
+Contributions to NFD are greatly appreciated and can be made through our
+[Gerrit code review site](https://gerrit.named-data.net/).
+If you are new to the NDN software community, please read our
+[Contributor's Guide](https://github.com/named-data/.github/blob/main/CONTRIBUTING.md)
+and [`README-dev.md`](README-dev.md) to get started.
 
 ## License
 
-NFD is a free and open-source software package licensed under the GPL version 3 and
-is the centerpiece of our committement to making NDN's core technology free and open
-to all Internet users and developers. For more information about licensing, refer to
-[`COPYING.md`](COPYING.md).
+NFD is free software distributed under the GNU General Public License version 3.
+See [`COPYING.md`](COPYING.md) for details.

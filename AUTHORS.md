@@ -2,7 +2,7 @@
 
 The following lists maintainers, primary developers, and all much-appreciated contributors to NFD in alphabetical order.
 The specific contributions of individual authors can be obtained from the git history of the [official NFD repository](https://github.com/named-data/NFD).
-If you would like to become a contributor to the official repository, please follow the recommendations in <https://github.com/named-data/.github/blob/master/CONTRIBUTING.md>.
+If you would like to become a contributor to the official repository, please follow the recommendations in <https://github.com/named-data/.github/blob/main/CONTRIBUTING.md>.
 
 * Jerald Paul Abraham <https://cs.arizona.edu/~jeraldabraham>
 * ***(Maintainer)*** Alexander Afanasyev <https://users.cs.fiu.edu/~afanasyev>

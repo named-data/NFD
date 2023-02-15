@@ -48,7 +48,7 @@ For developers
   A comprehensive guide to the design and implementation of NFD. The developer's guide
   also contains suggestions and hints for anyone wanting to modify or extend NFD.
 
-* `NDN Software Contributor's Guide <https://github.com/named-data/.github/blob/master/CONTRIBUTING.md>`__
+* `NDN Software Contributor's Guide <https://github.com/named-data/.github/blob/main/CONTRIBUTING.md>`__
   (guide for newcomers to the NDN community of software)
 
 * `NFD Wiki <https://redmine.named-data.net/projects/nfd/wiki>`__

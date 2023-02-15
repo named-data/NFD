@@ -1,7 +1,7 @@
 # Notes for NFD developers
 
-If you are new to the NDN software community, please read the
-[Contributor's Guide](https://github.com/named-data/.github/blob/master/CONTRIBUTING.md).
+If you are new to the NDN software community, please read our
+[Contributor's Guide](https://github.com/named-data/.github/blob/main/CONTRIBUTING.md).
 
 ## Code style
 
@@ -9,11 +9,9 @@ NFD code is subject to [NFD code style](https://redmine.named-data.net/projects/
 
 ## Licensing
 
-Contributions to NFD must be licensed under the GPL 3.0 or compatible license.  If you
-are choosing GPL 3.0, please use the following license boilerplate in all `.hpp` and
-`.cpp` files:
-
-Include the following license boilerplate into all `.hpp` and `.cpp` files:
+Contributions to NFD must be licensed under the GPL v3 or a compatible license.
+If you choose the GPL v3, please use the following license boilerplate in all `.hpp`
+and `.cpp` files:
 
     /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
     /*

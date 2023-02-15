@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2022,  Regents of the University of California,
+Copyright (c) 2014-2023,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -341,7 +341,9 @@ def version(ctx):
         Logs.warn('%s is not writable (%s)' % (versionFile, e.strerror))
 
 def dist(ctx):
+    ctx.algo = 'tar.xz'
     version(ctx)
 
 def distcheck(ctx):
+    ctx.algo = 'tar.xz'
     version(ctx)
