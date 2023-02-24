@@ -3,7 +3,7 @@ message: If you use NFD in your research, please cite it as below.
 license: GPL-3.0-or-later
 repository-code: "https://github.com/named-data/NFD"
 title: Named Data Networking Forwarding Daemon
-url: "https://named-data.net/doc/NFD/"
+url: "https://docs.named-data.net/NFD/"
 preferred-citation:
   authors:
     - name: Named Data Networking Project Team

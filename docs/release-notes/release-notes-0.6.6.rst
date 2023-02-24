@@ -5,8 +5,8 @@ Release date: April 29, 2019
 
 .. note::
    This is the last release to support the `NDN packet format version 0.2.1
-   <https://named-data.net/doc/NDN-packet-spec/0.2.1/>`__. The next release will support
-   only the `v0.3 packet format <https://named-data.net/doc/NDN-packet-spec/0.3/>`__.
+   <https://docs.named-data.net/NDN-packet-spec/0.2.1/>`__. The next release will support
+   only the `v0.3 packet format <https://docs.named-data.net/NDN-packet-spec/0.3/>`__.
 
 New features
 ^^^^^^^^^^^^

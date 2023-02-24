@@ -7,7 +7,7 @@ This is an incomplete list of features that are implemented in NFD version 0.1.0
 
 - **Packet Format**
 
-  + `NDN-TLV <https://named-data.net/doc/NDN-packet-spec/0.1/>`__
+  + `NDN-TLV <https://docs.named-data.net/NDN-packet-spec/0.1/>`__
   + LocalControlHeader, to allow apps to set outgoing face and learn incoming face
 
 - **Faces**

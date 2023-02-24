@@ -352,7 +352,7 @@ rib
   ;   ; trust-anchors, which are briefly defined in this file.  For more information refer to
   ;   ; validator configuration file format documentation:
   ;   ;
-  ;   ;    https://named-data.net/doc/ndn-cxx/current/tutorials/security-validator-config.html
+  ;   ;    https://docs.named-data.net/ndn-cxx/current/tutorials/security-validator-config.html
   ;   ;
   ;   ; A trust-anchor is a pre-trusted certificate.  This can be any certificate that is the
   ;   ; root of certification chain (e.g., NDN testbed root certificate) or an existing

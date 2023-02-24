@@ -18,7 +18,7 @@ NFD: Named Data Networking Forwarding Daemon
    releases
 
 **NFD** is a network forwarder that implements and evolves together with the Named Data
-Networking (NDN) `protocol <https://named-data.net/doc/NDN-packet-spec/current/>`__.
+Networking (NDN) `protocol <https://docs.named-data.net/NDN-packet-spec/current/>`__.
 NFD is a core component of the `NDN Platform <https://named-data.net/codebase/platform/>`__.
 
 Documentation
@@ -64,7 +64,7 @@ For developers
 Issues
 ------
 
-Please submit any bugs or feature requests to the
+Please submit any bug reports or feature requests to the
 `NFD issue tracker <https://redmine.named-data.net/projects/nfd/issues>`__.
 
 License

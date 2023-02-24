@@ -1,9 +1,6 @@
 name: Docs
 on:
   push:
-    paths-ignore:
-      - '*.md'
-      - '.mailmap'
   workflow_dispatch:
     inputs:
       skip-deploy:

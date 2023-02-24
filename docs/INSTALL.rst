@@ -91,7 +91,7 @@ checkout the correct release tag (e.g., ``*-0.8.1``) from both repositories.
 Prerequisites
 ~~~~~~~~~~~~~
 
-Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`__
+Install the `ndn-cxx library <https://docs.named-data.net/ndn-cxx/current/INSTALL.html>`__
 and its prerequisites.
 
 On Linux, NFD needs the following dependencies to enable optional features:
@@ -278,7 +278,7 @@ of NDN using the following applications and libraries.
 
 Sample applications:
 
-    + `Simple examples using the ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`__
+    + `Simple examples using the ndn-cxx library <https://docs.named-data.net/ndn-cxx/current/examples.html>`__
     + `Simple examples using the python-ndn library <https://python-ndn.readthedocs.io/en/latest/src/examples/basic_app.html>`__
 
 Real applications and libraries:

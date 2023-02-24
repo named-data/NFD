@@ -6,7 +6,7 @@ Release date: January 13, 2020
 New features
 ^^^^^^^^^^^^
 
-- Support only `NDN packet format version 0.3 <https://named-data.net/doc/NDN-packet-spec/0.3/>`__
+- Support only `NDN packet format version 0.3 <https://docs.named-data.net/NDN-packet-spec/0.3/>`__
   (:issue:`4805`, :issue:`4581`, :issue:`4913`)
 
 - Initial support for ``PitToken`` (:issue:`4532`)
