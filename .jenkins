@@ -32,6 +32,9 @@ if [[ $JOB_NAME == *"code-coverage" ]]; then
     export DISABLE_HEADERS_CHECK=yes
 fi
 
+# https://reproducible-builds.org/docs/source-date-epoch/
+export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+
 for file in .jenkins.d/*; do
     [[ -f $file && -x $file ]] || continue
 
