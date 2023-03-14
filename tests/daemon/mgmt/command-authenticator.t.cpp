@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(MissingKeyLocator)
   BOOST_CHECK_EQUAL(authorize1_V02(
     [] (Interest& interest) {
       ndn::SignatureInfo sigInfo(interest.getName().at(ndn::command_interest::POS_SIG_INFO).blockFromValue());
-      sigInfo.setKeyLocator(ndn::nullopt);
+      sigInfo.setKeyLocator(std::nullopt);
       setNameComponent(interest, ndn::command_interest::POS_SIG_INFO, span(sigInfo.wireEncode()));
     }
   ), false);
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(MissingKeyLocator)
   BOOST_CHECK_EQUAL(authorize1_V03(
     [] (Interest& interest) {
       auto sigInfo = interest.getSignatureInfo().value();
-      sigInfo.setKeyLocator(ndn::nullopt);
+      sigInfo.setKeyLocator(std::nullopt);
       interest.setSignatureInfo(sigInfo);
     }
   ), false);
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(MissingTimestamp)
   BOOST_CHECK_EQUAL(authorize1_V03(
     [] (Interest& interest) {
       auto sigInfo = interest.getSignatureInfo().value();
-      sigInfo.setTime(ndn::nullopt);
+      sigInfo.setTime(std::nullopt);
       interest.setSignatureInfo(sigInfo);
     }
   ), false);

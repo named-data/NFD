@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ makeInterest(const Name& name, bool canBePrefix, std::optional<time::millisecond
   if (lifetime) {
     interest->setInterestLifetime(*lifetime);
   }
-  interest->setNonce(nonce ? ndn::make_optional(*nonce) : ndn::nullopt);
+  interest->setNonce(nonce);
   return interest;
 }
 
@@ -71,24 +71,15 @@ makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
   ndn::PrefixAnnouncement pa;
   pa.setAnnouncedName(announcedName);
   pa.setExpiration(expiration);
-  pa.setValidityPeriod(validity ? ndn::make_optional(*validity) : ndn::nullopt);
+  pa.setValidityPeriod(validity);
   return pa;
-}
-
-ndn::PrefixAnnouncement
-makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
-              std::pair<time::seconds, time::seconds> validityFromNow)
-{
-  auto now = time::system_clock::now();
-  return makePrefixAnn(announcedName, expiration,
-    ndn::security::ValidityPeriod(now + validityFromNow.first, now + validityFromNow.second));
 }
 
 ndn::PrefixAnnouncement
 signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
               const ndn::security::SigningInfo& si, std::optional<uint64_t> version)
 {
-  pa.toData(keyChain, si, version ? ndn::make_optional(*version) : ndn::nullopt);
+  pa.toData(keyChain, si, version);
   return std::move(pa);
 }
 

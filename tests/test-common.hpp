@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -86,7 +86,7 @@ makeNack(Interest interest, lp::NackReason reason);
 
 /**
  * \brief Replace a name component in a packet
- * \param[inout] pkt the packet
+ * \param[in,out] pkt the packet
  * \param index the index of the name component to replace
  * \param args arguments to name::Component constructor
  */
@@ -105,16 +105,6 @@ setNameComponent(Packet& pkt, ssize_t index, Args&& ...args)
 ndn::PrefixAnnouncement
 makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
               std::optional<ndn::security::ValidityPeriod> validity = std::nullopt);
-
-/**
- * \brief Create a prefix announcement without signing
- * \param announcedName announced name
- * \param expiration expiration period
- * \param validityFromNow validity period, relative from now
- */
-ndn::PrefixAnnouncement
-makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
-              std::pair<time::seconds, time::seconds> validityFromNow);
 
 /**
  * \brief Sign a prefix announcement

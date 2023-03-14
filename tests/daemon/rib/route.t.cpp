@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(NoValidity)
 
 BOOST_AUTO_TEST_CASE(BeforeNotBefore)
 {
-  auto pa = makePrefixAnn("/A", 212_s, {10_s, 80_s});
+  auto pa = makePrefixAnn("/A", 212_s, ndn::security::ValidityPeriod::makeRelative(10_s, 80_s));
   Route route(pa, 1053);
   BOOST_CHECK_LE(route.annExpires, time::steady_clock::now());
   BOOST_REQUIRE(route.expires);
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(BeforeNotBefore)
 
 BOOST_AUTO_TEST_CASE(AfterNotAfter)
 {
-  auto pa = makePrefixAnn("/A", 212_s, {-80_s, -10_s});
+  auto pa = makePrefixAnn("/A", 212_s, ndn::security::ValidityPeriod::makeRelative(-80_s, -10_s));
   Route route(pa, 2972);
   BOOST_CHECK_LE(route.annExpires, time::steady_clock::now());
   BOOST_REQUIRE(route.expires);
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(AfterNotAfter)
 
 BOOST_AUTO_TEST_CASE(ExpirationLtValidity)
 {
-  auto pa = makePrefixAnn("/A", 212_s, {-100_s, 300_s});
+  auto pa = makePrefixAnn("/A", 212_s, ndn::security::ValidityPeriod::makeRelative(-100_s, 300_s));
   Route route(pa, 7804);
   BOOST_CHECK_EQUAL(route.annExpires, time::steady_clock::now() + 212_s);
   BOOST_REQUIRE(route.expires);
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(ExpirationLtValidity)
 
 BOOST_AUTO_TEST_CASE(ValidityLtExpiration)
 {
-  auto pa = makePrefixAnn("/A", 212_s, {-100_s, 200_s});
+  auto pa = makePrefixAnn("/A", 212_s, ndn::security::ValidityPeriod::makeRelative(-100_s, 200_s));
   Route route(pa, 7804);
   BOOST_CHECK_EQUAL(route.annExpires, time::steady_clock::now() + 200_s);
   BOOST_REQUIRE(route.expires);

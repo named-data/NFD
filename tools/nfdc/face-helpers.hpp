@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -72,7 +72,7 @@ public:
   /** \brief Find face by FaceId or FaceUri.
    *  \param faceIdOrUri either a FaceId (uint64_t) or a FaceUri
    *  \param allowMulti effective only if \p faceIdOrUri contains a FaceUri
-   *  \throw ndn::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
+   *  \throw std::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
    */
   Code
   execute(const std::any& faceIdOrUri, bool allowMulti = false);
