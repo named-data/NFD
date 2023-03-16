@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,8 +78,6 @@ namespace nfd {
 
 using std::size_t;
 
-using boost::noncopyable;
-
 using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
@@ -90,12 +88,13 @@ using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
 
+using std::to_string;
 using namespace std::string_literals;
 using namespace std::string_view_literals;
 
-using ndn::span;
-using ndn::to_string;
+using boost::noncopyable;
 
+using ndn::span;
 using ndn::Block;
 using ndn::Data;
 using ndn::FaceUri;
@@ -116,6 +115,7 @@ namespace scheduler = ndn::scheduler;
 namespace signal = ndn::util::signal;
 namespace time = ndn::time;
 using namespace ndn::time_literals;
+
 using ndn::operator""_block;
 
 } // namespace nfd

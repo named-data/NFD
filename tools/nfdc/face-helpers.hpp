@@ -28,6 +28,9 @@
 
 #include "execute-command.hpp"
 
+#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
+
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::FaceQueryFilter;

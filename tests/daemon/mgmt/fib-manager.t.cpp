@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
   receiveInterest(req);
 
   ControlResponse expected(414, "FIB entry prefix cannot exceed " +
-                                ndn::to_string(Fib::getMaxDepth()) + " components");
+                           std::to_string(Fib::getMaxDepth()) + " components");
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expected), CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(checkNextHop(prefix), CheckNextHopResult::NO_FIB_ENTRY);

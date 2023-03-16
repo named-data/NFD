@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "module.hpp"
 
+#include <ndn-cxx/mgmt/nfd/channel-status.hpp>
+
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::ChannelStatus;
@@ -35,7 +37,7 @@ using ndn::nfd::ChannelStatus;
 /** \brief Provides access to NFD channel dataset.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
  */
-class ChannelModule : public Module, noncopyable
+class ChannelModule : public Module, boost::noncopyable
 {
 public:
   void

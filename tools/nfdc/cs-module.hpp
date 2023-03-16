@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,10 @@
 #ifndef NFD_TOOLS_NFDC_CS_MODULE_HPP
 #define NFD_TOOLS_NFDC_CS_MODULE_HPP
 
-#include "command-parser.hpp"
 #include "module.hpp"
+#include "command-parser.hpp"
+
+#include <ndn-cxx/mgmt/nfd/cs-info.hpp>
 
 namespace nfd::tools::nfdc {
 
@@ -36,7 +38,7 @@ using ndn::nfd::CsInfo;
 /** \brief Provides access to NFD CS management.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
-class CsModule : public Module, noncopyable
+class CsModule : public Module, boost::noncopyable
 {
 public:
   /** \brief Register 'cs config' command.

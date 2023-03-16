@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,17 +26,19 @@
 #ifndef NFD_TOOLS_NFDC_MODULE_HPP
 #define NFD_TOOLS_NFDC_MODULE_HPP
 
-#include "core/common.hpp"
 #include <ndn-cxx/mgmt/nfd/command-options.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
+
+#include <ostream>
 
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::CommandOptions;
 using ndn::nfd::Controller;
 
-/** \brief Provides access to an NFD management module.
- *  \note This type is an interface. It should not have member fields.
+/**
+ * \brief Provides access to an NFD management module.
+ * \note This type is an interface. It should not have any member fields.
  */
 class Module
 {

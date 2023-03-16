@@ -32,8 +32,8 @@ GIT_TAG_PREFIX = 'NFD-'
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['default-compiler-flags',
-              'coverage', 'pch', 'sanitizers', 'boost',
+    opt.load(['default-compiler-flags', 'pch',
+              'coverage', 'sanitizers', 'boost',
               'dependency-checker', 'unix-socket', 'websocket',
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
@@ -82,8 +82,8 @@ int main()
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
-               'default-compiler-flags', 'boost',
-               'pch', 'dependency-checker', 'websocket',
+               'default-compiler-flags', 'pch',
+               'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
     conf.env.WITH_TESTS = conf.options.with_tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_TOOLS_NFDC_STATUS_REPORT_HPP
 #define NFD_TOOLS_NFDC_STATUS_REPORT_HPP
 
+#include "core/common.hpp"
 #include "module.hpp"
 
 #include <ndn-cxx/face.hpp>
@@ -46,9 +47,10 @@ enum class ReportFormat {
 std::ostream&
 operator<<(std::ostream& os, ReportFormat fmt);
 
-/** \brief Collects and prints NFD status report.
+/**
+ * \brief Collects and prints NFD status report.
  */
-class StatusReport : noncopyable
+class StatusReport : boost::noncopyable
 {
 public:
 #ifdef NFD_WITH_TESTS
