@@ -32,9 +32,9 @@
 namespace nfd::tools::nfdc {
 
 void
-ForwarderGeneralModule::fetchStatus(Controller& controller,
+ForwarderGeneralModule::fetchStatus(ndn::nfd::Controller& controller,
                                     const std::function<void()>& onSuccess,
-                                    const Controller::DatasetFailCallback& onFailure,
+                                    const ndn::nfd::DatasetFailureCallback& onFailure,
                                     const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::ForwarderGeneralStatusDataset>(

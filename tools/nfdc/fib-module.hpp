@@ -35,16 +35,17 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::FibEntry;
 using ndn::nfd::NextHopRecord;
 
-/** \brief Provides access to NFD FIB management.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
+/**
+ * \brief Provides access to NFD FIB management.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
 class FibModule : public Module, boost::noncopyable
 {
 public:
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void

@@ -363,9 +363,9 @@ FaceModule::destroy(ExecuteContext& ctx)
 }
 
 void
-FaceModule::fetchStatus(Controller& controller,
+FaceModule::fetchStatus(ndn::nfd::Controller& controller,
                         const std::function<void()>& onSuccess,
-                        const Controller::DatasetFailCallback& onFailure,
+                        const ndn::nfd::DatasetFailureCallback& onFailure,
                         const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::FaceDataset>(

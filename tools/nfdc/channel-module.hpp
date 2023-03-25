@@ -34,16 +34,17 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::ChannelStatus;
 
-/** \brief Provides access to NFD channel dataset.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
+/**
+ * \brief Provides access to NFD channel dataset.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
  */
 class ChannelModule : public Module, boost::noncopyable
 {
 public:
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,10 +37,10 @@ ndn::nfd::CommandOptions
 ExecuteContext::makeCommandOptions() const
 {
   return ndn::nfd::CommandOptions()
-           .setTimeout(time::duration_cast<time::milliseconds>(this->getTimeout()));
+         .setTimeout(time::duration_cast<time::milliseconds>(this->getTimeout()));
 }
 
-Controller::CommandFailCallback
+ndn::nfd::CommandFailureCallback
 ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
 {
   return [=] (const ControlResponse& resp) {
@@ -49,7 +49,7 @@ ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
   };
 }
 
-Controller::DatasetFailCallback
+ndn::nfd::DatasetFailureCallback
 ExecuteContext::makeDatasetFailureHandler(const std::string& datasetName)
 {
   return [=] (uint32_t code, const std::string& reason) {

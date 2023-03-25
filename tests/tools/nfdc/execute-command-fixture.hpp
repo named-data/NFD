@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ protected:
     registerCommands(parser);
     auto [noun, verb, ca, exec] = parser.parse(args, ParseMode::ONE_SHOT);
 
-    Controller controller(face, m_keyChain);
+    ndn::nfd::Controller controller(face, m_keyChain);
     ExecuteContext ctx{noun, verb, ca, 0, out, err, face, m_keyChain, controller};
     exec(ctx);
     exitCode = ctx.exitCode;

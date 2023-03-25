@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,15 +60,15 @@ public:
   void
   setResult(uint32_t res, time::nanoseconds delay)
   {
-    BOOST_ASSERT(delay > time::nanoseconds::zero());
+    BOOST_ASSERT(delay > 0_ns);
     m_res = res;
     m_delay = delay;
   }
 
   void
-  fetchStatus(Controller&,
+  fetchStatus(ndn::nfd::Controller&,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions&) final
   {
     ++nFetchStatusCalls;
@@ -151,7 +151,7 @@ protected:
 protected:
   ndn::util::DummyClientFace face;
   ValidatorNull validator;
-  Controller controller;
+  ndn::nfd::Controller controller;
   StatusReportTester report;
 
   uint32_t res;

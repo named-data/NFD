@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -154,9 +154,9 @@ main(int argc, char** argv)
   }
 
   try {
-    Face face;
-    KeyChain keyChain;
-    Controller controller(face, keyChain);
+    ndn::Face face;
+    ndn::KeyChain keyChain;
+    ndn::nfd::Controller controller(face, keyChain);
     size_t commandCounter = 0;
     for (auto& command : commands) {
       ++commandCounter;

@@ -35,8 +35,9 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::CsInfo;
 
-/** \brief Provides access to NFD CS management.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
+/**
+ * \brief Provides access to NFD CS management.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
 class CsModule : public Module, boost::noncopyable
 {
@@ -57,9 +58,9 @@ public:
   erase(ExecuteContext& ctx);
 
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void

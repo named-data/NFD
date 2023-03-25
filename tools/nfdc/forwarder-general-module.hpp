@@ -34,16 +34,17 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::ForwarderStatus;
 
-/** \brief Provides access to NFD forwarder general status.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
+/**
+ * \brief Provides access to NFD forwarder general status.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
  */
 class ForwarderGeneralModule : public Module, boost::noncopyable
 {
 public:
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void

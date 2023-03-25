@@ -35,10 +35,6 @@
 
 namespace nfd::tools::nfdc {
 
-using ndn::Face;
-using ndn::KeyChain;
-using ndn::security::Validator;
-
 enum class ReportFormat {
   XML = 1,
   TEXT = 2,
@@ -66,26 +62,30 @@ public:
    *          otherwise, error code from any failed section, plus 1000000 * section index
    */
   uint32_t
-  collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options);
+  collect(ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::Validator& validator,
+          const CommandOptions& options);
 
-  /** \brief Print an XML report.
-   *  \param os output stream
+  /**
+   * \brief Print an XML report.
+   * \param os output stream
    */
   void
   formatXml(std::ostream& os) const;
 
-  /** \brief Print a text report.
-   *  \param os output stream
+  /**
+   * \brief Print a text report.
+   * \param os output stream
    */
   void
   formatText(std::ostream& os) const;
 
 private:
   NFD_VIRTUAL_WITH_TESTS void
-  processEvents(Face& face);
+  processEvents(ndn::Face& face);
 
 public:
-  /** \brief Modules through which status is collected.
+  /**
+   * \brief Modules through which status is collected.
    */
   std::vector<unique_ptr<Module>> sections;
 };

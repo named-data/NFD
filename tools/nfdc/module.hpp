@@ -34,7 +34,6 @@
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::CommandOptions;
-using ndn::nfd::Controller;
 
 /**
  * \brief Provides access to an NFD management module.
@@ -54,9 +53,9 @@ public:
    *  \param options passed to controller.fetch
    */
   virtual void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) = 0;
 
   /** \brief Format collected status as XML.

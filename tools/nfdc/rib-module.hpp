@@ -36,8 +36,9 @@ namespace nfd::tools::nfdc {
 using ndn::nfd::RibEntry;
 using ndn::nfd::Route;
 
-/** \brief Provides access to NFD RIB management.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
+/**
+ * \brief Provides access to NFD RIB management.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
  */
 class RibModule : public Module, boost::noncopyable
 {
@@ -68,9 +69,9 @@ public:
   remove(ExecuteContext& ctx);
 
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void

@@ -302,9 +302,9 @@ RibModule::remove(ExecuteContext& ctx)
 }
 
 void
-RibModule::fetchStatus(Controller& controller,
+RibModule::fetchStatus(ndn::nfd::Controller& controller,
                        const std::function<void()>& onSuccess,
-                       const Controller::DatasetFailCallback& onFailure,
+                       const ndn::nfd::DatasetFailureCallback& onFailure,
                        const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::RibDataset>(

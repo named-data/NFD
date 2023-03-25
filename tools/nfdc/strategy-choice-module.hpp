@@ -35,8 +35,9 @@ namespace nfd::tools::nfdc {
 
 using ndn::nfd::StrategyChoice;
 
-/** \brief Provides access to NFD Strategy Choice management.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
+/**
+ * \brief Provides access to NFD Strategy Choice management.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
  */
 class StrategyChoiceModule : public Module, boost::noncopyable
 {
@@ -67,9 +68,9 @@ public:
   unset(ExecuteContext& ctx);
 
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(ndn::nfd::Controller& controller,
               const std::function<void()>& onSuccess,
-              const Controller::DatasetFailCallback& onFailure,
+              const ndn::nfd::DatasetFailureCallback& onFailure,
               const CommandOptions& options) override;
 
   void
