@@ -112,7 +112,7 @@ using namespace ndn::tlv;
 namespace lp = ndn::lp;
 namespace name = ndn::name;
 namespace scheduler = ndn::scheduler;
-namespace signal = ndn::util::signal;
+namespace signal = ndn::signal;
 namespace time = ndn::time;
 using namespace ndn::time_literals;
 

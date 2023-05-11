@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,8 @@
 
 namespace ndn::autoconfig {
 
-/** \brief A discovery stage.
+/**
+ * \brief A discovery stage.
  */
 class Stage : boost::noncopyable
 {
@@ -76,17 +77,19 @@ private:
   doStart() = 0;
 
 public:
-  /** \brief Signal when a HUB FaceUri is found.
+  /**
+   * \brief Signal emitted when a HUB FaceUri is found.
    *
-   *  Argument is HUB FaceUri, may not be canonical.
+   * Argument is HUB FaceUri, may not be canonical.
    */
-  util::Signal<Stage, FaceUri> onSuccess;
+  signal::Signal<Stage, FaceUri> onSuccess;
 
-  /** \brief Signal when discovery fails.
+  /**
+   * \brief Signal emitted when discovery fails.
    *
-   *  Argument is error message.
+   * Argument is error message.
    */
-  util::Signal<Stage, std::string> onFailure;
+  signal::Signal<Stage, std::string> onFailure;
 
 private:
   bool m_isInProgress = false;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,11 +74,12 @@ private:
   registerPrefixes(uint64_t hubFaceId, size_t index = 0);
 
 public:
-  /** \brief Signal when procedure completes.
+  /**
+   * \brief Signal emitted when the procedure completes.
    *
-   *  Argument indicates whether the procedure succeeds (true) or fails (false).
+   * Argument indicates whether the procedure succeeds (true) or fails (false).
    */
-  util::Signal<Procedure, bool> onComplete;
+  signal::Signal<Procedure, bool> onComplete;
 
 NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   std::vector<unique_ptr<Stage>> m_stages;

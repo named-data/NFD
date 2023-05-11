@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -146,7 +146,7 @@ public: // verify
   concatenateResponses(size_t startIndex = 0, size_t nResponses = 0);
 
 protected:
-  ndn::util::DummyClientFace m_face{g_io, m_keyChain, {true, true}};
+  ndn::DummyClientFace m_face{g_io, m_keyChain, {true, true}};
   Dispatcher m_dispatcher{m_face, m_keyChain};
   std::vector<Data>& m_responses{m_face.sentData};
 };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,18 +48,15 @@ public:
 
 private:
   void
-  addNextHop(const Name& topPrefix, const Interest& interest,
-             ControlParameters parameters,
+  addNextHop(const Interest& interest, ControlParameters parameters,
              const ndn::mgmt::CommandContinuation& done);
 
   void
-  removeNextHop(const Name& topPrefix, const Interest& interest,
-                ControlParameters parameters,
+  removeNextHop(const Interest& interest, ControlParameters parameters,
                 const ndn::mgmt::CommandContinuation& done);
 
   void
-  listEntries(const Name& topPrefix, const Interest& interest,
-              ndn::mgmt::StatusDatasetContext& context);
+  listEntries(ndn::mgmt::StatusDatasetContext& context);
 
 private:
   void

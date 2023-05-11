@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,16 +48,19 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
 {
   // register handlers for ControlCommand
   registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
-    std::bind(&FaceManager::createFace, this, _4, _5));
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { createFace(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
-    std::bind(&FaceManager::updateFace, this, _3, _4, _5));
+    [this] (auto&&, auto&&, auto&&... args) { updateFace(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
-    std::bind(&FaceManager::destroyFace, this, _4, _5));
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { destroyFace(std::forward<decltype(args)>(args)...); });
 
   // register handlers for StatusDataset
-  registerStatusDatasetHandler("list", std::bind(&FaceManager::listFaces, this, _3));
-  registerStatusDatasetHandler("channels", std::bind(&FaceManager::listChannels, this, _3));
-  registerStatusDatasetHandler("query", std::bind(&FaceManager::queryFaces, this, _2, _3));
+  registerStatusDatasetHandler("list",
+    [this] (auto&&, auto&&, auto&&... args) { listFaces(std::forward<decltype(args)>(args)...); });
+  registerStatusDatasetHandler("channels",
+    [this] (auto&&, auto&&, auto&&... args) { listChannels(std::forward<decltype(args)>(args)...); });
+  registerStatusDatasetHandler("query",
+    [this] (auto&&, auto&&... args) { queryFaces(std::forward<decltype(args)>(args)...); });
 
   // register notification stream
   m_postNotification = registerNotificationStream("events");

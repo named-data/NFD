@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,6 @@
 
 namespace nfd::cs::lru {
 
-const std::string LruPolicy::POLICY_NAME = "lru";
 NFD_REGISTER_CS_POLICY(LruPolicy);
 
 LruPolicy::LruPolicy()

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,10 +40,10 @@ class Policy : noncopyable
 public: // registry
   template<typename P>
   static void
-  registerPolicy(const std::string& policyName = P::POLICY_NAME)
+  registerPolicy(std::string_view policyName = P::POLICY_NAME)
   {
     BOOST_ASSERT(!policyName.empty());
-    auto r = getRegistry().insert_or_assign(policyName, [] { return make_unique<P>(); });
+    auto r = getRegistry().insert_or_assign(std::string(policyName), [] { return make_unique<P>(); });
     BOOST_VERIFY(r.second);
   }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,8 +51,7 @@ private:
    * \brief Provides the general status dataset.
    */
   void
-  listGeneralStatus(const Name& topPrefix, const Interest& interest,
-                    ndn::mgmt::StatusDatasetContext& context);
+  listGeneralStatus(ndn::mgmt::StatusDatasetContext& context);
 
 private:
   Forwarder& m_forwarder;

@@ -149,7 +149,7 @@ protected:
   }
 
 protected:
-  ndn::util::DummyClientFace face;
+  ndn::DummyClientFace face;
   ValidatorNull validator;
   ndn::nfd::Controller controller;
   StatusReportTester report;

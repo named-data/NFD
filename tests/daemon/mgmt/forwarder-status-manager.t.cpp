@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ protected:
   FaceTable m_faceTable;
   Forwarder m_forwarder;
   ForwarderStatusManager m_manager;
-  time::system_clock::TimePoint m_startTime;
+  time::system_clock::time_point m_startTime;
 };
 
 BOOST_AUTO_TEST_SUITE(Mgmt)

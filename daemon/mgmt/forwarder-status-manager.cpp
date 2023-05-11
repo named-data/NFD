@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@ ForwarderStatusManager::ForwarderStatusManager(Forwarder& forwarder, Dispatcher&
   , m_startTimestamp(time::system_clock::now())
 {
   m_dispatcher.addStatusDataset("status/general", ndn::mgmt::makeAcceptAllAuthorization(),
-                                std::bind(&ForwarderStatusManager::listGeneralStatus, this, _1, _2, _3));
+    [this] (auto&&, auto&&, auto&& ctx) { listGeneralStatus(std::forward<decltype(ctx)>(ctx)); });
 }
 
 ndn::nfd::ForwarderStatus
@@ -67,8 +67,7 @@ ForwarderStatusManager::collectGeneralStatus()
 }
 
 void
-ForwarderStatusManager::listGeneralStatus(const Name&, const Interest&,
-                                          ndn::mgmt::StatusDatasetContext& context)
+ForwarderStatusManager::listGeneralStatus(ndn::mgmt::StatusDatasetContext& context)
 {
   auto status = this->collectGeneralStatus();
   const auto& wire = status.wireEncode();

@@ -178,7 +178,7 @@ protected:
   unique_ptr<RibManager> manager;
 
 private:
-  ndn::util::DummyClientFace m_face;
+  ndn::DummyClientFace m_face;
   ndn::nfd::Controller m_nfdController;
   Dispatcher m_dispatcher;
   MockFibUpdater m_fibUpdater;

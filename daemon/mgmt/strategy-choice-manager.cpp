@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,12 +43,11 @@ StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
   , m_table(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
-    std::bind(&StrategyChoiceManager::setStrategy, this, _4, _5));
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { setStrategy(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::StrategyChoiceUnsetCommand>("unset",
-    std::bind(&StrategyChoiceManager::unsetStrategy, this, _4, _5));
-
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { unsetStrategy(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("list",
-    std::bind(&StrategyChoiceManager::listChoices, this, _3));
+    [this] (auto&&, auto&&, auto&&... args) { listChoices(std::forward<decltype(args)>(args)...); });
 }
 
 void

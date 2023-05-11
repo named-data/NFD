@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -68,9 +68,6 @@ public:
 
   ~PriorityFifoPolicy() final;
 
-public:
-  static const std::string POLICY_NAME;
-
 private:
   void
   doAfterInsert(EntryRef i) final;
@@ -110,6 +107,9 @@ private:
    */
   void
   moveToStaleQueue(EntryRef i);
+
+public:
+  static constexpr std::string_view POLICY_NAME{"priority_fifo"};
 
 private:
   Queue m_queues[QUEUE_MAX];

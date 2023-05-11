@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,11 +38,11 @@ CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCounters,
   , m_fwCounters(fwCounters)
 {
   registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
-    std::bind(&CsManager::changeConfig, this, _4, _5));
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { changeConfig(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::CsEraseCommand>("erase",
-    std::bind(&CsManager::erase, this, _4, _5));
-
-  registerStatusDatasetHandler("info", std::bind(&CsManager::serveInfo, this, _1, _2, _3));
+    [this] (auto&&, auto&&, auto&&, auto&&... args) { erase(std::forward<decltype(args)>(args)...); });
+  registerStatusDatasetHandler("info",
+    [this] (auto&&, auto&&, auto&&... args) { serveInfo(std::forward<decltype(args)>(args)...); });
 }
 
 void
@@ -99,7 +99,7 @@ CsManager::erase(const ControlParameters& parameters,
 }
 
 void
-CsManager::serveInfo(const Name&, const Interest&, ndn::mgmt::StatusDatasetContext& context) const
+CsManager::serveInfo(ndn::mgmt::StatusDatasetContext& context) const
 {
   ndn::nfd::CsInfo info;
   info.setCapacity(m_cs.getLimit());

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ protected:
   }
 
 protected:
-  util::DummyClientFace face{{true, true}};
+  DummyClientFace face{{true, true}};
   unique_ptr<Program> program;
 };
 
@@ -88,12 +88,11 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
   }
   this->initialize(options);
 
-  util::DummyClientFace clientFace(face.getIoService());
+  DummyClientFace clientFace(face.getIoService());
   clientFace.linkTo(face);
 
   Name baseName("/localhop/nfd/rib/routable-prefixes");
-  auto fetcher = util::SegmentFetcher::start(clientFace, Interest(baseName),
-                                             security::getAcceptAllValidator());
+  auto fetcher = SegmentFetcher::start(clientFace, Interest(baseName), security::getAcceptAllValidator());
   fetcher->afterSegmentReceived.connect([baseName] (const Data& data) {
     const Name& dataName = data.getName();
     BOOST_CHECK_EQUAL(dataName.size(), baseName.size() + 2);

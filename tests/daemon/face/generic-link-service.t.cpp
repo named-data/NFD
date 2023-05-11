@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
   options.allowCongestionMarking = true;
   options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, 65536);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -594,7 +594,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt1(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt1.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 2);
   lp::Packet pkt2(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt2.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 }
@@ -615,7 +615,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   options.allowCongestionMarking = true;
   options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, 65536);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt0(transport->sentPackets.back());
   BOOST_REQUIRE_EQUAL(pkt0.count<lp::CongestionMarkField>(), 0);
-  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + 100_ms;
+  auto nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
 
   time::nanoseconds markingInterval(
@@ -747,7 +747,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 9);
   lp::Packet pkt8(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt8.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 4);
 
@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 14);
   lp::Packet pkt13(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt13.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 6);
 
@@ -847,7 +847,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 16);
   lp::Packet pkt15(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt15.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 6);
 }
@@ -858,7 +858,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   options.allowCongestionMarking = true;
   options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, QUEUE_UNSUPPORTED);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -873,7 +873,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt1(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt1.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -883,7 +883,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 2);
   lp::Packet pkt2(transport->sentPackets.back());
   BOOST_CHECK_EQUAL(pkt2.count<lp::CongestionMarkField>(), 0);
-  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::time_point::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);
 
@@ -893,7 +893,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 3);
   lp::Packet pkt3(transport->sentPackets.back());
   BOOST_REQUIRE_EQUAL(pkt3.count<lp::CongestionMarkField>(), 0);
-  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + 100_ms;
+  auto nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 0);

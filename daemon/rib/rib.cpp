@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -410,14 +410,16 @@ Rib::sendBatchFromQueue()
   UpdateQueueItem item = std::move(m_updateBatches.front());
   m_updateBatches.pop_front();
 
-  RibUpdateBatch& batch = item.batch;
-
   // Until task #1698, each RibUpdateBatch contains exactly one RIB update
-  BOOST_ASSERT(batch.size() == 1);
+  BOOST_ASSERT(item.batch.size() == 1);
 
-  auto fibSuccessCb = std::bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
-  auto fibFailureCb = std::bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
-  m_fibUpdater->computeAndSendFibUpdates(batch, fibSuccessCb, fibFailureCb);
+  m_fibUpdater->computeAndSendFibUpdates(item.batch,
+    [this, batch = item.batch, successCb = item.managerSuccessCallback] (const auto& routes) {
+      onFibUpdateSuccess(batch, routes, successCb);
+    },
+    [this, failureCb = item.managerFailureCallback] (const auto& code, const auto& error) {
+      onFibUpdateFailure(failureCb, code, error);
+    });
 }
 
 void

@@ -60,11 +60,11 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
-    std::bind(&RibManager::registerEntry, this, _2, _3, _4, _5));
+    [this] (auto&&, auto&&, auto&&... args) { registerEntry(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::RibUnregisterCommand>("unregister",
-    std::bind(&RibManager::unregisterEntry, this, _2, _3, _4, _5));
-
-  registerStatusDatasetHandler("list", std::bind(&RibManager::listEntries, this, _1, _2, _3));
+    [this] (auto&&, auto&&, auto&&... args) { unregisterEntry(std::forward<decltype(args)>(args)...); });
+  registerStatusDatasetHandler("list",
+    [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
 }
 
 void
@@ -215,8 +215,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
 }
 
 void
-RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
-                          ControlParameters parameters,
+RibManager::registerEntry(const Interest& interest, ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
   if (parameters.getName().size() > Fib::getMaxDepth()) {
@@ -246,8 +245,7 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
 }
 
 void
-RibManager::unregisterEntry(const Name&, const Interest& interest,
-                            ControlParameters parameters,
+RibManager::unregisterEntry(const Interest& interest, ControlParameters parameters,
                             const ndn::mgmt::CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
@@ -263,7 +261,7 @@ RibManager::unregisterEntry(const Name&, const Interest& interest,
 }
 
 void
-RibManager::listEntries(const Name&, const Interest&, ndn::mgmt::StatusDatasetContext& context)
+RibManager::listEntries(ndn::mgmt::StatusDatasetContext& context)
 {
   auto now = time::steady_clock::now();
   for (const auto& kv : m_rib) {
@@ -426,9 +424,8 @@ RibManager::fetchActiveFaces()
   NFD_LOG_DEBUG("Fetching active faces");
 
   m_nfdController.fetch<ndn::nfd::FaceDataset>(
-    std::bind(&RibManager::removeInvalidFaces, this, _1),
-    std::bind(&RibManager::onFetchActiveFacesFailure, this, _1, _2),
-    ndn::nfd::CommandOptions());
+    [this] (auto&&... args) { removeInvalidFaces(std::forward<decltype(args)>(args)...); },
+    [this] (auto&&... args) { onFetchActiveFacesFailure(std::forward<decltype(args)>(args)...); });
 }
 
 void

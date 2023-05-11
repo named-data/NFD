@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -67,13 +67,13 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 BOOST_AUTO_TEST_CASE(ExpirationTime)
 {
   TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::time_point::max());
 
   transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::time_point::max());
 
   transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::time_point::max());
 }
 
 BOOST_AUTO_TEST_CASE(IdleClose)

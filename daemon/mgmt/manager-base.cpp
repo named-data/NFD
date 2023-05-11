@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,13 +27,13 @@
 
 namespace nfd {
 
-ManagerBase::ManagerBase(const std::string& module, Dispatcher& dispatcher)
+ManagerBase::ManagerBase(std::string_view module, Dispatcher& dispatcher)
   : m_module(module)
   , m_dispatcher(dispatcher)
 {
 }
 
-ManagerBase::ManagerBase(const std::string& module, Dispatcher& dispatcher,
+ManagerBase::ManagerBase(std::string_view module, Dispatcher& dispatcher,
                          CommandAuthenticator& authenticator)
   : m_module(module)
   , m_dispatcher(dispatcher)

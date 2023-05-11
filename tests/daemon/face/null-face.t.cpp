@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(ExpirationTime)
 {
   auto transport = make_unique<NullTransport>();
 
-  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::time_point::max());
 }
 
 BOOST_AUTO_TEST_CASE(SendQueue)

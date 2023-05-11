@@ -200,22 +200,19 @@ private: // management Dispatcher related
   /** \brief Serve rib/register command.
    */
   void
-  registerEntry(const Name& topPrefix, const Interest& interest,
-                ControlParameters parameters,
+  registerEntry(const Interest& interest, ControlParameters parameters,
                 const ndn::mgmt::CommandContinuation& done);
 
   /** \brief Serve rib/unregister command.
    */
   void
-  unregisterEntry(const Name& topPrefix, const Interest& interest,
-                  ControlParameters parameters,
+  unregisterEntry(const Interest& interest, ControlParameters parameters,
                   const ndn::mgmt::CommandContinuation& done);
 
   /** \brief Serve rib/list dataset.
    */
   void
-  listEntries(const Name& topPrefix, const Interest& interest,
-              ndn::mgmt::StatusDatasetContext& context);
+  listEntries(ndn::mgmt::StatusDatasetContext& context);
 
   void
   setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters);

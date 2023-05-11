@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,10 +60,10 @@ public:
 public: // registry
   template<typename P>
   static void
-  registerPolicy(const std::string& policyName = P::POLICY_NAME)
+  registerPolicy(std::string_view policyName = P::POLICY_NAME)
   {
     BOOST_ASSERT(!policyName.empty());
-    auto r = getRegistry().insert_or_assign(policyName, [] { return make_unique<P>(); });
+    auto r = getRegistry().insert_or_assign(std::string(policyName), [] { return make_unique<P>(); });
     BOOST_VERIFY(r.second);
   }
 
@@ -96,7 +96,7 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 
 public:
-  static const std::string POLICY_NAME;
+  static constexpr std::string_view POLICY_NAME{"drop-all"};
 };
 
 /**
@@ -109,7 +109,7 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 
 public:
-  static const std::string POLICY_NAME;
+  static constexpr std::string_view POLICY_NAME{"admit-local"};
 };
 
 /**
@@ -122,7 +122,7 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 
 public:
-  static const std::string POLICY_NAME;
+  static constexpr std::string_view POLICY_NAME{"admit-network"};
 };
 
 /**
@@ -135,7 +135,7 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 
 public:
-  static const std::string POLICY_NAME;
+  static constexpr std::string_view POLICY_NAME{"admit-all"};
 };
 
 /**
@@ -146,9 +146,9 @@ using DefaultUnsolicitedDataPolicy = DropAllUnsolicitedDataPolicy;
 } // namespace nfd::fw
 
 /**
- * \brief Registers an unsolicited data policy
- * \param P A subclass of nfd::fw::UnsolicitedDataPolicy. \p P must have a static data
- *          member `POLICY_NAME` convertible to std::string that contains the policy name.
+ * \brief Registers an unsolicited data policy.
+ * \param P A subclass of nfd::fw::UnsolicitedDataPolicy. \p P must have a static const data
+ *          member `POLICY_NAME` convertible to std::string_view that contains the policy name.
  */
 #define NFD_REGISTER_UNSOLICITED_DATA_POLICY(P)                     \
 static class NfdAuto ## P ## UnsolicitedDataPolicyRegistrationClass \
