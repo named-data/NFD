@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,28 +28,41 @@
 namespace nfd::rib {
 
 FibUpdate
-FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
+FibUpdate::createAddUpdate(const Name& name, uint64_t faceId, uint64_t cost)
 {
   FibUpdate update;
-
   update.name = name;
   update.faceId = faceId;
   update.cost = cost;
   update.action = ADD_NEXTHOP;
-
   return update;
 }
 
 FibUpdate
-FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
+FibUpdate::createRemoveUpdate(const Name& name, uint64_t faceId)
 {
   FibUpdate update;
-
   update.name = name;
   update.faceId = faceId;
   update.action = REMOVE_NEXTHOP;
-
   return update;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const FibUpdate& update)
+{
+  os << "FibUpdate(" << update.name << ", "
+     << "faceid: " << update.faceId << ", ";
+
+  if (update.action == FibUpdate::ADD_NEXTHOP) {
+    os << "cost: " << update.cost << ", "
+       << "action: ADD_NEXTHOP";
+  }
+  else {
+    os << "action: REMOVE_NEXTHOP";
+  }
+
+  return os << ")";
 }
 
 } // namespace nfd::rib

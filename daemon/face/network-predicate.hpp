@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,15 +57,6 @@ public:
   assign(std::initializer_list<std::pair<std::string, std::string>> whitelist,
          std::initializer_list<std::pair<std::string, std::string>> blacklist);
 
-  bool
-  operator==(const NetworkPredicateBase& other) const;
-
-  bool
-  operator!=(const NetworkPredicateBase& other) const
-  {
-    return !this->operator==(other);
-  }
-
 private:
   virtual bool
   isRuleSupported(const std::string& key) = 0;
@@ -78,6 +69,20 @@ private:
 
   void
   parseList(std::set<std::string>& set, std::initializer_list<std::pair<std::string, std::string>> list);
+
+private: // non-member operators (hidden friends)
+  friend bool
+  operator==(const NetworkPredicateBase& lhs, const NetworkPredicateBase& rhs)
+  {
+    return lhs.m_whitelist == rhs.m_whitelist &&
+           lhs.m_blacklist == rhs.m_blacklist;
+  }
+
+  friend bool
+  operator!=(const NetworkPredicateBase& lhs, const NetworkPredicateBase& rhs)
+  {
+    return !(lhs == rhs);
+  }
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   std::set<std::string> m_whitelist;

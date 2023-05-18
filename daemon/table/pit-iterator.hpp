@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,16 +70,17 @@ public:
   Iterator
   operator++(int);
 
-  bool
-  operator==(const Iterator& other) const
+  friend bool
+  operator==(const Iterator& lhs, const Iterator& rhs) noexcept
   {
-    return m_ntIt == other.m_ntIt && m_iPitEntry == other.m_iPitEntry;
+    return lhs.m_ntIt == rhs.m_ntIt &&
+           lhs.m_iPitEntry == rhs.m_iPitEntry;
   }
 
-  bool
-  operator!=(const Iterator& other) const
+  friend bool
+  operator!=(const Iterator& lhs, const Iterator& rhs) noexcept
   {
-    return !this->operator==(other);
+    return !(lhs == rhs);
   }
 
 private:

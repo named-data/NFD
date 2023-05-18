@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -186,11 +186,10 @@ FibUpdater::sendUpdates(const FibUpdateList& updates,
                         const FibUpdateSuccessCallback& onSuccess,
                         const FibUpdateFailureCallback& onFailure)
 {
-  std::string updateString = (updates.size() == 1) ? " update" : " updates";
-  NFD_LOG_DEBUG("Applying " << updates.size() << updateString << " to FIB");
+  NFD_LOG_DEBUG("Applying " << updates.size() << " FIB update(s)");
 
   for (const FibUpdate& update : updates) {
-    NFD_LOG_DEBUG("Sending FIB update: " << update);
+    NFD_LOG_DEBUG("Sending " << update);
 
     if (update.action == FibUpdate::ADD_NEXTHOP) {
       sendAddNextHopUpdate(update, onSuccess, onFailure);
@@ -283,7 +282,7 @@ FibUpdater::onUpdateError(const FibUpdate& update,
 {
   uint32_t code = response.getCode();
   NFD_LOG_DEBUG("Failed to apply " << update <<
-                " (code: " << code << ", error: " << response.getText() << ")");
+                " [code: " << code << ", error: " << response.getText() << "]");
 
   if (code == ndn::nfd::Controller::ERROR_TIMEOUT && nTimeouts < MAX_NUM_TIMEOUTS) {
     sendAddNextHopUpdate(update, onSuccess, onFailure, ++nTimeouts);

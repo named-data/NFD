@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,14 +37,15 @@
 
 namespace nfd::rib {
 
-/** \brief Represents a route for a name prefix.
+/**
+ * \brief Represents a route for a name prefix.
  */
 class Route : public ndn::nfd::RouteFlagsTraits<Route>
 {
 public:
   /** \brief Default constructor.
    */
-  Route() = default;
+  Route();
 
   /** \brief Construct from a prefix announcement.
    *  \param ann a prefix announcement that has passed verification
@@ -76,6 +77,24 @@ public:
     return flags;
   }
 
+public: // non-member operators (hidden friends)
+  friend bool
+  operator==(const Route& lhs, const Route& rhs)
+  {
+    return lhs.faceId == rhs.faceId &&
+           lhs.origin == rhs.origin &&
+           lhs.cost == rhs.cost &&
+           lhs.flags == rhs.flags &&
+           lhs.expires == rhs.expires &&
+           lhs.announcement == rhs.announcement;
+  }
+
+  friend bool
+  operator!=(const Route& lhs, const Route& rhs)
+  {
+    return !(lhs == rhs);
+  }
+
 public:
   uint64_t faceId = 0;
   ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
@@ -102,15 +121,6 @@ public:
 private:
   scheduler::EventId m_expirationEvent;
 };
-
-bool
-operator==(const Route& lhs, const Route& rhs);
-
-inline bool
-operator!=(const Route& lhs, const Route& rhs)
-{
-  return !(lhs == rhs);
-}
 
 std::ostream&
 operator<<(std::ostream& os, const Route& route);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,7 +63,7 @@ Network::getMaxRangeV6()
 }
 
 bool
-Network::isValidCidr(std::string_view cidr)
+Network::isValidCidr(std::string_view cidr) noexcept
 {
   auto pos = cidr.find('/');
   if (pos == std::string::npos) {

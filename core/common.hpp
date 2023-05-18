@@ -114,9 +114,9 @@ namespace name = ndn::name;
 namespace scheduler = ndn::scheduler;
 namespace signal = ndn::signal;
 namespace time = ndn::time;
-using namespace ndn::time_literals;
 
-using ndn::operator""_block;
+using namespace ndn::block_literals;
+using namespace ndn::time_literals;
 
 } // namespace nfd
 

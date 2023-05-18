@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -88,14 +88,14 @@ public:
   Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);
 
   const Entry&
-  operator*() const
+  operator*() const noexcept
   {
     BOOST_ASSERT(m_impl != nullptr);
     return *m_entry;
   }
 
   const Entry*
-  operator->() const
+  operator->() const noexcept
   {
     BOOST_ASSERT(m_impl != nullptr);
     return m_entry;
@@ -107,13 +107,16 @@ public:
   Iterator
   operator++(int);
 
-  bool
-  operator==(const Iterator& other) const;
-
-  bool
-  operator!=(const Iterator& other) const
+  friend bool
+  operator==(const Iterator& lhs, const Iterator& rhs) noexcept
   {
-    return !this->operator==(other);
+    return lhs.m_entry == rhs.m_entry;
+  }
+
+  friend bool
+  operator!=(const Iterator& lhs, const Iterator& rhs) noexcept
+  {
+    return !(lhs == rhs);
   }
 
 private:

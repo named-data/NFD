@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -161,13 +161,6 @@ IpAddressPredicate::isRuleValid(const std::string& key, const std::string& value
   else {
     NDN_THROW(std::logic_error("Only supported rules are expected"));
   }
-}
-
-bool
-NetworkPredicateBase::operator==(const NetworkPredicateBase& other) const
-{
-  return this->m_whitelist == other.m_whitelist &&
-         this->m_blacklist == other.m_blacklist;
 }
 
 static bool

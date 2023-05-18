@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,64 +30,48 @@
 
 namespace nfd::rib {
 
-/** \class FibUpdate
- *  \brief represents a FIB update
+/**
+ * \brief Represents a FIB update.
  */
 class FibUpdate
 {
 public:
-  FibUpdate()
-    : faceId(0)
-    , cost(0)
-  {
-  }
-
-  bool
-  operator==(const FibUpdate& other) const
-  {
-    return (this->name == other.name &&
-            this->faceId == other.faceId &&
-            this->cost == other.cost &&
-            this->action == other.action);
-  }
-
-  static FibUpdate
-  createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost);
-
-  static FibUpdate
-  createRemoveUpdate(const Name& name, const uint64_t faceId);
-
   enum Action {
     ADD_NEXTHOP    = 0,
-    REMOVE_NEXTHOP = 1
+    REMOVE_NEXTHOP = 1,
   };
+
+  static FibUpdate
+  createAddUpdate(const Name& name, uint64_t faceId, uint64_t cost);
+
+  static FibUpdate
+  createRemoveUpdate(const Name& name, uint64_t faceId);
+
+public: // non-member operators (hidden friends)
+  friend bool
+  operator==(const FibUpdate& lhs, const FibUpdate& rhs) noexcept
+  {
+    return lhs.name == rhs.name &&
+           lhs.faceId == rhs.faceId &&
+           lhs.cost == rhs.cost &&
+           lhs.action == rhs.action;
+  }
+
+  friend bool
+  operator!=(const FibUpdate& lhs, const FibUpdate& rhs) noexcept
+  {
+    return !(lhs == rhs);
+  }
 
 public:
   Name name;
-  uint64_t faceId;
-  uint64_t cost;
+  uint64_t faceId = 0;
+  uint64_t cost = 0;
   Action action;
 };
 
-inline std::ostream&
-operator<<(std::ostream& os, const FibUpdate& update)
-{
-  os << "FibUpdate("
-     << " Name: " << update.name << ", "
-     << "faceId: " << update.faceId << ", ";
-
-  if (update.action == FibUpdate::ADD_NEXTHOP) {
-    os << "cost: " << update.cost << ", "
-       << "action: ADD_NEXTHOP";
-  }
-  else {
-    os << "action: REMOVE_NEXTHOP";
-  }
-
-  os << ")";
-
-  return os;
-}
+std::ostream&
+operator<<(std::ostream& os, const FibUpdate& update);
 
 } // namespace nfd::rib
 

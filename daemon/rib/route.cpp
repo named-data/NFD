@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,6 +31,8 @@ namespace nfd::rib {
 
 constexpr uint64_t PA_ROUTE_COST = 2048; // cost of route created by prefix announcement
 
+Route::Route() = default;
+
 static time::steady_clock::time_point
 computeExpiration(const ndn::PrefixAnnouncement& ann)
 {
@@ -59,17 +61,6 @@ Route::Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId)
 {
 }
 
-bool
-operator==(const Route& lhs, const Route& rhs)
-{
-  return lhs.faceId == rhs.faceId &&
-         lhs.origin == rhs.origin &&
-         lhs.flags == rhs.flags &&
-         lhs.cost == rhs.cost &&
-         lhs.expires == rhs.expires &&
-         lhs.announcement == rhs.announcement;
-}
-
 std::ostream&
 operator<<(std::ostream& os, const Route& route)
 {
@@ -78,18 +69,19 @@ operator<<(std::ostream& os, const Route& route)
      << ", origin: " << route.origin
      << ", cost: " << route.cost
      << ", flags: " << ndn::AsHex{route.flags};
+
   if (route.expires) {
     os << ", expires in: " << time::duration_cast<time::milliseconds>(*route.expires - time::steady_clock::now());
   }
   else {
     os << ", never expires";
   }
+
   if (route.announcement) {
     os << ", announcement: (" << *route.announcement << ')';
   }
-  os << ')';
 
-  return os;
+  return os << ')';
 }
 
 } // namespace nfd::rib

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,14 +32,11 @@ operator<<(std::ostream& os, RibUpdate::Action action)
 {
   switch (action) {
   case RibUpdate::REGISTER:
-    os << "REGISTER";
-    break;
+    return os << "REGISTER";
   case RibUpdate::UNREGISTER:
-    os << "UNREGISTER";
-    break;
+    return os << "UNREGISTER";
   case RibUpdate::REMOVE_FACE:
-    os << "REMOVE_FACE";
-    break;
+    return os << "REMOVE_FACE";
   }
   return os;
 }

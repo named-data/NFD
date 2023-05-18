@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ public:
           const boost::asio::ip::address& maxAddress);
 
   bool
-  doesContain(const boost::asio::ip::address& address) const
+  doesContain(const boost::asio::ip::address& address) const noexcept
   {
     return m_minAddress <= address && address <= m_maxAddress;
   }
@@ -52,29 +52,31 @@ public:
   getMaxRangeV6();
 
   static bool
-  isValidCidr(std::string_view cidr);
+  isValidCidr(std::string_view cidr) noexcept;
 
-  bool
-  operator==(const Network& rhs) const
+private: // non-member operators
+  friend bool
+  operator==(const Network& lhs, const Network& rhs) noexcept
   {
-    return m_minAddress == rhs.m_minAddress && m_maxAddress == rhs.m_maxAddress;
+    return lhs.m_minAddress == rhs.m_minAddress &&
+           lhs.m_maxAddress == rhs.m_maxAddress;
   }
 
-  bool
-  operator!=(const Network& rhs) const
+  friend bool
+  operator!=(const Network& lhs, const Network& rhs) noexcept
   {
-    return !(*this == rhs);
+    return !(lhs == rhs);
   }
-
-private:
-  boost::asio::ip::address m_minAddress;
-  boost::asio::ip::address m_maxAddress;
 
   friend std::ostream&
   operator<<(std::ostream& os, const Network& network);
 
   friend std::istream&
   operator>>(std::istream& is, Network& network);
+
+private:
+  boost::asio::ip::address m_minAddress;
+  boost::asio::ip::address m_maxAddress;
 };
 
 std::ostream&
