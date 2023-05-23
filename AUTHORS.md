@@ -19,6 +19,7 @@ If you would like to become a contributor to the official repository, please fol
 * Nick Gordon <https://github.com/gorgonical>
 * Giulio Grassi <https://www.lip6.fr/actualite/personnes-fiche.php?ident=D1461>
 * Yi Huang <https://www.linkedin.com/in/yihuang1991>
+* Alexander Lane <https://github.com/awlane>
 * Jongseok Lee <https://github.com/imwhiz>
 * Spencer Lee <https://www.linkedin.com/in/spenlee>
 * Vince Lehman <http://vslehman.com>
