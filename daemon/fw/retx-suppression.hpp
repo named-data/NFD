@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,22 +26,12 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
 
-#include "core/common.hpp"
-
 namespace nfd::fw {
 
 enum class RetxSuppressionResult {
-  /** \brief Interest is new (not a retransmission)
-   */
-  NEW,
-
-  /** \brief Interest is retransmission and should be forwarded
-   */
-  FORWARD,
-
-  /** \brief Interest is retransmission and should be suppressed
-   */
-  SUPPRESS
+  NEW,      ///< Interest is new (not a retransmission).
+  FORWARD,  ///< Interest is a retransmission and should be forwarded.
+  SUPPRESS, ///< Interest is a retransmission and should be suppressed.
 };
 
 } // namespace nfd::fw

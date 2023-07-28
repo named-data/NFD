@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -490,9 +490,10 @@ public:
 
 } // namespace nfd::fw
 
-/** \brief Registers a strategy
+/**
+ * \brief Registers a forwarding strategy.
  *
- *  This macro should appear once in .cpp of each strategy.
+ * This macro should appear once in the `.cpp` of each strategy.
  */
 #define NFD_REGISTER_STRATEGY(S)                       \
 static class NfdAuto ## S ## StrategyRegistrationClass \
@@ -503,5 +504,26 @@ public:                                                \
     ::nfd::fw::Strategy::registerType<S>();            \
   }                                                    \
 } g_nfdAuto ## S ## StrategyRegistrationVariable
+
+/// Logs the reception of \p interest on \p ingress, followed by \p msg, at DEBUG level.
+#define NFD_LOG_INTEREST_FROM(interest, ingress, msg)  \
+  NFD_LOG_DEBUG("interest=" << (interest).getName() << \
+                " nonce=" << (interest).getNonce() <<  \
+                " from=" << (ingress) <<               \
+                ' ' << msg)
+
+/// Logs the reception of \p data on \p ingress, followed by \p msg, at DEBUG level.
+#define NFD_LOG_DATA_FROM(data, ingress, msg)          \
+  NFD_LOG_DEBUG("data=" << (data).getName() <<         \
+                " from=" << (ingress) <<               \
+                ' ' << msg)
+
+/// Logs the reception of \p nack on \p ingress, followed by \p msg, at DEBUG level.
+#define NFD_LOG_NACK_FROM(nack, ingress, msg)                   \
+  NFD_LOG_DEBUG("nack=" << (nack).getInterest().getName() <<    \
+                " nonce=" << (nack).getInterest().getNonce() << \
+                " reason=" << (nack).getReason() <<             \
+                " from=" << (ingress) <<                        \
+                ' ' << msg)
 
 #endif // NFD_DAEMON_FW_STRATEGY_HPP

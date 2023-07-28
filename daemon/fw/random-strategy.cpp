@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,8 +66,7 @@ RandomStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoin
                [&] (const auto& nh) { return isNextHopEligible(ingress.face, interest, nh, pitEntry); });
 
   if (nhs.empty()) {
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " no nexthop");
-
+    NFD_LOG_INTEREST_FROM(interest, ingress, "no-nexthop");
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);
     this->sendNack(nackHeader, ingress.face, pitEntry);

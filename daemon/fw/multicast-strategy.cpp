@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -67,10 +67,9 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
-    RetxSuppressionResult suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
-
+    auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
-      NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
+      NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId() << " suppressed");
       continue;
     }
 
@@ -78,7 +77,7 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
       continue;
     }
 
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
+    NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId());
     auto* sentOutRecord = this->sendInterest(interest, outFace, pitEntry);
     if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression->incrementIntervalForOutRecord(*sentOutRecord);
@@ -93,16 +92,15 @@ MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
   // no need to check for suppression, as it is a new next hop
 
   auto nextHopFaceId = nextHop.getFace().getId();
-  auto& interest = pitEntry->getInterest();
+  const auto& interest = pitEntry->getInterest();
 
   // try to find an incoming face record that doesn't violate scope restrictions
   for (const auto& r : pitEntry->getInRecords()) {
     auto& inFace = r.getFace();
+
     if (isNextHopEligible(inFace, interest, nextHop, pitEntry)) {
-
-      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " pitEntry-to=" << nextHopFaceId);
+      NFD_LOG_INTEREST_FROM(interest, inFace.getId(), "new-nexthop to=" << nextHopFaceId);
       this->sendInterest(interest, nextHop.getFace(), pitEntry);
-
       break; // just one eligible incoming face record is enough
     }
   }

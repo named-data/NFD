@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,6 @@
 
 #include "asf-strategy.hpp"
 #include "algorithm.hpp"
-#include "common/global.hpp"
 #include "common/logger.hpp"
 
 namespace nfd::fw::asf {
@@ -75,11 +74,11 @@ AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& 
   if (!hasPendingOutRecords(*pitEntry)) {
     auto* faceToUse = getBestFaceForForwarding(interest, ingress.face, fibEntry, pitEntry);
     if (faceToUse == nullptr) {
-      NFD_LOG_DEBUG(interest << " new-interest from=" << ingress << " no-nexthop");
+      NFD_LOG_INTEREST_FROM(interest, ingress, "new no-nexthop");
       sendNoRouteNack(ingress.face, pitEntry);
     }
     else {
-      NFD_LOG_DEBUG(interest << " new-interest from=" << ingress << " forward-to=" << faceToUse->getId());
+      NFD_LOG_INTEREST_FROM(interest, ingress, "new forward-to=" << faceToUse->getId());
       forwardInterest(interest, *faceToUse, fibEntry, pitEntry);
       sendProbe(interest, ingress, *faceToUse, fibEntry, pitEntry);
     }
@@ -91,13 +90,12 @@ AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& 
     auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, *faceToUse);
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
       // Cannot be sent on this face, interest was received within the suppression window
-      NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress
-                    << " forward-to=" << faceToUse->getId() << " suppressed");
+      NFD_LOG_INTEREST_FROM(interest, ingress, "retx forward-to=" << faceToUse->getId() << " suppressed");
     }
     else {
       // The retx arrived after the suppression period: forward it but don't probe, because
       // probing was done earlier for this interest when it was newly received
-      NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress << " forward-to=" << faceToUse->getId());
+      NFD_LOG_INTEREST_FROM(interest, ingress, "retx forward-to=" << faceToUse->getId());
       auto* outRecord = forwardInterest(interest, *faceToUse, fibEntry, pitEntry);
       if (outRecord && suppressResult == RetxSuppressionResult::FORWARD) {
         m_retxSuppression->incrementIntervalForOutRecord(*outRecord);
@@ -111,17 +109,16 @@ AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& 
   const auto& nexthops = fibEntry.getNextHops();
   auto it = findEligibleNextHopWithEarliestOutRecord(ingress.face, interest, nexthops, pitEntry);
   if (it == nexthops.end()) {
-    NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress << " no eligible nexthop");
+    NFD_LOG_INTEREST_FROM(interest, ingress, "retx no-nexthop");
     return;
   }
   auto& outFace = it->getFace();
   auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
   if (suppressResult == RetxSuppressionResult::SUPPRESS) {
-    NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress
-                  << " retry-to=" << outFace.getId() << " suppressed");
+    NFD_LOG_INTEREST_FROM(interest, ingress, "retx retry-to=" << outFace.getId() << " suppressed");
   }
   else {
-    NFD_LOG_DEBUG(interest << " retx-interest from=" << ingress << " retry-to=" << outFace.getId());
+    NFD_LOG_INTEREST_FROM(interest, ingress, "retx retry-to=" << outFace.getId());
     // sendInterest() is used here instead of forwardInterest() because the measurements info
     // were already attached to this face in the previous forwarding
     auto* outRecord = sendInterest(interest, outFace, pitEntry);
@@ -137,25 +134,24 @@ AsfStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress
 {
   NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
   if (namespaceInfo == nullptr) {
-    NFD_LOG_DEBUG(pitEntry->getName() << " data from=" << ingress << " no-measurements");
+    NFD_LOG_DATA_FROM(data, ingress, "no-measurements");
     return;
   }
 
   // Record the RTT between the Interest out to Data in
   FaceInfo* faceInfo = namespaceInfo->getFaceInfo(ingress.face.getId());
   if (faceInfo == nullptr) {
-    NFD_LOG_DEBUG(pitEntry->getName() << " data from=" << ingress << " no-face-info");
+    NFD_LOG_DATA_FROM(data, ingress, "no-face-info");
     return;
   }
 
   auto outRecord = pitEntry->getOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) {
-    NFD_LOG_DEBUG(pitEntry->getName() << " data from=" << ingress << " no-out-record");
+    NFD_LOG_DATA_FROM(data, ingress, "no-out-record");
   }
   else {
     faceInfo->recordRtt(time::steady_clock::now() - outRecord->getLastRenewed());
-    NFD_LOG_DEBUG(pitEntry->getName() << " data from=" << ingress
-                  << " rtt=" << faceInfo->getLastRtt() << " srtt=" << faceInfo->getSrtt());
+    NFD_LOG_DATA_FROM(data, ingress, "rtt=" << faceInfo->getLastRtt() << " srtt=" << faceInfo->getSrtt());
   }
 
   // Extend lifetime for measurements associated with Face
@@ -169,7 +165,7 @@ void
 AsfStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                               const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG(nack.getInterest() << " nack from=" << ingress << " reason=" << nack.getReason());
+  NFD_LOG_NACK_FROM(nack, ingress, "");
   onTimeoutOrNack(pitEntry->getName(), ingress.face.getId(), true);
 }
 
@@ -213,7 +209,8 @@ AsfStrategy::sendProbe(const Interest& interest, const FaceEndpoint& ingress, co
 
   Interest probeInterest(interest);
   probeInterest.refreshNonce();
-  NFD_LOG_TRACE("Sending probe " << probeInterest << " to=" << faceToProbe->getId());
+  NFD_LOG_DEBUG("Sending probe " << probeInterest.getName() << " nonce=" << probeInterest.getNonce()
+                << " to=" << faceToProbe->getId() << " trigger-nonce=" << interest.getNonce());
   forwardInterest(probeInterest, *faceToProbe, fibEntry, pitEntry);
 
   m_probing.afterForwardingProbe(fibEntry, interest.getName());

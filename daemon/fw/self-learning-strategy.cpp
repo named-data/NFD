@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,7 +76,7 @@ SelfLearningStrategy::afterReceiveInterest(const Interest& interest, const FaceE
   if (isNonDiscovery) { // "non-discovery" Interest
     inRecordInfo->isNonDiscoveryInterest = true;
     if (nexthops.empty()) { // return NACK if no matching FIB entry exists
-      NFD_LOG_DEBUG("NACK non-discovery Interest=" << interest << " from=" << ingress << " noNextHop");
+      NFD_LOG_INTEREST_FROM(interest, ingress, "non-discovery no-nexthop");
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
       this->sendNack(nackHeader, ingress.face, pitEntry);
@@ -104,7 +104,7 @@ SelfLearningStrategy::afterReceiveData(const Data& data, const FaceEndpoint& ing
 {
   auto outRecord = pitEntry->getOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) {
-    NFD_LOG_DEBUG("Data " << data.getName() << " from=" << ingress << " no out-record");
+    NFD_LOG_DATA_FROM(data, ingress, "no-out-record");
     return;
   }
 
@@ -132,11 +132,11 @@ void
 SelfLearningStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                                        const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("Nack for " << nack.getInterest() << " from=" << ingress
-                << " reason=" << nack.getReason());
+  NFD_LOG_NACK_FROM(nack, ingress, "");
+
   if (nack.getReason() == lp::NackReason::NO_ROUTE) { // remove FIB entries
     BOOST_ASSERT(this->lookupFib(*pitEntry).hasNextHops());
-    NFD_LOG_DEBUG("Send NACK to all downstreams");
+    NFD_LOG_DEBUG("Send Nack to all downstreams");
     this->sendNacks(nack.getHeader(), pitEntry);
     renewRoute(nack.getInterest().getName(), ingress.face.getId(), 0_ms);
   }
@@ -153,8 +153,7 @@ SelfLearningStrategy::broadcastInterest(const Interest& interest, const Face& in
       continue;
     }
 
-    NFD_LOG_DEBUG("send discovery Interest=" << interest << " from=" << inFace.getId() <<
-                  " to=" << outFace.getId());
+    NFD_LOG_INTEREST_FROM(interest, inFace.getId(), "send discovery to=" << outFace.getId());
     auto outRecord = this->sendInterest(interest, outFace, pitEntry);
     if (outRecord != nullptr) {
       outRecord->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = false;
@@ -173,8 +172,7 @@ SelfLearningStrategy::multicastInterest(const Interest& interest, const Face& in
     }
 
     Face& outFace = nexthop.getFace();
-    NFD_LOG_DEBUG("send non-discovery Interest=" << interest << " from=" << inFace.getId() <<
-                  " to=" << outFace.getId());
+    NFD_LOG_INTEREST_FROM(interest, inFace.getId(), "send non-discovery to=" << outFace.getId());
     auto outRecord = this->sendInterest(interest, outFace, pitEntry);
     if (outRecord != nullptr) {
       outRecord->insertStrategyInfo<OutRecordInfo>().first->isNonDiscoveryInterest = true;
@@ -198,13 +196,13 @@ SelfLearningStrategy::asyncProcessData(const shared_ptr<pit::Entry>& pitEntry, c
             auto pitEntry = pitEntryWeak.lock();
             auto inFace = this->getFace(inFaceId);
             if (pitEntry && inFace) {
-              NFD_LOG_DEBUG("found PrefixAnnouncement=" << pa.getAnnouncedName());
+              NFD_LOG_DEBUG("Found PrefixAnnouncement=" << pa.getAnnouncedName());
               data.setTag(make_shared<lp::PrefixAnnouncementTag>(lp::PrefixAnnouncementHeader(pa)));
               this->sendDataToAll(data, pitEntry, *inFace);
               this->setExpiryTimer(pitEntry, 0_ms);
             }
             else {
-              NFD_LOG_DEBUG("PIT entry or Face no longer exists");
+              NFD_LOG_DEBUG("PIT entry or face no longer exists");
             }
           });
         }
