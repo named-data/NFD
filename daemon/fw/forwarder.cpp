@@ -183,6 +183,7 @@ Forwarder::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
   lp::Nack nack(interest);
   nack.setReason(lp::NackReason::DUPLICATE);
   ingress.face.sendNack(nack);
+  ++m_counters.nOutNacks;
 }
 
 void
@@ -271,6 +272,7 @@ Forwarder::onOutgoingInterest(const Interest& interest, Face& egress,
   // send Interest
   egress.sendInterest(interest);
   ++m_counters.nOutInterests;
+
   return &*it;
 }
 
