@@ -122,7 +122,7 @@ def add_supported_linkflags(self, linkflags):
     self.env.prepend_value('LINKFLAGS', supportedFlags)
 
 
-class CompilerFlags(object):
+class CompilerFlags:
     def getCompilerVersion(self, conf):
         return tuple(int(i) for i in conf.env.CC_VERSION)
 
@@ -139,97 +139,99 @@ class CompilerFlags(object):
         return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': ['NDEBUG']}
 
 
-class GccBasicFlags(CompilerFlags):
+class GccClangCommonFlags(CompilerFlags):
     """
     This class defines common flags that work for both gcc and clang compilers.
     """
 
     def getGeneralFlags(self, conf):
-        flags = super(GccBasicFlags, self).getGeneralFlags(conf)
+        flags = super().getGeneralFlags(conf)
         flags['CXXFLAGS'] += ['-std=c++17']
         if Utils.unversioned_sys_platform() != 'darwin':
             flags['LINKFLAGS'] += ['-fuse-ld=lld']
         return flags
 
+    __cxxFlags = [
+        '-fdiagnostics-color',
+        '-Wall',
+        '-Wextra',
+        '-Wpedantic',
+        '-Wenum-conversion',
+        '-Wextra-semi',
+        '-Wnon-virtual-dtor',
+        '-Wno-unused-parameter',
+    ]
+    __linkFlags = ['-Wl,-O1']
+
     def getDebugFlags(self, conf):
-        flags = super(GccBasicFlags, self).getDebugFlags(conf)
-        flags['CXXFLAGS'] += ['-Og',
-                              '-g',
-                              '-Wall',
-                              '-Wextra',
-                              '-Wpedantic',
-                              '-Werror',
-                              '-Wcatch-value=2',
-                              '-Wextra-semi',
-                              '-Wnon-virtual-dtor',
-                              '-Wno-error=deprecated-declarations', # Bug #3795
-                              '-Wno-error=maybe-uninitialized', # Bug #1615
-                              '-Wno-unused-parameter',
-                              ]
-        flags['LINKFLAGS'] += ['-Wl,-O1']
+        flags = super().getDebugFlags(conf)
+        flags['CXXFLAGS'] += ['-Og', '-g'] + self.__cxxFlags + [
+            '-Werror',
+            '-Wno-error=deprecated-declarations', # Bug #3795
+            '-Wno-error=maybe-uninitialized', # Bug #1615
+        ]
+        flags['LINKFLAGS'] += self.__linkFlags
         return flags
 
     def getOptimizedFlags(self, conf):
-        flags = super(GccBasicFlags, self).getOptimizedFlags(conf)
-        flags['CXXFLAGS'] += ['-O2',
-                              '-g1',
-                              '-Wall',
-                              '-Wextra',
-                              '-Wpedantic',
-                              '-Wcatch-value=2',
-                              '-Wextra-semi',
-                              '-Wnon-virtual-dtor',
-                              '-Wno-unused-parameter',
-                              ]
-        flags['LINKFLAGS'] += ['-Wl,-O1']
+        flags = super().getOptimizedFlags(conf)
+        flags['CXXFLAGS'] += ['-O2', '-g1'] + self.__cxxFlags
+        flags['LINKFLAGS'] += self.__linkFlags
         return flags
 
 
-class GccFlags(GccBasicFlags):
+class GccFlags(GccClangCommonFlags):
+    __cxxFlags = [
+        '-Wcatch-value=2',
+        '-Wcomma-subscript', # enabled by default in C++20
+        '-Wduplicated-branches',
+        '-Wduplicated-cond',
+        '-Wlogical-op',
+        '-Wredundant-tags',
+        '-Wvolatile', # enabled by default in C++20
+    ]
+
     def getDebugFlags(self, conf):
-        flags = super(GccFlags, self).getDebugFlags(conf)
-        flags['CXXFLAGS'] += ['-fdiagnostics-color',
-                              '-Wredundant-tags',
-                              ]
+        flags = super().getDebugFlags(conf)
+        flags['CXXFLAGS'] += self.__cxxFlags
         if platform.machine() == 'armv7l':
             flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
     def getOptimizedFlags(self, conf):
-        flags = super(GccFlags, self).getOptimizedFlags(conf)
-        flags['CXXFLAGS'] += ['-fdiagnostics-color',
-                              '-Wredundant-tags',
-                              ]
+        flags = super().getOptimizedFlags(conf)
+        flags['CXXFLAGS'] += self.__cxxFlags
         if platform.machine() == 'armv7l':
             flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
         return flags
 
 
-class ClangFlags(GccBasicFlags):
+class ClangFlags(GccClangCommonFlags):
     def getGeneralFlags(self, conf):
-        flags = super(ClangFlags, self).getGeneralFlags(conf)
+        flags = super().getGeneralFlags(conf)
         if Utils.unversioned_sys_platform() == 'darwin':
             # Bug #4296
             brewdir = '/opt/homebrew' if platform.machine() == 'arm64' else '/usr/local'
-            flags['CXXFLAGS'] += [['-isystem', f'{brewdir}/include'], # for Homebrew
-                                  ['-isystem', '/opt/local/include']] # for MacPorts
+            flags['CXXFLAGS'] += [
+                ['-isystem', f'{brewdir}/include'], # for Homebrew
+                ['-isystem', '/opt/local/include'], # for MacPorts
+            ]
         elif Utils.unversioned_sys_platform() == 'freebsd':
             # Bug #4790
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
         return flags
 
+    __cxxFlags = [
+        '-Wundefined-func-template',
+        '-Wno-unused-local-typedef', # Bugs #2657 and #3209
+    ]
+
     def getDebugFlags(self, conf):
-        flags = super(ClangFlags, self).getDebugFlags(conf)
-        flags['CXXFLAGS'] += ['-fcolor-diagnostics',
-                              '-Wundefined-func-template',
-                              '-Wno-unused-local-typedef', # Bugs #2657 and #3209
-                              ]
+        flags = super().getDebugFlags(conf)
+        flags['CXXFLAGS'] += self.__cxxFlags
         return flags
 
     def getOptimizedFlags(self, conf):
-        flags = super(ClangFlags, self).getOptimizedFlags(conf)
-        flags['CXXFLAGS'] += ['-fcolor-diagnostics',
-                              '-Wundefined-func-template',
-                              '-Wno-unused-local-typedef', # Bugs #2657 and #3209
-                              ]
+        flags = super().getOptimizedFlags(conf)
+        flags['CXXFLAGS'] += self.__cxxFlags
         return flags
