@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,9 +30,15 @@
 
 #include <unordered_set>
 
+#include <boost/range/concepts.hpp>
+#include <ndn-cxx/util/concepts.hpp>
+
 namespace nfd::tests {
 
 using namespace nfd::name_tree;
+
+NDN_CXX_ASSERT_FORWARD_ITERATOR(NameTree::const_iterator);
+BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestNameTree, GlobalIoFixture)

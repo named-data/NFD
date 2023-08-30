@@ -28,12 +28,14 @@
 
 #include "core/common.hpp"
 
+#include <boost/operators.hpp>
+
 namespace nfd::rib {
 
 /**
  * \brief Represents a FIB update.
  */
-class FibUpdate
+class FibUpdate : private boost::equality_comparable<FibUpdate>
 {
 public:
   enum Action {
@@ -55,12 +57,6 @@ public: // non-member operators (hidden friends)
            lhs.faceId == rhs.faceId &&
            lhs.cost == rhs.cost &&
            lhs.action == rhs.action;
-  }
-
-  friend bool
-  operator!=(const FibUpdate& lhs, const FibUpdate& rhs) noexcept
-  {
-    return !(lhs == rhs);
   }
 
 public:

@@ -40,7 +40,7 @@ namespace nfd::rib {
 /**
  * \brief Represents a route for a name prefix.
  */
-class Route : public ndn::nfd::RouteFlagsTraits<Route>
+class Route : public ndn::nfd::RouteFlagsTraits<Route>, private boost::equality_comparable<Route>
 {
 public:
   /** \brief Default constructor.
@@ -87,12 +87,6 @@ public: // non-member operators (hidden friends)
            lhs.flags == rhs.flags &&
            lhs.expires == rhs.expires &&
            lhs.announcement == rhs.announcement;
-  }
-
-  friend bool
-  operator!=(const Route& lhs, const Route& rhs)
-  {
-    return !(lhs == rhs);
   }
 
 public:

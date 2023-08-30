@@ -27,11 +27,13 @@
 #define NFD_CORE_NETWORK_HPP
 
 #include <boost/asio/ip/address.hpp>
+#include <boost/operators.hpp>
+
 #include <string_view>
 
 namespace nfd {
 
-class Network
+class Network : private boost::equality_comparable<Network>
 {
 public:
   Network();
@@ -60,12 +62,6 @@ private: // non-member operators
   {
     return lhs.m_minAddress == rhs.m_minAddress &&
            lhs.m_maxAddress == rhs.m_maxAddress;
-  }
-
-  friend bool
-  operator!=(const Network& lhs, const Network& rhs) noexcept
-  {
-    return !(lhs == rhs);
   }
 
   friend std::ostream&

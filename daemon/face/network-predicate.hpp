@@ -28,12 +28,14 @@
 
 #include "core/common.hpp"
 
+#include <boost/operators.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
+
 #include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd::face {
 
-class NetworkPredicateBase
+class NetworkPredicateBase : private boost::equality_comparable<NetworkPredicateBase>
 {
 public:
   NetworkPredicateBase();
@@ -76,12 +78,6 @@ private: // non-member operators (hidden friends)
   {
     return lhs.m_whitelist == rhs.m_whitelist &&
            lhs.m_blacklist == rhs.m_blacklist;
-  }
-
-  friend bool
-  operator!=(const NetworkPredicateBase& lhs, const NetworkPredicateBase& rhs)
-  {
-    return !(lhs == rhs);
   }
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED:

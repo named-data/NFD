@@ -28,6 +28,7 @@
 
 #include "name-tree-hashtable.hpp"
 
+#include <boost/operators.hpp>
 #include <boost/range/iterator_range_core.hpp>
 
 namespace nfd::name_tree {
@@ -74,15 +75,9 @@ class EnumerationImpl;
 /**
  * \brief NameTree iterator.
  */
-class Iterator
+class Iterator : public boost::forward_iterator_helper<Iterator, const Entry>
 {
 public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type        = const Entry;
-  using difference_type   = std::ptrdiff_t;
-  using pointer           = value_type*;
-  using reference         = value_type&;
-
   Iterator();
 
   Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);
@@ -94,29 +89,13 @@ public:
     return *m_entry;
   }
 
-  const Entry*
-  operator->() const noexcept
-  {
-    BOOST_ASSERT(m_impl != nullptr);
-    return m_entry;
-  }
-
   Iterator&
   operator++();
-
-  Iterator
-  operator++(int);
 
   friend bool
   operator==(const Iterator& lhs, const Iterator& rhs) noexcept
   {
     return lhs.m_entry == rhs.m_entry;
-  }
-
-  friend bool
-  operator!=(const Iterator& lhs, const Iterator& rhs) noexcept
-  {
-    return !(lhs == rhs);
   }
 
 private:

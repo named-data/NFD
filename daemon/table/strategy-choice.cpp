@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,11 +30,7 @@
 #include "common/logger.hpp"
 #include "fw/strategy.hpp"
 
-#include <ndn-cxx/util/concepts.hpp>
-
 namespace nfd::strategy_choice {
-
-NDN_CXX_ASSERT_FORWARD_ITERATOR(StrategyChoice::const_iterator);
 
 NFD_LOG_INIT(StrategyChoice);
 

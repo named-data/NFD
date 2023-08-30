@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,16 +37,21 @@ using ndn::nfd::ControlParameters;
 
 class FibUpdater;
 
-/** \brief References a route.
+/**
+ * \brief References a route.
  */
 struct RibRouteRef
 {
   shared_ptr<RibEntry> entry;
   RibEntry::const_iterator route;
-};
 
-bool
-operator<(const RibRouteRef& lhs, const RibRouteRef& rhs);
+  friend bool
+  operator<(const RibRouteRef& lhs, const RibRouteRef& rhs) noexcept
+  {
+    return std::tie(lhs.entry->getName(), lhs.route->faceId, lhs.route->origin) <
+           std::tie(rhs.entry->getName(), rhs.route->faceId, rhs.route->origin);
+  }
+};
 
 /**
  * \brief Represents the Routing Information Base.

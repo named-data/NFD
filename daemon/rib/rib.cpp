@@ -31,13 +31,6 @@ namespace nfd::rib {
 
 NFD_LOG_INIT(Rib);
 
-bool
-operator<(const RibRouteRef& lhs, const RibRouteRef& rhs)
-{
-  return std::tie(lhs.entry->getName(), lhs.route->faceId, lhs.route->origin) <
-         std::tie(rhs.entry->getName(), rhs.route->faceId, rhs.route->origin);
-}
-
 static inline bool
 sortRoutes(const Route& lhs, const Route& rhs)
 {
