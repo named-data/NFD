@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2022,  Regents of the University of California,
+Copyright (c) 2014-2023,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 
 from waflib import Context, Utils
 
-top = '../'
+top = '..'
 
 def build(bld):
     # Single object tools:
@@ -34,7 +34,7 @@ def build(bld):
     for tool in bld.path.ant_glob('*.cpp'):
         name = tool.change_ext('').path_from(bld.path.get_bld())
         bld.program(name=name,
-                    target=top + 'bin/%s' % name,
+                    target=f'{top}/bin/{name}',
                     source=[tool],
                     use='core-objects')
 
@@ -59,7 +59,7 @@ def build(bld):
         srcFiles = subdir.ant_glob('**/*.cpp', excl=['main.cpp'])
         srcObjects = ''
         if srcFiles:
-            srcObjects = 'tools-%s-objects' % name
+            srcObjects = f'tools-{name}-objects'
             bld.objects(target=srcObjects,
                         source=srcFiles,
                         features='pch',
@@ -69,7 +69,7 @@ def build(bld):
             testableObjects.append(srcObjects)
 
         bld.program(name=name,
-                    target=top + 'bin/%s' % name,
+                    target=f'{top}/bin/{name}',
                     source=[mainFile],
                     use='core-objects ' + srcObjects,
                     includes=name)
@@ -84,7 +84,7 @@ def build(bld):
         name = script.change_ext('').path_from(bld.path.get_bld())
         bld(features='subst',
             name=name,
-            target=top + 'bin/%s' % name,
+            target=f'{top}/bin/{name}',
             source=[script],
             install_path='${BINDIR}',
             chmod=Utils.O755,
