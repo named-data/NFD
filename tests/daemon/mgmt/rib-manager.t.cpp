@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -185,7 +185,7 @@ private:
       data->setContent(resp.wireEncode());
       m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
 
-      m_face.getIoService().post([this, data] { m_face.receive(*data); });
+      boost::asio::post(m_face.getIoService(), [this, data] { m_face.receive(*data); });
     };
 
     const Name commandPrefix("/localhost/nfd/fib/add-nexthop");

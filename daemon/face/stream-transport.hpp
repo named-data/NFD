@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,7 @@
 
 #include <queue>
 
+#include <boost/asio/defer.hpp>
 #include <boost/asio/write.hpp>
 
 namespace nfd::face {
@@ -149,7 +150,7 @@ StreamTransport<T>::doClose()
 
   // Ensure that the Transport stays alive at least until
   // all pending handlers are dispatched
-  getGlobalIoService().post([this] { deferredClose(); });
+  boost::asio::defer(getGlobalIoService(), [this] { deferredClose(); });
 
   // Some bug or feature of Boost.Asio (see https://redmine.named-data.net/issues/1856):
   //

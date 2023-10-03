@@ -30,6 +30,8 @@
 #include "rib/rib.hpp"
 #include "table/fib.hpp"
 
+#include <boost/asio/defer.hpp>
+
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 #include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
@@ -446,11 +448,12 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
 {
   NFD_LOG_DEBUG("Checking for invalid face registrations");
 
-  std::set<uint64_t> activeFaceIds;
+  std::set<uint64_t> activeIds;
   for (const auto& faceStatus : activeFaces) {
-    activeFaceIds.insert(faceStatus.getFaceId());
+    activeIds.insert(faceStatus.getFaceId());
   }
-  getGlobalIoService().post([=] { m_rib.beginRemoveFailedFaces(activeFaceIds); });
+  boost::asio::defer(getGlobalIoService(),
+                     [this, active = std::move(activeIds)] { m_rib.beginRemoveFailedFaces(active); });
 
   // Reschedule the check for future clean up
   scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
@@ -463,7 +466,8 @@ RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
 
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
     NFD_LOG_DEBUG("Received notification for destroyed FaceId " << notification.getFaceId());
-    getGlobalIoService().post([this, id = notification.getFaceId()] { m_rib.beginRemoveFace(id); });
+    boost::asio::defer(getGlobalIoService(),
+                       [this, id = notification.getFaceId()] { m_rib.beginRemoveFace(id); });
   }
 }
 

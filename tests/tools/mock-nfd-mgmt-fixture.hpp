@@ -34,6 +34,7 @@
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
+#include <boost/asio/defer.hpp>
 #include <boost/concept/assert.hpp>
 
 namespace nfd::tests {
@@ -52,7 +53,7 @@ protected:
   {
     face.onSendInterest.connect([this] (const Interest& interest) {
       if (processInterest) {
-        m_io.post([=] { processInterest(interest); });
+        boost::asio::defer(m_io, [=] { processInterest(interest); });
       }
     });
   }

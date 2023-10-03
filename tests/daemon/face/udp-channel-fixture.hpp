@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,6 +31,8 @@
 
 #include "channel-fixture.hpp"
 
+#include <boost/asio/defer.hpp>
+
 namespace nfd::tests {
 
 using face::UdpChannel;
@@ -52,7 +54,7 @@ protected:
   void
   connect(UdpChannel& channel) final
   {
-    g_io.post([&] {
+    boost::asio::defer(g_io, [&] {
       channel.connect(listenerEp, {},
         [this] (const shared_ptr<Face>& newFace) {
           BOOST_REQUIRE(newFace != nullptr);

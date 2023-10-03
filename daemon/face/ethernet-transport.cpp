@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 
 #include <pcap/pcap.h>
 
+#include <boost/asio/defer.hpp>
 #include <boost/endian/conversion.hpp>
 
 namespace nfd::face {
@@ -87,7 +88,7 @@ EthernetTransport::doClose()
 
   // Ensure that the Transport stays alive at least
   // until all pending handlers are dispatched
-  getGlobalIoService().post([this] {
+  boost::asio::defer(getGlobalIoService(), [this] {
     this->setState(TransportState::CLOSED);
   });
 }

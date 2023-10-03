@@ -28,6 +28,8 @@
 #include "common/logger.hpp"
 #include "face/channel.hpp"
 
+#include <boost/asio/defer.hpp>
+
 namespace nfd {
 
 NFD_LOG_INIT(FaceTable);
@@ -100,7 +102,7 @@ FaceTable::remove(FaceId faceId)
                " local=" << face->getLocalUri());
 
   // defer Face deallocation, so that Transport isn't deallocated during afterStateChange signal
-  getGlobalIoService().post([face] {});
+  boost::asio::defer(getGlobalIoService(), [face] {});
 }
 
 FaceTable::ForwardRange

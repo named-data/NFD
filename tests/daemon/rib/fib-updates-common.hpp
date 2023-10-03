@@ -33,6 +33,8 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib/create-route.hpp"
 
+#include <boost/asio/defer.hpp>
+
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd::tests {
@@ -80,7 +82,7 @@ private:
              uint32_t nTimeouts)
   {
     updates.push_back(update);
-    getGlobalIoService().post([=] {
+    boost::asio::defer(getGlobalIoService(), [=] {
       if (mockSuccess) {
         onUpdateSuccess(update, onSuccess, onFailure);
       }

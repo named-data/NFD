@@ -26,6 +26,8 @@
 #include "tcp-transport.hpp"
 #include "common/global.hpp"
 
+#include <boost/asio/defer.hpp>
+
 #if defined(__linux__)
 #include <linux/sockios.h>
 #include <sys/ioctl.h>
@@ -105,7 +107,7 @@ TcpTransport::handleError(const boost::system::error_code& error)
     m_socket.cancel(ec);
 
     // do this asynchronously because there could be some callbacks still pending
-    getGlobalIoService().post([this] { reconnect(); });
+    boost::asio::defer(getGlobalIoService(), [this] { reconnect(); });
   }
   else {
     StreamTransport::handleError(error);
@@ -175,7 +177,7 @@ TcpTransport::handleReconnectTimeout()
                MAX_RECONNECT_DELAY);
 
   // do this asynchronously because there could be some callbacks still pending
-  getGlobalIoService().post([this] { reconnect(); });
+  boost::asio::defer(getGlobalIoService(), [this] { reconnect(); });
 }
 
 void
