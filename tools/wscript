@@ -63,7 +63,7 @@ def build(bld):
             bld.objects(target=srcObjects,
                         source=srcFiles,
                         features='pch',
-                        headers=subdir.find_node(name + '-pch.hpp'),
+                        headers=subdir.find_node(f'{name}-pch.hpp'),
                         use='core-objects LIBRESOLV',
                         includes=name)
             testableObjects.append(srcObjects)
@@ -71,7 +71,7 @@ def build(bld):
         bld.program(name=name,
                     target=f'{top}/bin/{name}',
                     source=[mainFile],
-                    use='core-objects ' + srcObjects,
+                    use=f'core-objects {srcObjects}',
                     includes=name)
 
     bld.objects(target='tools-objects',

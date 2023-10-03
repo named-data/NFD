@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,8 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib-io-fixture.hpp"
 
+#include <boost/asio/post.hpp>
+
 #include <thread>
 
 namespace nfd::tests {
@@ -37,8 +39,8 @@ BOOST_FIXTURE_TEST_SUITE(TestGlobal, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(ThreadLocalIoService)
 {
-  boost::asio::io_service* s1 = &getGlobalIoService();
-  boost::asio::io_service* s2 = nullptr;
+  boost::asio::io_context* s1 = &getGlobalIoService();
+  boost::asio::io_context* s2 = nullptr;
 
   std::thread t([&s2] { s2 = &getGlobalIoService(); });
   t.join();
@@ -63,8 +65,8 @@ BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
 
 BOOST_FIXTURE_TEST_CASE(MainRibIoService, RibIoFixture)
 {
-  boost::asio::io_service* mainIo = &g_io;
-  boost::asio::io_service* ribIo = g_ribIo;
+  boost::asio::io_context* mainIo = &g_io;
+  boost::asio::io_context* ribIo = g_ribIo;
 
   BOOST_CHECK(mainIo != ribIo);
   BOOST_CHECK(&getGlobalIoService() == mainIo);
@@ -72,15 +74,15 @@ BOOST_FIXTURE_TEST_CASE(MainRibIoService, RibIoFixture)
   BOOST_CHECK(&getRibIoService() == ribIo);
   auto mainThreadId = std::this_thread::get_id();
 
-  runOnRibIoService([&] {
+  boost::asio::post(getRibIoService(), [&] {
     BOOST_CHECK(mainThreadId != std::this_thread::get_id());
     BOOST_CHECK(&getGlobalIoService() == ribIo);
     BOOST_CHECK(&getMainIoService() == mainIo);
     BOOST_CHECK(&getRibIoService() == ribIo);
   });
 
-  runOnRibIoService([&] {
-    runOnMainIoService([&] {
+  boost::asio::post(getRibIoService(), [&] {
+    boost::asio::post(getMainIoService(), [&] {
       BOOST_CHECK(mainThreadId == std::this_thread::get_id());
       BOOST_CHECK(&getGlobalIoService() == mainIo);
       BOOST_CHECK(&getMainIoService() == mainIo);
@@ -92,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE(MainRibIoService, RibIoFixture)
 BOOST_FIXTURE_TEST_CASE(PollInAllThreads, RibIoFixture)
 {
   bool hasRibRun = false;
-  runOnRibIoService([&] { hasRibRun = true; });
+  boost::asio::post(getRibIoService(), [&] { hasRibRun = true; });
   std::this_thread::sleep_for(std::chrono::seconds(1));
   BOOST_CHECK_EQUAL(hasRibRun, false);
 
@@ -101,9 +103,9 @@ BOOST_FIXTURE_TEST_CASE(PollInAllThreads, RibIoFixture)
 
   hasRibRun = false;
   bool hasMainRun = false;
-  runOnMainIoService([&] {
+  boost::asio::post(getMainIoService(), [&] {
     hasMainRun = true;
-    runOnRibIoService([&] { hasRibRun = true; });
+    boost::asio::post(getRibIoService(), [&] { hasRibRun = true; });
   });
   BOOST_CHECK_EQUAL(hasMainRun, false);
   BOOST_CHECK_EQUAL(hasRibRun, false);
@@ -116,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(PollInAllThreads, RibIoFixture)
 BOOST_FIXTURE_TEST_CASE(AdvanceClocks, RibIoTimeFixture)
 {
   bool hasRibRun = false;
-  runOnRibIoService([&] { hasRibRun = true; });
+  boost::asio::post(getRibIoService(), [&] { hasRibRun = true; });
   std::this_thread::sleep_for(std::chrono::seconds(1));
   BOOST_CHECK_EQUAL(hasRibRun, false);
 
@@ -127,7 +129,7 @@ BOOST_FIXTURE_TEST_CASE(AdvanceClocks, RibIoTimeFixture)
   bool hasMainRun = false;
   getScheduler().schedule(250_ms, [&] {
     hasMainRun = true;
-    runOnRibIoService([&] { hasRibRun = true; });
+    boost::asio::post(getRibIoService(), [&] { hasRibRun = true; });
   });
   BOOST_CHECK_EQUAL(hasMainRun, false);
   BOOST_CHECK_EQUAL(hasRibRun, false);

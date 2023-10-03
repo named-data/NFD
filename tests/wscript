@@ -35,7 +35,7 @@ def build(bld):
             target='tests-common',
             features='pch',
             source=bld.path.ant_glob('*.cpp', excl='main.cpp'),
-            use='core-objects',
+            use='BOOST_TESTS core-objects',
             headers='../core/common.hpp boost-test.hpp',
             defines=[tmpdir])
 
@@ -43,7 +43,7 @@ def build(bld):
             # main() for the module
             bld.objects(target=f'unit-tests-{module}-main',
                         source='main.cpp',
-                        use='BOOST',
+                        use='BOOST_TESTS',
                         defines=[f'BOOST_TEST_MODULE=NFD {module.capitalize()}'])
 
             subdir = 'daemon/rib' if module == 'rib' else module

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -128,13 +128,7 @@ TcpTransport::reconnect()
   BOOST_ASSERT(getState() == TransportState::DOWN);
 
   // recreate the socket
-  m_socket = protocol::socket(
-#if BOOST_VERSION >= 107000
-                              m_socket.get_executor()
-#else
-                              m_socket.get_io_service()
-#endif // BOOST_VERSION >= 107000
-                              );
+  m_socket = protocol::socket(m_socket.get_executor());
   this->resetReceiveBuffer();
   this->resetSendQueue();
 

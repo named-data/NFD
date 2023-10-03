@@ -34,6 +34,7 @@
 #include <ndn-cxx/lp/prefix-announcement-header.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
+#include <boost/asio/post.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 namespace nfd::fw {
@@ -188,26 +189,28 @@ SelfLearningStrategy::asyncProcessData(const shared_ptr<pit::Entry>& pitEntry, c
   // (the PIT entry's expiry timer was set to 0 before dispatching)
   this->setExpiryTimer(pitEntry, 1_s);
 
-  runOnRibIoService([this, pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data] {
-    rib::Service::get().getRibManager().slFindAnn(data.getName(),
-      [this, pitEntryWeak, inFaceId, data] (std::optional<ndn::PrefixAnnouncement> paOpt) {
-        if (paOpt) {
-          runOnMainIoService([this, pitEntryWeak, inFaceId, data, pa = std::move(*paOpt)] {
-            auto pitEntry = pitEntryWeak.lock();
-            auto inFace = this->getFace(inFaceId);
-            if (pitEntry && inFace) {
-              NFD_LOG_DEBUG("Found PrefixAnnouncement=" << pa.getAnnouncedName());
-              data.setTag(make_shared<lp::PrefixAnnouncementTag>(lp::PrefixAnnouncementHeader(pa)));
-              this->sendDataToAll(data, pitEntry, *inFace);
-              this->setExpiryTimer(pitEntry, 0_ms);
-            }
-            else {
-              NFD_LOG_DEBUG("PIT entry or face no longer exists");
-            }
-          });
-        }
+  boost::asio::post(getRibIoService(),
+    [this, pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data] {
+      rib::Service::get().getRibManager().slFindAnn(data.getName(),
+        [this, pitEntryWeak, inFaceId, data] (std::optional<ndn::PrefixAnnouncement> paOpt) {
+          if (paOpt) {
+            boost::asio::post(getMainIoService(),
+              [this, pitEntryWeak, inFaceId, data, pa = std::move(*paOpt)] {
+                auto pitEntry = pitEntryWeak.lock();
+                auto inFace = this->getFace(inFaceId);
+                if (pitEntry && inFace) {
+                  NFD_LOG_DEBUG("Found PrefixAnnouncement=" << pa.getAnnouncedName());
+                  data.setTag(make_shared<lp::PrefixAnnouncementTag>(lp::PrefixAnnouncementHeader(pa)));
+                  this->sendDataToAll(data, pitEntry, *inFace);
+                  this->setExpiryTimer(pitEntry, 0_ms);
+                }
+                else {
+                  NFD_LOG_DEBUG("PIT entry or face no longer exists");
+                }
+              });
+          }
+        });
     });
-  });
 }
 
 bool
@@ -235,24 +238,26 @@ void
 SelfLearningStrategy::addRoute(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace,
                                const Data& data, const ndn::PrefixAnnouncement& pa)
 {
-  runOnRibIoService([pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data, pa] {
-    rib::Service::get().getRibManager().slAnnounce(pa, inFaceId, ROUTE_RENEW_LIFETIME,
-      [] (RibManager::SlAnnounceResult res) {
-        NFD_LOG_DEBUG("Add route via PrefixAnnouncement with result=" << res);
-      });
-  });
+  boost::asio::post(getRibIoService(),
+    [pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data, pa] {
+      rib::Service::get().getRibManager().slAnnounce(pa, inFaceId, ROUTE_RENEW_LIFETIME,
+        [] (RibManager::SlAnnounceResult res) {
+          NFD_LOG_DEBUG("Add route via PrefixAnnouncement with result=" << res);
+        });
+    });
 }
 
 void
 SelfLearningStrategy::renewRoute(const Name& name, FaceId inFaceId, time::milliseconds maxLifetime)
 {
   // renew route with PA or ignore PA (if route has no PA)
-  runOnRibIoService([name, inFaceId, maxLifetime] {
-    rib::Service::get().getRibManager().slRenew(name, inFaceId, maxLifetime,
-      [] (RibManager::SlAnnounceResult res) {
-        NFD_LOG_DEBUG("Renew route with result=" << res);
-      });
-  });
+  boost::asio::post(getRibIoService(),
+    [name, inFaceId, maxLifetime] {
+      rib::Service::get().getRibManager().slRenew(name, inFaceId, maxLifetime,
+        [] (RibManager::SlAnnounceResult res) {
+          NFD_LOG_DEBUG("Renew route with result=" << res);
+        });
+    });
 }
 
 } // namespace nfd::fw

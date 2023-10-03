@@ -23,8 +23,9 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+import subprocess
 from waflib import Context, Logs, Utils
-import os, subprocess
 
 VERSION = '22.12'
 APPNAME = 'nfd'
@@ -113,15 +114,14 @@ def configure(conf):
 
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
-    boost_libs = ['system', 'program_options', 'filesystem']
-    if conf.env.WITH_TESTS or conf.env.WITH_OTHER_TESTS:
-        boost_libs.append('unit_test_framework')
-
-    conf.check_boost(lib=boost_libs, mt=True)
-    if conf.env.BOOST_VERSION_NUMBER < 106501:
-        conf.fatal('The minimum supported version of Boost is 1.65.1.\n'
+    conf.check_boost(lib='filesystem program_options', mt=True)
+    if conf.env.BOOST_VERSION_NUMBER < 107100:
+        conf.fatal('The minimum supported version of Boost is 1.71.0.\n'
                    'Please upgrade your distribution or manually install a newer version of Boost.\n'
                    'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
+
+    if conf.env.WITH_TESTS or conf.env.WITH_OTHER_TESTS:
+        conf.check_boost(lib='unit_test_framework', mt=True, uselib_store='BOOST_TESTS')
 
     conf.load('unix-socket')
 
@@ -160,8 +160,8 @@ def build(bld):
 
     bld.objects(
         target='core-objects',
-        source=bld.path.find_node('core').ant_glob('*.cpp') + ['core/version.cpp'],
-        use='version.cpp version.hpp NDN_CXX BOOST LIBRT',
+        source=bld.path.find_dir('core').ant_glob('*.cpp') + ['core/version.cpp'],
+        use='version.cpp version.hpp BOOST NDN_CXX LIBRT',
         includes='.',
         export_includes='.')
 
@@ -199,9 +199,10 @@ def build(bld):
                 source='daemon/main.cpp',
                 use='daemon-objects SYSTEMD')
 
-    bld.recurse('tools')
     bld.recurse('tests')
+    bld.recurse('tools')
 
+    # Install sample configs
     bld(features='subst',
         source='nfd.conf.sample.in',
         target='nfd.conf.sample',
@@ -209,7 +210,6 @@ def build(bld):
         IF_HAVE_LIBPCAP='' if bld.env.HAVE_LIBPCAP else '; ',
         IF_HAVE_WEBSOCKET='' if bld.env.HAVE_WEBSOCKET else '; ',
         UNIX_SOCKET_PATH='/run/nfd.sock' if Utils.unversioned_sys_platform() == 'linux' else '/var/run/nfd.sock')
-
     bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
 
     if bld.env.HAVE_SYSTEMD:

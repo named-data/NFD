@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,10 +30,11 @@
 
 namespace nfd::tests {
 
-/** \brief A fixture providing proper setup and teardown of the global io_service.
+/**
+ * \brief A fixture providing proper setup and teardown of the global io_context.
  *
- *  Every daemon fixture or test case should inherit from this fixture,
- *  to have per test case io_service initialization and cleanup.
+ * Every daemon fixture or test case should inherit from this fixture,
+ * to have per test case io_context initialization and cleanup.
  */
 class GlobalIoFixture
 {
@@ -42,18 +43,21 @@ protected:
 
   ~GlobalIoFixture();
 
-  /** \brief Poll the global io_service.
+  /**
+   * \brief Poll the global io_context.
    */
   size_t
   pollIo();
 
 protected:
-  /** \brief Reference to the global io_service instance.
+  /**
+   * \brief Reference to the global io_context instance.
    */
-  boost::asio::io_service& g_io;
+  boost::asio::io_context& g_io;
 };
 
-/** \brief GlobalIoFixture that also overrides steady clock and system clock.
+/**
+ * \brief GlobalIoFixture that also overrides steady clock and system clock.
  */
 class GlobalIoTimeFixture : public ClockFixture, public GlobalIoFixture
 {

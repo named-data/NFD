@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022  Regents of the University of California,
+ * Copyright (c) 2014-2023  Regents of the University of California,
  *                          Arizona Board of Regents,
  *                          Colorado State University,
  *                          University Pierre & Marie Curie, Sorbonne University,
@@ -27,46 +27,39 @@
 
 #include "core/common.hpp"
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 namespace nfd {
 
-/** \brief Returns the global io_service instance for the calling thread.
+/**
+ * \brief Returns the global io_context instance for the calling thread.
  */
-boost::asio::io_service&
+boost::asio::io_context&
 getGlobalIoService();
 
-/** \brief Returns the global Scheduler instance for the calling thread.
+/**
+ * \brief Returns the global Scheduler instance for the calling thread.
  */
 Scheduler&
 getScheduler();
 
-boost::asio::io_service&
+boost::asio::io_context&
 getMainIoService();
 
-boost::asio::io_service&
+boost::asio::io_context&
 getRibIoService();
 
 void
-setMainIoService(boost::asio::io_service* mainIo);
+setMainIoService(boost::asio::io_context* mainIo);
 
 void
-setRibIoService(boost::asio::io_service* ribIo);
-
-/** \brief Run a function on the main io_service instance.
- */
-void
-runOnMainIoService(const std::function<void()>& f);
-
-/** \brief Run a function on the RIB io_service instance.
- */
-void
-runOnRibIoService(const std::function<void()>& f);
+setRibIoService(boost::asio::io_context* ribIo);
 
 #ifdef NFD_WITH_TESTS
-/** \brief Destroy the global io_service instance.
+/**
+ * \brief Destroy the global io_context instance.
  *
- *  It will be recreated at the next invocation of getGlobalIoService().
+ * It will be recreated at the next invocation of getGlobalIoService().
  */
 void
 resetGlobalIoService();

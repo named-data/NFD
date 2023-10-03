@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,10 +66,10 @@ public:
   /** \param stageName stage name
    *  \param nCalls pointer to a variable which is incremented each time doStart is invoked
    *  \param result expected result, nullopt to cause a failued
-   *  \param io io_service to asynchronously post the result
+   *  \param io io_context to asynchronously post the result
    */
   DummyStage(const std::string& stageName, int* nCalls,
-             const std::optional<FaceUri>& result, boost::asio::io_service& io)
+             const std::optional<FaceUri>& result, boost::asio::io_context& io)
     : m_stageName(stageName)
     , m_nCalls(nCalls)
     , m_result(result)
@@ -90,7 +90,8 @@ private:
     if (m_nCalls != nullptr) {
       ++(*m_nCalls);
     }
-    m_io.post([this] {
+
+    boost::asio::post(m_io, [this] {
       if (m_result) {
         this->succeed(*m_result);
       }
@@ -104,7 +105,7 @@ private:
   std::string m_stageName;
   int* m_nCalls;
   std::optional<FaceUri> m_result;
-  boost::asio::io_service& m_io;
+  boost::asio::io_context& m_io;
 };
 
 /** \brief Two-stage Procedure where the first stage succeeds and the second stage fails.
@@ -133,7 +134,7 @@ public:
   int nCalls2 = 0;
 
 private:
-  boost::asio::io_service& m_io;
+  boost::asio::io_context& m_io;
 };
 
 /** \brief Two-stage Procedure where the first stage fails and the second stage succeeds.
@@ -160,7 +161,7 @@ public:
   int nCalls2 = 0;
 
 private:
-  boost::asio::io_service& m_io;
+  boost::asio::io_context& m_io;
 };
 
 BOOST_AUTO_TEST_SUITE(NdnAutoconfig)

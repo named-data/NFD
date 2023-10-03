@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -140,11 +140,7 @@ NdnFchDiscovery::doStart()
 {
   try {
     boost::asio::ip::tcp::iostream requestStream;
-#if BOOST_VERSION >= 106700
     requestStream.expires_after(std::chrono::seconds(3));
-#else
-    requestStream.expires_from_now(boost::posix_time::seconds(3));
-#endif // BOOST_VERSION >= 106700
 
     Url url(m_url);
     if (!url.isValid()) {

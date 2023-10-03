@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,7 +70,7 @@ namespace nfd {
 /** \brief Executes NFD with RIB manager
  *
  *  NFD (main forwarding procedure) and RIB manager execute in two different threads.
- *  Each thread has its own instances of global io_service and global scheduler.
+ *  Each thread has its own instances of global io_context and global scheduler.
  *
  *  When either of the daemons fails, execution of non-failed daemon will be terminated as
  *  well.  In other words, when NFD fails, RIB manager will be terminated; when RIB manager
@@ -107,9 +107,9 @@ public:
     // a separate thread) fails.
     std::atomic_int retval(0);
 
-    boost::asio::io_service* const mainIo = &getGlobalIoService();
+    boost::asio::io_context* const mainIo = &getGlobalIoService();
     setMainIoService(mainIo);
-    boost::asio::io_service* ribIo = nullptr;
+    boost::asio::io_context* ribIo = nullptr;
 
     // Mutex and conditional variable to implement synchronization between main and RIB manager
     // threads:

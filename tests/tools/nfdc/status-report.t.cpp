@@ -45,7 +45,7 @@ module2
 class DummyModule : public Module
 {
 public:
-  DummyModule(const std::string& moduleName, boost::asio::io_service& io)
+  DummyModule(const std::string& moduleName, boost::asio::io_context& io)
     : m_moduleName(moduleName)
     , m_scheduler(io)
     , m_res(0)

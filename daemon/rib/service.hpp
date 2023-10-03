@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ class Readvertise;
  * \brief Initializes and executes the NFD-RIB service thread.
  *
  * Only one instance of this class can be created at any time.
- * After initialization, NFD-RIB instance can be started by running the global io_service.
+ * After initialization, NFD-RIB instance can be started by running the global io_context.
  */
 class Service : noncopyable
 {

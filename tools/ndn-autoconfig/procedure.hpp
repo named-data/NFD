@@ -57,7 +57,7 @@ public:
   void
   runOnce();
 
-  boost::asio::io_service&
+  boost::asio::io_context&
   getIoService()
   {
     return m_face.getIoService();

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@
 namespace nfd::tests {
 
 /** \brief Enumerate network interfaces using the given NetworkMonitor
- *  \param netmon a NetworkMonitor constructed on the global io_service.
+ *  \param netmon a NetworkMonitor constructed on the global io_context.
  *  \note This function is blocking
  *  \note Signals are supported if caller keeps \p netmon running
  */

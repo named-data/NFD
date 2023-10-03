@@ -31,7 +31,7 @@ def build(bld):
         # main
         bld.objects(target=f'other-tests-{module}-main',
                     source='../main.cpp',
-                    use='BOOST',
+                    use='BOOST_TESTS',
                     defines=[f'BOOST_TEST_MODULE={name}'])
         # module
         bld.program(name=module,

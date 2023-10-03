@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 #include "tests/clock-fixture.hpp"
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 namespace nfd::tests {
 
@@ -39,17 +39,13 @@ private:
   afterTick() final
   {
     if (m_io.stopped()) {
-#if BOOST_VERSION >= 106600
       m_io.restart();
-#else
-      m_io.reset();
-#endif
     }
     m_io.poll();
   }
 
 protected:
-  boost::asio::io_service m_io;
+  boost::asio::io_context m_io;
 };
 
 } // namespace nfd::tests
