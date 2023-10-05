@@ -147,8 +147,8 @@ EthernetTransport::sendPacket(const ndn::Block& block)
 void
 EthernetTransport::asyncRead()
 {
-  m_socket.async_read_some(boost::asio::null_buffers(),
-                           [this] (const auto& e, auto) { this->handleRead(e); });
+  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+                      [this] (const auto& e) { this->handleRead(e); });
 }
 
 void

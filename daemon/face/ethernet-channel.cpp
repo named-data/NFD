@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -101,8 +101,8 @@ void
 EthernetChannel::asyncRead(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_read_some(boost::asio::null_buffers(),
-                           [=] (const auto& e, auto) { this->handleRead(e, onFaceCreated, onReceiveFailed); });
+  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+                      [=] (const auto& e) { this->handleRead(e, onFaceCreated, onReceiveFailed); });
 }
 
 void
