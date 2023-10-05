@@ -116,7 +116,7 @@ public:
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
-      auto address = boost::asio::ip::address::from_string(uri.getHost(), ec);
+      auto address = boost::asio::ip::make_address(uri.getHost(), ec);
 
       if (!address.is_multicast()) {
         // register all-face prefixes

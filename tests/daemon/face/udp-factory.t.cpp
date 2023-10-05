@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ protected:
   shared_ptr<UdpChannel>
   createChannel(const std::string& localIp, uint16_t localPort)
   {
-    udp::Endpoint endpoint(boost::asio::ip::address::from_string(localIp), localPort);
+    udp::Endpoint endpoint(boost::asio::ip::make_address(localIp), localPort);
     return factory.createChannel(endpoint, 5_min);
   }
 };
@@ -75,8 +75,8 @@ protected:
   shared_ptr<Face>
   createMulticastFace(const std::string& localIp, const std::string& mcastIp, uint16_t mcastPort)
   {
-    auto localAddress = boost::asio::ip::address::from_string(localIp);
-    udp::Endpoint mcastEndpoint(boost::asio::ip::address::from_string(mcastIp), mcastPort);
+    auto localAddress = boost::asio::ip::make_address(localIp);
+    udp::Endpoint mcastEndpoint(boost::asio::ip::make_address(mcastIp), mcastPort);
 
     if (localAddress.is_v4()) {
       BOOST_ASSERT(!netifsV4.empty());
@@ -129,7 +129,7 @@ protected:
   static bool
   isFaceOnNetif(const Face& face, const NetworkInterface& netif)
   {
-    auto ip = boost::asio::ip::address::from_string(face.getLocalUri().getHost());
+    auto ip = boost::asio::ip::make_address(face.getLocalUri().getHost());
     return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
                        [ip] (const auto& a) { return a.getIp() == ip; });
   }
@@ -427,9 +427,9 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpointV6, UdpFactoryMcastFixture)
   auto uri = udpMcastFaces.front()->getRemoteUri();
   BOOST_CHECK_EQUAL(uri.getScheme(), "udp6");
   // check the address ignoring the scope id
-  auto addr = boost::asio::ip::address_v6::from_string(uri.getHost());
+  auto addr = boost::asio::ip::make_address_v6(uri.getHost());
   addr.scope_id(0);
-  BOOST_CHECK_EQUAL(addr, boost::asio::ip::address_v6::from_string("ff02::1101"));
+  BOOST_CHECK_EQUAL(addr, boost::asio::ip::make_address_v6("ff02::1101"));
   BOOST_CHECK_EQUAL(uri.getPort(), "7011");
 
   parseConfig(CONFIG2, false);
@@ -439,9 +439,9 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpointV6, UdpFactoryMcastFixture)
   uri = udpMcastFaces.front()->getRemoteUri();
   BOOST_CHECK_EQUAL(uri.getScheme(), "udp6");
   // check the address ignoring the scope id
-  addr = boost::asio::ip::address_v6::from_string(uri.getHost());
+  addr = boost::asio::ip::make_address_v6(uri.getHost());
   addr.scope_id(0);
-  BOOST_CHECK_EQUAL(addr, boost::asio::ip::address_v6::from_string("ff02::1102"));
+  BOOST_CHECK_EQUAL(addr, boost::asio::ip::make_address_v6("ff02::1102"));
   BOOST_CHECK_EQUAL(uri.getPort(), "7012");
 }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,7 +121,7 @@ private:
     }
 
     // create the right face
-    auto addr = boost::asio::ip::address::from_string(uriR.getHost());
+    auto addr = boost::asio::ip::make_address(uriR.getHost());
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port), {},

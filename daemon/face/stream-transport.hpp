@@ -145,7 +145,7 @@ StreamTransport<T>::doClose()
     // Use the non-throwing variants and ignore errors, if any.
     boost::system::error_code error;
     m_socket.cancel(error);
-    m_socket.shutdown(protocol::socket::shutdown_both, error);
+    m_socket.shutdown(boost::asio::socket_base::shutdown_both, error);
   }
 
   // Ensure that the Transport stays alive at least until

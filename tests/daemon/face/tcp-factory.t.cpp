@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ protected:
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort)
   {
-    tcp::Endpoint endpoint(boost::asio::ip::address::from_string(localIp),
+    tcp::Endpoint endpoint(boost::asio::ip::make_address(localIp),
                            boost::lexical_cast<uint16_t>(localPort));
     return factory.createChannel(endpoint);
   }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMa
 void
 TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
                    const FaceCreationFailedCallback& onAcceptFailed,
-                   int backlog/* = tcp::acceptor::max_connections*/)
+                   int backlog)
 {
   if (isListening()) {
     NFD_LOG_CHAN_WARN("Already listening");
@@ -150,7 +150,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
     NFD_LOG_CHAN_TRACE("Reusing existing face for " << remoteEndpoint);
 
     boost::system::error_code error;
-    socket.shutdown(ip::tcp::socket::shutdown_both, error);
+    socket.shutdown(boost::asio::socket_base::shutdown_both, error);
     socket.close(error);
   }
 

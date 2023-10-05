@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,16 +37,16 @@ using Endpoint = boost::asio::local::stream_protocol::endpoint;
 namespace nfd::face {
 
 /**
- * \brief Class implementing a local channel to create faces
+ * \brief Class implementing a local channel to create faces.
  *
  * Channel can create faces as a response to incoming IPC connections
- * (UnixStreamChannel::listen needs to be called for that to work).
+ * (UnixStreamChannel::listen() needs to be called for that to work).
  */
 class UnixStreamChannel final : public Channel
 {
 public:
   /**
-   * \brief UnixStreamChannel-related error
+   * \brief UnixStreamChannel-related error.
    */
   class Error : public std::runtime_error
   {
@@ -55,10 +55,10 @@ public:
   };
 
   /**
-   * \brief Create UnixStream channel for the specified endpoint
+   * \brief Create a UnixStream channel for the specified \p endpoint.
    *
-   * To enable creation of faces upon incoming connections, one
-   * needs to explicitly call UnixStreamChannel::listen method.
+   * To enable the creation of faces upon incoming connections, one needs to
+   * explicitly call listen().
    */
   UnixStreamChannel(const unix_stream::Endpoint& endpoint, bool wantCongestionMarking);
 
@@ -77,7 +77,7 @@ public:
   }
 
   /**
-   * \brief Start listening
+   * \brief Start listening.
    *
    * Enable listening on the Unix socket, waiting for incoming connections,
    * and creating a face when a connection is made.
@@ -94,7 +94,7 @@ public:
   void
   listen(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onAcceptFailed,
-         int backlog = boost::asio::local::stream_protocol::acceptor::max_connections);
+         int backlog = boost::asio::socket_base::max_listen_connections);
 
 private:
   void

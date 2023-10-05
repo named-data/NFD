@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,38 +31,34 @@
 
 namespace nfd::tests {
 
-BOOST_AUTO_TEST_SUITE(TestNetwork)
+namespace ip = boost::asio::ip;
 
-using boost::asio::ip::address;
+BOOST_AUTO_TEST_SUITE(TestNetwork)
 
 BOOST_AUTO_TEST_CASE(Empty)
 {
   Network n;
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:0:3025:ccc5:eeeb:86d3")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:0:3025:ccc5:eeeb:86d3")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("0.0.0.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("255.255.255.255")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("0.0.0.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("255.255.255.255")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("::")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("::")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")), false);
 }
 
 BOOST_AUTO_TEST_CASE(MaxRangeV4)
 {
   Network n = Network::getMaxRangeV4();
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.1")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("0.0.0.1")), true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("255.255.255.255")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("0.0.0.1")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("255.255.255.255")), true);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("::")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("::")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")), false);
 }
 
 BOOST_AUTO_TEST_CASE(RangeV4)
@@ -73,35 +69,31 @@ BOOST_AUTO_TEST_CASE(RangeV4)
   BOOST_CHECK_THROW(boost::lexical_cast<Network>("192.0.2.0/255"), boost::bad_lexical_cast);
   BOOST_CHECK_THROW(boost::lexical_cast<Network>("256.0.2.0/24"), boost::bad_lexical_cast);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.254")), true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.1.255")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.3.0")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.1")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.254")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.1.255")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.3.0")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("0.0.0.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("255.255.255.255")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("0.0.0.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("255.255.255.255")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("::")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("::")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")), false);
 }
 
 BOOST_AUTO_TEST_CASE(MaxRangeV6)
 {
   Network n = Network::getMaxRangeV6();
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")),
-                    true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")), true);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("0.0.0.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("255.255.255.255")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("0.0.0.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("255.255.255.255")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("::")), true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
-                    true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("::")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")), true);
 }
 
 BOOST_AUTO_TEST_CASE(RangeV6)
@@ -114,24 +106,18 @@ BOOST_AUTO_TEST_CASE(RangeV6)
   BOOST_CHECK_THROW(boost::lexical_cast<Network>("200x:db8:3f9:1::/64"), boost::bad_lexical_cast);
   BOOST_CHECK_THROW(boost::lexical_cast<Network>("2001:db8:3f9::1::/64"), boost::bad_lexical_cast);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")),
-                    true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1::")),
-                    true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:ffff:ffff:ffff:ffff")),
-                    true);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:0:ffff:ffff:ffff:ffff")),
-                    false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:2::")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("192.0.2.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1::")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:1:ffff:ffff:ffff:ffff")), true);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:0:ffff:ffff:ffff:ffff")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("2001:db8:3f9:2::")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("0.0.0.1")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("255.255.255.255")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("0.0.0.1")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("255.255.255.255")), false);
 
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("::")), false);
-  BOOST_CHECK_EQUAL(n.doesContain(address::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
-                    false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("::")), false);
+  BOOST_CHECK_EQUAL(n.doesContain(ip::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")), false);
 }
 
 BOOST_AUTO_TEST_CASE(Comparisons)

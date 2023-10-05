@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,7 +37,7 @@ enumerateNetworkInterfaces(NetworkMonitor& netmon)
   if (netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) {
     netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
     getGlobalIoService().run();
-    getGlobalIoService().reset();
+    getGlobalIoService().restart();
   }
   return netmon.listNetworkInterfaces();
 }

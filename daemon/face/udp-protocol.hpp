@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ computeMtu(const Endpoint& localEndpoint);
 inline Endpoint
 getDefaultMulticastGroup()
 {
-  return {boost::asio::ip::address_v4(0xE00017AA), 56363};
+  return {boost::asio::ip::make_address_v4(0xE00017AA), 56363};
 }
 
 /**
@@ -55,7 +55,7 @@ getDefaultMulticastGroup()
 inline Endpoint
 getDefaultMulticastGroupV6()
 {
-  return {boost::asio::ip::address_v6::from_string("FF02::1234"), 56363};
+  return {boost::asio::ip::make_address_v6("FF02::1234"), 56363};
 }
 
 } // namespace nfd::udp

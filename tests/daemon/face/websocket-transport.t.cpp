@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,7 +63,7 @@ using StaticPropertiesV4MappedFixtures = boost::mpl::vector<
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticPropertiesV4Mapped, T, StaticPropertiesV4MappedFixtures, T)
 {
   TRANSPORT_TEST_CHECK_PRECONDITIONS();
-  auto mappedAddr = ip::address_v6::v4_mapped(this->address.to_v4());
+  auto mappedAddr = ip::make_address_v6(ip::v4_mapped, this->address.to_v4());
   BOOST_REQUIRE(mappedAddr.is_v4_mapped());
   WebSocketTransportFixture::initialize(this->interface, mappedAddr);
 

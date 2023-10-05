@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -129,7 +129,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.group.address(ip::address_v4::from_string(valueStr, ec));
+        mcastConfig.group.address(ip::make_address_v4(valueStr, ec));
         if (ec) {
           NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group: '" +
                                       valueStr + "' cannot be parsed as an IPv4 address"));
@@ -145,7 +145,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group_v6") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.groupV6.address(ip::address_v6::from_string(valueStr, ec));
+        mcastConfig.groupV6.address(ip::make_address_v6(valueStr, ec));
         if (ec) {
           NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
                                       valueStr + "' cannot be parsed as an IPv6 address"));
@@ -261,7 +261,7 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
     return;
   }
 
-  udp::Endpoint endpoint(ip::address::from_string(req.remoteUri.getHost()),
+  udp::Endpoint endpoint(ip::make_address(req.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {

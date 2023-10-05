@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,12 +36,13 @@ isLoopback(const boost::asio::ip::address& addr)
   if (addr.is_loopback()) {
     return true;
   }
+
   // Workaround for loopback IPv4-mapped IPv6 addresses
   // see https://svn.boost.org/trac/boost/ticket/9084
-  else if (addr.is_v6()) {
+  if (addr.is_v6()) {
     auto addr6 = addr.to_v6();
     if (addr6.is_v4_mapped()) {
-      return addr6.to_v4().is_loopback();
+      return boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped, addr6).is_loopback();
     }
   }
 

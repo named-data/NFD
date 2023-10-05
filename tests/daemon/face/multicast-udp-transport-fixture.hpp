@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,11 +49,11 @@ protected:
     ip::address mcastAddr;
     if (address.is_v4()) {
       // the administratively scoped group 224.0.0.254 is reserved for experimentation (RFC 4727)
-      mcastAddr = ip::address_v4(0xE00000FE);
+      mcastAddr = ip::make_address_v4(0xE00000FE);
     }
     else {
       // the group FF0X::114 is reserved for experimentation at all scope levels (RFC 4727)
-      auto v6Addr = ip::address_v6::from_string("FF01::114");
+      auto v6Addr = ip::make_address_v6("FF01::114");
       v6Addr.scope_id(netif->getIndex());
       mcastAddr = v6Addr;
     }
