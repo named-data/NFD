@@ -39,10 +39,8 @@ NFD_LOG_INIT(UnixStreamChannel);
 UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint,
                                      bool wantCongestionMarking)
   : m_endpoint(endpoint)
-  , m_acceptor(getGlobalIoService())
-  , m_socket(getGlobalIoService())
-  , m_size(0)
   , m_wantCongestionMarking(wantCongestionMarking)
+  , m_acceptor(getGlobalIoService())
 {
   setUri(FaceUri(m_endpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -112,39 +110,34 @@ void
 UnixStreamChannel::accept(const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onAcceptFailed)
 {
-  m_acceptor.async_accept(m_socket, [=] (const auto& e) { this->handleAccept(e, onFaceCreated, onAcceptFailed); });
-}
-
-void
-UnixStreamChannel::handleAccept(const boost::system::error_code& error,
-                                const FaceCreatedCallback& onFaceCreated,
-                                const FaceCreationFailedCallback& onAcceptFailed)
-{
-  if (error) {
-    if (error != boost::asio::error::operation_aborted) {
-      NFD_LOG_CHAN_DEBUG("Accept failed: " << error.message());
-      if (onAcceptFailed)
-        onAcceptFailed(500, "Accept failed: " + error.message());
+  m_acceptor.async_accept([=] (const boost::system::error_code& error,
+                               boost::asio::local::stream_protocol::socket socket) {
+    if (error) {
+      if (error != boost::asio::error::operation_aborted) {
+        NFD_LOG_CHAN_DEBUG("Accept failed: " << error.message());
+        if (onAcceptFailed)
+          onAcceptFailed(500, "Accept failed: " + error.message());
+      }
+      return;
     }
-    return;
-  }
 
-  NFD_LOG_CHAN_TRACE("Incoming connection via fd " << m_socket.native_handle());
+    NFD_LOG_CHAN_TRACE("Incoming connection via fd " << socket.native_handle());
 
-  GenericLinkService::Options options;
-  options.allowCongestionMarking = m_wantCongestionMarking;
-  auto linkService = make_unique<GenericLinkService>(options);
-  auto transport = make_unique<UnixStreamTransport>(std::move(m_socket));
-  auto face = make_shared<Face>(std::move(linkService), std::move(transport));
-  face->setChannel(weak_from_this());
+    GenericLinkService::Options options;
+    options.allowCongestionMarking = m_wantCongestionMarking;
+    auto linkService = make_unique<GenericLinkService>(options);
+    auto transport = make_unique<UnixStreamTransport>(std::move(socket));
+    auto face = make_shared<Face>(std::move(linkService), std::move(transport));
+    face->setChannel(weak_from_this());
 
-  ++m_size;
-  connectFaceClosedSignal(*face, [this] { --m_size; });
+    ++m_size;
+    connectFaceClosedSignal(*face, [this] { --m_size; });
 
-  onFaceCreated(face);
+    onFaceCreated(face);
 
-  // prepare accepting the next connection
-  accept(onFaceCreated, onAcceptFailed);
+    // prepare accepting the next connection
+    accept(onFaceCreated, onAcceptFailed);
+  });
 }
 
 } // namespace nfd::face

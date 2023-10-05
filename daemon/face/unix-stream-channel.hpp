@@ -101,17 +101,11 @@ private:
   accept(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onAcceptFailed);
 
-  void
-  handleAccept(const boost::system::error_code& error,
-               const FaceCreatedCallback& onFaceCreated,
-               const FaceCreationFailedCallback& onAcceptFailed);
-
 private:
   const unix_stream::Endpoint m_endpoint;
+  const bool m_wantCongestionMarking;
   boost::asio::local::stream_protocol::acceptor m_acceptor;
-  boost::asio::local::stream_protocol::socket m_socket;
-  size_t m_size;
-  bool m_wantCongestionMarking;
+  size_t m_size = 0;
 };
 
 } // namespace nfd::face

@@ -105,11 +105,6 @@ private:
          const FaceCreationFailedCallback& onAcceptFailed);
 
   void
-  handleAccept(const boost::system::error_code& error,
-               const FaceCreatedCallback& onFaceCreated,
-               const FaceCreationFailedCallback& onAcceptFailed);
-
-  void
   handleConnect(const boost::system::error_code& error,
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
@@ -125,10 +120,9 @@ private:
 
 private:
   const tcp::Endpoint m_localEndpoint;
+  const bool m_wantCongestionMarking;
   boost::asio::ip::tcp::acceptor m_acceptor;
-  boost::asio::ip::tcp::socket m_socket;
   std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
-  bool m_wantCongestionMarking;
   DetermineFaceScopeFromAddress m_determineFaceScope;
 };
 

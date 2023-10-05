@@ -40,9 +40,8 @@ namespace ip = boost::asio::ip;
 TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking,
                        DetermineFaceScopeFromAddress determineFaceScope)
   : m_localEndpoint(localEndpoint)
-  , m_acceptor(getGlobalIoService())
-  , m_socket(getGlobalIoService())
   , m_wantCongestionMarking(wantCongestionMarking)
+  , m_acceptor(getGlobalIoService())
   , m_determineFaceScope(std::move(determineFaceScope))
 {
   setUri(FaceUri(m_localEndpoint));
@@ -163,31 +162,25 @@ void
 TcpChannel::accept(const FaceCreatedCallback& onFaceCreated,
                    const FaceCreationFailedCallback& onAcceptFailed)
 {
-  m_acceptor.async_accept(m_socket, [=] (const auto& e) { this->handleAccept(e, onFaceCreated, onAcceptFailed); });
-}
-
-void
-TcpChannel::handleAccept(const boost::system::error_code& error,
-                         const FaceCreatedCallback& onFaceCreated,
-                         const FaceCreationFailedCallback& onAcceptFailed)
-{
-  if (error) {
-    if (error != boost::asio::error::operation_aborted) {
-      NFD_LOG_CHAN_DEBUG("Accept failed: " << error.message());
-      if (onAcceptFailed)
-        onAcceptFailed(500, "Accept failed: " + error.message());
+  m_acceptor.async_accept([=] (const boost::system::error_code& error, ip::tcp::socket socket) {
+    if (error) {
+      if (error != boost::asio::error::operation_aborted) {
+        NFD_LOG_CHAN_DEBUG("Accept failed: " << error.message());
+        if (onAcceptFailed)
+          onAcceptFailed(500, "Accept failed: " + error.message());
+      }
+      return;
     }
-    return;
-  }
 
-  NFD_LOG_CHAN_TRACE("Incoming connection from " << m_socket.remote_endpoint());
+    NFD_LOG_CHAN_TRACE("Incoming connection from " << socket.remote_endpoint());
 
-  FaceParams params;
-  params.persistency = ndn::nfd::FACE_PERSISTENCY_ON_DEMAND;
-  createFace(std::move(m_socket), params, onFaceCreated, onAcceptFailed);
+    FaceParams params;
+    params.persistency = ndn::nfd::FACE_PERSISTENCY_ON_DEMAND;
+    createFace(std::move(socket), params, onFaceCreated, onAcceptFailed);
 
-  // prepare accepting the next connection
-  accept(onFaceCreated, onAcceptFailed);
+    // prepare accepting the next connection
+    accept(onFaceCreated, onAcceptFailed);
+  });
 }
 
 void

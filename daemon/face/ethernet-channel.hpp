@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,13 +36,13 @@
 namespace nfd::face {
 
 /**
- * \brief Class implementing Ethernet-based channel to create faces
+ * \brief Class implementing an Ethernet-based channel to create faces.
  */
 class EthernetChannel final : public Channel
 {
 public:
   /**
-   * \brief EthernetChannel-related error
+   * \brief EthernetChannel-related error.
    */
   class Error : public std::runtime_error
   {
@@ -51,10 +51,10 @@ public:
   };
 
   /**
-   * \brief Create an Ethernet channel on the given \p localEndpoint (network interface)
+   * \brief Create an Ethernet channel on the given \p localEndpoint (network interface).
    *
-   * To enable creation of faces upon incoming connections,
-   * one needs to explicitly call EthernetChannel::listen method.
+   * To enable the creation of faces upon incoming connections, one needs to
+   * explicitly call listen().
    */
   EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                   time::nanoseconds idleTimeout);
@@ -72,7 +72,7 @@ public:
   }
 
   /**
-   * \brief Create a unicast Ethernet face toward \p remoteEndpoint
+   * \brief Create a unicast Ethernet face toward \p remoteEndpoint.
    */
   void
   connect(const ethernet::Address& remoteEndpoint,
@@ -81,7 +81,7 @@ public:
           const FaceCreationFailedCallback& onConnectFailed);
 
   /**
-   * \brief Start listening
+   * \brief Start listening.
    *
    * Enable listening on the local endpoint, waiting for incoming frames,
    * and creating a face when a frame is received from a new remote host.
