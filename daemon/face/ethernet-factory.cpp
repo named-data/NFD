@@ -26,6 +26,7 @@
 #include "ethernet-factory.hpp"
 #include "generic-link-service.hpp"
 #include "multicast-ethernet-transport.hpp"
+#include "pcap-helper.hpp"
 
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -334,6 +335,10 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
     face = this->createMulticastFace(netif, m_mcastConfig.group);
   }
   catch (const EthernetTransport::Error& e) {
+    NFD_LOG_WARN("Cannot create multicast face on " << netif.getName() << ": " << e.what());
+    return nullptr;
+  }
+  catch (const PcapHelper::Error& e) {
     NFD_LOG_WARN("Cannot create multicast face on " << netif.getName() << ": " << e.what());
     return nullptr;
   }
