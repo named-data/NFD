@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -103,8 +103,7 @@ MulticastEthernetTransport::joinMulticastGroup()
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
   // see bug #2327
-  using boost::asio::ip::udp;
-  udp::socket sock(getGlobalIoService(), udp::v4());
+  boost::asio::ip::udp::socket sock(getGlobalIoService(), boost::asio::ip::udp::v4());
   int fd = sock.native_handle();
 
   // Differences between Linux and the BSDs (including macOS):

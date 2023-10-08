@@ -40,7 +40,7 @@ struct Unicast {};
 struct Multicast {};
 
 /**
- * \brief Implements Transport for datagram-based protocols.
+ * \brief Implements a Transport for datagram-based protocols.
  *
  * \tparam Protocol A datagram-based protocol in Boost.Asio
  * \tparam Addressing The addressing mode, either Unicast or Multicast
@@ -52,9 +52,10 @@ public:
   using protocol = Protocol;
   using addressing = Addressing;
 
-  /** \brief Construct datagram transport.
+  /**
+   * \brief Construct datagram transport.
    *
-   *  \param socket Protocol-specific socket for the created transport
+   * \param socket Protocol-specific socket for the created transport
    */
   explicit
   DatagramTransport(typename protocol::socket&& socket);

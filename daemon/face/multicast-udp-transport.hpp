@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ namespace nfd::face {
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>));
 
 /**
- * \brief A Transport that communicates on a UDP multicast group
+ * \brief A Transport that communicates on a UDP multicast group.
  */
 class MulticastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
@@ -48,35 +48,35 @@ public:
   };
 
   /**
-   * \brief Creates a UDP-based transport for multicast communication
+   * \brief Creates a UDP-based transport for multicast communication.
    * \param multicastGroup multicast group
    * \param recvSocket socket used to receive multicast packets
    * \param sendSocket socket used to send to the multicast group
    * \param linkType either `ndn::nfd::LINK_TYPE_MULTI_ACCESS` or `ndn::nfd::LINK_TYPE_AD_HOC`
    */
-  MulticastUdpTransport(const protocol::endpoint& multicastGroup,
-                        protocol::socket&& recvSocket,
-                        protocol::socket&& sendSocket,
+  MulticastUdpTransport(const boost::asio::ip::udp::endpoint& multicastGroup,
+                        boost::asio::ip::udp::socket&& recvSocket,
+                        boost::asio::ip::udp::socket&& sendSocket,
                         ndn::nfd::LinkType linkType);
 
   ssize_t
   getSendQueueLength() final;
 
   /**
-   * \brief Opens and configures the receive-side socket
+   * \brief Opens and configures the receive-side socket.
    */
   static void
-  openRxSocket(protocol::socket& sock,
-               const protocol::endpoint& multicastGroup,
+  openRxSocket(boost::asio::ip::udp::socket& sock,
+               const boost::asio::ip::udp::endpoint& multicastGroup,
                const boost::asio::ip::address& localAddress = {},
                const ndn::net::NetworkInterface* netif = nullptr);
 
   /**
-   * \brief Opens and configures the transmit-side socket
+   * \brief Opens and configures the transmit-side socket.
    */
   static void
-  openTxSocket(protocol::socket& sock,
-               const protocol::endpoint& localEndpoint,
+  openTxSocket(boost::asio::ip::udp::socket& sock,
+               const boost::asio::ip::udp::endpoint& localEndpoint,
                const ndn::net::NetworkInterface* netif = nullptr,
                bool enableLoopback = false);
 
@@ -88,8 +88,8 @@ private:
   doClose() final;
 
 private:
-  protocol::endpoint m_multicastGroup;
-  protocol::socket m_sendSocket;
+  boost::asio::ip::udp::endpoint m_multicastGroup;
+  boost::asio::ip::udp::socket m_sendSocket;
 };
 
 } // namespace nfd::face

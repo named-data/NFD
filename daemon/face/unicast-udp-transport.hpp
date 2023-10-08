@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,12 +35,12 @@ namespace nfd::face {
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Unicast>));
 
 /**
- * \brief A Transport that communicates on a unicast UDP socket
+ * \brief A Transport that communicates on a unicast UDP socket.
  */
 class UnicastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Unicast>
 {
 public:
-  UnicastUdpTransport(protocol::socket&& socket,
+  UnicastUdpTransport(boost::asio::ip::udp::socket&& socket,
                       ndn::nfd::FacePersistency persistency,
                       time::nanoseconds idleTimeout);
 

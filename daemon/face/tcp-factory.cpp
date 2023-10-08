@@ -215,8 +215,8 @@ TcpFactory::doGetChannels() const
 }
 
 ndn::nfd::FaceScope
-TcpFactory::determineFaceScopeFromAddresses(const boost::asio::ip::address& localAddress,
-                                            const boost::asio::ip::address& remoteAddress) const
+TcpFactory::determineFaceScopeFromAddresses(const ip::address& localAddress,
+                                            const ip::address& remoteAddress) const
 {
   if (m_local(localAddress) && m_local(remoteAddress)) {
     return ndn::nfd::FACE_SCOPE_LOCAL;

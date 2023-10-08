@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@ namespace nfd::face {
 NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);
 
 /**
- * \brief A Transport that communicates on a connected TCP socket
+ * \brief A Transport that communicates on a connected TCP socket.
  *
  * When persistency is set to permanent, whenever the TCP connection is severed, the transport
  * state is set to DOWN, and the connection is retried periodically with exponential backoff
@@ -44,7 +44,9 @@ NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);
 class TcpTransport NFD_FINAL_UNLESS_WITH_TESTS : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
-  TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope);
+  TcpTransport(boost::asio::ip::tcp::socket&& socket,
+               ndn::nfd::FacePersistency persistency,
+               ndn::nfd::FaceScope faceScope);
 
   ssize_t
   getSendQueueLength() final;
@@ -74,29 +76,25 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
-   * \brief Delay before the first reconnection attempt after the TCP connection has been severed
+   * \brief Delay before the first reconnection attempt after the TCP connection has been severed.
    */
   static constexpr time::milliseconds INITIAL_RECONNECT_DELAY = 1_s;
 
   /**
-   * \brief Maximum amount of time to wait before a reconnection attempt
+   * \brief Maximum amount of time to wait before a reconnection attempt.
    */
   static constexpr time::milliseconds MAX_RECONNECT_DELAY = 5_min;
 
   /**
-   * \brief Multiplier for the exponential backoff of the reconnection timer
+   * \brief Multiplier for the exponential backoff of the reconnection timer.
    */
   static constexpr float RECONNECT_DELAY_MULTIPLIER = 2.0f;
 
 private:
-  typename protocol::endpoint m_remoteEndpoint;
+  boost::asio::ip::tcp::endpoint m_remoteEndpoint;
 
-  /** \note valid only when persistency is set to permanent
-   */
+  // The following members are valid only when the persistency is set to permanent
   scheduler::ScopedEventId m_reconnectEvent;
-
-  /** \note valid only when persistency is set to permanent
-   */
   time::milliseconds m_nextReconnectWait;
 };
 

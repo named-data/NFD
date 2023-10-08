@@ -91,10 +91,6 @@ private:
   waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
                  const FaceCreationFailedCallback& onReceiveFailed);
 
-  /**
-   * \brief The channel has received a packet from a remote
-   *        endpoint not associated with any UDP face yet.
-   */
   void
   handleNewPeer(const boost::system::error_code& error,
                 size_t nBytesReceived,

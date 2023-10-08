@@ -33,9 +33,9 @@
 
 namespace nfd::face {
 
-NFD_LOG_INIT(TcpChannel);
-
 namespace ip = boost::asio::ip;
+
+NFD_LOG_INIT(TcpChannel);
 
 TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking,
                        DetermineFaceScopeFromAddress determineFaceScope)
@@ -59,7 +59,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   }
 
   m_acceptor.open(m_localEndpoint.protocol());
-  m_acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
+  m_acceptor.set_option(boost::asio::socket_base::reuse_address(true));
   if (m_localEndpoint.address().is_v6()) {
     m_acceptor.set_option(ip::v6_only(true));
   }

@@ -37,9 +37,10 @@
 
 namespace nfd::face {
 
-/** \brief Implements Transport for stream-based protocols.
+/**
+ * \brief Implements a Transport for stream-based protocols.
  *
- *  \tparam Protocol a stream-based protocol in Boost.Asio
+ * \tparam Protocol a stream-based protocol in Boost.Asio
  */
 template<class Protocol>
 class StreamTransport : public Transport
@@ -47,9 +48,10 @@ class StreamTransport : public Transport
 public:
   using protocol = Protocol;
 
-  /** \brief Construct stream transport.
+  /**
+   * \brief Construct stream transport.
    *
-   *  \param socket Protocol-specific socket for the created transport
+   * \param socket Protocol-specific socket for the created transport
    */
   explicit
   StreamTransport(typename protocol::socket&& socket);

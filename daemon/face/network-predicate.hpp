@@ -44,7 +44,7 @@ public:
   ~NetworkPredicateBase();
 
   /**
-   * \brief Set the whitelist to "*" and clear the blacklist
+   * \brief Set the whitelist to "*" and clear the blacklist.
    */
   void
   clear();

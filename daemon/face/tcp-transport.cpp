@@ -35,9 +35,11 @@
 
 namespace nfd::face {
 
-NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
+namespace ip = boost::asio::ip;
 
-TcpTransport::TcpTransport(protocol::socket&& socket,
+NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<ip::tcp>, TcpTransport);
+
+TcpTransport::TcpTransport(ip::tcp::socket&& socket,
                            ndn::nfd::FacePersistency persistency,
                            ndn::nfd::FaceScope faceScope)
   : StreamTransport(std::move(socket))
@@ -130,7 +132,7 @@ TcpTransport::reconnect()
   BOOST_ASSERT(getState() == TransportState::DOWN);
 
   // recreate the socket
-  m_socket = protocol::socket(m_socket.get_executor());
+  m_socket = ip::tcp::socket(m_socket.get_executor());
   this->resetReceiveBuffer();
   this->resetSendQueue();
 
