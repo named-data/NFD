@@ -38,8 +38,6 @@ NetworkPredicateBase::NetworkPredicateBase()
   this->clear();
 }
 
-NetworkPredicateBase::~NetworkPredicateBase() = default;
-
 void
 NetworkPredicateBase::clear()
 {

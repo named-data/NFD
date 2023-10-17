@@ -53,9 +53,6 @@ public:
     using std::runtime_error::runtime_error;
   };
 
-  virtual
-  ~ManagerBase();
-
   const std::string&
   getModule() const
   {
@@ -70,6 +67,11 @@ protected:
 
   ManagerBase(std::string_view module, Dispatcher& dispatcher,
               CommandAuthenticator& authenticator);
+
+  // ManagerBase is not supposed to be used polymorphically, so we make the destructor
+  // protected to prevent deletion of derived objects through a pointer to the base class,
+  // which would be UB when the destructor is non-virtual.
+  ~ManagerBase();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   // difference from mgmt::ControlCommand: accepts nfd::ControlParameters

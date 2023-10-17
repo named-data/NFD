@@ -40,9 +40,6 @@ class NetworkPredicateBase : private boost::equality_comparable<NetworkPredicate
 public:
   NetworkPredicateBase();
 
-  virtual
-  ~NetworkPredicateBase();
-
   /**
    * \brief Set the whitelist to "*" and clear the blacklist.
    */
@@ -58,6 +55,25 @@ public:
   void
   assign(std::initializer_list<std::pair<std::string, std::string>> whitelist,
          std::initializer_list<std::pair<std::string, std::string>> blacklist);
+
+protected:
+  // Explicitly declare the following four special member functions
+  // to avoid -Wdeprecated-copy-with-dtor warnings from clang.
+
+  NetworkPredicateBase(const NetworkPredicateBase&) = delete;
+
+  NetworkPredicateBase(NetworkPredicateBase&&) = default;
+
+  NetworkPredicateBase&
+  operator=(const NetworkPredicateBase&) = delete;
+
+  NetworkPredicateBase&
+  operator=(NetworkPredicateBase&&) = default;
+
+  // NetworkPredicateBase is not supposed to be used polymorphically, so we make the destructor
+  // protected to prevent deletion of derived objects through a pointer to the base class,
+  // which would be UB when the destructor is non-virtual.
+  ~NetworkPredicateBase() = default;
 
 private:
   virtual bool
@@ -95,7 +111,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
  * ndn::net::NetworkInterface is accepted if it matches any entry in the whitelist and none of
  * the entries in the blacklist.
  */
-class NetworkInterfacePredicate : public NetworkPredicateBase
+class NetworkInterfacePredicate final : public NetworkPredicateBase
 {
 public:
   bool
@@ -117,7 +133,7 @@ private:
  * 2001:db8:2::/64`) or a wildcard (`*`) that matches all IP addresses. An IP address is
  * accepted if it matches any entry in the whitelist and none of the entries in the blacklist.
  */
-class IpAddressPredicate : public NetworkPredicateBase
+class IpAddressPredicate final : public NetworkPredicateBase
 {
 public:
   bool

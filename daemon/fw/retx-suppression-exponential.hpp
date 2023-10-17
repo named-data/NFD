@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,19 +51,22 @@ public:
                              Duration maxInterval = DEFAULT_MAX_INTERVAL,
                              float multiplier = DEFAULT_MULTIPLIER);
 
-  /** \brief Determines whether Interest is a retransmission per pit entry
-   *         and if so, whether it shall be forwarded or suppressed.
+  /**
+   * \brief Determines whether Interest is a retransmission per PIT entry
+   *        and if so, whether it shall be forwarded or suppressed.
    */
   RetxSuppressionResult
   decidePerPitEntry(pit::Entry& pitEntry);
 
-  /** \brief Determines whether Interest is a retransmission per upstream
-   *         and if so, whether it shall be forwarded or suppressed.
+  /**
+   * \brief Determines whether Interest is a retransmission per upstream
+   *        and if so, whether it shall be forwarded or suppressed.
    */
   RetxSuppressionResult
   decidePerUpstream(pit::Entry& pitEntry, Face& outFace);
 
-  /** \brief Increment the suppression interval for out record.
+  /**
+   * \brief Increment the suppression interval for an out-record.
    */
   void
   incrementIntervalForOutRecord(pit::OutRecord& outRecord);
@@ -75,8 +78,8 @@ private: // non-member operators (hidden friends)
   friend std::ostream&
   operator<<(std::ostream& os, const RetxSuppressionExponential& retxSupp)
   {
-    return os << "RetxSuppressionExponential initial-interval=" << retxSupp.m_initialInterval
-              << " max-interval=" << retxSupp.m_maxInterval
+    return os << "RetxSuppressionExponential initial-interval=" << retxSupp.m_initialInterval.count()
+              << " max-interval=" << retxSupp.m_maxInterval.count()
               << " multiplier=" << retxSupp.m_multiplier;
   }
 

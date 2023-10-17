@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,8 +47,8 @@ EthernetFactory::EthernetFactory(const CtorParams& params)
   : ProtocolFactory(params)
 {
   m_netifAddConn = netmon->onInterfaceAdded.connect([this] (const auto& netif) {
-    this->applyUnicastConfigToNetif(netif);
-    this->applyMcastConfigToNetif(*netif);
+    applyUnicastConfigToNetif(netif);
+    applyMcastConfigToNetif(*netif);
   });
 }
 
@@ -157,11 +157,11 @@ EthernetFactory::doProcessConfig(OptionalConfigSection configSection,
     }
   }
 
-  // Even if there's no configuration change, we still need to re-apply configuration because
-  // netifs may have changed.
-  m_unicastConfig = unicastConfig;
-  m_mcastConfig = mcastConfig;
-  this->applyConfig(context);
+  // Even if there are no configuration changes, we still need to re-apply
+  // the configuration because netifs may have changed.
+  m_unicastConfig = std::move(unicastConfig);
+  m_mcastConfig = std::move(mcastConfig);
+  applyConfig(context);
 }
 
 void
@@ -347,6 +347,7 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
     // new face: register with forwarding
     this->addFace(face);
   }
+
   return face;
 }
 
@@ -366,9 +367,9 @@ EthernetFactory::applyConfig(const FaceSystem::ConfigContext&)
 
   // create channels and multicast faces if requested by config
   for (const auto& netif : netmon->listNetworkInterfaces()) {
-    this->applyUnicastConfigToNetif(netif);
+    applyUnicastConfigToNetif(netif);
 
-    auto face = this->applyMcastConfigToNetif(*netif);
+    auto face = applyMcastConfigToNetif(*netif);
     if (face != nullptr) {
       // don't destroy face
       oldFaces.erase(face);

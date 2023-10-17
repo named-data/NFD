@@ -51,7 +51,7 @@ UdpFactory::UdpFactory(const CtorParams& params)
   : ProtocolFactory(params)
 {
   m_netifAddConn = netmon->onInterfaceAdded.connect([this] (const auto& netif) {
-    this->applyMcastConfigToNetif(netif);
+    applyMcastConfigToNetif(netif);
   });
 }
 
@@ -238,10 +238,10 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     }
   }
 
-  // Even if there's no configuration change, we still need to re-apply configuration because
-  // netifs may have changed.
-  m_mcastConfig = mcastConfig;
-  this->applyMcastConfig(context);
+  // Even if there are no configuration changes, we still need to re-apply
+  // the configuration because netifs may have changed.
+  m_mcastConfig = std::move(mcastConfig);
+  applyMcastConfig(context);
 }
 
 void
@@ -434,7 +434,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
     NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": no viable IP address");
     // keep an eye on new addresses
     m_netifConns[netif->getIndex()].addrAddConn =
-      netif->onAddressAdded.connect([=] (auto&&...) { this->applyMcastConfigToNetif(netif); });
+      netif->onAddressAdded.connect([=] (auto&&...) { applyMcastConfigToNetif(netif); });
     return {};
   }
 
@@ -464,7 +464,7 @@ UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext&)
 
   // create faces if requested by config
   for (const auto& netif : netmon->listNetworkInterfaces()) {
-    auto facesToKeep = this->applyMcastConfigToNetif(netif);
+    auto facesToKeep = applyMcastConfigToNetif(netif);
     for (const auto& face : facesToKeep) {
       // don't destroy face
       facesToClose.erase(face);

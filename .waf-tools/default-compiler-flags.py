@@ -158,7 +158,6 @@ class GccClangCommonFlags(CompilerFlags):
         '-Wpedantic',
         '-Wenum-conversion',
         '-Wextra-semi',
-        '-Wnon-virtual-dtor',
         '-Wno-unused-parameter',
     ]
     __linkFlags = ['-Wl,-O1']

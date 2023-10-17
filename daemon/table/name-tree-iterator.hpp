@@ -124,7 +124,8 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const Iterator& i);
 
-/** \brief Enumeration operation implementation.
+/**
+ * \brief Enumeration operation implementation.
  */
 class EnumerationImpl
 {
@@ -132,18 +133,19 @@ public:
   explicit
   EnumerationImpl(const NameTree& nt);
 
-  virtual
-  ~EnumerationImpl() = default;
-
   virtual void
   advance(Iterator& i) = 0;
+
+protected:
+  ~EnumerationImpl() = default;
 
 protected:
   const NameTree& nt;
   const Hashtable& ht;
 };
 
-/** \brief Full enumeration implementation.
+/**
+ * \brief Full enumeration implementation.
  */
 class FullEnumerationImpl final : public EnumerationImpl
 {
@@ -157,10 +159,11 @@ private:
   EntrySelector m_pred;
 };
 
-/** \brief Partial enumeration implementation.
+/**
+ * \brief Partial enumeration implementation.
  *
- *  Iterator::m_ref should be initialized to subtree root.
- *  Iterator::m_state LSB indicates whether to visit children of m_entry.
+ * Iterator::m_ref should be initialized to subtree root.
+ * Iterator::m_state LSB indicates whether to visit children of m_entry.
  */
 class PartialEnumerationImpl final : public EnumerationImpl
 {
@@ -174,9 +177,10 @@ private:
   EntrySubTreeSelector m_pred;
 };
 
-/** \brief Partial enumeration implementation.
+/**
+ * \brief Partial enumeration implementation.
  *
- *  Iterator::m_ref should be initialized to longest prefix matched entry.
+ * Iterator::m_ref should be initialized to longest prefix matched entry.
  */
 class PrefixMatchImpl final : public EnumerationImpl
 {
@@ -191,10 +195,11 @@ private:
   EntrySelector m_pred;
 };
 
-/** \brief A Forward Range of name tree entries.
+/**
+ * \brief A forward range of name tree entries.
  *
- *  This type has .begin() and .end() methods which return Iterator.
- *  This type is usable with range-based for.
+ * This type has `.begin()` and `.end()` methods which return Iterator.
+ * This type is usable with range-based for loops.
  */
 using Range = boost::iterator_range<Iterator>;
 

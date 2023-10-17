@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,19 +32,21 @@
 
 namespace nfd::face {
 
-/** \brief Abstracts a transport that can be paired with another.
+/**
+ * \brief Abstracts a transport that can be paired with another.
  */
 class InternalTransportBase
 {
 public:
-  virtual
-  ~InternalTransportBase() = default;
-
   virtual void
   receivePacket(const Block& packet) = 0;
+
+protected:
+  ~InternalTransportBase() = default;
 };
 
-/** \brief Implements a forwarder-side transport that can be paired with another transport.
+/**
+ * \brief Implements a forwarder-side transport that can be paired with another transport.
  */
 class InternalForwarderTransport final : public Transport, public InternalTransportBase
 {
@@ -56,7 +58,7 @@ public:
                              ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   void
-  setPeer(InternalTransportBase* peer)
+  setPeer(InternalTransportBase* peer) noexcept
   {
     m_peer = peer;
   }
@@ -78,7 +80,8 @@ private:
   InternalTransportBase* m_peer = nullptr;
 };
 
-/** \brief Implements a client-side transport that can be paired with an InternalForwarderTransport.
+/**
+ * \brief Implements a client-side transport that can be paired with an InternalForwarderTransport.
  */
 class InternalClientTransport final : public ndn::Transport, public InternalTransportBase
 {
