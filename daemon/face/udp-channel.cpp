@@ -97,10 +97,9 @@ void
 UdpChannel::waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint,
-                              [=] (auto&&... args) {
-                                this->handleNewPeer(std::forward<decltype(args)>(args)..., onFaceCreated, onReceiveFailed);
-                              });
+  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint, [=] (auto&&... args) {
+    handleNewPeer(std::forward<decltype(args)>(args)..., onFaceCreated, onReceiveFailed);
+  });
 }
 
 void

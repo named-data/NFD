@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,8 @@
 
 namespace nfd::face {
 
-/** \brief Protocol factory for WebSocket.
+/**
+ * \brief Protocol factory for WebSocket.
  */
 class WebSocketFactory final : public ProtocolFactory
 {
@@ -44,13 +45,13 @@ public:
   /**
    * \brief Create WebSocket-based channel using websocket::Endpoint.
    *
-   * websocket::Endpoint is really an alias for boost::asio::ip::tcp::endpoint.
+   * websocket::Endpoint is an alias for boost::asio::ip::tcp::endpoint.
    *
    * If this method called twice with the same endpoint, only one channel
    * will be created.  The second call will just retrieve the existing
    * channel.
    *
-   * \returns always a valid pointer to a WebSocketChannel object, an exception
+   * \returns Always a valid pointer to a WebSocketChannel object, an exception
    *          is thrown if it cannot be created.
    */
   shared_ptr<WebSocketChannel>

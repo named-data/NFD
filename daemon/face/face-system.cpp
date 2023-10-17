@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,8 @@
  */
 
 #include "face-system.hpp"
-#include "protocol-factory.hpp"
 #include "netdev-bound.hpp"
-#include "common/global.hpp"
+#include "protocol-factory.hpp"
 #include "fw/face-table.hpp"
 
 namespace nfd::face {
@@ -71,14 +70,14 @@ FaceSystem::listProtocolFactories() const
 }
 
 ProtocolFactory*
-FaceSystem::getFactoryById(const std::string& id)
+FaceSystem::getFactoryById(const std::string& id) const
 {
   auto found = m_factories.find(id);
   return found == m_factories.end() ? nullptr : found->second.get();
 }
 
 ProtocolFactory*
-FaceSystem::getFactoryByScheme(const std::string& scheme)
+FaceSystem::getFactoryByScheme(const std::string& scheme) const
 {
   auto found = m_factoryByScheme.find(scheme);
   return found == m_factoryByScheme.end() ? nullptr : found->second;

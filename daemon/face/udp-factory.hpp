@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,11 +27,13 @@
 #define NFD_DAEMON_FACE_UDP_FACTORY_HPP
 
 #include "protocol-factory.hpp"
+#include "network-predicate.hpp"
 #include "udp-channel.hpp"
 
 namespace nfd::face {
 
-/** \brief Protocol factory for UDP over IPv4 and IPv6.
+/**
+ * \brief Protocol factory for UDP over IPv4 and IPv6.
  */
 class UdpFactory final : public ProtocolFactory
 {
@@ -51,7 +53,7 @@ public:
   /**
    * \brief Create UDP-based channel using udp::Endpoint.
    *
-   * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
+   * udp::Endpoint is an alias for boost::asio::ip::udp::endpoint.
    *
    * If this method is called twice with the same endpoint, only one channel
    * will be created. The second call will just return the existing channel.
@@ -59,7 +61,7 @@ public:
    * If a multicast face is already active on the same local endpoint,
    * the creation fails and an exception is thrown.
    *
-   * \return always a valid pointer to a UdpChannel object, an exception
+   * \return Always a valid pointer to a UdpChannel object, an exception
    *         is thrown if it cannot be created.
    * \throw UdpFactory::Error
    */
@@ -70,7 +72,7 @@ public:
   /**
    * \brief Create a multicast UDP face.
    *
-   * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
+   * udp::Endpoint is an alias for boost::asio::ip::udp::endpoint.
    *
    * The face will join the specified multicast group.
    *
@@ -85,9 +87,9 @@ public:
    * \param localAddress the local IP address to which the face will be bound
    * \param multicastEndpoint the multicast endpoint (multicast group and port number)
    *
-   * \return always a valid shared pointer to the created face;
+   * \return Always a valid shared pointer to the created face;
    *         an exception is thrown if the face cannot be created.
-   * \throw UdpFactory::Error
+   * \throw std::runtime_error %Face creation failed
    */
   shared_ptr<Face>
   createMulticastFace(const ndn::net::NetworkInterface& netif,
@@ -107,13 +109,15 @@ private:
   std::vector<shared_ptr<const Channel>>
   doGetChannels() const final;
 
-  /** \brief Create UDP multicast faces on \p netif if needed by \p m_mcastConfig.
-   *  \return list of faces (just created or already existing) on \p netif
+  /**
+   * \brief Create UDP multicast faces on \p netif if needed by \p m_mcastConfig.
+   * \return List of faces (just created or already existing) on \p netif.
    */
   std::vector<shared_ptr<Face>>
   applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
-  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig.
+  /**
+   * \brief Create and destroy UDP multicast faces according to \p m_mcastConfig.
    */
   void
   applyMcastConfig(const FaceSystem::ConfigContext& context);

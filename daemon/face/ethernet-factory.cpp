@@ -26,7 +26,6 @@
 #include "ethernet-factory.hpp"
 #include "generic-link-service.hpp"
 #include "multicast-ethernet-transport.hpp"
-#include "pcap-helper.hpp"
 
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -170,13 +169,13 @@ EthernetFactory::doCreateFace(const CreateFaceRequest& req,
                               const FaceCreationFailedCallback& onFailure)
 {
   if (!req.localUri || req.localUri->getScheme() != "dev") {
-    NFD_LOG_TRACE("Cannot create unicast Ethernet face without dev:// LocalUri");
+    NFD_LOG_TRACE("createFace: dev:// LocalUri required");
     onFailure(406, "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme");
     return;
   }
 
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    NFD_LOG_TRACE("createFace: unsupported FacePersistency");
     onFailure(406, "Outgoing Ethernet faces do not support on-demand persistency");
     return;
   }
@@ -185,14 +184,14 @@ EthernetFactory::doCreateFace(const CreateFaceRequest& req,
   std::string localEndpoint(req.localUri->getHost());
 
   if (remoteEndpoint.isMulticast()) {
-    NFD_LOG_TRACE("createFace does not support multicast faces");
+    NFD_LOG_TRACE("createFace: unsupported multicast endpoint");
     onFailure(406, "Cannot create multicast Ethernet faces");
     return;
   }
 
   if (req.params.wantLocalFields) {
     // Ethernet faces are never local
-    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
+    NFD_LOG_TRACE("createFace: cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
     return;
   }
@@ -258,7 +257,9 @@ EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
   connectFaceClosedSignal(*face, [this, key] { m_mcastFaces.erase(key); });
 
   auto channelIt = m_channels.find(netif.getName());
-  face->setChannel(channelIt != m_channels.end() ? channelIt->second : nullptr);
+  if (channelIt != m_channels.end()) {
+    face->setChannel(channelIt->second);
+  }
 
   return face;
 }
@@ -332,15 +333,11 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
   NFD_LOG_DEBUG("Creating multicast face on " << netif.getName());
   shared_ptr<Face> face;
   try {
-    face = this->createMulticastFace(netif, m_mcastConfig.group);
+    face = createMulticastFace(netif, m_mcastConfig.group);
   }
-  catch (const EthernetTransport::Error& e) {
+  catch (const std::runtime_error& e) {
     NFD_LOG_WARN("Cannot create multicast face on " << netif.getName() << ": " << e.what());
-    return nullptr;
-  }
-  catch (const PcapHelper::Error& e) {
-    NFD_LOG_WARN("Cannot create multicast face on " << netif.getName() << ": " << e.what());
-    return nullptr;
+    return nullptr; // not a fatal error
   }
 
   if (face->getId() == INVALID_FACEID) {

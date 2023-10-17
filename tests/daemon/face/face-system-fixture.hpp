@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,20 +43,19 @@ class FaceSystemFixture : public virtual GlobalIoFixture
 {
 public:
   FaceSystemFixture()
-    : netmon(make_shared<ndn::net::NetworkMonitorStub>(~0))
-    , faceSystem(faceTable, netmon)
-    , netdevBound(*faceSystem.m_netdevBound)
   {
     faceSystem.setConfigFile(configFile);
   }
 
-  /** \brief Copy a snapshot of NetworkInterface information to \p netmon.
-   *  \pre netmon contains no NetworkInterface
+  /**
+   * \brief Copy a snapshot of NetworkInterface information to \p netmon.
+   * \pre netmon contains no NetworkInterface.
    */
   void
   copyRealNetifsToNetmon()
   {
     BOOST_ASSERT(netmon->listNetworkInterfaces().empty());
+
     for (const auto& netif : collectNetworkInterfaces()) {
       auto copy = netmon->makeNetworkInterface();
       copy->setIndex(netif->getIndex());
@@ -72,6 +71,7 @@ public:
       }
       netmon->addInterface(copy);
     }
+
     netmon->emitEnumerationCompleted();
   }
 
@@ -81,39 +81,42 @@ public:
     configFile.parse(text, isDryRun, "test-config");
   }
 
-  /** \brief Get ProtocolFactory from FaceSystem.
-   *  \tparam F ProtocolFactory subclass
+  /**
+   * \brief Get ProtocolFactory from FaceSystem.
+   * \tparam F ProtocolFactory subclass
    *
-   *  If ProtocolFactory with \p scheme does not exist or has an incompatible type,
-   *  this fails the test case.
+   * If ProtocolFactory with \p id does not exist or has an incompatible type,
+   * this fails the test case.
    */
   template<typename F>
   F&
-  getFactoryById(const std::string& id)
+  getFactoryById(const std::string& id) const
   {
     F* factory = dynamic_cast<F*>(faceSystem.getFactoryById(id));
     BOOST_REQUIRE(factory != nullptr);
     return *factory;
   }
 
-  /** \brief Get ProtocolFactory from FaceSystem.
-   *  \tparam F ProtocolFactory subclass
+  /**
+   * \brief Get ProtocolFactory from FaceSystem.
+   * \tparam F ProtocolFactory subclass
    *
-   *  If ProtocolFactory with \p scheme does not exist or has an incompatible type,
-   *  this fails the test case.
+   * If ProtocolFactory with \p scheme does not exist or has an incompatible type,
+   * this fails the test case.
    */
   template<typename F>
   F&
-  getFactoryByScheme(const std::string& scheme)
+  getFactoryByScheme(const std::string& scheme) const
   {
     F* factory = dynamic_cast<F*>(faceSystem.getFactoryByScheme(scheme));
     BOOST_REQUIRE(factory != nullptr);
     return *factory;
   }
 
-  /** \brief List faces of specified scheme from FaceTable.
-   *  \param scheme local or remote FaceUri scheme
-   *  \param linkType if not NONE, filter by specified LinkType
+  /**
+   * \brief List faces of specified scheme from FaceTable.
+   * \param scheme local or remote FaceUri scheme
+   * \param linkType if not NONE, filter by specified LinkType
    */
   std::vector<const Face*>
   listFacesByScheme(const std::string& scheme,
@@ -134,9 +137,8 @@ public:
 protected:
   ConfigFile configFile;
   FaceTable faceTable;
-  shared_ptr<ndn::net::NetworkMonitorStub> netmon;
-  FaceSystem faceSystem;
-  face::NetdevBound& netdevBound;
+  shared_ptr<ndn::net::NetworkMonitorStub> netmon{make_shared<ndn::net::NetworkMonitorStub>(~0)};
+  FaceSystem faceSystem{faceTable, netmon};
 };
 
 /**

@@ -28,6 +28,7 @@
 #include "multicast-udp-transport.hpp"
 #include "common/global.hpp"
 
+#include <boost/container/static_vector.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -196,7 +197,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     providedSchemes.insert("udp4");
   }
   else if (providedSchemes.count("udp4") > 0) {
-    NFD_LOG_WARN("Cannot close udp4 channel after its creation");
+    NFD_LOG_WARN("Cannot close UDP channel after its creation");
   }
 
   if (enableV6) {
@@ -209,7 +210,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     providedSchemes.insert("udp6");
   }
   else if (providedSchemes.count("udp6") > 0) {
-    NFD_LOG_WARN("Cannot close udp6 channel after its creation");
+    NFD_LOG_WARN("Cannot close UDP channel after its creation");
   }
 
   if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
@@ -250,13 +251,13 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
                          const FaceCreationFailedCallback& onFailure)
 {
   if (req.localUri) {
-    NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
+    NFD_LOG_TRACE("createFace: unsupported LocalUri");
     onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
     return;
   }
 
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    NFD_LOG_TRACE("createFace: unsupported FacePersistency");
     onFailure(406, "Outgoing UDP faces do not support on-demand persistency");
     return;
   }
@@ -265,14 +266,14 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
                          boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
-    NFD_LOG_TRACE("createFace does not support multicast faces");
+    NFD_LOG_TRACE("createFace: unsupported multicast endpoint");
     onFailure(406, "Cannot create multicast UDP faces");
     return;
   }
 
   if (req.params.wantLocalFields) {
     // UDP faces are never local
-    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
+    NFD_LOG_TRACE("createFace: cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
     return;
   }
@@ -377,7 +378,9 @@ UdpFactory::createMulticastFace(const net::NetworkInterface& netif,
                                 [isV4 = localEp.address().is_v4()] (const auto& it) {
                                   return it.first.address().is_v4() == isV4;
                                 });
-  face->setChannel(channelIt != m_channels.end() ? channelIt->second : nullptr);
+  if (channelIt != m_channels.end()) {
+    face->setChannel(channelIt->second);
+  }
 
   return face;
 }
@@ -423,7 +426,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
     return {};
   }
 
-  std::vector<ip::address> addrs;
+  boost::container::static_vector<ip::address, 2> addrs;
   for (auto af : {net::AddressFamily::V4, net::AddressFamily::V6}) {
     auto addr = pickAddress(*netif, af);
     if (addr)
@@ -442,8 +445,14 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
 
   std::vector<shared_ptr<Face>> faces;
   for (const auto& addr : addrs) {
-    auto face = this->createMulticastFace(*netif, addr,
-                                          addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
+    shared_ptr<Face> face;
+    try {
+      face = createMulticastFace(*netif, addr, addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
+    }
+    catch (const std::runtime_error& e) {
+      NFD_LOG_WARN("Cannot create multicast face on " << addr << ": " << e.what());
+      continue; // not a fatal error
+    }
     if (face->getId() == INVALID_FACEID) {
       // new face: register with forwarding
       this->addFace(face);

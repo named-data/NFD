@@ -101,8 +101,9 @@ void
 EthernetChannel::asyncRead(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read,
-                      [=] (const auto& e) { this->handleRead(e, onFaceCreated, onReceiveFailed); });
+  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read, [=] (const auto& e) {
+    handleRead(e, onFaceCreated, onReceiveFailed);
+  });
 }
 
 void
