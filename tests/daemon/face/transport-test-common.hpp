@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,25 +32,27 @@
 
 namespace nfd::tests {
 
-/** \brief Check that a transport has all its static properties set after initialization
+/**
+ * \brief Check that a transport has all its static properties set after initialization.
  *
- *  This check shall be inserted to the StaticProperties test case for each transport,
- *  in addition to checking the values of properties.
- *  When a new static property is defined, this test case shall be updated.
- *  Thus, if a transport forgets to set a static property, this check would fail.
+ * This check shall be inserted to the StaticProperties test case for each transport,
+ * in addition to checking the values of properties.
+ * When a new static property is defined, this test case shall be updated.
+ * Thus, if a transport forgets to set a static property, this check would fail.
  */
 inline void
 checkStaticPropertiesInitialized(const face::Transport& transport)
 {
-  BOOST_CHECK(!transport.getLocalUri().getScheme().empty());
-  BOOST_CHECK(!transport.getRemoteUri().getScheme().empty());
-  BOOST_CHECK_NE(transport.getScope(), ndn::nfd::FACE_SCOPE_NONE);
-  BOOST_CHECK_NE(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_NONE);
-  BOOST_CHECK_NE(transport.getLinkType(), ndn::nfd::LINK_TYPE_NONE);
-  BOOST_CHECK_NE(transport.getMtu(), face::MTU_INVALID);
+  BOOST_TEST(transport.getLocalUri().getScheme().empty() == false);
+  BOOST_TEST(transport.getRemoteUri().getScheme().empty() == false);
+  BOOST_TEST(transport.getScope() != ndn::nfd::FACE_SCOPE_NONE);
+  BOOST_TEST(transport.getPersistency() != ndn::nfd::FACE_PERSISTENCY_NONE);
+  BOOST_TEST(transport.getLinkType() != ndn::nfd::LINK_TYPE_NONE);
+  BOOST_TEST(transport.getMtu() != face::MTU_INVALID);
 }
 
-/** \brief Generic wrapper for transport fixtures that require an IP address
+/**
+ * \brief Generic wrapper for transport fixtures that require an IP address.
  */
 template<typename TransportFixtureBase,
          AddressFamily AF = AddressFamily::Any,

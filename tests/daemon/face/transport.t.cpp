@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 
   auto from = static_cast<TransportState>(T::first::value);
   auto to = static_cast<TransportState>(T::second::value);
-  BOOST_TEST_MESSAGE("SetState " << from << " -> " << to);
+  BOOST_TEST_INFO_SCOPE(from << " -> " << to);
 
   // enter from state
   using Steps = typename mpl::at<StateEntering, mpl::int_<T::first::value>>::type;
@@ -155,12 +155,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
   BOOST_REQUIRE_EQUAL(transport->getState(), from);
 
   bool hasSignal = false;
-  transport->afterStateChange.connect(
-    [from, to, &hasSignal] (TransportState oldState, TransportState newState) {
-      hasSignal = true;
-      BOOST_CHECK_EQUAL(oldState, from);
-      BOOST_CHECK_EQUAL(newState, to);
-    });
+  transport->afterStateChange.connect([&] (TransportState oldState, TransportState newState) {
+    hasSignal = true;
+    BOOST_CHECK_EQUAL(oldState, from);
+    BOOST_CHECK_EQUAL(newState, to);
+  });
 
   // do transition
   bool isValid = from == to ||

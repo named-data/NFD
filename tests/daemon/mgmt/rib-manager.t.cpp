@@ -486,6 +486,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
   std::vector<ndn::nfd::RibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::RibEntry decodedEntry(content.elements()[idx]);
+    BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getName());
 

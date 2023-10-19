@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -541,17 +541,16 @@ BOOST_AUTO_TEST_CASE(Parameters)
   FaceTable faceTable;
   Forwarder forwarder{faceTable};
 
-  auto checkValidity = [&] (const std::string& parameters, bool isCorrect) {
-    Name strategyName(Name(AsfStrategy::getStrategyName()).append(parameters));
+  auto checkValidity = [&] (std::string_view parameters, bool isCorrect) {
+    BOOST_TEST_INFO_SCOPE(parameters);
+    Name strategyName(Name(AsfStrategy::getStrategyName()).append(Name(parameters)));
     std::unique_ptr<AsfStrategy> strategy;
-    BOOST_TEST_CONTEXT(parameters) {
-      if (isCorrect) {
-        strategy = make_unique<AsfStrategy>(forwarder, strategyName);
-        BOOST_CHECK(strategy->m_retxSuppression != nullptr);
-      }
-      else {
-        BOOST_CHECK_THROW(make_unique<AsfStrategy>(forwarder, strategyName), std::invalid_argument);
-      }
+    if (isCorrect) {
+      strategy = make_unique<AsfStrategy>(forwarder, strategyName);
+      BOOST_CHECK(strategy->m_retxSuppression != nullptr);
+    }
+    else {
+      BOOST_CHECK_THROW(make_unique<AsfStrategy>(forwarder, strategyName), std::invalid_argument);
     }
     return strategy;
   };

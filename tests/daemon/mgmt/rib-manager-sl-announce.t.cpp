@@ -71,14 +71,14 @@ public:
     loadDefaultPaConfig();
   }
 
-  template<typename ...T>
+  template<typename... T>
   ndn::PrefixAnnouncement
   makeTrustedAnn(T&&... args)
   {
     return signPrefixAnn(makePrefixAnn(std::forward<T>(args)...), m_keyChain, m_trustedSigner);
   }
 
-  template<typename ...T>
+  template<typename... T>
   ndn::PrefixAnnouncement
   makeUntrustedAnn(T&&... args)
   {

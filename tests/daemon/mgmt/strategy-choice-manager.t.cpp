@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -218,14 +218,13 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
 
   for (auto i = dataset.elements_begin(); i != dataset.elements_end(); ++i) {
     ndn::nfd::StrategyChoice record(*i);
+    BOOST_TEST_INFO_SCOPE(record);
     auto found = expected.find(record.getName());
     if (found == expected.end()) {
       BOOST_ERROR("record has unexpected namespace " << record.getName());
     }
     else {
-      BOOST_CHECK_MESSAGE(record.getStrategy() == found->second,
-        "record for " << record.getName() << " has wrong strategy " << record.getStrategy() <<
-        ", should be " << found->second);
+      BOOST_TEST(record.getStrategy() == found->second);
       expected.erase(found);
     }
   }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,22 +49,20 @@ protected:
   {
     std::set<std::string> uris;
     std::transform(netifs.begin(), netifs.end(), std::inserter(uris, uris.end()),
-                   [] (const auto& netif) {
-                     return FaceUri::fromDev(netif->getName()).toString();
-                   });
+                   [] (const auto& netif) { return FaceUri::fromDev(netif->getName()).toString(); });
     return uris;
   }
 
   std::vector<const Face*>
   listEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listFacesByScheme("ether", linkType);
+    return listFacesByScheme("ether", linkType);
   }
 
   size_t
   countEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listEtherMcastFaces(linkType).size();
+    return listEtherMcastFaces(linkType).size();
   }
 };
 
@@ -303,10 +301,9 @@ BOOST_AUTO_TEST_CASE(Blacklist)
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size() - 1);
   BOOST_CHECK(std::none_of(etherMcastFaces.begin(), etherMcastFaces.end(),
-    [ifname] (const nfd::Face* face) {
-      return face->getLocalUri() == FaceUri::fromDev(ifname);
-    }
-  ));
+                           [uri = FaceUri::fromDev(ifname)] (const auto* face) {
+                             return face->getLocalUri() == uri;
+                           }));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -438,6 +435,7 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
+
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   factory.createChannel(netifs.front(), 1_min);

@@ -244,20 +244,21 @@ BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
   BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(mABCD).getPrefix(), "/A/B/C");
 }
 
-void
+static void
 validateFindExactMatch(Fib& fib, const Name& target)
 {
+  BOOST_TEST_INFO_SCOPE(target);
   const Entry* entry = fib.findExactMatch(target);
-  BOOST_REQUIRE_MESSAGE(entry != nullptr, "No entry found for " << target);
+  BOOST_REQUIRE(entry != nullptr);
   BOOST_CHECK_EQUAL(entry->getPrefix(), target);
 }
 
-void
+static void
 validateNoExactMatch(Fib& fib, const Name& target)
 {
+  BOOST_TEST_INFO_SCOPE(target);
   const Entry* entry = fib.findExactMatch(target);
-  BOOST_CHECK_MESSAGE(entry == nullptr,
-                      "Found unexpected entry for " << target);
+  BOOST_CHECK(entry == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(ExactMatch)
@@ -294,13 +295,12 @@ BOOST_AUTO_TEST_CASE(ExactMatchEmpty)
   validateNoExactMatch(fib, "/nothing/here");
 }
 
-void
+static void
 validateErase(Fib& fib, const Name& target)
 {
+  BOOST_TEST_INFO_SCOPE(target);
   fib.erase(target);
-
-  const Entry* entry = fib.findExactMatch(target);
-  BOOST_CHECK_MESSAGE(entry == nullptr, "Found \"removed\" entry for " << target);
+  BOOST_CHECK(fib.findExactMatch(target) == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(Erase)

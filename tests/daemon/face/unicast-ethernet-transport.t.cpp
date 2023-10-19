@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ethernet-fixture.hpp"
+#include "ethernet-transport-fixture.hpp"
 
 #include "common/global.hpp"
 
@@ -34,7 +34,7 @@ namespace nfd::tests {
 using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestUnicastEthernetTransport, EthernetFixture)
+BOOST_FIXTURE_TEST_SUITE(TestUnicastEthernetTransport, EthernetTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticProperties)
 {

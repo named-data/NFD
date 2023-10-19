@@ -421,6 +421,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   std::vector<ndn::nfd::FibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::FibEntry decodedEntry(content.elements()[idx]);
+    BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getPrefix());
 

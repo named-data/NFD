@@ -69,7 +69,7 @@ protected:
         }
       }
     }
-    this->copyRealNetifsToNetmon();
+    copyRealNetifsToNetmon();
   }
 
   shared_ptr<Face>
@@ -106,16 +106,17 @@ protected:
   std::vector<const Face*>
   listUdp4McastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listFacesByScheme("udp4", linkType);
+    return listFacesByScheme("udp4", linkType);
   }
 
   std::vector<const Face*>
   listUdp6McastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listFacesByScheme("udp6", linkType);
+    return listFacesByScheme("udp6", linkType);
   }
 
-  /** \brief Determine whether \p netif has at least one IP address of the given family.
+  /**
+   * \brief Determine whether \p netif has at least one IP address of the given family.
    */
   static bool
   hasAddressFamily(const NetworkInterface& netif, ndn::net::AddressFamily af)
@@ -124,7 +125,8 @@ protected:
                        [af] (const auto& a) { return a.getFamily() == af; });
   }
 
-  /** \brief Determine whether a UDP multicast face is created on \p netif.
+  /**
+   * \brief Determine whether a UDP multicast face is created on \p netif.
    */
   static bool
   isFaceOnNetif(const Face& face, const NetworkInterface& netif)

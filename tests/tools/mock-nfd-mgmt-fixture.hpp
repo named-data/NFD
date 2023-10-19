@@ -173,7 +173,7 @@ private:
    *  \param name dataset prefix without version and segment
    *  \param contentArgs passed to Data::setContent
    */
-  template<typename ...ContentArgs>
+  template<typename... ContentArgs>
   void
   sendDatasetReply(Name name, ContentArgs&&... contentArgs)
   {
@@ -220,8 +220,8 @@ protected:
   [&interest] { \
     auto params = parseCommand(interest, (expectedPrefix)); \
     BOOST_REQUIRE_MESSAGE(params.has_value(), "Interest " << interest.getName() << \
-                          " does not match command prefix " << (expectedPrefix)); \
+                          " must match the prefix " << (expectedPrefix)); \
     return *params; \
-  } ()
+  }()
 
 #endif // NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP

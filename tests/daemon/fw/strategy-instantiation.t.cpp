@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,18 +125,17 @@ class SuppressionParametersFixture
 {
 public:
   std::unique_ptr<S>
-  checkValidity(const std::string& parameters, bool isCorrect)
+  checkValidity(std::string_view parameters, bool isCorrect)
   {
-    Name strategyName(Name(S::getStrategyName()).append(parameters));
+    BOOST_TEST_INFO_SCOPE(parameters);
+    Name strategyName(Name(S::getStrategyName()).append(Name(parameters)));
     std::unique_ptr<S> strategy;
-    BOOST_TEST_CONTEXT(parameters) {
-      if (isCorrect) {
-        strategy = make_unique<S>(m_forwarder, strategyName);
-        BOOST_CHECK(strategy->m_retxSuppression != nullptr);
-      }
-      else {
-        BOOST_CHECK_THROW(make_unique<S>(m_forwarder, strategyName), std::invalid_argument);
-      }
+    if (isCorrect) {
+      strategy = make_unique<S>(m_forwarder, strategyName);
+      BOOST_CHECK(strategy->m_retxSuppression != nullptr);
+    }
+    else {
+      BOOST_CHECK_THROW(make_unique<S>(m_forwarder, strategyName), std::invalid_argument);
     }
     return strategy;
   }
