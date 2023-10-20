@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -110,6 +110,7 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
   auto channel1 = factory.createChannel(CHANNEL_PATH1);
   auto channel1a = factory.createChannel(CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
 
   const auto& uri = channel1->getUri();
   BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
@@ -119,9 +120,10 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 
   auto channel2 = factory.createChannel(CHANNEL_PATH2);
   BOOST_CHECK_NE(channel1, channel2);
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
 }
 
-BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
+BOOST_AUTO_TEST_CASE(CreateFace)
 {
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
