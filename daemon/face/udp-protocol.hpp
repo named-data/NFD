@@ -46,7 +46,7 @@ computeMtu(const Endpoint& localEndpoint);
 inline Endpoint
 getDefaultMulticastGroup()
 {
-  return {boost::asio::ip::make_address_v4(0xE00017AA), 56363};
+  return {boost::asio::ip::address_v4(0xE00017AA), 56363};
 }
 
 /**
@@ -55,7 +55,8 @@ getDefaultMulticastGroup()
 inline Endpoint
 getDefaultMulticastGroupV6()
 {
-  return {boost::asio::ip::make_address_v6("FF02::1234"), 56363};
+  return {boost::asio::ip::address_v6({0xFF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34}), 56363};
 }
 
 } // namespace nfd::udp

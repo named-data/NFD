@@ -53,10 +53,10 @@ protected:
 
     remoteConnect(address);
 
-    face = make_unique<Face>(make_unique<DummyLinkService>(),
-                             make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
-    transport = static_cast<UnicastUdpTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
+    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
+                               make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
+    transport = static_cast<UnicastUdpTransport*>(m_face->getTransport());
+    receivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -75,7 +75,7 @@ protected:
   remoteRead(std::vector<uint8_t>& buf, bool needToCheck = true)
   {
     remoteSocket.async_receive(boost::asio::buffer(buf),
-      [this, needToCheck] (const boost::system::error_code& error, size_t) {
+      [this, needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -104,7 +104,7 @@ protected:
   std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
-  unique_ptr<Face> face;
+  unique_ptr<Face> m_face;
 };
 
 } // namespace nfd::tests

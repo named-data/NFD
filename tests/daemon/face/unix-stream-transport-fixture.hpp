@@ -80,14 +80,6 @@ public:
 class UnixStreamTransportFixture : public GlobalIoFixture
 {
 protected:
-  UnixStreamTransportFixture()
-    : transport(nullptr)
-    , remoteSocket(g_io)
-    , receivedPackets(nullptr)
-    , acceptor(g_io)
-  {
-  }
-
   [[nodiscard]] std::tuple<bool, std::string>
   checkPreconditions() const
   {
@@ -98,13 +90,13 @@ protected:
   initialize()
   {
     unix_stream::socket sock(g_io);
-    acceptor.async_accept(sock, [this] (const boost::system::error_code& error) {
+    m_acceptor.async_accept(sock, [this] (const auto& error) {
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
 
-    unix_stream::endpoint remoteEp(acceptor.local_endpoint());
-    remoteSocket.async_connect(remoteEp, [this] (const boost::system::error_code& error) {
+    unix_stream::endpoint remoteEp(m_acceptor.local_endpoint());
+    remoteSocket.async_connect(remoteEp, [this] (const auto& error) {
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
@@ -112,10 +104,10 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
     localEp = sock.local_endpoint();
-    face = make_unique<Face>(make_unique<DummyLinkService>(),
-                             make_unique<UnixStreamTransport>(std::move(sock)));
-    transport = static_cast<UnixStreamTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
+    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
+                               make_unique<UnixStreamTransport>(std::move(sock)));
+    transport = static_cast<UnixStreamTransport*>(m_face->getTransport());
+    receivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -134,14 +126,14 @@ protected:
 
 protected:
   LimitedIo limitedIo;
-  UnixStreamTransport* transport;
+  UnixStreamTransport* transport = nullptr;
   unix_stream::endpoint localEp;
-  unix_stream::socket remoteSocket;
-  std::vector<RxPacket>* receivedPackets;
+  unix_stream::socket remoteSocket{g_io};
+  std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
-  AcceptorWithCleanup acceptor;
-  unique_ptr<Face> face;
+  AcceptorWithCleanup m_acceptor{g_io};
+  unique_ptr<Face> m_face;
 };
 
 } // namespace nfd::tests

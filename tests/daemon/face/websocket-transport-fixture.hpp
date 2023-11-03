@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -103,10 +103,10 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, // serverHandleOpen, clientHandleOpen
                                       1_s), LimitedIo::EXCEED_OPS);
 
-    face = make_unique<Face>(make_unique<DummyLinkService>(),
-                             make_unique<WebSocketTransport>(serverHdl, server, pingInterval));
-    transport = static_cast<WebSocketTransport*>(face->getTransport());
-    serverReceivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
+    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
+                               make_unique<WebSocketTransport>(serverHdl, server, pingInterval));
+    transport = static_cast<WebSocketTransport*>(m_face->getTransport());
+    serverReceivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -205,7 +205,7 @@ protected:
   std::vector<std::string> clientReceivedMessages;
 
 private:
-  unique_ptr<Face> face;
+  unique_ptr<Face> m_face;
 };
 
 } // namespace nfd::tests

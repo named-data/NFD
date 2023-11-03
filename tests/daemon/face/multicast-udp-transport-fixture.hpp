@@ -34,6 +34,8 @@
 #include "tests/daemon/face/dummy-link-service.hpp"
 #include "tests/daemon/face/transport-test-common.hpp"
 
+#include <ndn-cxx/util/random.hpp>
+
 namespace nfd::tests {
 
 namespace ip = boost::asio::ip;
@@ -49,7 +51,7 @@ protected:
     ip::address mcastAddr;
     if (address.is_v4()) {
       // the administratively scoped group 224.0.0.254 is reserved for experimentation (RFC 4727)
-      mcastAddr = ip::make_address_v4(0xE00000FE);
+      mcastAddr = ip::make_address_v4("224.0.0.254");
     }
     else {
       // the group FF0X::114 is reserved for experimentation at all scope levels (RFC 4727)
@@ -57,22 +59,22 @@ protected:
       v6Addr.scope_id(netif->getIndex());
       mcastAddr = v6Addr;
     }
-    mcastEp = udp::endpoint(mcastAddr, 7373);
-    remoteMcastEp = udp::endpoint(mcastAddr, 8383);
+    mcastEp = udp::endpoint(mcastAddr, m_randomPort(ndn::random::getRandomNumberEngine()));
+    m_remoteMcastEp = udp::endpoint(mcastAddr, m_randomPort(ndn::random::getRandomNumberEngine()));
 
-    MulticastUdpTransport::openRxSocket(remoteSockRx, mcastEp, address);
-    MulticastUdpTransport::openTxSocket(remoteSockTx, udp::endpoint(address, 0), &*netif, true);
+    MulticastUdpTransport::openRxSocket(m_remoteSockRx, mcastEp, address);
+    MulticastUdpTransport::openTxSocket(m_remoteSockTx, udp::endpoint(address, 0), &*netif, true);
 
     udp::socket sockRx(g_io);
     udp::socket sockTx(g_io);
-    MulticastUdpTransport::openRxSocket(sockRx, remoteMcastEp, address);
+    MulticastUdpTransport::openRxSocket(sockRx, m_remoteMcastEp, address);
     MulticastUdpTransport::openTxSocket(sockTx, udp::endpoint(address, txPort), &*netif, true);
 
-    face = make_unique<Face>(make_unique<DummyLinkService>(),
-                             make_unique<MulticastUdpTransport>(mcastEp, std::move(sockRx), std::move(sockTx),
-                                                                ndn::nfd::LINK_TYPE_MULTI_ACCESS));
-    transport = static_cast<MulticastUdpTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
+    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
+                               make_unique<MulticastUdpTransport>(mcastEp, std::move(sockRx), std::move(sockTx),
+                                                                  ndn::nfd::LINK_TYPE_MULTI_ACCESS));
+    transport = static_cast<MulticastUdpTransport*>(m_face->getTransport());
+    receivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -80,8 +82,8 @@ protected:
   void
   remoteRead(std::vector<uint8_t>& buf, bool needToCheck = true)
   {
-    remoteSockRx.async_receive(boost::asio::buffer(buf),
-      [this, needToCheck] (const boost::system::error_code& error, size_t) {
+    m_remoteSockRx.async_receive(boost::asio::buffer(buf),
+      [this, needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -93,14 +95,14 @@ protected:
   void
   remoteWrite(const std::vector<uint8_t>& buf, bool needToCheck = true)
   {
-    sendToGroup(remoteSockTx, buf, needToCheck);
+    sendToGroup(m_remoteSockTx, buf, needToCheck);
     limitedIo.defer(1_s);
   }
 
   void
   sendToGroup(udp::socket& sock, const std::vector<uint8_t>& buf, bool needToCheck = true) const
   {
-    sock.async_send_to(boost::asio::buffer(buf), remoteMcastEp,
+    sock.async_send_to(boost::asio::buffer(buf), m_remoteMcastEp,
       [needToCheck] (const auto& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
@@ -116,10 +118,11 @@ protected:
   std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
-  unique_ptr<Face> face;
-  udp::endpoint remoteMcastEp;
-  udp::socket remoteSockRx{g_io};
-  udp::socket remoteSockTx{g_io};
+  std::uniform_int_distribution<uint16_t> m_randomPort{10000};
+  udp::endpoint m_remoteMcastEp;
+  udp::socket m_remoteSockRx{g_io};
+  udp::socket m_remoteSockTx{g_io};
+  unique_ptr<Face> m_face;
 };
 
 } // namespace nfd::tests
