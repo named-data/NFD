@@ -185,7 +185,7 @@ private:
       data->setContent(resp.wireEncode());
       m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
 
-      boost::asio::post(m_face.getIoService(), [this, data] { m_face.receive(*data); });
+      boost::asio::post(m_face.getIoContext(), [this, data] { m_face.receive(*data); });
     };
 
     const Name commandPrefix("/localhost/nfd/fib/add-nexthop");

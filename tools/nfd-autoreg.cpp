@@ -173,7 +173,7 @@ public:
     m_faceMonitor.onNotification.connect([this] (const auto& notif) { onNotification(notif); });
     m_faceMonitor.start();
 
-    boost::asio::signal_set signalSet(m_face.getIoService(), SIGINT, SIGTERM);
+    boost::asio::signal_set signalSet(m_face.getIoContext(), SIGINT, SIGTERM);
     signalSet.async_wait([this] (auto&&...) { m_face.shutdown(); });
 
     m_face.processEvents();

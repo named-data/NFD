@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,10 +60,10 @@ usage(std::ostream& os,
 static void
 runDaemon(Procedure& proc)
 {
-  boost::asio::signal_set terminateSignals(proc.getIoService());
+  boost::asio::signal_set terminateSignals(proc.getIoContext());
   terminateSignals.add(SIGINT);
   terminateSignals.add(SIGTERM);
-  terminateSignals.async_wait([&] (const boost::system::error_code& error, int signalNo) {
+  terminateSignals.async_wait([&] (const auto& error, int signalNo) {
     if (error) {
       return;
     }
@@ -76,10 +76,10 @@ runDaemon(Procedure& proc)
       std::cerr << signalName;
     }
     std::cerr << std::endl;
-    proc.getIoService().stop();
+    proc.getIoContext().stop();
   });
 
-  Scheduler sched(proc.getIoService());
+  Scheduler sched(proc.getIoContext());
   scheduler::ScopedEventId runEvt;
   auto scheduleRerun = [&] (time::nanoseconds delay) {
     runEvt = sched.schedule(delay, [&] { proc.runOnce(); });
@@ -89,11 +89,11 @@ runDaemon(Procedure& proc)
     scheduleRerun(DAEMON_UNCONDITIONAL_INTERVAL);
   });
 
-  net::NetworkMonitor netmon(proc.getIoService());
+  net::NetworkMonitor netmon(proc.getIoContext());
   netmon.onNetworkStateChanged.connect([&] { scheduleRerun(NETMON_DAMPEN_PERIOD); });
 
   scheduleRerun(DAEMON_INITIAL_DELAY);
-  proc.getIoService().run();
+  proc.getIoContext().run();
 }
 
 static int

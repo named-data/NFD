@@ -108,16 +108,16 @@ private:
   boost::asio::io_context& m_io;
 };
 
-/** \brief Two-stage Procedure where the first stage succeeds and the second stage fails.
- *
- *  But the second stage shouldn't be invoked after the first stage succeeds.
+/**
+ * Two-stage Procedure where the first stage succeeds and the second stage fails,
+ * but the second stage shouldn't be invoked after the first stage succeeds.
  */
 class ProcedureSuccessFailure : public Procedure
 {
 public:
   ProcedureSuccessFailure(Face& face, KeyChain& keyChain)
     : Procedure(face, keyChain)
-    , m_io(face.getIoService())
+    , m_io(face.getIoContext())
   {
   }
 
@@ -137,14 +137,15 @@ private:
   boost::asio::io_context& m_io;
 };
 
-/** \brief Two-stage Procedure where the first stage fails and the second stage succeeds.
+/**
+ * Two-stage Procedure where the first stage fails and the second stage succeeds.
  */
 class ProcedureFailureSuccess : public Procedure
 {
 public:
   ProcedureFailureSuccess(Face& face, KeyChain& keyChain)
     : Procedure(face, keyChain)
-    , m_io(face.getIoService())
+    , m_io(face.getIoContext())
   {
   }
 

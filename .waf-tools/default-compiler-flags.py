@@ -128,7 +128,11 @@ class CompilerFlags:
 
     def getGeneralFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are always needed"""
-        return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
+        return {
+            'CXXFLAGS': [],
+            'LINKFLAGS': [],
+            'DEFINES': ['BOOST_FILESYSTEM_NO_DEPRECATED'],
+        }
 
     def getDebugFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in debug mode"""

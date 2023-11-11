@@ -186,7 +186,7 @@ canonize(ExecuteContext& ctx, const FaceUri& uri)
   uri.canonize(
     [&result] (const auto& canonicalUri) { result = canonicalUri; },
     [&error] (const auto& errorReason) { error = errorReason; },
-    ctx.face.getIoService(), ctx.getTimeout());
+    ctx.face.getIoContext(), ctx.getTimeout());
   ctx.face.processEvents();
 
   return {result, error};

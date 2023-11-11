@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
   }
   this->initialize(options);
 
-  DummyClientFace clientFace(face.getIoService());
+  DummyClientFace clientFace(face.getIoContext());
   clientFace.linkTo(face);
 
   Name baseName("/localhop/nfd/rib/routable-prefixes");

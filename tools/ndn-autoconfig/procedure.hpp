@@ -52,15 +52,16 @@ public:
   void
   initialize(const Options& options);
 
-  /** \brief Run HUB discovery procedure once.
+  /**
+   * \brief Run the HUB discovery procedure once.
    */
   void
   runOnce();
 
   boost::asio::io_context&
-  getIoService()
+  getIoContext() const noexcept
   {
-    return m_face.getIoService();
+    return m_face.getIoContext();
   }
 
 private:

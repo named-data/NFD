@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,7 +108,7 @@ Procedure::connect(const FaceUri& hubFaceUri)
       std::cerr << "Failed to canonize HUB FaceUri: " << reason << std::endl;
       this->onComplete(false);
     },
-    m_face.getIoService(), FACEURI_CANONIZE_TIMEOUT);
+    m_face.getIoContext(), FACEURI_CANONIZE_TIMEOUT);
 }
 
 void
