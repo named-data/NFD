@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2023,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,14 @@
  */
 
 #include "face/lp-reliability.hpp"
-#include "face/face.hpp"
 #include "face/generic-link-service.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 #include "dummy-face.hpp"
 #include "dummy-transport.hpp"
+
+#include <ndn-cxx/lp/fields.hpp>
 
 #include <cstring>
 #include <unordered_set>

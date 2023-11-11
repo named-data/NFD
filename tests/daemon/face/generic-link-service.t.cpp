@@ -31,8 +31,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "dummy-transport.hpp"
 
-#include <ndn-cxx/lp/empty-value.hpp>
-#include <ndn-cxx/lp/prefix-announcement-header.hpp>
+#include <ndn-cxx/lp/fields.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd::tests {
