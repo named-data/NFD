@@ -27,6 +27,9 @@ COPY --from=builder /usr/lib/libndn-cxx.so* /usr/lib/
 COPY --from=builder /usr/bin/nfd /usr/bin/
 COPY --from=builder /usr/bin/nfdc /usr/bin/
 
+COPY --from=builder /usr/bin/nfd-status-http-server /usr/bin/
+COPY --from=builder /usr/share/ndn/ /usr/share/ndn/
+
 VOLUME /config
 VOLUME /run/nfd
 

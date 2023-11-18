@@ -1,0 +1,8 @@
+Dockerfile
+
+/build/
+.waf-*-*/
+.waf3-*-*/
+.lock-waf*
+
+/VERSION.info

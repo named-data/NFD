@@ -1,0 +1,12 @@
+FROM ghcr.io/named-data/nfd:latest
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+VOLUME /run/nfd
+
+EXPOSE 8080/tcp
+
+ENTRYPOINT ["/usr/bin/nfd-status-http-server"]
+CMD ["--address", "0.0.0.0", "--port", "8080"]

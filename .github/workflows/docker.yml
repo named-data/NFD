@@ -15,10 +15,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  publish:
+  nfd:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -37,13 +36,45 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/nfd
           flavor: latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          pull: true
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  nfd-status-http-server:
+    needs: nfd
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/nfd-status-http-server
+          flavor: latest=true
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./tools
+          file: ./tools/Dockerfile.nfd-status-http-server
           pull: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
