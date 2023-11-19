@@ -30,6 +30,10 @@ COPY --from=builder /usr/bin/nfdc /usr/bin/
 COPY --from=builder /usr/bin/nfd-status-http-server /usr/bin/
 COPY --from=builder /usr/share/ndn/ /usr/share/ndn/
 
+COPY --from=builder /etc/ndn/nfd.conf.sample /config/nfd.conf
+
+ENV HOME=/config
+
 VOLUME /config
 VOLUME /run/nfd
 
