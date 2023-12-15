@@ -35,8 +35,6 @@ NFD_REGISTER_STRATEGY(AsfStrategy);
 AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , ProcessNackTraits(this)
-  , m_measurements(getMeasurements())
-  , m_probing(m_measurements)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
@@ -73,7 +71,7 @@ AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& 
 
   // Check if the interest is new and, if so, skip the retx suppression check
   if (!hasPendingOutRecords(*pitEntry)) {
-    auto* faceToUse = getBestFaceForForwarding(interest, ingress.face, fibEntry, pitEntry);
+    auto faceToUse = getBestFaceForForwarding(interest, ingress.face, fibEntry, pitEntry);
     if (faceToUse == nullptr) {
       NFD_LOG_INTEREST_FROM(interest, ingress, "new no-nexthop");
       sendNoRouteNack(ingress.face, pitEntry);
@@ -86,7 +84,7 @@ AsfStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& 
     return;
   }
 
-  auto* faceToUse = getBestFaceForForwarding(interest, ingress.face, fibEntry, pitEntry, false);
+  auto faceToUse = getBestFaceForForwarding(interest, ingress.face, fibEntry, pitEntry, false);
   if (faceToUse != nullptr) {
     auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, *faceToUse);
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
@@ -160,6 +158,7 @@ AsfStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress
   // Extend PIT entry timer to allow slower probes to arrive
   this->setExpiryTimer(pitEntry, 50_ms);
   faceInfo->cancelTimeout(data.getName());
+  faceInfo->setNTimeouts(0);
 }
 
 void
@@ -218,50 +217,52 @@ AsfStrategy::sendProbe(const Interest& interest, const FaceEndpoint& ingress, co
   m_probing.afterForwardingProbe(fibEntry, interest.getName());
 }
 
-struct FaceStats
+static auto
+getFaceRankForForwarding(const FaceStats& fs) noexcept
 {
-  Face* face;
-  time::nanoseconds rtt;
-  time::nanoseconds srtt;
-  uint64_t cost;
-};
+  // The RTT is used to store the status of the face:
+  //  - A positive value indicates data was received and is assumed to indicate a working face (group 1),
+  //  - RTT_NO_MEASUREMENT indicates a face is unmeasured (group 2),
+  //  - RTT_TIMEOUT indicates a face is timed out (group 3).
+  // These groups are defined in the technical report.
+  //
+  // When forwarding, we assume an order where working faces (group 1) are ranked
+  // higher than unmeasured faces (group 2), and unmeasured faces are ranked higher
+  // than timed out faces (group 3). We assign each group a priority value from 1-3
+  // to ensure lowest-to-highest ordering consistent with this logic.
 
-struct FaceStatsCompare
-{
-  bool
-  operator()(const FaceStats& lhs, const FaceStats& rhs) const
-  {
-    time::nanoseconds lhsValue = getValueForSorting(lhs);
-    time::nanoseconds rhsValue = getValueForSorting(rhs);
-
-    // Sort by RTT and then by cost
-    return std::tie(lhsValue, lhs.cost) < std::tie(rhsValue, rhs.cost);
+  // Working faces are ranked first in priority; if RTT is not
+  // a special value, we assume the face to be in this group.
+  int priority = 1;
+  if (fs.rtt == FaceInfo::RTT_NO_MEASUREMENT) {
+    priority = 2;
+  }
+  else if (fs.rtt == FaceInfo::RTT_TIMEOUT) {
+    priority = 3;
   }
 
-private:
-  static time::nanoseconds
-  getValueForSorting(const FaceStats& stats)
-  {
-    // These values allow faces with no measurements to be ranked better than timeouts
-    // srtt < RTT_NO_MEASUREMENT < RTT_TIMEOUT
-    if (stats.rtt == FaceInfo::RTT_TIMEOUT) {
-      return time::nanoseconds::max();
-    }
-    else if (stats.rtt == FaceInfo::RTT_NO_MEASUREMENT) {
-      return time::nanoseconds::max() / 2;
-    }
-    else {
-      return stats.srtt;
-    }
-  }
-};
+  // We set SRTT by default to the max value; if a face is working, we instead set it to the actual value.
+  // Unmeasured and timed out faces are not sorted by SRTT.
+  auto srtt = priority == 1 ? fs.srtt : time::nanoseconds::max();
+
+  // For ranking, group takes the priority over SRTT (if present) or cost, SRTT (if present)
+  // takes priority over cost, and cost takes priority over FaceId.
+  // FaceId is included to ensure all unique entries are included in the ranking (see #5310)
+  return std::tuple(priority, srtt, fs.cost, fs.face->getId());
+}
+
+bool
+AsfStrategy::FaceStatsForwardingCompare::operator()(const FaceStats& lhs, const FaceStats& rhs) const noexcept
+{
+  return getFaceRankForForwarding(lhs) < getFaceRankForForwarding(rhs);
+}
 
 Face*
 AsfStrategy::getBestFaceForForwarding(const Interest& interest, const Face& inFace,
                                       const fib::Entry& fibEntry, const shared_ptr<pit::Entry>& pitEntry,
                                       bool isInterestNew)
 {
-  std::set<FaceStats, FaceStatsCompare> rankedFaces;
+  FaceStatsForwardingSet rankedFaces;
 
   auto now = time::steady_clock::now();
   for (const auto& nh : fibEntry.getNextHops()) {
@@ -311,6 +312,7 @@ AsfStrategy::onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNac
   else {
     NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts);
     faceInfo.recordTimeout(interestName);
+    faceInfo.setNTimeouts(0);
   }
 }
 

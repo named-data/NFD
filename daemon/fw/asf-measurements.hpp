@@ -35,8 +35,9 @@
 
 namespace nfd::fw::asf {
 
-/** \brief Strategy information for each face in a namespace
-*/
+/**
+ * \brief Strategy information for each face in a namespace.
+ */
 class FaceInfo
 {
 public:
@@ -70,12 +71,6 @@ public:
   {
     m_lastRtt = RTT_TIMEOUT;
     cancelTimeout(interestName);
-  }
-
-  bool
-  hasTimeout() const
-  {
-    return getLastRtt() == RTT_TIMEOUT;
   }
 
   time::nanoseconds
@@ -123,7 +118,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/** \brief Stores strategy information about each face in this namespace
+/**
+ * \brief Stores strategy information about each face in this namespace.
  */
 class NamespaceInfo final : public StrategyInfo
 {
@@ -183,7 +179,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/** \brief Helper class to retrieve and create strategy measurements
+/**
+ * \brief Helper class to retrieve and create strategy measurements.
  */
 class AsfMeasurements : noncopyable
 {

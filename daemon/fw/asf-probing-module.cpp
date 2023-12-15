@@ -57,14 +57,94 @@ ProbingModule::scheduleProbe(const fib::Entry& fibEntry, time::milliseconds inte
   });
 }
 
+static auto
+getFaceRankForProbing(const FaceStats& fs) noexcept
+{
+  // The RTT is used to store the status of the face:
+  //  - A positive value indicates data was received and is assumed to indicate a working face (group 1),
+  //  - RTT_NO_MEASUREMENT indicates a face is unmeasured (group 2),
+  //  - RTT_TIMEOUT indicates a face is timed out (group 3).
+  // These groups are defined in the technical report.
+  //
+  // Unlike during forwarding, we adjust the ranking such that unmeasured faces (group 2)
+  // are prioritized before working faces (group 1), and working faces are prioritized
+  // before timed out faces (group 3). We assign each group a priority value from 1-3
+  // to ensure lowest-to-highest ordering consistent with this logic.
+  // Additionally, unmeasured faces will always be chosen to probe if they exist.
+
+  // Working faces are ranked second in priority; if RTT is not
+  // a special value, we assume the face to be in this group.
+  int priority = 2;
+  if (fs.rtt == FaceInfo::RTT_NO_MEASUREMENT) {
+    priority = 1;
+  }
+  else if (fs.rtt == FaceInfo::RTT_TIMEOUT) {
+    priority = 3;
+  }
+
+  // We set SRTT by default to the max value; if a face is working, we instead set it to the actual value.
+  // Unmeasured and timed out faces are not sorted by SRTT.
+  auto srtt = priority == 2 ? fs.srtt : time::nanoseconds::max();
+
+  // For ranking, group takes the priority over SRTT (if present) or cost, SRTT (if present)
+  // takes priority over cost, and cost takes priority over FaceId.
+  // FaceId is included to ensure all unique entries are included in the ranking (see #5310).
+  return std::tuple(priority, srtt, fs.cost, fs.face->getId());
+}
+
+bool
+ProbingModule::FaceStatsProbingCompare::operator()(const FaceStats& lhs, const FaceStats& rhs) const noexcept
+{
+  return getFaceRankForProbing(lhs) < getFaceRankForProbing(rhs);
+}
+
+static Face*
+chooseFace(const ProbingModule::FaceStatsProbingSet& rankedFaces)
+{
+  static std::uniform_real_distribution<> randDist;
+  static auto& rng = ndn::random::getRandomNumberEngine();
+  const double randomNumber = randDist(rng);
+
+  const auto nFaces = rankedFaces.size();
+  const double rankSum = (nFaces + 1) * nFaces / 2;
+  size_t rank = 1;
+  double offset = 0.0;
+
+  for (const auto& faceStat : rankedFaces) {
+    //     n + 1 - j
+    // p = ---------
+    //     sum(ranks)
+    double probability = static_cast<double>(nFaces + 1 - rank) / rankSum;
+    rank++;
+
+    // Is the random number within the bounds of this face's probability + the previous faces'
+    // probability?
+    //
+    // e.g. (FaceId: 1, p=0.5), (FaceId: 2, p=0.33), (FaceId: 3, p=0.17)
+    //      randomNumber = 0.92
+    //
+    //      The face with FaceId: 3 should be picked
+    //      (0.68 < 0.5 + 0.33 + 0.17) == true
+    //
+    offset += probability;
+    if (randomNumber <= offset) {
+      // Found face to probe
+      return faceStat.face;
+    }
+  }
+
+  // Given a set of Faces, this method should always select a Face to probe
+  NDN_CXX_UNREACHABLE;
+}
+
 Face*
 ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
                               const fib::Entry& fibEntry, const Face& faceUsed)
 {
-  FaceInfoFacePairSet rankedFaces;
+  FaceStatsProbingSet rankedFaces;
 
-  // Put eligible faces into rankedFaces. If a face does not have an RTT measurement,
-  // immediately pick the face for probing
+  // Put eligible faces into rankedFaces. If one or more faces do not have an RTT measurement,
+  // the lowest ranked one will always be returned.
   for (const auto& hop : fibEntry.getNextHops()) {
     Face& hopFace = hop.getFace();
 
@@ -76,18 +156,23 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
     }
 
     FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest.getName(), hopFace.getId());
-    // If no RTT has been recorded, probe this face
     if (info == nullptr || info->getLastRtt() == FaceInfo::RTT_NO_MEASUREMENT) {
-      return &hopFace;
+      rankedFaces.insert({&hopFace, FaceInfo::RTT_NO_MEASUREMENT,
+                          FaceInfo::RTT_NO_MEASUREMENT, hop.getCost()});
     }
-
-    // Add FaceInfo to container sorted by RTT
-    rankedFaces.insert({info, &hopFace});
+    else {
+      rankedFaces.insert({&hopFace, info->getLastRtt(), info->getSrtt(), hop.getCost()});
+    }
   }
 
   if (rankedFaces.empty()) {
     // No Face to probe
     return nullptr;
+  }
+
+  // If the top face is unmeasured, immediately return it.
+  if (rankedFaces.begin()->rtt == FaceInfo::RTT_NO_MEASUREMENT) {
+    return rankedFaces.begin()->face;
   }
 
   return chooseFace(rankedFaces);
@@ -103,7 +188,8 @@ ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Name& interestN
   if (!info.isFirstProbeScheduled()) {
     // Schedule first probe between 0 and 5 seconds
     static std::uniform_int_distribution<> randDist(0, 5000);
-    auto interval = randDist(ndn::random::getRandomNumberEngine());
+    static auto& rng = ndn::random::getRandomNumberEngine();
+    auto interval = randDist(rng);
     scheduleProbe(fibEntry, time::milliseconds(interval));
     info.setIsFirstProbeScheduled(true);
   }
@@ -120,48 +206,6 @@ ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const Name& inte
   info.setIsProbingDue(false);
 
   scheduleProbe(fibEntry, m_probingInterval);
-}
-
-Face*
-ProbingModule::chooseFace(const FaceInfoFacePairSet& rankedFaces)
-{
-  static std::uniform_real_distribution<> randDist;
-  double randomNumber = randDist(ndn::random::getRandomNumberEngine());
-  uint64_t rankSum = (rankedFaces.size() + 1) * rankedFaces.size() / 2;
-
-  uint64_t rank = 1;
-  double offset = 0.0;
-
-  for (const auto& pair : rankedFaces) {
-    double probability = getProbingProbability(rank++, rankSum, rankedFaces.size());
-
-    // Is the random number within the bounds of this face's probability + the previous faces'
-    // probability?
-    //
-    // e.g. (FaceId: 1, p=0.5), (FaceId: 2, p=0.33), (FaceId: 3, p=0.17)
-    //      randomNumber = 0.92
-    //
-    //      The face with FaceId: 3 should be picked
-    //      (0.68 < 0.5 + 0.33 + 0.17) == true
-    //
-    if (randomNumber <= offset + probability) {
-      // Found face to probe
-      return pair.second;
-    }
-    offset += probability;
-  }
-
-  // Given a set of Faces, this method should always select a Face to probe
-  NDN_CXX_UNREACHABLE;
-}
-
-double
-ProbingModule::getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t nFaces)
-{
-  // p = n + 1 - j ; n: # faces
-  //     ---------
-  //     sum(ranks)
-  return static_cast<double>(nFaces + 1 - rank) / rankSum;
 }
 
 void

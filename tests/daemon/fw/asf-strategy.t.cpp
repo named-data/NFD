@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,12 +25,15 @@
 
 #include "fw/asf-strategy.hpp"
 
+#include "tests/daemon/face/dummy-face.hpp"
+
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
 namespace nfd::tests {
 
 using fw::AsfStrategy;
+using fw::asf::FaceInfo;
 
 // The tester is unused in this file, but it's used in various templated test suites.
 using AsfStrategyTester = StrategyTester<AsfStrategy>;
@@ -582,6 +585,325 @@ BOOST_AUTO_TEST_CASE(Parameters)
   checkValidity("/max-timeouts~1/probing-interval~-30000", false);
   checkValidity("/probing-interval~foo", false);
   checkValidity("/max-timeouts~1~2", false);
+}
+
+BOOST_AUTO_TEST_CASE(FaceRankingForForwarding)
+{
+  const Name PRODUCER_PREFIX = "/ndn/edu/nodeD/ping";
+  AsfStrategy::FaceStatsForwardingSet rankedFaces;
+
+  //Group 1- Working Measured Faces
+  FaceInfo group1_a(nullptr);
+  group1_a.recordRtt(25_ms);
+  DummyFace face1_a;
+  face1_a.setId(1);
+  rankedFaces.insert({&face1_a, group1_a.getLastRtt(), group1_a.getSrtt(), 0});
+  // Higher FaceId
+  FaceInfo group1_b(nullptr);
+  group1_b.recordRtt(25_ms);
+  DummyFace face1_b;
+  face1_b.setId(2);
+  rankedFaces.insert({&face1_b, group1_b.getLastRtt(), group1_b.getSrtt(), 0});
+  //Higher SRTT
+  FaceInfo group1_c(nullptr);
+  group1_c.recordRtt(30_ms);
+  DummyFace face1_c;
+  face1_c.setId(3);
+  rankedFaces.insert({&face1_c, group1_c.getLastRtt(), group1_c.getSrtt(), 0});
+  //Higher SRTT/Cost
+  FaceInfo group1_d(nullptr);
+  group1_d.recordRtt(30_ms);
+  DummyFace face1_d;
+  face1_d.setId(4);
+  rankedFaces.insert({&face1_d, group1_d.getLastRtt(), group1_d.getSrtt(), 1});
+  //Group 2- Unmeasured Faces
+  FaceInfo group2_a(nullptr);
+  DummyFace face2_a;
+  face2_a.setId(5);
+  rankedFaces.insert({&face2_a, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher FaceId
+  FaceInfo group2_b(nullptr);
+  DummyFace face2_b;
+  face2_b.setId(6);
+  rankedFaces.insert({&face2_b, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher Cost
+  FaceInfo group2_c(nullptr);
+  DummyFace face2_c;
+  face2_c.setId(7);
+  rankedFaces.insert({&face2_c, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 1});
+  //Group 3- Timeout Faces
+  //Lowest cost, high SRTT
+  FaceInfo group3_a(nullptr);
+  group3_a.recordRtt(30_ms);
+  group3_a.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_a;
+  face3_a.setId(8);
+  rankedFaces.insert({&face3_a, group3_a.getLastRtt(), group3_a.getSrtt(), 0});
+  //Lowest cost, lower SRTT, higher FaceId
+  FaceInfo group3_b(nullptr);
+  group3_b.recordRtt(30_ms);
+  group3_b.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_b;
+  face3_b.setId(9);
+  rankedFaces.insert({&face3_b, group3_b.getLastRtt(), group3_b.getSrtt(), 0});
+  //Lowest cost, higher SRTT, higher FaceId
+  FaceInfo group3_c(nullptr);
+  group3_c.recordRtt(45_ms);
+  group3_c.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_c;
+  face3_c.setId(10);
+  rankedFaces.insert({&face3_c, group3_c.getLastRtt(), group3_c.getSrtt(), 0});
+  //Lowest cost, no SRTT, higher FaceId
+  FaceInfo group3_d(nullptr);
+  group3_d.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_d;
+  face3_d.setId(11);
+  rankedFaces.insert({&face3_d, group3_d.getLastRtt(), FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher cost, lower SRTT, higher FaceId
+  FaceInfo group3_e(nullptr);
+  group3_e.recordRtt(15_ms);
+  group3_e.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_e;
+  face3_e.setId(12);
+  rankedFaces.insert({&face3_e, group3_e.getLastRtt(), group3_e.getSrtt(), 1});
+  //Higher cost, higher SRTT, higher FaceId
+  FaceInfo group3_f(nullptr);
+  group3_f.recordRtt(45_ms);
+  group3_f.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_f;
+  face3_f.setId(13);
+  rankedFaces.insert({&face3_f, group3_f.getLastRtt(), group3_f.getSrtt(), 1});
+  //Higher cost, no SRTT, higher FaceId
+  FaceInfo group3_g(nullptr);
+  group3_g.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_g;
+  face3_g.setId(14);
+  rankedFaces.insert({&face3_g, FaceInfo::RTT_TIMEOUT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 1});
+  auto face = rankedFaces.begin();
+  //Group 1 - Working Measured Faces
+  BOOST_CHECK_EQUAL(face->rtt, group1_a.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_a.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 1);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_b.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_b.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 2);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_c.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_c.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 3);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_d.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_d.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 4);
+  face++;
+  //Group 2 - Unmeasured Faces
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 5);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 6);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 7);
+  face++;
+  //Group 3 - Timeout
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_a.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 8);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_b.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 9);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_c.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 10);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 11);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_e.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 12);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_f.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 13);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 14);
+  // face++;
+}
+
+BOOST_AUTO_TEST_CASE(FaceRankingForProbing)
+{
+  const Name PRODUCER_PREFIX = "/ndn/edu/nodeD/ping";
+  fw::asf::ProbingModule::FaceStatsProbingSet rankedFaces;
+
+  //Group 2- Unmeasured Faces
+  FaceInfo group2_a(nullptr);
+  DummyFace face2_a;
+  face2_a.setId(1);
+  rankedFaces.insert({&face2_a, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher FaceId
+  FaceInfo group2_b(nullptr);
+  DummyFace face2_b;
+  face2_b.setId(2);
+  rankedFaces.insert({&face2_b, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher Cost
+  FaceInfo group2_c(nullptr);
+  DummyFace face2_c;
+  face2_c.setId(3);
+  rankedFaces.insert({&face2_c, FaceInfo::RTT_NO_MEASUREMENT,
+                      FaceInfo::RTT_NO_MEASUREMENT, 1});
+
+  //Group 1- Working Measured Faces
+  FaceInfo group1_a(nullptr);
+  group1_a.recordRtt(25_ms);
+  DummyFace face1_a;
+  face1_a.setId(4);
+  rankedFaces.insert({&face1_a, group1_a.getLastRtt(), group1_a.getSrtt(), 0});
+  // Higher FaceId
+  FaceInfo group1_b(nullptr);
+  group1_b.recordRtt(25_ms);
+  DummyFace face1_b;
+  face1_b.setId(5);
+  rankedFaces.insert({&face1_b, group1_b.getLastRtt(), group1_b.getSrtt(), 0});
+  //Higher SRTT
+  FaceInfo group1_c(nullptr);
+  group1_c.recordRtt(30_ms);
+  DummyFace face1_c;
+  face1_c.setId(6);
+  rankedFaces.insert({&face1_c, group1_c.getLastRtt(), group1_c.getSrtt(), 0});
+  //Higher SRTT/Cost
+  FaceInfo group1_d(nullptr);
+  group1_d.recordRtt(30_ms);
+  DummyFace face1_d;
+  face1_d.setId(7);
+  rankedFaces.insert({&face1_d, group1_d.getLastRtt(), group1_d.getSrtt(), 1});
+
+  //Group 3- Timeout Faces
+  //Lowest cost, high SRTT
+  FaceInfo group3_a(nullptr);
+  group3_a.recordRtt(30_ms);
+  group3_a.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_a;
+  face3_a.setId(8);
+  rankedFaces.insert({&face3_a, group3_a.getLastRtt(), group3_a.getSrtt(), 0});
+  //Lowest cost, lower SRTT, higher FaceId
+  FaceInfo group3_b(nullptr);
+  group3_b.recordRtt(30_ms);
+  group3_b.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_b;
+  face3_b.setId(9);
+  rankedFaces.insert({&face3_b, group3_b.getLastRtt(), group3_b.getSrtt(), 0});
+  //Lowest cost, higher SRTT, higher FaceId
+  FaceInfo group3_c(nullptr);
+  group3_c.recordRtt(45_ms);
+  group3_c.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_c;
+  face3_c.setId(10);
+  rankedFaces.insert({&face3_c, group3_c.getLastRtt(), group3_c.getSrtt(), 0});
+  //Lowest cost, no SRTT, higher FaceId
+  FaceInfo group3_d(nullptr);
+  group3_d.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_d;
+  face3_d.setId(11);
+  rankedFaces.insert({&face3_d, group3_d.getLastRtt(), FaceInfo::RTT_NO_MEASUREMENT, 0});
+  //Higher cost, lower SRTT, higher FaceId
+  FaceInfo group3_e(nullptr);
+  group3_e.recordRtt(15_ms);
+  group3_e.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_e;
+  face3_e.setId(12);
+  rankedFaces.insert({&face3_e, group3_e.getLastRtt(), group3_e.getSrtt(), 1});
+  //Higher cost, higher SRTT, higher FaceId
+  FaceInfo group3_f(nullptr);
+  group3_f.recordRtt(45_ms);
+  group3_f.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_f;
+  face3_f.setId(13);
+  rankedFaces.insert({&face3_f, group3_f.getLastRtt(), group3_f.getSrtt(), 1});
+  //Higher cost, no SRTT, higher FaceId
+  FaceInfo group3_g(nullptr);
+  group3_g.recordTimeout(PRODUCER_PREFIX);
+  DummyFace face3_g;
+  face3_g.setId(14);
+  rankedFaces.insert({&face3_g, group3_g.getLastRtt(),
+                      FaceInfo::RTT_NO_MEASUREMENT, 1});
+  auto face = rankedFaces.begin();
+
+  //Group 2 - Unmeasured Faces
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 1);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 2);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 3);
+  face++;
+  //Group 1 - Working Measured Faces
+  BOOST_CHECK_EQUAL(face->rtt, group1_a.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_a.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 4);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_b.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_b.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 5);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_c.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_c.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 6);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, group1_d.getLastRtt());
+  BOOST_CHECK_EQUAL(face->srtt, group1_d.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 7);
+  face++;
+  //Group 3 - Timeout
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_a.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 8);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_b.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 9);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_c.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 10);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 11);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_e.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 12);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, group3_f.getSrtt());
+  BOOST_CHECK_EQUAL(face->face->getId(), 13);
+  face++;
+  BOOST_CHECK_EQUAL(face->rtt, FaceInfo::RTT_TIMEOUT);
+  BOOST_CHECK_EQUAL(face->srtt, FaceInfo::RTT_NO_MEASUREMENT);
+  BOOST_CHECK_EQUAL(face->face->getId(), 14);
+  // face++;
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy

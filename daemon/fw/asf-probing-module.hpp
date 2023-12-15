@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,19 @@
 
 namespace nfd::fw::asf {
 
-/** \brief ASF Probing Module
+/**
+ * \brief Container for ranking-related values.
+ */
+struct FaceStats
+{
+  Face* face = nullptr;
+  time::nanoseconds rtt = 0_ns;
+  time::nanoseconds srtt = 0_ns;
+  uint64_t cost = 0;
+};
+
+/**
+ * \brief ASF Probing Module.
  */
 class ProbingModule
 {
@@ -60,35 +72,16 @@ public:
     return m_probingInterval;
   }
 
-private:
-  // Used to associate FaceInfo with the face in a NextHop
-  using FaceInfoFacePair = std::pair<FaceInfo*, Face*>;
-
-  struct FaceInfoCompare
-  {
-    bool
-    operator()(const FaceInfoFacePair& leftPair, const FaceInfoFacePair& rightPair) const
-    {
-      const FaceInfo& lhs = *leftPair.first;
-      const FaceInfo& rhs = *rightPair.first;
-
-      // Sort by RTT: if a face has timed-out, rank it behind non-timed-out faces
-      return (!lhs.hasTimeout() && rhs.hasTimeout()) ||
-             (lhs.hasTimeout() == rhs.hasTimeout() && lhs.getSrtt() < rhs.getSrtt());
-    }
-  };
-
-  using FaceInfoFacePairSet = std::set<FaceInfoFacePair, FaceInfoCompare>;
-
-  static Face*
-  chooseFace(const FaceInfoFacePairSet& rankedFaces);
-
-  static double
-  getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t nFaces);
-
 public:
   static constexpr time::milliseconds DEFAULT_PROBING_INTERVAL = 1_min;
   static constexpr time::milliseconds MIN_PROBING_INTERVAL = 1_s;
+
+  struct FaceStatsProbingCompare
+  {
+    bool
+    operator()(const FaceStats& lhs, const FaceStats& rhs) const noexcept;
+  };
+  using FaceStatsProbingSet = std::set<FaceStats, FaceStatsProbingCompare>;
 
 private:
   time::milliseconds m_probingInterval;
