@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -68,9 +68,9 @@ makeLocalNfdTransport(const ConfigSection& config)
   if (config.get_child_optional("face_system.unix")) {
     // default socket path should be the same as in UnixStreamFactory::processConfig
 #ifdef __linux__
-    auto path = config.get<std::string>("face_system.unix.path", "/run/nfd.sock");
+    auto path = config.get<std::string>("face_system.unix.path", "/run/nfd/nfd.sock");
 #else
-    auto path = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
+    auto path = config.get<std::string>("face_system.unix.path", "/var/run/nfd/nfd.sock");
 #endif // __linux__
     return make_shared<ndn::UnixTransport>(path);
   }

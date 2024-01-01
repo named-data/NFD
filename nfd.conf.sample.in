@@ -101,10 +101,9 @@ face_system
   ; Unix stream faces and channels.
   unix
   {
-    ; The default transport is unix:///run/nfd.sock (on Linux) or unix:///var/run/nfd.sock (on
-    ; other platforms). This should match the "transport" field in client.conf for ndn-cxx. If you
-    ; wish to use TCP instead of Unix sockets with ndn-cxx, change "transport" to an appropriate
-    ; TCP FaceUri.
+    ; The default transport is 'unix:///run/nfd/nfd.sock' (on Linux) or 'unix:///var/run/nfd/nfd.sock' (on
+    ; other platforms). This should match the 'transport' field in client.conf for ndn-cxx. If you wish
+    ; to use TCP instead of Unix sockets with ndn-cxx, change 'transport' to an appropriate TCP FaceUri.
     path @UNIX_SOCKET_PATH@ ; Unix stream listener path
   }
 
@@ -303,12 +302,12 @@ authorizations
     ;      sudo mkdir -p @SYSCONFDIR@/ndn/keys
     ;      sudo mv default.ndncert @SYSCONFDIR@/ndn/keys/default.ndncert
     ;
-    ; The "certfile" field below specifies the default key directory for
+    ; The 'certfile' field below specifies the default key directory for
     ; your machine. You may move your newly created key to the location it
     ; specifies or path.
 
     ; certfile keys/default.ndncert ; NDN identity certificate file
-    certfile any ; "any" authorizes command interests signed under any certificate,
+    certfile any ; 'any' authorizes command interests signed under any certificate,
                  ; i.e., no actual validation.
     privileges ; set of privileges granted to this identity
     {

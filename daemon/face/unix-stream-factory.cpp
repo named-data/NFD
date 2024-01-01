@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,8 +45,8 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
 {
   // unix
   // {
-  //   path /run/nfd.sock        ; on Linux
-  //   path /var/run/nfd.sock    ; on other platforms
+  //   path /run/nfd/nfd.sock       ; on Linux
+  //   path /var/run/nfd/nfd.sock   ; on other platforms
   // }
 
   m_wantCongestionMarking = context.generalConfig.wantCongestionMarking;
@@ -59,15 +59,12 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
   }
 
 #ifdef __linux__
-  std::string path = "/run/nfd.sock";
+  std::string path = "/run/nfd/nfd.sock";
 #else
-  std::string path = "/var/run/nfd.sock";
+  std::string path = "/var/run/nfd/nfd.sock";
 #endif // __linux__
 
-  for (const auto& pair : *configSection) {
-    const std::string& key = pair.first;
-    const ConfigSection& value = pair.second;
-
+  for (const auto& [key, value] : *configSection) {
     if (key == "path") {
       path = value.get_value<std::string>();
     }
@@ -87,11 +84,10 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
 }
 
 shared_ptr<UnixStreamChannel>
-UnixStreamFactory::createChannel(const std::string& unixSocketPath)
+UnixStreamFactory::createChannel(const std::string& socketPath)
 {
-  boost::filesystem::path p(unixSocketPath);
-  p = boost::filesystem::canonical(p.parent_path()) / p.filename();
-  unix_stream::Endpoint endpoint(p.string());
+  auto normalizedPath = boost::filesystem::weakly_canonical(boost::filesystem::absolute(socketPath));
+  unix_stream::Endpoint endpoint(normalizedPath.string());
 
   auto it = m_channels.find(endpoint);
   if (it != m_channels.end())

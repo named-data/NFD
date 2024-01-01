@@ -66,7 +66,7 @@ OPTIONS
     - tcp4://192.0.2.1:6363
     - tcp6://[2001:db8::1]:6363
     - tcp://example.net
-    - unix:///var/run/nfd.sock
+    - unix:///run/nfd/nfd.sock
     - fd://6
     - ether://[08:00:27:01:01:01]
     - dev://eth0

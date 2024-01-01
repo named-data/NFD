@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,7 +41,8 @@ class UnixStreamChannelFixture : public ChannelFixture<UnixStreamChannel, unix_s
 protected:
   UnixStreamChannelFixture()
   {
-    listenerEp = unix_stream::Endpoint("nfd-test-unix-stream-channel.sock");
+    listenerEp = unix_stream::Endpoint(socketPath.string());
+    fs::remove_all(socketPath.parent_path());
   }
 
   shared_ptr<UnixStreamChannel>
@@ -68,11 +69,14 @@ protected:
   clientConnect(local::stream_protocol::socket& client)
   {
     client.async_connect(listenerEp,
-      [this] (const boost::system::error_code& error) {
+      [this] (const auto& error) {
         BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         limitedIo.afterOp();
       });
   }
+
+protected:
+  fs::path socketPath = fs::path(UNIT_TESTS_TMPDIR) / "unix-stream-channel" / "test" / "foo.sock";
 };
 
 BOOST_AUTO_TEST_SUITE(Face)
@@ -128,9 +132,6 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
 
 BOOST_AUTO_TEST_CASE(SocketFile)
 {
-  fs::path socketPath(listenerEp.path());
-  fs::remove(socketPath);
-
   auto channel = makeChannel();
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
 
@@ -144,32 +145,33 @@ BOOST_AUTO_TEST_CASE(SocketFile)
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
 }
 
-BOOST_AUTO_TEST_CASE(ExistingStaleSocketFile)
+BOOST_AUTO_TEST_CASE(ExistingSocketFile)
 {
-  fs::path socketPath(listenerEp.path());
-  fs::remove(socketPath);
-
+  fs::create_directories(socketPath.parent_path());
   local::stream_protocol::acceptor acceptor(g_io, listenerEp);
-  acceptor.close();
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
 
   auto channel = makeChannel();
+  BOOST_CHECK_THROW(channel->listen(nullptr, nullptr), UnixStreamChannel::Error);
+
+  acceptor.close();
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+
   BOOST_CHECK_NO_THROW(channel->listen(nullptr, nullptr));
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
 }
 
 BOOST_AUTO_TEST_CASE(ExistingRegularFile)
 {
-  fs::path socketPath(listenerEp.path());
-  fs::remove(socketPath);
+  auto guard = ndn::make_scope_exit([=] { fs::remove(socketPath); });
 
-  std::ofstream f(listenerEp.path());
+  fs::create_directories(socketPath.parent_path());
+  std::ofstream f(socketPath.string());
   f.close();
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::regular_file);
 
   auto channel = makeChannel();
   BOOST_CHECK_THROW(channel->listen(nullptr, nullptr), UnixStreamChannel::Error);
-
-  fs::remove(socketPath);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,11 +49,10 @@ UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint,
 UnixStreamChannel::~UnixStreamChannel()
 {
   if (isListening()) {
-    // use the non-throwing variants during destruction
-    // and ignore any errors
+    // use the non-throwing variants during destruction and ignore any errors
     boost::system::error_code error;
     m_acceptor.close(error);
-    NFD_LOG_CHAN_DEBUG("Removing socket file");
+    NFD_LOG_CHAN_TRACE("Removing socket file");
     boost::filesystem::remove(m_endpoint.path(), error);
   }
 }
@@ -70,7 +69,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
   namespace fs = boost::filesystem;
 
-  fs::path socketPath(m_endpoint.path());
+  fs::path socketPath = m_endpoint.path();
   fs::file_type type = fs::symlink_status(socketPath).type();
 
   if (type == fs::socket_file) {
@@ -80,7 +79,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     NFD_LOG_CHAN_TRACE("connect() on existing socket file returned: " << error.message());
     if (!error) {
       // someone answered, leave the socket alone
-      NDN_THROW(Error("Socket file at " + m_endpoint.path() + " belongs to another NFD process"));
+      NDN_THROW(Error("Socket file at " + m_endpoint.path() + " belongs to another process"));
     }
     else if (error == boost::asio::error::connection_refused ||
              error == boost::asio::error::timed_out) {
@@ -92,6 +91,12 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   }
   else if (type != fs::file_not_found) {
     NDN_THROW(Error(m_endpoint.path() + " already exists and is not a socket file"));
+  }
+
+  // ensure parent directory exists before creating socket
+  fs::path parent = socketPath.parent_path();
+  if (!parent.empty() && fs::create_directories(parent)) {
+    NFD_LOG_CHAN_TRACE("Created directory " << parent);
   }
 
   m_acceptor.open();

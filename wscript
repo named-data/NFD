@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2023,  Regents of the University of California,
+Copyright (c) 2014-2024,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -209,7 +209,7 @@ def build(bld):
         install_path='${SYSCONFDIR}/ndn',
         IF_HAVE_LIBPCAP='' if bld.env.HAVE_LIBPCAP else '; ',
         IF_HAVE_WEBSOCKET='' if bld.env.HAVE_WEBSOCKET else '; ',
-        UNIX_SOCKET_PATH='/run/nfd.sock' if Utils.unversioned_sys_platform() == 'linux' else '/var/run/nfd.sock')
+        UNIX_SOCKET_PATH='/run/nfd/nfd.sock' if Utils.unversioned_sys_platform() == 'linux' else '/var/run/nfd/nfd.sock')
     bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
 
     if bld.env.HAVE_SYSTEMD:

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,21 +28,18 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
+#include <boost/filesystem.hpp>
+
 namespace nfd::tests {
 
-using face::UnixStreamFactory;
-
-using UnixStreamFactoryFixture = FaceSystemFactoryFixture<UnixStreamFactory>;
+using UnixStreamFactoryFixture = FaceSystemFactoryFixture<face::UnixStreamFactory>;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnixStreamFactory, UnixStreamFactoryFixture)
 
-const std::string CHANNEL_PATH1("unix-stream-test.1.sock");
-const std::string CHANNEL_PATH2("unix-stream-test.2.sock");
-
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-BOOST_AUTO_TEST_CASE(Normal)
+BOOST_AUTO_TEST_CASE(AbsolutePath)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
@@ -58,9 +55,40 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, false);
 
   BOOST_REQUIRE_EQUAL(factory.getChannels().size(), 1);
+  BOOST_TEST(factory.getChannels().front()->isListening());
+
   const auto& uri = factory.getChannels().front()->getUri();
-  BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
-  BOOST_CHECK_NE(uri.getPath().find("nfd-test.sock"), std::string::npos);
+  BOOST_TEST(uri.getScheme() == "unix");
+  boost::filesystem::path path(uri.getPath());
+  BOOST_TEST(path.filename() == "nfd-test.sock");
+  BOOST_TEST(boost::filesystem::canonical(path) == path); // path should already be in canonical form
+  BOOST_TEST(boost::filesystem::equivalent(path, "/tmp/nfd-test.sock"));
+}
+
+BOOST_AUTO_TEST_CASE(RelativePath)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      unix
+      {
+        path nfd-test.sock
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  BOOST_REQUIRE_EQUAL(factory.getChannels().size(), 1);
+  BOOST_TEST(factory.getChannels().front()->isListening());
+
+  const auto& uri = factory.getChannels().front()->getUri();
+  BOOST_TEST(uri.getScheme() == "unix");
+  boost::filesystem::path path(uri.getPath());
+  BOOST_TEST(path.filename() == "nfd-test.sock");
+  BOOST_TEST(boost::filesystem::canonical(path) == path); // path should already be in canonical form
+  BOOST_TEST(boost::filesystem::equivalent(path, "nfd-test.sock"));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -95,6 +123,9 @@ BOOST_AUTO_TEST_CASE(UnknownOption)
 
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
+const std::string CHANNEL_PATH1("unix-stream-test.1.sock");
+const std::string CHANNEL_PATH2("unix-stream-test.2.sock");
+
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
@@ -107,16 +138,24 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 
 BOOST_AUTO_TEST_CASE(CreateChannel)
 {
-  auto channel1 = factory.createChannel(CHANNEL_PATH1);
+  auto channel1 = factory.createChannel("./" + CHANNEL_PATH1); // test path normalization
   auto channel1a = factory.createChannel(CHANNEL_PATH1);
+  auto channel1b = factory.createChannel(boost::filesystem::absolute(CHANNEL_PATH1).string());
+  auto channel1c = factory.createChannel("foo//../" + CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
+  BOOST_CHECK_EQUAL(channel1, channel1b);
+  BOOST_CHECK_EQUAL(channel1, channel1c);
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
 
   const auto& uri = channel1->getUri();
+  BOOST_TEST_INFO_SCOPE(uri);
   BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
   BOOST_CHECK_EQUAL(uri.getHost(), "");
   BOOST_CHECK_EQUAL(uri.getPort(), "");
-  BOOST_CHECK_EQUAL(uri.getPath().rfind(CHANNEL_PATH1), uri.getPath().size() - CHANNEL_PATH1.size());
+  boost::filesystem::path path1(uri.getPath());
+  BOOST_TEST(path1.filename() == CHANNEL_PATH1);
+  BOOST_TEST(path1.is_absolute()); // path should always be absolute
+  BOOST_TEST(path1.lexically_normal() == path1); // path should be in normal form
 
   auto channel2 = factory.createChannel(CHANNEL_PATH2);
   BOOST_CHECK_NE(channel1, channel2);
