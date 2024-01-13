@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,10 +36,10 @@
 #include <boost/asio/signal_set.hpp>
 #include <boost/config.hpp>
 #include <boost/exception/diagnostic_information.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/system/system_error.hpp>
 #include <boost/version.hpp>
 
 #include <atomic>
@@ -317,13 +317,19 @@ main(int argc, char** argv)
                ", with ndn-cxx version " NDN_CXX_VERSION_BUILD_STRING
             << std::endl;
 
+  auto flush = ndn::make_scope_exit([] { ndn::util::Logging::flush(); });
+
   NfdRunner runner(configFile);
   try {
     runner.initialize();
   }
-  catch (const boost::filesystem::filesystem_error& e) {
+  catch (const boost::system::system_error& e) {
     NFD_LOG_FATAL(boost::diagnostic_information(e));
-    return e.code() == boost::system::errc::permission_denied ? 4 : 1;
+    if (e.code() == boost::system::errc::operation_not_permitted ||
+        e.code() == boost::system::errc::permission_denied) {
+      return 4;
+    }
+    return 1;
   }
   catch (const std::exception& e) {
     NFD_LOG_FATAL(boost::diagnostic_information(e));

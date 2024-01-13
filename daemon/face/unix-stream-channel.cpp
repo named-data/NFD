@@ -30,7 +30,6 @@
 #include "common/global.hpp"
 
 #include <boost/filesystem.hpp>
-#include <sys/stat.h> // for chmod()
 
 namespace nfd::face {
 
@@ -50,10 +49,10 @@ UnixStreamChannel::~UnixStreamChannel()
 {
   if (isListening()) {
     // use the non-throwing variants during destruction and ignore any errors
-    boost::system::error_code error;
-    m_acceptor.close(error);
+    boost::system::error_code ec;
+    m_acceptor.close(ec);
     NFD_LOG_CHAN_TRACE("Removing socket file");
-    boost::filesystem::remove(m_endpoint.path(), error);
+    boost::filesystem::remove(m_endpoint.path(), ec);
   }
 }
 
@@ -70,42 +69,56 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   namespace fs = boost::filesystem;
 
   fs::path socketPath = m_endpoint.path();
-  fs::file_type type = fs::symlink_status(socketPath).type();
-
-  if (type == fs::socket_file) {
-    boost::system::error_code error;
-    boost::asio::local::stream_protocol::socket socket(getGlobalIoService());
-    socket.connect(m_endpoint, error);
-    NFD_LOG_CHAN_TRACE("connect() on existing socket file returned: " << error.message());
-    if (!error) {
-      // someone answered, leave the socket alone
-      NDN_THROW(Error("Socket file at " + m_endpoint.path() + " belongs to another process"));
-    }
-    else if (error == boost::asio::error::connection_refused ||
-             error == boost::asio::error::timed_out) {
-      // no one is listening on the remote side,
-      // we can safely remove the stale socket
-      NFD_LOG_CHAN_DEBUG("Removing stale socket file");
-      fs::remove(socketPath);
-    }
-  }
-  else if (type != fs::file_not_found) {
-    NDN_THROW(Error(m_endpoint.path() + " already exists and is not a socket file"));
-  }
-
-  // ensure parent directory exists before creating socket
+  // ensure parent directory exists
   fs::path parent = socketPath.parent_path();
   if (!parent.empty() && fs::create_directories(parent)) {
     NFD_LOG_CHAN_TRACE("Created directory " << parent);
   }
 
-  m_acceptor.open();
-  m_acceptor.bind(m_endpoint);
-  m_acceptor.listen(backlog);
-
-  if (::chmod(m_endpoint.path().data(), 0666) < 0) {
-    NDN_THROW_ERRNO(Error("Failed to chmod " + m_endpoint.path()));
+  boost::system::error_code ec;
+  fs::file_type type = fs::symlink_status(socketPath).type();
+  if (type == fs::socket_file) {
+    // if the socket file already exists, there may be another instance
+    // of NFD running on the system: make sure we don't steal its socket
+    boost::asio::local::stream_protocol::socket socket(getGlobalIoService());
+    socket.connect(m_endpoint, ec);
+    NFD_LOG_CHAN_TRACE("connect() on existing socket file returned: " << ec.message());
+    if (!ec) {
+      // someone answered, leave the socket alone
+      ec = boost::system::errc::make_error_code(boost::system::errc::address_in_use);
+      NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath, ec));
+    }
+    else if (ec == boost::asio::error::connection_refused ||
+             ec == boost::asio::error::timed_out) {
+      // no one is listening on the remote side, we can safely remove the stale socket
+      NFD_LOG_CHAN_DEBUG("Removing stale socket file");
+      fs::remove(socketPath);
+    }
   }
+  else if (type != fs::file_not_found) {
+    // the file exists but is not a socket: this is a fatal error as we cannot
+    // safely overwrite the file without potentially risking data loss
+    ec = boost::system::errc::make_error_code(boost::system::errc::not_a_socket);
+    NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath, ec));
+  }
+
+  try {
+    m_acceptor.open();
+    m_acceptor.bind(m_endpoint);
+    m_acceptor.listen(backlog);
+  }
+  catch (const boost::system::system_error& e) {
+    // exceptions thrown by Boost.Asio are very terse, add more context
+    NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen: "s + e.std::runtime_error::what(),
+                                            socketPath, e.code()));
+  }
+
+  // do this here so that, even if the calls below fail,
+  // the destructor will still remove the socket file
+  m_isListening = true;
+
+  fs::permissions(socketPath, fs::owner_read | fs::group_read | fs::others_read |
+                              fs::owner_write | fs::group_write | fs::others_write);
 
   accept(onFaceCreated, onAcceptFailed);
   NFD_LOG_CHAN_DEBUG("Started listening");

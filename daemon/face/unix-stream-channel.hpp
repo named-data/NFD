@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,15 +46,6 @@ class UnixStreamChannel final : public Channel
 {
 public:
   /**
-   * \brief UnixStreamChannel-related error.
-   */
-  class Error : public std::runtime_error
-  {
-  public:
-    using std::runtime_error::runtime_error;
-  };
-
-  /**
    * \brief Create a UnixStream channel for the specified \p endpoint.
    *
    * To enable the creation of faces upon incoming connections, one needs to
@@ -67,7 +58,7 @@ public:
   bool
   isListening() const final
   {
-    return m_acceptor.is_open();
+    return m_isListening;
   }
 
   size_t
@@ -89,7 +80,7 @@ public:
    *                       returns an error)
    * \param backlog        The maximum length of the queue of pending incoming
    *                       connections
-   * \throw Error
+   * \throw boost::system::system_error
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
@@ -104,6 +95,7 @@ private:
 private:
   const unix_stream::Endpoint m_endpoint;
   const bool m_wantCongestionMarking;
+  bool m_isListening = false;
   boost::asio::local::stream_protocol::acceptor m_acceptor;
   size_t m_size = 0;
 };

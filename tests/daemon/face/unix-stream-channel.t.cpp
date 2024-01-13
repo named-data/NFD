@@ -42,7 +42,17 @@ protected:
   UnixStreamChannelFixture()
   {
     listenerEp = unix_stream::Endpoint(socketPath.string());
-    fs::remove_all(socketPath.parent_path());
+
+    // in case an earlier test run crashed without a chance to run the destructor
+    boost::system::error_code ec;
+    fs::remove_all(testDir, ec);
+  }
+
+  ~UnixStreamChannelFixture() override
+  {
+    // cleanup
+    boost::system::error_code ec;
+    fs::remove_all(testDir, ec);
   }
 
   shared_ptr<UnixStreamChannel>
@@ -76,7 +86,8 @@ protected:
   }
 
 protected:
-  fs::path socketPath = fs::path(UNIT_TESTS_TMPDIR) / "unix-stream-channel" / "test" / "foo.sock";
+  fs::path testDir = fs::path(UNIT_TESTS_TMPDIR) / "unix-stream-channel";
+  fs::path socketPath = testDir / "test" / "foo.sock";
 };
 
 BOOST_AUTO_TEST_SUITE(Face)
@@ -97,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Listen)
   BOOST_CHECK_EQUAL(channel->isListening(), true);
 
   // listen() is idempotent
-  BOOST_CHECK_NO_THROW(channel->listen(nullptr, nullptr));
+  channel->listen(nullptr, nullptr);
   BOOST_CHECK_EQUAL(channel->isListening(), true);
 }
 
@@ -130,7 +141,9 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   }
 }
 
-BOOST_AUTO_TEST_CASE(SocketFile)
+BOOST_AUTO_TEST_SUITE(SocketFile)
+
+BOOST_AUTO_TEST_CASE(CreateAndRemove)
 {
   auto channel = makeChannel();
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
@@ -145,34 +158,127 @@ BOOST_AUTO_TEST_CASE(SocketFile)
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
 }
 
-BOOST_AUTO_TEST_CASE(ExistingSocketFile)
+BOOST_AUTO_TEST_CASE(InUse)
 {
+  auto channel = makeChannel();
   fs::create_directories(socketPath.parent_path());
+
   local::stream_protocol::acceptor acceptor(g_io, listenerEp);
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
 
-  auto channel = makeChannel();
-  BOOST_CHECK_THROW(channel->listen(nullptr, nullptr), UnixStreamChannel::Error);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::address_in_use &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
+  });
+}
 
+BOOST_AUTO_TEST_CASE(Stale)
+{
+  auto channel = makeChannel();
+  fs::create_directories(socketPath.parent_path());
+
+  local::stream_protocol::acceptor acceptor(g_io, listenerEp);
   acceptor.close();
+  // the socket file is not removed when the acceptor is closed
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
 
-  BOOST_CHECK_NO_THROW(channel->listen(nullptr, nullptr));
+  // drop write permission from the parent directory
+  fs::permissions(socketPath.parent_path(), fs::owner_all & ~fs::owner_write);
+  // removal of the "stale" socket fails due to insufficient permissions
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::permission_denied &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("remove") != std::string_view::npos;
+  });
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+
+  // restore all permissions
+  fs::permissions(socketPath.parent_path(), fs::owner_all);
+  // the socket file should be considered "stale" and overwritten
+  channel->listen(nullptr, nullptr);
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
 }
 
-BOOST_AUTO_TEST_CASE(ExistingRegularFile)
+BOOST_AUTO_TEST_CASE(NotASocket)
 {
-  auto guard = ndn::make_scope_exit([=] { fs::remove(socketPath); });
+  auto channel = makeChannel();
 
-  fs::create_directories(socketPath.parent_path());
+  fs::create_directories(socketPath);
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::directory_file);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::not_a_socket &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
+  });
+
+  fs::remove(socketPath);
   std::ofstream f(socketPath.string());
   f.close();
   BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::regular_file);
-
-  auto channel = makeChannel();
-  BOOST_CHECK_THROW(channel->listen(nullptr, nullptr), UnixStreamChannel::Error);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::not_a_socket &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
+  });
 }
+
+BOOST_AUTO_TEST_CASE(ParentConflict)
+{
+  auto channel = makeChannel();
+  fs::create_directories(testDir);
+
+  auto parent = socketPath.parent_path();
+  std::ofstream f(parent.string());
+  f.close();
+  BOOST_CHECK_EQUAL(fs::symlink_status(parent).type(), fs::regular_file);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::file_exists &&
+           e.path1() == parent &&
+           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+  });
+}
+
+BOOST_AUTO_TEST_CASE(PermissionDenied)
+{
+  auto channel = makeChannel();
+  fs::create_directories(testDir);
+
+  fs::permissions(testDir, fs::no_perms);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::permission_denied &&
+           e.path1() == socketPath.parent_path() &&
+           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+  });
+
+  fs::permissions(testDir, fs::owner_read | fs::owner_exe);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::permission_denied &&
+           e.path1() == socketPath.parent_path() &&
+           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+  });
+
+  fs::permissions(testDir, fs::owner_all);
+  fs::create_directories(socketPath.parent_path());
+
+  fs::permissions(socketPath.parent_path(), fs::no_perms);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::permission_denied &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("status") != std::string_view::npos;
+  });
+
+  fs::permissions(socketPath.parent_path(), fs::owner_read | fs::owner_exe);
+  BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
+    return e.code() == boost::system::errc::permission_denied &&
+           e.path1() == socketPath &&
+           std::string_view(e.what()).find("bind") != std::string_view::npos;
+  });
+
+  fs::permissions(socketPath.parent_path(), fs::owner_all);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // SocketFile
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
