@@ -222,6 +222,9 @@ class ClangFlags(GccClangCommonFlags):
         elif Utils.unversioned_sys_platform() == 'freebsd':
             # Bug #4790
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
+        if self.getCompilerVersion(conf) >= (18, 0, 0):
+            # Bug #5300
+            flags['CXXFLAGS'] += ['-Wno-enum-constexpr-conversion']
         return flags
 
     __cxxFlags = [
