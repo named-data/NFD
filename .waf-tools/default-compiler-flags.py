@@ -174,6 +174,9 @@ class GccClangCommonFlags(CompilerFlags):
             '-Wno-error=maybe-uninitialized', # Bug #1615
         ]
         flags['LINKFLAGS'] += self.__linkFlags
+        # Enable assertions in libstdc++
+        # https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_macros.html
+        flags['DEFINES'] += ['_GLIBCXX_ASSERTIONS=1']
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -235,6 +238,13 @@ class ClangFlags(GccClangCommonFlags):
     def getDebugFlags(self, conf):
         flags = super().getDebugFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
+        # Enable assertions in libc++
+        if self.getCompilerVersion(conf) >= (18, 0, 0):
+            # https://libcxx.llvm.org/Hardening.html
+            flags['DEFINES'] += ['_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+        elif self.getCompilerVersion(conf) >= (15, 0, 0):
+            # https://releases.llvm.org/15.0.0/projects/libcxx/docs/UsingLibcxx.html#enabling-the-safe-libc-mode
+            flags['DEFINES'] += ['_LIBCPP_ENABLE_ASSERTIONS=1']
         return flags
 
     def getOptimizedFlags(self, conf):
