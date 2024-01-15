@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -398,21 +398,6 @@ LpReliability::deleteUnackedFrag(UnackedFrags::iterator fragIt)
   else if (m_unackedFrags.empty()) {
     m_firstUnackedFrag = m_unackedFrags.end();
   }
-}
-
-LpReliability::UnackedFrag::UnackedFrag(lp::Packet pkt)
-  : pkt(std::move(pkt))
-  , sendTime(time::steady_clock::now())
-  , retxCount(0)
-  , nGreaterSeqAcks(0)
-{
-}
-
-LpReliability::NetPkt::NetPkt(lp::Packet&& pkt, bool isInterest)
-  : pkt(std::move(pkt))
-  , isInterest(isInterest)
-  , didRetx(false)
-{
 }
 
 std::ostream&

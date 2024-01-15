@@ -136,7 +136,7 @@ class CompilerFlags:
 
     def getDebugFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in debug mode"""
-        return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': ['_DEBUG']}
+        return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
 
     def getOptimizedFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in optimized mode"""

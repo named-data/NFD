@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -106,10 +106,10 @@ protected:
 private:
   signal::ScopedConnection m_netifStateChangedConn;
   signal::ScopedConnection m_netifMtuChangedConn;
-  bool m_hasRecentlyReceived;
-#ifdef _DEBUG
-  /// number of frames dropped by the kernel, as reported by libpcap
-  size_t m_nDropped;
+  bool m_hasRecentlyReceived = false;
+#ifndef NDEBUG
+  /// Number of frames dropped by the kernel, as reported by libpcap
+  size_t m_nDropped = 0;
 #endif
 };
 

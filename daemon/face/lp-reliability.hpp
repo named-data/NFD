@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -174,14 +174,17 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   {
   public:
     explicit
-    UnackedFrag(lp::Packet pkt);
+    UnackedFrag(lp::Packet p)
+      : pkt(std::move(p))
+    {
+    }
 
   public:
     lp::Packet pkt;
     scheduler::ScopedEventId rtoTimer;
-    time::steady_clock::time_point sendTime;
-    size_t retxCount;
-    size_t nGreaterSeqAcks; //!< number of Acks received for sequences greater than this fragment
+    time::steady_clock::time_point sendTime = time::steady_clock::now();
+    size_t retxCount = 0;
+    size_t nGreaterSeqAcks = 0; ///< Number of Acks received for sequences greater than this fragment
     shared_ptr<NetPkt> netPkt;
   };
 
@@ -191,17 +194,21 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   class NetPkt
   {
   public:
-    NetPkt(lp::Packet&& pkt, bool isInterest);
+    NetPkt(lp::Packet&& p, bool isInterest)
+      : pkt(std::move(p))
+      , isInterest(isInterest)
+    {
+    }
 
   public:
     std::vector<UnackedFrags::iterator> unackedFrags;
     lp::Packet pkt;
     bool isInterest;
-    bool didRetx;
+    bool didRetx = false;
   };
 
   Options m_options;
-  GenericLinkService* m_linkService;
+  GenericLinkService* m_linkService = nullptr;
   UnackedFrags m_unackedFrags;
   // An iterator that points to the first unacknowledged fragment in the current window. The window
   // can wrap around so that the beginning of the window is at a TxSequence greater than other

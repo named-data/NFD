@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,9 +44,6 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_fragmenter(m_options.fragmenterOptions, this)
   , m_reassembler(m_options.reassemblerOptions, this)
   , m_reliability(m_options.reliabilityOptions, this)
-  , m_lastSeqNo(-2)
-  , m_nextMarkTime(time::steady_clock::time_point::max())
-  , m_nMarkedSinceInMarkingState(0)
 {
   m_reassembler.beforeTimeout.connect([this] (auto&&...) { ++nReassemblyTimeouts; });
   m_reliability.onDroppedInterest.connect([this] (const auto& i) { notifyDroppedInterest(i); });

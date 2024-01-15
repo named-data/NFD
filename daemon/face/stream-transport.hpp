@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -105,17 +105,15 @@ protected:
 
 private:
   uint8_t m_receiveBuffer[ndn::MAX_NDN_PACKET_SIZE];
-  size_t m_receiveBufferSize;
+  size_t m_receiveBufferSize = 0;
   std::queue<Block> m_sendQueue;
-  size_t m_sendQueueBytes;
+  size_t m_sendQueueBytes = 0;
 };
 
 
 template<class T>
 StreamTransport<T>::StreamTransport(typename StreamTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
-  , m_receiveBufferSize(0)
-  , m_sendQueueBytes(0)
 {
   // No queue capacity is set because there is no theoretical limit to the size of m_sendQueue.
   // Therefore, protecting against send queue overflows is less critical than in other transport

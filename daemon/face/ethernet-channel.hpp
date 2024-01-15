@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,15 +121,15 @@ private:
 
 private:
   shared_ptr<const ndn::net::NetworkInterface> m_localEndpoint;
-  bool m_isListening;
+  bool m_isListening = false;
   boost::asio::posix::stream_descriptor m_socket;
   PcapHelper m_pcap;
   std::map<ethernet::Address, shared_ptr<Face>> m_channelFaces;
   const time::nanoseconds m_idleFaceTimeout; ///< Timeout for automatic closure of idle on-demand faces
 
-#ifdef _DEBUG
-  /// number of frames dropped by the kernel, as reported by libpcap
-  size_t m_nDropped;
+#ifndef NDEBUG
+  /// Number of frames dropped by the kernel, as reported by libpcap
+  size_t m_nDropped = 0;
 #endif
 };
 

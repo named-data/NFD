@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ protected:
     : m_fib(m_nameTree)
     , m_pit(m_nameTree)
   {
-#ifdef _DEBUG
+#ifndef NDEBUG
     std::cerr << "Benchmark compiled in debug mode is unreliable, please compile in release mode.\n";
 #endif
   }

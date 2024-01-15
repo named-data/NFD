@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,24 +31,25 @@ namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(TestNdebug)
 
-BOOST_AUTO_TEST_CASE(AssertFalse)
+BOOST_AUTO_TEST_CASE(Assert)
 {
-#ifndef _DEBUG
+  BOOST_TEST(BOOST_IS_DEFINED(BOOST_ASSERT_IS_VOID) == BOOST_IS_DEFINED(NDEBUG));
+
+#ifdef NDEBUG
   // in release builds, assertion shouldn't execute
   BOOST_ASSERT(false);
+  BOOST_VERIFY(false);
 #endif
-  // Trivial check to avoid "test case did not check any assertions" message from Boost.Test
-  BOOST_CHECK(true);
 }
 
 BOOST_AUTO_TEST_CASE(SideEffect)
 {
   int a = 1;
   BOOST_ASSERT((a = 2) > 0);
-#ifdef _DEBUG
-  BOOST_CHECK_EQUAL(a, 2);
+#ifdef NDEBUG
+  BOOST_TEST(a == 1);
 #else
-  BOOST_CHECK_EQUAL(a, 1);
+  BOOST_TEST(a == 2);
 #endif
 }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -99,14 +99,13 @@ protected:
 
 private:
   std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
-  bool m_hasRecentlyReceived;
+  bool m_hasRecentlyReceived = false;
 };
 
 
 template<class T, class U>
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
-  , m_hasRecentlyReceived(false)
 {
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption;
   boost::system::error_code error;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -308,13 +308,13 @@ NFD_PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   LpFragmenter m_fragmenter;
   LpReassembler m_reassembler;
   LpReliability m_reliability;
-  lp::Sequence m_lastSeqNo;
+  lp::Sequence m_lastSeqNo = static_cast<lp::Sequence>(-2);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /// Time to mark next packet due to send queue congestion
-  time::steady_clock::time_point m_nextMarkTime;
-  /// number of marked packets in the current incident of congestion
-  size_t m_nMarkedSinceInMarkingState;
+  time::steady_clock::time_point m_nextMarkTime = time::steady_clock::time_point::max();
+  /// Number of marked packets in the current incident of congestion
+  size_t m_nMarkedSinceInMarkingState = 0;
 
   friend LpReliability;
 };

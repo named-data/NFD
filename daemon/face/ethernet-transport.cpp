@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,10 +43,6 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
   , m_srcAddress(localEndpoint.getEthernetAddress())
   , m_destAddress(remoteEndpoint)
   , m_interfaceName(localEndpoint.getName())
-  , m_hasRecentlyReceived(false)
-#ifdef _DEBUG
-  , m_nDropped(0)
-#endif
 {
   try {
     m_pcap.activate(DLT_EN10MB);
@@ -183,7 +179,7 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
     }
   }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
   size_t nDropped = m_pcap.getNDropped();
   if (nDropped - m_nDropped > 0)
     NFD_LOG_FACE_DEBUG("Detected " << nDropped - m_nDropped << " dropped frame(s)");
