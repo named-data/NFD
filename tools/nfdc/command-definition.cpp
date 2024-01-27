@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,11 @@
 #include "command-definition.hpp"
 #include "status-report.hpp"
 
-#include <boost/lexical_cast.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
+#include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/logger.hpp>
+
+#include <boost/lexical_cast.hpp>
 
 namespace nfd::tools::nfdc {
 
@@ -282,14 +285,14 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token)
       return Name(token);
 
     case ArgValueType::FACE_URI:
-      return FaceUri(token);
+      return ndn::FaceUri(token);
 
     case ArgValueType::FACE_ID_OR_URI:
       try {
         return boost::lexical_cast<uint64_t>(token);
       }
       catch (const boost::bad_lexical_cast&) {
-        return FaceUri(token);
+        return ndn::FaceUri(token);
       }
 
     case ArgValueType::FACE_PERSISTENCY:

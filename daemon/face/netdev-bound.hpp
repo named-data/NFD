@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,8 @@ namespace nfd::face {
 
 class FaceSystem;
 
-/** \brief Manages netdev-bound faces.
+/**
+ * \brief Manages netdev-bound faces.
  */
 class NetdevBound : noncopyable
 {
@@ -42,7 +43,7 @@ public:
   {
   public:
     RuleParseError(int index, std::string msg)
-      : Error("Error parsing face_system.netdev_bound.rule[" + to_string(index) + "]: " + msg)
+      : Error("Error parsing face_system.netdev_bound.rule[" + std::to_string(index) + "]: " + msg)
       , index(index)
       , msg(std::move(msg))
     {

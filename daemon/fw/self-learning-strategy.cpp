@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,8 +52,8 @@ SelfLearningStrategy::SelfLearningStrategy(Forwarder& forwarder, const Name& nam
     NDN_THROW(std::invalid_argument("SelfLearningStrategy does not accept parameters"));
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument(
-      "SelfLearningStrategy does not support version " + to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument("SelfLearningStrategy does not support version " +
+                                    std::to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }

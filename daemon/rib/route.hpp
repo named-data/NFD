@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,14 +53,14 @@ public:
    */
   Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId);
 
-  const scheduler::EventId&
+  const ndn::scheduler::EventId&
   getExpirationEvent() const
   {
     return m_expirationEvent;
   }
 
   void
-  setExpirationEvent(const scheduler::EventId& eid)
+  setExpirationEvent(const ndn::scheduler::EventId& eid)
   {
     m_expirationEvent = eid;
   }
@@ -113,7 +113,7 @@ public:
   time::steady_clock::time_point annExpires;
 
 private:
-  scheduler::EventId m_expirationEvent;
+  ndn::scheduler::EventId m_expirationEvent;
 };
 
 std::ostream&

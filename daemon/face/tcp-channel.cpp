@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -188,7 +188,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
                           const tcp::Endpoint& remoteEndpoint,
                           const shared_ptr<ip::tcp::socket>& socket,
                           const FaceParams& params,
-                          const scheduler::EventId& connectTimeoutEvent,
+                          const ndn::scheduler::EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onConnectFailed)
 {

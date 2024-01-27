@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,11 @@
 
 #include "channel.hpp"
 
+#include <ndn-cxx/util/scheduler.hpp>
+
 #include <boost/asio/ip/tcp.hpp>
+
+#include <map>
 
 namespace nfd::tcp {
 using Endpoint = boost::asio::ip::tcp::endpoint;
@@ -109,7 +113,7 @@ private:
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                 const FaceParams& params,
-                const scheduler::EventId& connectTimeoutEvent,
+                const ndn::scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onConnectFailed);
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -141,7 +141,7 @@ protected:
   Name name = "/N";
   uint32_t lastNonce = 0;
   size_t addNonceBatch = 0;
-  scheduler::ScopedEventId addNonceEvent;
+  ndn::scheduler::ScopedEventId addNonceEvent;
 };
 
 BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)

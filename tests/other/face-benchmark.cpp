@@ -162,7 +162,7 @@ private:
   [[noreturn]] static void
   onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
-    NDN_THROW(std::runtime_error("Failed to create face: [" + to_string(status) + "] " + reason));
+    NDN_THROW(std::runtime_error("Failed to create face: [" + std::to_string(status) + "] " + reason));
   }
 
 private:

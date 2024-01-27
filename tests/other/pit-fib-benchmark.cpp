@@ -59,13 +59,13 @@ protected:
     BOOST_ASSERT(interestNameLength <= dataNameLength);
 
     for (size_t i = 0; i < nPackets; i++) {
-      Name prefix(to_string(i / nFibEntries));
+      Name prefix(std::to_string(i / nFibEntries));
       extendName(prefix, fibPrefixLength);
       m_fib.insert(prefix);
 
       Name interestName = prefix;
       if (nPackets > nFibEntries) {
-        interestName.append(to_string(i));
+        interestName.append(std::to_string(i));
       }
       extendName(interestName, interestNameLength);
       interests.push_back(make_shared<Interest>(interestName));

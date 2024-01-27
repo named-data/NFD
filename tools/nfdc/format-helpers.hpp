@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -255,7 +255,7 @@ template<typename OutputPrecision>
 std::string
 formatDuration(time::nanoseconds d, bool isLong = false)
 {
-  return to_string(time::duration_cast<OutputPrecision>(d).count()) +
+  return std::to_string(time::duration_cast<OutputPrecision>(d).count()) +
          (isLong ? " " : "") + detail::getTimeUnit<OutputPrecision>(isLong);
 }
 

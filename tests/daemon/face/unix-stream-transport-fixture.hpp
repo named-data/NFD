@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ using unix_stream = boost::asio::local::stream_protocol;
 using face::UnixStreamTransport;
 
 /**
- * \brief Automatically unlinks the socket file of a Unix stream acceptor
+ * \brief Automatically unlinks the socket file of a Unix stream acceptor.
  */
 class AcceptorWithCleanup : public unix_stream::acceptor
 {
@@ -51,28 +51,27 @@ public:
   AcceptorWithCleanup(boost::asio::io_context& io, const std::string& path = "")
     : unix_stream::acceptor(io)
   {
-    this->open();
+    open();
 
     if (path.empty()) {
-      this->bind("nfd-unix-stream-test." + to_string(time::system_clock::now().time_since_epoch().count()) + ".sock");
+      bind("nfd-unix-stream-test." + std::to_string(time::system_clock::now().time_since_epoch().count()) + ".sock");
     }
     else {
-      this->bind(path);
+      bind(path);
     }
 
-    this->listen(1);
+    listen(1);
   }
 
   ~AcceptorWithCleanup()
   {
     boost::system::error_code ec;
-
-    std::string path = this->local_endpoint(ec).path();
+    std::string path = local_endpoint(ec).path();
     if (ec) {
       return;
     }
 
-    this->close(ec);
+    close(ec);
     boost::filesystem::remove(path, ec);
   }
 };

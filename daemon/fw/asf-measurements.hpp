@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,7 +53,7 @@ public:
   }
 
   time::nanoseconds
-  scheduleTimeout(const Name& interestName, scheduler::EventCallback cb);
+  scheduleTimeout(const Name& interestName, ndn::scheduler::EventCallback cb);
 
   void
   cancelTimeout(const Name& prefix);
@@ -113,11 +113,11 @@ private:
   size_t m_nTimeouts = 0;
 
   // Timeout associated with measurement
-  scheduler::ScopedEventId m_measurementExpiration;
+  ndn::scheduler::ScopedEventId m_measurementExpiration;
   friend class NamespaceInfo;
 
   // RTO associated with Interest
-  scheduler::ScopedEventId m_timeoutEvent;
+  ndn::scheduler::ScopedEventId m_timeoutEvent;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

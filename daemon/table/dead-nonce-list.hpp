@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 #define NFD_DAEMON_TABLE_DEAD_NONCE_LIST_HPP
 
 #include "core/common.hpp"
+
+#include <ndn-cxx/util/scheduler.hpp>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -194,14 +196,14 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::multiset<size_t> m_actualMarkCounts;
 
   const time::nanoseconds m_markInterval;
-  scheduler::ScopedEventId m_markEvent;
+  ndn::scheduler::ScopedEventId m_markEvent;
 
   // ---- capacity adjustments
 
   static constexpr double CAPACITY_UP = 1.2;
   static constexpr double CAPACITY_DOWN = 0.9;
   const time::nanoseconds m_adjustCapacityInterval;
-  scheduler::ScopedEventId m_adjustCapacityEvent;
+  ndn::scheduler::ScopedEventId m_adjustCapacityEvent;
 
   /// Maximum number of entries to evict at each operation if the index is over capacity
   static constexpr size_t EVICT_LIMIT = 64;

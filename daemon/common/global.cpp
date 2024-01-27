@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,8 @@
 
 namespace nfd {
 
-static thread_local unique_ptr<boost::asio::io_context> g_ioCtx;
-static thread_local unique_ptr<Scheduler> g_scheduler;
+static thread_local std::unique_ptr<boost::asio::io_context> g_ioCtx;
+static thread_local std::unique_ptr<ndn::Scheduler> g_scheduler;
 static boost::asio::io_context* g_mainIoCtx = nullptr;
 static boost::asio::io_context* g_ribIoCtx = nullptr;
 
@@ -36,16 +36,16 @@ boost::asio::io_context&
 getGlobalIoService()
 {
   if (g_ioCtx == nullptr) {
-    g_ioCtx = make_unique<boost::asio::io_context>();
+    g_ioCtx = std::make_unique<boost::asio::io_context>();
   }
   return *g_ioCtx;
 }
 
-Scheduler&
+ndn::Scheduler&
 getScheduler()
 {
   if (g_scheduler == nullptr) {
-    g_scheduler = make_unique<Scheduler>(getGlobalIoService());
+    g_scheduler = std::make_unique<ndn::Scheduler>(getGlobalIoService());
   }
   return *g_scheduler;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -86,7 +86,7 @@ public:
     // SignerTag must be placed on the 'original Interest' in ValidationState to be available for
     // InterestValidationSuccessCallback. The 'interest' parameter refers to a different instance
     // which is copied into 'original Interest'.
-    auto state1 = dynamic_pointer_cast<security::InterestValidationState>(state);
+    auto state1 = std::dynamic_pointer_cast<security::InterestValidationState>(state);
     state1->getOriginalInterest().setTag(make_shared<SignerTag>(klName));
 
     continueValidation(make_shared<security::CertificateRequest>(klName), state);
@@ -146,7 +146,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
     catch (const boost::property_tree::ptree_error&) {
       NDN_THROW(ConfigFile::Error("'certfile' is missing under authorize[" +
-                                  to_string(authSectionIndex) + "]"));
+                                  std::to_string(authSectionIndex) + "]"));
     }
 
     bool isAny = false;
@@ -162,7 +162,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       cert = ndn::io::load<security::Certificate>(certfilePath.string());
       if (cert == nullptr) {
         NDN_THROW(ConfigFile::Error("cannot load certfile " + certfilePath.string() +
-                                    " for authorize[" + to_string(authSectionIndex) + "]"));
+                                    " for authorize[" + std::to_string(authSectionIndex) + "]"));
       }
     }
 
@@ -172,7 +172,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
     catch (const boost::property_tree::ptree_error&) {
       NDN_THROW(ConfigFile::Error("'privileges' is missing under authorize[" +
-                                  to_string(authSectionIndex) + "]"));
+                                  std::to_string(authSectionIndex) + "]"));
     }
 
     if (privSection->empty()) {
@@ -183,7 +183,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       auto found = m_validators.find(module);
       if (found == m_validators.end()) {
         NDN_THROW(ConfigFile::Error("unknown module '" + module +
-                                    "' under authorize[" + to_string(authSectionIndex) + "]"));
+                                    "' under authorize[" + std::to_string(authSectionIndex) + "]"));
       }
 
       if (isDryRun) {

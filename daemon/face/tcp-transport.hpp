@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 #define NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
 
 #include "stream-transport.hpp"
+
+#include <ndn-cxx/util/scheduler.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
 
@@ -94,7 +96,7 @@ private:
   boost::asio::ip::tcp::endpoint m_remoteEndpoint;
 
   // The following members are valid only when the persistency is set to permanent
-  scheduler::ScopedEventId m_reconnectEvent;
+  ndn::scheduler::ScopedEventId m_reconnectEvent;
   time::milliseconds m_nextReconnectWait;
 };
 

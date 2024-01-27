@@ -33,6 +33,8 @@
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
+#include <map>
+
 namespace nfd::face {
 
 /**

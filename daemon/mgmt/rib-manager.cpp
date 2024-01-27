@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -119,7 +119,7 @@ RibManager::enableLocalFields()
       NFD_LOG_DEBUG("Local fields enabled");
     },
     [] (const ControlResponse& res) {
-      NDN_THROW(Error("Couldn't enable local fields (" + to_string(res.getCode()) +
+      NDN_THROW(Error("Couldn't enable local fields (" + std::to_string(res.getCode()) +
                       " " + res.getText() + ")"));
     });
 }
@@ -209,7 +209,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
     },
     [=] (const ControlResponse& res) {
       NDN_THROW(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
-                      to_string(res.getCode()) + " " + res.getText() + ")"));
+                      std::to_string(res.getCode()) + " " + res.getText() + ")"));
     });
 
   // add top prefix to the dispatcher without prefix registration
@@ -221,7 +221,7 @@ RibManager::registerEntry(const Interest& interest, ControlParameters parameters
                           const ndn::mgmt::CommandContinuation& done)
 {
   if (parameters.getName().size() > Fib::getMaxDepth()) {
-    done(ControlResponse(414, "Route prefix cannot exceed " + to_string(Fib::getMaxDepth()) +
+    done(ControlResponse(414, "Route prefix cannot exceed " + std::to_string(Fib::getMaxDepth()) +
                               " components"));
     return;
   }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -300,7 +300,7 @@ FibUpdater::onUpdateError(const FibUpdate& update,
     }
   }
   else {
-    NDN_THROW(Error("Non-recoverable error: " + response.getText() + " code: " + to_string(code)));
+    NDN_THROW(Error("Non-recoverable error " + std::to_string(code) + ": " + response.getText()));
   }
 }
 

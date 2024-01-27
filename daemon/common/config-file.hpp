@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,9 @@
 #include "core/common.hpp"
 
 #include <boost/property_tree/ptree.hpp>
+
+#include <functional>
+#include <map>
 
 namespace nfd {
 
@@ -140,9 +143,9 @@ public: // parse helpers
     static_assert(std::is_integral_v<T>);
 
     if (value < min || value > max) {
-      NDN_THROW(Error("Invalid value '" + to_string(value) + "' for option '" + key +
+      NDN_THROW(Error("Invalid value '" + std::to_string(value) + "' for option '" + key +
                       "' in section '" + sectionName + "': out of acceptable range [" +
-                      to_string(min) + ", " + to_string(max) + "]"));
+                      std::to_string(min) + ", " + std::to_string(max) + "]"));
     }
   }
 

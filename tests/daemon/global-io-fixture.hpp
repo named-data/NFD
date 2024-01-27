@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,10 @@
 #define NFD_TESTS_DAEMON_GLOBAL_IO_FIXTURE_HPP
 
 #include "tests/clock-fixture.hpp"
+
+namespace boost::asio {
+class io_context;
+} // namespace boost::asio
 
 namespace nfd::tests {
 

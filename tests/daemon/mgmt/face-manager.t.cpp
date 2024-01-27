@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(ChannelDataset)
   const size_t nEntries = 42;
   std::map<std::string, shared_ptr<TestChannel>> addedChannels;
   for (size_t i = 0; i < nEntries; i++) {
-    auto channel = factory->addChannel("test" + to_string(i) + "://");
+    auto channel = factory->addChannel("test" + std::to_string(i) + "://");
     addedChannels[channel->getUri().toString()] = channel;
   }
 

@@ -30,6 +30,8 @@
 
 #include <ndn-cxx/lp/fields.hpp>
 
+#include <set>
+
 namespace nfd::face {
 
 NFD_LOG_INIT(LpReliability);

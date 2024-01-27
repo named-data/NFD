@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023  Regents of the University of California,
+ * Copyright (c) 2014-2024  Regents of the University of California,
  *                          Arizona Board of Regents,
  *                          Colorado State University,
  *                          University Pierre & Marie Curie, Sorbonne University,
@@ -25,9 +25,10 @@
 #ifndef NFD_DAEMON_COMMON_GLOBAL_HPP
 #define NFD_DAEMON_COMMON_GLOBAL_HPP
 
-#include "core/common.hpp"
+#include "core/config.hpp"
 
 #include <boost/asio/io_context.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
 
@@ -40,7 +41,7 @@ getGlobalIoService();
 /**
  * \brief Returns the global Scheduler instance for the calling thread.
  */
-Scheduler&
+ndn::Scheduler&
 getScheduler();
 
 boost::asio::io_context&

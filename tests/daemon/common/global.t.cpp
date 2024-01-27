@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_CASE(ThreadLocalIoService)
 
 BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
 {
-  scheduler::Scheduler* s1 = &getScheduler();
-  scheduler::Scheduler* s2 = nullptr;
+  ndn::scheduler::Scheduler* s1 = &getScheduler();
+  ndn::scheduler::Scheduler* s2 = nullptr;
 
   std::thread t([&s2] { s2 = &getScheduler(); });
   t.join();

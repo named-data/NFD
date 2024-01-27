@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   // downstream retransmits frequently, but the strategy should not send Interests
   // more often than DEFAULT_MIN_RETX_INTERVAL
-  scheduler::EventId retxFrom4Evt;
+  ndn::scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.sendInterestHistory.size();
   auto timeSentLast = time::steady_clock::now();
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself

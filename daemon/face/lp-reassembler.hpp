@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,9 @@
 
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
+
+#include <map>
 
 namespace nfd::face {
 
@@ -106,7 +109,7 @@ private:
     std::vector<lp::Packet> fragments;
     size_t fragCount; ///< total fragments
     size_t nReceivedFragments; ///< number of received fragments
-    scheduler::ScopedEventId dropTimer;
+    ndn::scheduler::ScopedEventId dropTimer;
   };
 
   /**

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 #define NFD_DAEMON_FACE_UNICAST_ETHERNET_TRANSPORT_HPP
 
 #include "ethernet-transport.hpp"
+
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd::face {
 
@@ -57,7 +59,7 @@ private:
 
 private:
   const time::nanoseconds m_idleTimeout;
-  scheduler::ScopedEventId m_closeIfIdleEvent;
+  ndn::scheduler::ScopedEventId m_closeIfIdleEvent;
 };
 
 } // namespace nfd::face

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
+
+#include <ndn-cxx/util/scheduler.hpp>
 
 #include <list>
 
@@ -223,7 +225,7 @@ public:
    *
    *  This timer is used in forwarding pipelines to delete the entry
    */
-  scheduler::EventId expiryTimer;
+  ndn::scheduler::EventId expiryTimer;
 
   /** \brief Indicates whether this PIT entry is satisfied.
    */

@@ -217,7 +217,7 @@ EthernetChannel::updateFilter()
   if (!isListening())
     return;
 
-  std::string filter = "(ether proto " + to_string(ethernet::ETHERTYPE_NDN) +
+  std::string filter = "(ether proto " + std::to_string(ethernet::ETHERTYPE_NDN) +
                        ") && (ether dst " + m_localEndpoint->getEthernetAddress().toString() + ")";
   for (const auto& addr : m_channelFaces | boost::adaptors::map_keys) {
     filter += " && (not ether src " + addr.toString() + ")";

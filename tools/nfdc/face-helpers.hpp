@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,13 +26,18 @@
 #ifndef NFD_TOOLS_NFDC_FACE_HELPERS_HPP
 #define NFD_TOOLS_NFDC_FACE_HELPERS_HPP
 
+#include "core/common.hpp"
 #include "execute-command.hpp"
 
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
+
+#include <set>
 
 namespace nfd::tools::nfdc {
 
+using ndn::FaceUri;
 using ndn::nfd::FaceQueryFilter;
 using ndn::nfd::FaceStatus;
 

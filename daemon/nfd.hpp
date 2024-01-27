@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,7 @@
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
 
@@ -126,7 +127,7 @@ private:
   unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
 
   shared_ptr<ndn::net::NetworkMonitor> m_netmon;
-  scheduler::ScopedEventId m_reloadConfigEvent;
+  ndn::scheduler::ScopedEventId m_reloadConfigEvent;
 };
 
 } // namespace nfd

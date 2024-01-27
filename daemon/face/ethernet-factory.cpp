@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -199,7 +199,7 @@ EthernetFactory::doCreateFace(const CreateFaceRequest& req,
   if (req.params.mtu && *req.params.mtu < MIN_MTU) {
     // The specified MTU must be greater than the minimum possible
     NFD_LOG_TRACE("createFace: override MTU cannot be less than " << MIN_MTU);
-    onFailure(406, "Override MTU cannot be less than " + to_string(MIN_MTU));
+    onFailure(406, "Override MTU cannot be less than " + std::to_string(MIN_MTU));
     return;
   }
 

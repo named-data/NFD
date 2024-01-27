@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,6 +31,7 @@
 #include "common/logger.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
 
 #include <boost/logic/tribool.hpp>
 #include <variant>
@@ -76,10 +77,11 @@ inline constexpr ssize_t MIN_MTU = 64;
  */
 using EndpointId = std::variant<std::monostate, ethernet::Address, udp::Endpoint>;
 
-/** \brief Parameters used to set Transport properties or LinkService options on a newly created face.
+/**
+ * \brief Parameters used to set Transport properties or LinkService options on a newly created face.
  *
- *  Parameters are passed as a struct rather than individually, so that a future change in the list
- *  of parameters does not require an update to the method signature in all subclasses.
+ * Parameters are passed as a struct rather than individually, so that a future change in the list
+ * of parameters does not require an update to the method signature in all subclasses.
  */
 struct FaceParams
 {
@@ -92,13 +94,14 @@ struct FaceParams
   boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
 };
 
-/** \brief For internal use by FaceLogging macros.
+/**
+ * \brief For internal use by FaceLogging macros.
  *
- *  FaceLogHelper wraps a reference to Face, LinkService, or Transport object.
+ * FaceLogHelper wraps a reference to Face, LinkService, or Transport object.
  *
- *  `std::ostream& operator<<(std::ostream& os, const FaceLogHelper<T>& flh)`
- *  should be specialized to print "[id=888,local=scheme://local/uri,remote=scheme://remote/uri] "
- *  which will appear as part of the log message.
+ * `std::ostream& operator<<(std::ostream& os, const FaceLogHelper<T>& flh)`
+ * should be specialized to print "[id=888,local=scheme://local/uri,remote=scheme://remote/uri] "
+ * which will appear as part of the log message.
  */
 template<typename T>
 class FaceLogHelper
@@ -118,10 +121,12 @@ public:
 
 using face::EndpointId;
 using face::FaceId;
+using ::ndn::FaceUri;
 
 } // namespace nfd
 
-/** \defgroup FaceLogging Face logging macros
+/**
+ * \defgroup FaceLogging Face logging macros.
  *
  * These macros augment the log message with some face-specific information,
  * such as the face ID, that are useful to distinguish which face produced the

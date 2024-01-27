@@ -291,9 +291,9 @@ main(int argc, char** argv)
   }
 
   const std::string boostBuildInfo =
-      "with Boost version " + to_string(BOOST_VERSION / 100000) +
-      "." + to_string(BOOST_VERSION / 100 % 1000) +
-      "." + to_string(BOOST_VERSION % 100);
+      "with Boost version " + std::to_string(BOOST_VERSION / 100000) +
+      "." + std::to_string(BOOST_VERSION / 100 % 1000) +
+      "." + std::to_string(BOOST_VERSION % 100);
   const std::string pcapBuildInfo =
 #ifdef NFD_HAVE_LIBPCAP
       "with " + std::string(pcap_lib_version());
@@ -302,9 +302,9 @@ main(int argc, char** argv)
 #endif
   const std::string wsBuildInfo =
 #ifdef NFD_HAVE_WEBSOCKET
-      "with WebSocket++ version " + to_string(websocketpp::major_version) +
-      "." + to_string(websocketpp::minor_version) +
-      "." + to_string(websocketpp::patch_version);
+      "with WebSocket++ version " + std::to_string(websocketpp::major_version) +
+      "." + std::to_string(websocketpp::minor_version) +
+      "." + std::to_string(websocketpp::patch_version);
 #else
       "without WebSocket++";
 #endif

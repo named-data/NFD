@@ -31,6 +31,8 @@
 #include "lp-reassembler.hpp"
 #include "lp-reliability.hpp"
 
+#include <limits>
+
 namespace nfd::face {
 
 /** \brief Counters provided by GenericLinkService.

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(EligibleForChannelAndMcast)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   // Now add a real interface: both channel and multicast face should be created successfully.
-  netmon->addInterface(const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
+  netmon->addInterface(std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), 1);
@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE(EligibleForChannelOnly)
   BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
 
   // Add an interface that satisfies only the unicast criteria.
-  auto netif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
+  auto netif = std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
   netif->setFlags(netif->getFlags() & ~IFF_MULTICAST);
   netmon->addInterface(netif);
   checkChannelListEqual(factory, {FaceUri::fromDev(netifs.front()->getName()).toString()});
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(Disabled)
   parseConfig("", false);
   g_io.poll();
 
-  netmon->addInterface(const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
+  netmon->addInterface(std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
   BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
 }

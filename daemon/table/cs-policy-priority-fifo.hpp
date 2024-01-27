@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "cs-policy.hpp"
 
+#include <ndn-cxx/util/scheduler.hpp>
+
 #include <list>
 
 namespace nfd::cs {
@@ -46,7 +48,7 @@ struct EntryInfo
 {
   QueueType queueType;
   Queue::iterator queueIt;
-  scheduler::EventId moveStaleEventId;
+  ndn::scheduler::EventId moveStaleEventId;
 };
 
 /** \brief Priority First-In-First-Out (FIFO) replacement policy.

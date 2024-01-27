@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,8 @@
  */
 
 #include "congestion-mark-strategy.hpp"
+
+#include <boost/lexical_cast.hpp>
 
 namespace nfd::fw {
 
@@ -62,8 +64,8 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
   }
 
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument(
-      "CongestionMarkStrategy does not support version " + to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument("CongestionMarkStrategy does not support version " +
+                                    std::to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }

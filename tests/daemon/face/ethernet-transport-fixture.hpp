@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ protected:
   EthernetTransportFixture()
   {
     if (!netifs.empty()) {
-      defaultNetif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
+      defaultNetif = std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
     }
   }
 
@@ -52,7 +52,7 @@ protected:
   {
     for (const auto& netif : netifs) {
       if (netif->getState() == ndn::net::InterfaceState::RUNNING) {
-        return const_pointer_cast<ndn::net::NetworkInterface>(netif);
+        return std::const_pointer_cast<ndn::net::NetworkInterface>(netif);
       }
     }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,8 +39,8 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument(
-      "AsfStrategy does not support version " + to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument("AsfStrategy does not support version " +
+                                    std::to_string(*parsed.version)));
   }
 
   StrategyParameters params = parseParameters(parsed.parameters);

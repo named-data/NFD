@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(SetNameTooLong)
   ControlResponse expectedResp;
   expectedResp.setCode(414)
               .setText("Prefix has too many components (limit is " +
-                       to_string(NameTree::getMaxDepth()) + ")");
+                       std::to_string(NameTree::getMaxDepth()) + ")");
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 

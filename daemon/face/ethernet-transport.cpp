@@ -133,8 +133,8 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   if (sent < 0)
     handleError("Send operation failed: " + m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
-    handleError("Failed to send the full frame: size=" + to_string(buffer.size()) +
-                " sent=" + to_string(sent));
+    handleError("Failed to send the full frame: size=" + std::to_string(buffer.size()) +
+                " sent=" + std::to_string(sent));
   else
     // print block size because we don't want to count the padding in buffer
     NFD_LOG_FACE_TRACE("Successfully sent: " << block.size() << " bytes");

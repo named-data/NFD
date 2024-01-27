@@ -26,6 +26,7 @@
 #include "benchmark-helpers.hpp"
 #include "table/cs.hpp"
 
+#include <functional>
 #include <iostream>
 
 #ifdef NFD_HAVE_VALGRIND

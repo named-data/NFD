@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -252,7 +252,7 @@ private:
   ndn::ValidatorConfig m_paValidator;
   bool m_isLocalhopEnabled;
 
-  scheduler::ScopedEventId m_activeFaceFetchEvent;
+  ndn::scheduler::ScopedEventId m_activeFaceFetchEvent;
 };
 
 std::ostream&

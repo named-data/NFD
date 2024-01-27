@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,7 +65,7 @@ FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
     NFD_LOG_DEBUG("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
                   "): FAIL prefix-too-long");
     return done(ControlResponse(414, "FIB entry prefix cannot exceed " +
-                                to_string(Fib::getMaxDepth()) + " components"));
+                                std::to_string(Fib::getMaxDepth()) + " components"));
   }
 
   Face* face = m_faceTable.get(faceId);

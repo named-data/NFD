@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -127,7 +127,7 @@ operator<<(std::ostream& os, const StrategyChoice::InsertResult& res)
       return os << "Error instantiating strategy: " << res.m_exceptionMessage;
     case StrategyChoice::InsertResult::DEPTH_EXCEEDED:
       return os << "Prefix has too many components (limit is "
-                 << to_string(NameTree::getMaxDepth()) << ")";
+                 << std::to_string(NameTree::getMaxDepth()) << ")";
   }
   return os;
 }

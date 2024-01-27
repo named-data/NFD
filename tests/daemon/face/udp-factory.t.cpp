@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -1188,7 +1188,7 @@ BOOST_AUTO_TEST_CASE(EligibleV4)
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);
   BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 0);
 
-  netmon->addInterface(const_pointer_cast<NetworkInterface>(netifsV4.front()));
+  netmon->addInterface(std::const_pointer_cast<NetworkInterface>(netifsV4.front()));
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 1);
   BOOST_CHECK_LE(this->listUdp6McastFaces().size(), 1);
 }
@@ -1211,7 +1211,7 @@ BOOST_AUTO_TEST_CASE(EligibleV6)
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);
   BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 0);
 
-  netmon->addInterface(const_pointer_cast<NetworkInterface>(netifsV6.front()));
+  netmon->addInterface(std::const_pointer_cast<NetworkInterface>(netifsV6.front()));
   BOOST_CHECK_LE(this->listUdp4McastFaces().size(), 1);
   BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 1);
 }
@@ -1278,7 +1278,7 @@ BOOST_AUTO_TEST_CASE(Disabled)
   parseConfig("", false);
   g_io.poll();
 
-  netmon->addInterface(const_pointer_cast<NetworkInterface>(netifs.front()));
+  netmon->addInterface(std::const_pointer_cast<NetworkInterface>(netifs.front()));
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);
   BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 0);
 }

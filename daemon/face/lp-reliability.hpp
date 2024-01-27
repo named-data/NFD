@@ -31,7 +31,9 @@
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>
 #include <ndn-cxx/util/rtt-estimator.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
+#include <map>
 #include <queue>
 
 namespace nfd::face {
@@ -181,7 +183,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   public:
     lp::Packet pkt;
-    scheduler::ScopedEventId rtoTimer;
+    ndn::scheduler::ScopedEventId rtoTimer;
     time::steady_clock::time_point sendTime = time::steady_clock::now();
     size_t retxCount = 0;
     size_t nGreaterSeqAcks = 0; ///< Number of Acks received for sequences greater than this fragment
@@ -219,7 +221,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<lp::Sequence, time::steady_clock::time_point> m_recentRecvSeqs;
   std::queue<lp::Sequence> m_recentRecvSeqsQueue;
   lp::Sequence m_lastTxSeqNo;
-  scheduler::ScopedEventId m_idleAckTimer;
+  ndn::scheduler::ScopedEventId m_idleAckTimer;
   ndn::util::RttEstimator m_rttEst;
 };
 

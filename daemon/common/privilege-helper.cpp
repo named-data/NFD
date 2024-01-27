@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -123,11 +123,11 @@ PrivilegeHelper::drop()
 
   NFD_LOG_TRACE("dropping to effective gid=" << s_normalGid);
   if (::setegid(s_normalGid) != 0)
-    throw Error("Failed to drop to effective gid=" + to_string(s_normalGid));
+    throw Error("Failed to drop to effective gid=" + std::to_string(s_normalGid));
 
   NFD_LOG_TRACE("dropping to effective uid=" << s_normalUid);
   if (::seteuid(s_normalUid) != 0)
-    throw Error("Failed to drop to effective uid=" + to_string(s_normalUid));
+    throw Error("Failed to drop to effective uid=" + std::to_string(s_normalUid));
 
   NFD_LOG_INFO("dropped to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
@@ -144,11 +144,11 @@ PrivilegeHelper::raise()
 
   NFD_LOG_TRACE("elevating to effective uid=" << s_privilegedUid);
   if (::seteuid(s_privilegedUid) != 0)
-    throw Error("Failed to elevate to effective uid=" + to_string(s_privilegedUid));
+    throw Error("Failed to elevate to effective uid=" + std::to_string(s_privilegedUid));
 
   NFD_LOG_TRACE("elevating to effective gid=" << s_privilegedGid);
   if (::setegid(s_privilegedGid) != 0)
-    throw Error("Failed to elevate to effective gid=" + to_string(s_privilegedGid));
+    throw Error("Failed to elevate to effective gid=" + std::to_string(s_privilegedGid));
 
   NFD_LOG_INFO("elevated to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else

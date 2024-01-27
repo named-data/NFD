@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
 #define NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
 
+#include "core/common.hpp"
 #include "command-definition.hpp"
 #include "execute-command.hpp"
 
@@ -58,7 +59,7 @@ operator<<(std::ostream& os, ParseMode mode);
 
 /** \brief Parses a command.
  */
-class CommandParser : noncopyable
+class CommandParser : boost::noncopyable
 {
 public:
   class NoSuchCommandError : public std::invalid_argument

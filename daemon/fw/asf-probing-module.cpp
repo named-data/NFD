@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -172,7 +172,7 @@ ProbingModule::setProbingInterval(time::milliseconds probingInterval)
   }
   else {
     NDN_THROW(std::invalid_argument("Probing interval must be >= " +
-                                    to_string(MIN_PROBING_INTERVAL.count()) + " milliseconds"));
+                                    std::to_string(MIN_PROBING_INTERVAL.count()) + " milliseconds"));
   }
 }
 

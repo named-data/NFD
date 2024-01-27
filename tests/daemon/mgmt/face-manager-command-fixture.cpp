@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,11 +44,11 @@ FaceManagerCommandNode::FaceManagerCommandNode(ndn::KeyChain& keyChain, uint16_t
     "{\n"
     "  tcp\n"
     "  {\n"
-    "    port " + to_string(port) + "\n"
+    "    port " + std::to_string(port) + "\n"
     "  }\n"
     "  udp\n"
     "  {\n"
-    "    port " + to_string(port) + "\n"
+    "    port " + std::to_string(port) + "\n"
     "    mcast no\n"
     "  }\n"
     "  ether\n"

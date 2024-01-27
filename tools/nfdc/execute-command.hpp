@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,6 +36,9 @@
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
+#include <functional>
+#include <iosfwd>
+
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::ControlParameters;
@@ -49,7 +52,7 @@ class ExecuteContext
 public:
   /** \return timeout for each step
    */
-  time::nanoseconds
+  ndn::time::nanoseconds
   getTimeout() const;
 
   ndn::nfd::CommandOptions

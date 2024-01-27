@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
   BOOST_CHECK_EQUAL(checkResponse(0, command.getName(),
                                   ControlResponse(414, "Route prefix cannot exceed " +
-                                                  to_string(Fib::getMaxDepth()) + " components")),
+                                                  std::to_string(Fib::getMaxDepth()) + " components")),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.size(), 0);

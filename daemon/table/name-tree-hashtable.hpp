@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 #define NFD_DAEMON_TABLE_NAME_TREE_HASHTABLE_HPP
 
 #include "name-tree-entry.hpp"
+
+#include <limits>
 
 namespace nfd::name_tree {
 

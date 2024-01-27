@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -77,7 +77,7 @@ public:
         onSuccess();
       }
       else {
-        onFailure(m_res, m_moduleName + " fails with code " + to_string(m_res));
+        onFailure(m_res, m_moduleName + " fails with code " + std::to_string(m_res));
       }
     });
   }
@@ -99,7 +99,7 @@ public:
 
 private:
   std::string m_moduleName;
-  Scheduler m_scheduler;
+  ndn::Scheduler m_scheduler;
   uint32_t m_res;
   time::nanoseconds m_delay;
 };
