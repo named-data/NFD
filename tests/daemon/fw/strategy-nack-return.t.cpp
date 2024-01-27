@@ -28,6 +28,7 @@
  */
 
 // Strategies implementing recommended Nack processing procedure, sorted alphabetically.
+#include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
@@ -84,6 +85,7 @@ BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
 using Strategies = boost::mp11::mp_list<
+  AsfStrategy,
   BestRouteStrategy,
   RandomStrategy
 >;

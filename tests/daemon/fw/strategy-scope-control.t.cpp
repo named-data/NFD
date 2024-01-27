@@ -95,7 +95,7 @@ struct Test
 
 using Tests = boost::mp11::mp_list<
   Test<AccessStrategy, false, false, true>,
-  Test<AsfStrategy, true, false, true>,
+  Test<AsfStrategy, true, true, true>,
   Test<BestRouteStrategy, true, true, true>,
   Test<MulticastStrategy, false, false, false>,
   Test<RandomStrategy, true, true, true>

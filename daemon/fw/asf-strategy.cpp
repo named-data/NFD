@@ -34,6 +34,7 @@ NFD_REGISTER_STRATEGY(AsfStrategy);
 
 AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
+  , ProcessNackTraits(this)
   , m_measurements(getMeasurements())
   , m_probing(m_measurements)
 {
@@ -167,6 +168,7 @@ AsfStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
 {
   NFD_LOG_NACK_FROM(nack, ingress, "");
   onTimeoutOrNack(pitEntry->getName(), ingress.face.getId(), true);
+  this->processNack(nack, ingress.face, pitEntry);
 }
 
 pit::OutRecord*
