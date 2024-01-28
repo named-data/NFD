@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,18 +31,14 @@
 #include "tests/daemon/face/dummy-link-service.hpp"
 #include "tests/daemon/face/dummy-transport.hpp"
 
-#include <boost/mpl/fold.hpp>
-#include <boost/mpl/int.hpp>
-#include <boost/mpl/lambda.hpp>
-#include <boost/mpl/map.hpp>
-#include <boost/mpl/pair.hpp>
-#include <boost/mpl/push_back.hpp>
-#include <boost/mpl/set.hpp>
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/algorithm.hpp>
+#include <boost/mp11/bind.hpp>
+#include <boost/mp11/map.hpp>
+#include <boost/mp11/set.hpp>
 
 namespace nfd::tests {
 
-namespace mpl = boost::mpl;
+using namespace boost::mp11;
 using namespace nfd::face;
 
 BOOST_AUTO_TEST_SUITE(Face)
@@ -68,90 +64,49 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->persistencyHistory.back(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 }
 
-/** \brief A macro to declare a TransportState as a integral constant.
- *  \note we cannot use mpl::integral_c because TransportState is not an integral type
- */
-#define TRANSPORT_STATE_C(X) mpl::int_<static_cast<int>(TransportState::X)>
+// Map from every TransportState to a valid state transition sequence
+// for entering this state from UP.
+using StateInitSequence = mp_list<
+  mp_list_c<TransportState, TransportState::UP        /* nothing to do, state is already UP */>,
+  mp_list_c<TransportState, TransportState::DOWN,     TransportState::DOWN>,
+  mp_list_c<TransportState, TransportState::CLOSING,  TransportState::CLOSING>,
+  mp_list_c<TransportState, TransportState::FAILED,   TransportState::FAILED>,
+  mp_list_c<TransportState, TransportState::CLOSED,   TransportState::CLOSING, TransportState::CLOSED>
+>;
+static_assert(mp_is_map<StateInitSequence>());
 
-/** \brief A map from every TransportState to a valid state transition sequence
- *         for entering this state from UP.
- */
-typedef mpl::map<
-  mpl::pair<TRANSPORT_STATE_C(UP),
-    mpl::vector<>>,
-  mpl::pair<TRANSPORT_STATE_C(DOWN),
-    mpl::vector<
-      TRANSPORT_STATE_C(DOWN)
-    >>,
-  mpl::pair<TRANSPORT_STATE_C(CLOSING),
-    mpl::vector<
-      TRANSPORT_STATE_C(CLOSING)
-    >>,
-  mpl::pair<TRANSPORT_STATE_C(FAILED),
-    mpl::vector<
-      TRANSPORT_STATE_C(FAILED)
-    >>,
-  mpl::pair<TRANSPORT_STATE_C(CLOSED),
-    mpl::vector<
-      TRANSPORT_STATE_C(CLOSING),
-      TRANSPORT_STATE_C(CLOSED)
-    >>
-> StateEntering;
+using TransportStates = mp_map_keys<StateInitSequence>;
 
-/** \brief A sequence of all valid TransportStates.
- */
-typedef mpl::fold<StateEntering,
-  mpl::vector<>,
-  mpl::push_back<mpl::_1, mpl::first<mpl::_2>>
->::type States;
+// The set of all state transitions (cartesian product of TransportStates)
+using AllStateTransitions = mp_product<mp_list, TransportStates, TransportStates>;
 
-/** \brief A set of all valid state transitions.
- */
-typedef mpl::set<
-  mpl::pair<TRANSPORT_STATE_C(UP), TRANSPORT_STATE_C(DOWN)>,
-  mpl::pair<TRANSPORT_STATE_C(DOWN), TRANSPORT_STATE_C(UP)>,
-  mpl::pair<TRANSPORT_STATE_C(UP), TRANSPORT_STATE_C(CLOSING)>,
-  mpl::pair<TRANSPORT_STATE_C(UP), TRANSPORT_STATE_C(FAILED)>,
-  mpl::pair<TRANSPORT_STATE_C(DOWN), TRANSPORT_STATE_C(CLOSING)>,
-  mpl::pair<TRANSPORT_STATE_C(DOWN), TRANSPORT_STATE_C(FAILED)>,
-  mpl::pair<TRANSPORT_STATE_C(CLOSING), TRANSPORT_STATE_C(CLOSED)>,
-  mpl::pair<TRANSPORT_STATE_C(FAILED), TRANSPORT_STATE_C(CLOSED)>
-> ValidStateTransitions;
-
-/** \brief A metafunction to generate a sequence of all state transitions
- *         from a specified state.
- */
-template<typename FromState, typename Result>
-struct StateTransitionsFrom : mpl::fold<
-                                States,
-                                Result,
-                                mpl::push_back<mpl::_1, mpl::pair<FromState, mpl::_2>>>
-{
-};
-
-/** \brief A sequence of all state transitions.
- */
-typedef mpl::fold<
-  States,
-  mpl::vector<>,
-  mpl::lambda<StateTransitionsFrom<mpl::_2, mpl::_1>>
->::type AllStateTransitions;
-
-#undef TRANSPORT_STATE_C
+// The set of *valid* state transitions
+using ValidStateTransitions = mp_list<
+  mp_list_c<TransportState, TransportState::UP, TransportState::DOWN>,
+  mp_list_c<TransportState, TransportState::UP, TransportState::CLOSING>,
+  mp_list_c<TransportState, TransportState::UP, TransportState::FAILED>,
+  mp_list_c<TransportState, TransportState::DOWN, TransportState::UP>,
+  mp_list_c<TransportState, TransportState::DOWN, TransportState::CLOSING>,
+  mp_list_c<TransportState, TransportState::DOWN, TransportState::FAILED>,
+  mp_list_c<TransportState, TransportState::CLOSING, TransportState::CLOSED>,
+  mp_list_c<TransportState, TransportState::FAILED, TransportState::CLOSED>
+>;
+// Sanity check that there are no duplicates
+static_assert(mp_is_set<ValidStateTransitions>());
+// Sanity check that ValidStateTransitions is a proper subset of AllStateTransitions
+static_assert(mp_all_of_q<ValidStateTransitions, mp_bind_front<mp_set_contains, AllStateTransitions>>());
+static_assert(mp_size<ValidStateTransitions>() < mp_size<AllStateTransitions>());
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 {
-  auto transport = make_unique<DummyTransport>();
-
-  auto from = static_cast<TransportState>(T::first::value);
-  auto to = static_cast<TransportState>(T::second::value);
+  constexpr TransportState from = mp_first<T>::value;
+  constexpr TransportState to = mp_second<T>::value;
   BOOST_TEST_INFO_SCOPE(from << " -> " << to);
 
-  // enter from state
-  using Steps = typename mpl::at<StateEntering, mpl::int_<T::first::value>>::type;
-  mpl::for_each<Steps>([&transport] (int state) {
-    transport->setState(static_cast<TransportState>(state));
-  });
+  auto transport = make_unique<DummyTransport>();
+  // initialize transport to the 'from' state
+  using Steps = mp_rest<mp_map_find<StateInitSequence, mp_first<T>>>;
+  mp_for_each<Steps>([&transport] (auto state) { transport->setState(state); });
   BOOST_REQUIRE_EQUAL(transport->getState(), from);
 
   bool hasSignal = false;
@@ -162,11 +117,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
   });
 
   // do transition
-  bool isValid = from == to ||
-                 mpl::has_key<ValidStateTransitions,
-                   mpl::pair<mpl::int_<T::first::value>, mpl::int_<T::second::value>>
-                 >::value;
-  if (isValid) {
+  constexpr bool isValid = (from == to) || mp_set_contains<ValidStateTransitions, T>();
+  if constexpr (isValid) {
     BOOST_REQUIRE_NO_THROW(transport->setState(to));
     BOOST_CHECK_EQUAL(hasSignal, from != to);
   }

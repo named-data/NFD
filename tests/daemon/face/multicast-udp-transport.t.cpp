@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "multicast-udp-transport-fixture.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -34,7 +34,7 @@ using namespace nfd::face;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestMulticastUdpTransport)
 
-using MulticastUdpTransportFixtures = boost::mpl::vector<
+using MulticastUdpTransportFixtures = boost::mp11::mp_list<
   IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>,
   IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::LinkLocal, MulticastInterface::Yes>,
   IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::Global, MulticastInterface::Yes>

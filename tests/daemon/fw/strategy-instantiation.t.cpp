@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,7 +37,7 @@
 
 #include "tests/test-common.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -46,23 +46,12 @@ using namespace nfd::fw;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyInstantiation)
 
-template<typename S, bool CanAcceptParameters, uint64_t MinVersion>
-class Test
+template<typename S, bool CanAcceptParams, uint64_t MinVer>
+struct Test
 {
-public:
   using Strategy = S;
-
-  static bool
-  canAcceptParameters()
-  {
-    return CanAcceptParameters;
-  }
-
-  static uint64_t
-  getMinVersion()
-  {
-    return MinVersion;
-  }
+  static constexpr bool canAcceptParameters = CanAcceptParams;
+  static constexpr uint64_t minVersion = MinVer;
 
   static Name
   getVersionedStrategyName(uint64_t version)
@@ -71,7 +60,7 @@ public:
   }
 };
 
-using Tests = boost::mpl::vector<
+using Tests = boost::mp11::mp_list<
   Test<AccessStrategy, false, 1>,
   Test<AsfStrategy, true, 4>,
   Test<BestRouteStrategy, true, 5>,
@@ -89,26 +78,25 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(InstanceName, T, Tests)
 {
   BOOST_REQUIRE(T::Strategy::getStrategyName().at(-1).isVersion());
   uint64_t maxVersion = T::Strategy::getStrategyName().at(-1).toVersion();
-  BOOST_REQUIRE_LE(T::getMinVersion(), maxVersion);
+  BOOST_REQUIRE_LE(T::minVersion, maxVersion);
 
   FaceTable faceTable;
   Forwarder forwarder(faceTable);
-  for (uint64_t version = T::getMinVersion(); version <= maxVersion; ++version) {
+  for (auto version = T::minVersion; version <= maxVersion; ++version) {
     Name versionedName = T::getVersionedStrategyName(version);
-    unique_ptr<typename T::Strategy> instance;
-    BOOST_CHECK_NO_THROW(instance = make_unique<typename T::Strategy>(forwarder, versionedName));
+    auto instance = make_unique<typename T::Strategy>(forwarder, versionedName);
     BOOST_CHECK_EQUAL(instance->getInstanceName(), versionedName);
 
-    if (!T::canAcceptParameters()) {
+    if (!T::canAcceptParameters) {
       Name nameWithParameters = Name(versionedName).append("param");
       BOOST_CHECK_THROW(typename T::Strategy(forwarder, nameWithParameters), std::invalid_argument);
     }
   }
 
-  if (T::getMinVersion() > 0) {
+  if (T::minVersion > 0) {
     Name version0Name = T::getVersionedStrategyName(0);
     BOOST_CHECK_THROW(typename T::Strategy(forwarder, version0Name), std::invalid_argument);
-    Name earlyVersionName = T::getVersionedStrategyName(T::getMinVersion() - 1);
+    Name earlyVersionName = T::getVersionedStrategyName(T::minVersion - 1);
     BOOST_CHECK_THROW(typename T::Strategy(forwarder, earlyVersionName), std::invalid_argument);
   }
 
@@ -145,7 +133,7 @@ private:
   Forwarder m_forwarder{m_faceTable};
 };
 
-using StrategiesWithRetxSuppressionExponential = boost::mpl::vector<
+using StrategiesWithRetxSuppressionExponential = boost::mp11::mp_list<
   AsfStrategy,
   BestRouteStrategy,
   MulticastStrategy

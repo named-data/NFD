@@ -32,6 +32,8 @@
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
+#include <boost/mp11/list.hpp>
+
 namespace nfd::tests {
 
 using MulticastStrategyTester = StrategyTester<fw::MulticastStrategy>;
@@ -470,7 +472,7 @@ protected:
   }
 };
 
-using Tests = boost::mpl::vector<
+using Tests = boost::mp11::mp_list<
   BasicNonLocal,
   NewFibLocal,
   InFaceLocal,

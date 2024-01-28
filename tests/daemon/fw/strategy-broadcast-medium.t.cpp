@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "topology-tester.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -89,7 +89,7 @@ protected:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyBroadcastMedium)
 
-using Strategies = boost::mpl::vector<
+using Strategies = boost::mp11::mp_list<
   AsfStrategy,
   BestRouteStrategy,
   MulticastStrategy,

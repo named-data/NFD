@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,7 @@
 #include "unix-stream-transport-fixture.hpp"
 
 #include <boost/asio/read.hpp>
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -36,7 +36,7 @@ using namespace nfd::face;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestStreamTransport)
 
-using StreamTransportFixtures = boost::mpl::vector<
+using StreamTransportFixtures = boost::mp11::mp_list<
   GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(TcpTransportFixture),
   UnixStreamTransportFixture
 >;

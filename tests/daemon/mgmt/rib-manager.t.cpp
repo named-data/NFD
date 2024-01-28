@@ -32,6 +32,7 @@
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
+#include <boost/mp11/algorithm.hpp>
 #include <boost/property_tree/info_parser.hpp>
 
 namespace nfd::tests {
@@ -303,21 +304,21 @@ public:
   }
 };
 
-template<typename Fixture, auto Format>
+template<typename Fixture, typename Format>
 struct FixtureWithFormat : public Fixture
 {
-  static constexpr ndn::security::SignedInterestFormat signedInterestFmt = Format;
+  static constexpr ndn::security::SignedInterestFormat signedInterestFmt = Format::value;
 };
 
-using AllFixtures = boost::mpl::vector<
-  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
-  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
-  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
-  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
-  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
-  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
-  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
-  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>
+using AllFixtures = boost::mp11::mp_product<
+  FixtureWithFormat,
+  boost::mp11::mp_list<UnauthorizedRibManagerFixture,
+                       LocalhostAuthorizedRibManagerFixture,
+                       LocalhopAuthorizedRibManagerFixture,
+                       AuthorizedRibManagerFixture>,
+  boost::mp11::mp_list_c<ndn::security::SignedInterestFormat,
+                         ndn::security::SignedInterestFormat::V02,
+                         ndn::security::SignedInterestFormat::V03>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)

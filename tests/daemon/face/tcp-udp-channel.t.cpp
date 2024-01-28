@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 #include "test-ip.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -43,7 +43,7 @@ struct FixtureAndAddress
   using Address = IpAddressTypeFromFamily<AF>;
 };
 
-using FixtureAndAddressList = boost::mpl::vector<
+using FixtureAndAddressList = boost::mp11::mp_list<
   FixtureAndAddress<TcpChannelFixture, AddressFamily::V4>,
   FixtureAndAddress<TcpChannelFixture, AddressFamily::V6>,
   FixtureAndAddress<UdpChannelFixture, AddressFamily::V4>,

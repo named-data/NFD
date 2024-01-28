@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,12 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
-
 #include "mgmt/face-manager.hpp"
 #include "face/generic-link-service.hpp"
+
 #include "face-manager-command-fixture.hpp"
+
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -302,36 +302,35 @@ public:
   }
 };
 
-namespace mpl = boost::mpl;
-
-// pairs of CreateCommand and Success/Failure status
-using TestCases = mpl::vector<
-                    mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
-                    mpl::pair<TcpFacePersistent, CommandSuccess>,
-                    mpl::pair<TcpFacePermanent, CommandSuccess>,
-                    mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
-                    mpl::pair<UdpFacePersistent, CommandSuccess>,
-                    mpl::pair<UdpFacePermanent, CommandSuccess>,
-                    mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
-                    mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceLpReliabilityEnabled, CommandSuccess>,
-                    mpl::pair<TcpFaceLpReliabilityDisabled, CommandSuccess>,
-                    mpl::pair<UdpFaceLpReliabilityEnabled, CommandSuccess>,
-                    mpl::pair<UdpFaceLpReliabilityDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
-                    mpl::pair<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceMtuOverride, CommandFailure<406>>,
-                    mpl::pair<UdpFaceMtuOverride, CommandSuccess>,
-                    mpl::pair<FaceUriMalformed, CommandFailure<400>>,
-                    mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
-                    mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
+// Pairs of CreateCommand and success/failure status
+using TestCases = boost::mp11::mp_list<
+  boost::mp11::mp_list<TcpFaceOnDemand, CommandFailure<406>>,
+  boost::mp11::mp_list<TcpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<TcpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceOnDemand, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
+  boost::mp11::mp_list<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
+  boost::mp11::mp_list<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
+  boost::mp11::mp_list<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceLpReliabilityEnabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceLpReliabilityDisabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceLpReliabilityEnabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceLpReliabilityDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceMtuOverride, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFaceMtuOverride, CommandSuccess>,
+  boost::mp11::mp_list<FaceUriMalformed, CommandFailure<400>>,
+  boost::mp11::mp_list<FaceUriNonCanonical, CommandFailure<400>>,
+  boost::mp11::mp_list<FaceUriUnsupportedScheme, CommandFailure<406>>
+>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixture)
 {
-  using FaceType = typename T::first;
-  using CreateResult = typename T::second;
+  using FaceType = boost::mp11::mp_first<T>;
+  using CreateResult = boost::mp11::mp_second<T>;
 
   Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@
 #include "topology-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -83,7 +83,7 @@ public:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
-using Strategies = boost::mpl::vector<
+using Strategies = boost::mp11::mp_list<
   BestRouteStrategy,
   RandomStrategy
 >;
@@ -282,7 +282,7 @@ struct NackReasonCombination
   static constexpr lp::NackReason expectedResult{R};
 };
 
-using NackReasonCombinations = boost::mpl::vector<
+using NackReasonCombinations = boost::mp11::mp_list<
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::CONGESTION, lp::NackReason::CONGESTION>,
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::DUPLICATE, lp::NackReason::CONGESTION>,
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::NO_ROUTE, lp::NackReason::CONGESTION>,

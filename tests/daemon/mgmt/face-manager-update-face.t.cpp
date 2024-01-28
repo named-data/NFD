@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,16 +31,14 @@
 
 #include <ndn-cxx/lp/tags.hpp>
 
-#include <thread>
-
 #include <boost/logic/tribool.hpp>
+#include <boost/mp11/list.hpp>
+#include <thread>
 
 namespace nfd::tests {
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
-
-namespace mpl = boost::mpl;
 
 class FaceManagerUpdateFixture : public FaceManagerCommandFixture
 {
@@ -202,15 +200,15 @@ BOOST_AUTO_TEST_CASE(FaceDoesNotExist)
   });
 }
 
-using UpdatePersistencyTests = mpl::vector<
-  mpl::pair<DummyTransportBase<true>, CommandSuccess>,
-  mpl::pair<DummyTransportBase<false>, CommandFailure<409>>
+using UpdatePersistencyTests = boost::mp11::mp_list<
+  boost::mp11::mp_list<DummyTransportBase<true>, CommandSuccess>,
+  boost::mp11::mp_list<DummyTransportBase<false>, CommandFailure<409>>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, FaceManagerUpdateFixture)
 {
-  using TransportType = typename T::first;
-  using ResultType = typename T::second;
+  using TransportType = boost::mp11::mp_first<T>;
+  using ResultType = boost::mp11::mp_second<T>;
 
   auto face = make_shared<face::Face>(make_unique<face::GenericLinkService>(),
                                       make_unique<TransportType>());
@@ -511,18 +509,18 @@ public:
   }
 };
 
-using LocalFieldFaces = mpl::vector<
-  mpl::pair<TcpLocalFieldsEnable, CommandSuccess>,
-  mpl::pair<TcpLocalFieldsDisable, CommandSuccess>,
-  mpl::pair<UdpLocalFieldsEnable, CommandFailure<409>>,
-  mpl::pair<UdpLocalFieldsDisable, CommandSuccess>,
-  mpl::pair<UdpLocalFieldsEnableNoMaskBit, CommandSuccess>
+using LocalFieldFaces = boost::mp11::mp_list<
+  boost::mp11::mp_list<TcpLocalFieldsEnable, CommandSuccess>,
+  boost::mp11::mp_list<TcpLocalFieldsDisable, CommandSuccess>,
+  boost::mp11::mp_list<UdpLocalFieldsEnable, CommandFailure<409>>,
+  boost::mp11::mp_list<UdpLocalFieldsDisable, CommandSuccess>,
+  boost::mp11::mp_list<UdpLocalFieldsEnableNoMaskBit, CommandSuccess>
 >;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(UpdateLocalFields, T, LocalFieldFaces)
 {
-  using TestType = typename T::first;
-  using ResultType = typename T::second;
+  using TestType = boost::mp11::mp_first<T>;
+  using ResultType = boost::mp11::mp_second<T>;
 
   createFace(TestType::getUri(), TestType::getPersistency(), {}, {},
              TestType::getInitLocalFieldsEnabled());

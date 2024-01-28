@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,7 @@
 
 #include "unicast-udp-transport-fixture.hpp"
 
-#include <boost/mpl/vector.hpp>
-#include <boost/mpl/vector_c.hpp>
+#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -35,7 +34,7 @@ using namespace nfd::face;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnicastUdpTransport, IpTransportFixture<UnicastUdpTransportFixture>)
 
-using UnicastUdpTransportFixtures = boost::mpl::vector<
+using UnicastUdpTransportFixtures = boost::mp11::mp_list<
   GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(UnicastUdpTransportFixture)
 >;
 
@@ -105,9 +104,9 @@ BOOST_AUTO_TEST_CASE(IdleClose)
 
 using RemoteCloseFixture = IpTransportFixture<UnicastUdpTransportFixture,
                                               AddressFamily::Any, AddressScope::Loopback>;
-using RemoteClosePersistencies = boost::mpl::vector_c<ndn::nfd::FacePersistency,
-                                                      ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-                                                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT>;
+using RemoteClosePersistencies = boost::mp11::mp_list_c<ndn::nfd::FacePersistency,
+                                                        ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                                        ndn::nfd::FACE_PERSISTENCY_PERSISTENT>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies, RemoteCloseFixture)
 {
