@@ -7,9 +7,6 @@ fi
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
 fi
-if [[ -n $DISABLE_PCH ]]; then
-    PCH="--without-pch"
-fi
 
 set -x
 
@@ -21,8 +18,8 @@ if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
     # Cleanup
     ./waf --color=yes distclean
 
-    # Build in release mode without tests, but with "other tests"
-    ./waf --color=yes configure --with-other-tests $PCH
+    # Build in release mode with "other tests" only
+    ./waf --color=yes configure --with-other-tests
     ./waf --color=yes build
 
     # Cleanup
@@ -30,7 +27,7 @@ if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
 fi
 
 # Build in debug mode with tests
-./waf --color=yes configure --debug --with-tests $ASAN $COVERAGE $PCH
+./waf --color=yes configure --debug --with-tests $ASAN $COVERAGE
 ./waf --color=yes build
 
 # (tests will be run against the debug version)

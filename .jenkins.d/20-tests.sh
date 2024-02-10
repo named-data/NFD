@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# https://github.com/google/sanitizers/wiki/SanitizerCommonFlags
 # https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
 ASAN_OPTIONS="color=always"
+ASAN_OPTIONS+=":strip_path_prefix=${PWD}/"
+ASAN_OPTIONS+=":detect_leaks=0"
 ASAN_OPTIONS+=":check_initialization_order=1"
 ASAN_OPTIONS+=":detect_stack_use_after_return=1"
 ASAN_OPTIONS+=":strict_init_order=1"
 ASAN_OPTIONS+=":strict_string_checks=1"
 ASAN_OPTIONS+=":detect_invalid_pointer_pairs=2"
 ASAN_OPTIONS+=":detect_container_overflow=0"
-ASAN_OPTIONS+=":detect_leaks=0"
-ASAN_OPTIONS+=":strip_path_prefix=${PWD}/"
 export ASAN_OPTIONS
 
 # https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/runtime_config/summary.html
