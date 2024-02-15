@@ -62,7 +62,7 @@ struct Test
 
 using Tests = boost::mp11::mp_list<
   Test<AccessStrategy, false, 1>,
-  Test<AsfStrategy, true, 4>,
+  Test<AsfStrategy, true, 5>,
   Test<BestRouteStrategy, true, 5>,
   Test<MulticastStrategy, true, 4>,
   Test<SelfLearningStrategy, false, 1>,
@@ -71,29 +71,29 @@ using Tests = boost::mp11::mp_list<
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Registration, T, Tests)
 {
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(T::Strategy::getStrategyName()), 1);
+  BOOST_TEST(Strategy::listRegistered().count(T::Strategy::getStrategyName()) == 1);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(InstanceName, T, Tests)
 {
-  BOOST_REQUIRE(T::Strategy::getStrategyName().at(-1).isVersion());
+  BOOST_TEST_REQUIRE(T::Strategy::getStrategyName().at(-1).isVersion());
   uint64_t maxVersion = T::Strategy::getStrategyName().at(-1).toVersion();
-  BOOST_REQUIRE_LE(T::minVersion, maxVersion);
+  BOOST_TEST_REQUIRE(T::minVersion <= maxVersion);
 
   FaceTable faceTable;
   Forwarder forwarder(faceTable);
   for (auto version = T::minVersion; version <= maxVersion; ++version) {
     Name versionedName = T::getVersionedStrategyName(version);
     auto instance = make_unique<typename T::Strategy>(forwarder, versionedName);
-    BOOST_CHECK_EQUAL(instance->getInstanceName(), versionedName);
+    BOOST_TEST(instance->getInstanceName() == versionedName);
 
-    if (!T::canAcceptParameters) {
+    if constexpr (!T::canAcceptParameters) {
       Name nameWithParameters = Name(versionedName).append("param");
       BOOST_CHECK_THROW(typename T::Strategy(forwarder, nameWithParameters), std::invalid_argument);
     }
   }
 
-  if (T::minVersion > 0) {
+  if constexpr (T::minVersion > 0) {
     Name version0Name = T::getVersionedStrategyName(0);
     BOOST_CHECK_THROW(typename T::Strategy(forwarder, version0Name), std::invalid_argument);
     Name earlyVersionName = T::getVersionedStrategyName(T::minVersion - 1);

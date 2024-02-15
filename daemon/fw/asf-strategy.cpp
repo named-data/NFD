@@ -59,7 +59,7 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 AsfStrategy::getStrategyName()
 {
-  static const auto strategyName = Name("/localhost/nfd/strategy/asf").appendVersion(4);
+  static const auto strategyName = Name("/localhost/nfd/strategy/asf").appendVersion(5);
   return strategyName;
 }
 
