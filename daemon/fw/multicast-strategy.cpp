@@ -53,7 +53,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(4);
+  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(5);
   return strategyName;
 }
 

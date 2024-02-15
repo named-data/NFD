@@ -64,7 +64,7 @@ using Tests = boost::mp11::mp_list<
   Test<AccessStrategy, false, 1>,
   Test<AsfStrategy, true, 5>,
   Test<BestRouteStrategy, true, 5>,
-  Test<MulticastStrategy, true, 4>,
+  Test<MulticastStrategy, true, 5>,
   Test<SelfLearningStrategy, false, 1>,
   Test<RandomStrategy, false, 1>
 >;

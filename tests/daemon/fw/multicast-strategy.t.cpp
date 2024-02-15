@@ -210,8 +210,28 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
-  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
-  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
+  BOOST_TEST(strategy.rejectPendingInterestHistory.size() == 0);
+  BOOST_TEST(strategy.sendInterestHistory.size() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(DuplicateInterest)
+{
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fib.addOrUpdateNextHop(fibEntry, *face3, 0);
+
+  auto interest = makeInterest("ndn:/H0D6i5fc");
+
+  // first interest
+  forwarder.onIncomingInterest(*interest, FaceEndpoint(*face1));
+  BOOST_TEST(forwarder.getCounters().nInInterests == 1);
+  BOOST_TEST(strategy.sendInterestHistory.size() == 1);
+
+  // second interest (duplicate, should enter onInterestLoop)
+  forwarder.onIncomingInterest(*interest, FaceEndpoint(*face2));
+  BOOST_TEST(forwarder.getCounters().nInInterests == 2);
+  BOOST_TEST(strategy.sendInterestHistory.size() == 1);
+  BOOST_TEST(strategy.rejectPendingInterestHistory.size() == 0);
+  BOOST_TEST(strategy.sendNackHistory.size() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(RetxSuppression)

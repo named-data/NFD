@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,7 +125,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   // detect duplicate Nonce with Dead Nonce List
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), nonce);
   if (hasDuplicateNonceInDnl) {
-    // goto Interest loop pipeline
+    // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
     return;
   }
@@ -149,7 +149,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     hasDuplicateNonceInPit = hasDuplicateNonceInPit && !(dnw & fw::DUPLICATE_NONCE_IN_SAME);
   }
   if (hasDuplicateNonceInPit) {
-    // goto Interest loop pipeline
+    // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
     return;
   }
@@ -176,14 +176,10 @@ Forwarder::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
   }
 
   NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " interest=" << interest.getName()
-                << " nonce=" << interest.getNonce() << " nack");
+                << " nonce=" << interest.getNonce());
 
-  // send Nack with reason=DUPLICATE
-  // note: Don't enter outgoing Nack pipeline because it needs an in-record.
-  lp::Nack nack(interest);
-  nack.setReason(lp::NackReason::DUPLICATE);
-  ingress.face.sendNack(nack);
-  ++m_counters.nOutNacks;
+  // leave loop handling up to the strategy (e.g., whether to reply with a Nack)
+  m_strategyChoice.findEffectiveStrategy(interest.getName()).onInterestLoop(interest, ingress);
 }
 
 void
@@ -317,7 +313,7 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
   // PIT match
   pit::DataMatchResult pitMatches = m_pit.findAllDataMatches(data);
   if (pitMatches.size() == 0) {
-    // goto Data unsolicited pipeline
+    // go to Data unsolicited pipeline
     this->onDataUnsolicited(data, ingress);
     return;
   }
@@ -387,7 +383,7 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
           pendingDownstream->getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
       }
-      // goto outgoing Data pipeline
+      // go to outgoing Data pipeline
       this->onOutgoingData(data, *pendingDownstream);
     }
   }
@@ -415,7 +411,6 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
     NFD_LOG_WARN("onOutgoingData out=(invalid) data=" << data.getName());
     return false;
   }
-  NFD_LOG_DEBUG("onOutgoingData out=" << egress.getId() << " data=" << data.getName());
 
   // /localhost scope control
   bool isViolatingLocalhost = egress.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
@@ -427,7 +422,7 @@ Forwarder::onOutgoingData(const Data& data, Face& egress)
     return false;
   }
 
-  // TODO traffic manager
+  NFD_LOG_DEBUG("onOutgoingData out=" << egress.getId() << " data=" << data.getName());
 
   // send Data
   egress.sendData(data);
@@ -486,7 +481,7 @@ Forwarder::onIncomingNack(const lp::Nack& nack, const FaceEndpoint& ingress)
     this->setExpiryTimer(pitEntry, 0_ms);
   }
 
-  // trigger strategy: after receive NACK
+  // trigger strategy: after receive Nack
   m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveNack(nack, ingress, pitEntry);
 }
 
@@ -495,8 +490,8 @@ Forwarder::onOutgoingNack(const lp::NackHeader& nack, Face& egress,
                           const shared_ptr<pit::Entry>& pitEntry)
 {
   if (egress.getId() == face::INVALID_FACEID) {
-    NFD_LOG_WARN("onOutgoingNack out=(invalid)"
-                 << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason());
+    NFD_LOG_WARN("onOutgoingNack out=(invalid)" << " nack=" << pitEntry->getName()
+                 << "~" << nack.getReason());
     return false;
   }
 
@@ -505,23 +500,20 @@ Forwarder::onOutgoingNack(const lp::NackHeader& nack, Face& egress,
 
   // if no in-record found, drop
   if (inRecord == pitEntry->in_end()) {
-    NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
-                  << " nack=" << pitEntry->getInterest().getName()
+    NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId() << " nack=" << pitEntry->getName()
                   << "~" << nack.getReason() << " no-in-record");
     return false;
   }
 
   // if multi-access or ad hoc face, drop
   if (egress.getLinkType() != ndn::nfd::LINK_TYPE_POINT_TO_POINT) {
-    NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
-                  << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason()
-                  << " link-type=" << egress.getLinkType());
+    NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId() << " nack=" << pitEntry->getName()
+                  << "~" << nack.getReason() << " link-type=" << egress.getLinkType());
     return false;
   }
 
-  NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId()
-                << " nack=" << pitEntry->getInterest().getName()
-                << "~" << nack.getReason() << " OK");
+  NFD_LOG_DEBUG("onOutgoingNack out=" << egress.getId() << " nack=" << pitEntry->getName()
+                << "~" << nack.getReason());
 
   // create Nack packet with the Interest from in-record
   lp::Nack nackPkt(inRecord->getInterest());

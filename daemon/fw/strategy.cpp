@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -172,6 +172,16 @@ Strategy::Strategy(Forwarder& forwarder)
 }
 
 Strategy::~Strategy() = default;
+
+void
+Strategy::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
+{
+  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " name=" << interest.getName());
+
+  lp::Nack nack(interest);
+  nack.setReason(lp::NackReason::DUPLICATE);
+  this->sendNack(nack, ingress.face);
+}
 
 void
 Strategy::afterContentStoreHit(const Data& data, const FaceEndpoint& ingress,

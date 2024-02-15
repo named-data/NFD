@@ -135,7 +135,7 @@ public: // triggers
    * The Interest:
    *  - has not exceeded HopLimit
    *  - does not violate Scope
-   *  - is not looped
+   *  - has not looped
    *  - cannot be satisfied by ContentStore
    *  - is under a namespace managed by this strategy
    *
@@ -159,6 +159,20 @@ public: // triggers
   virtual void
   afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                        const shared_ptr<pit::Entry>& pitEntry) = 0;
+
+  /**
+   * \brief Trigger after an Interest loop is detected.
+   *
+   * The Interest:
+   *  - has not exceeded HopLimit
+   *  - does not violate Scope
+   *  - has looped
+   *  - is under a namespace managed by this strategy
+   *
+   * In the base class, this method sends a Nack with reason DUPLICATE to \p ingress.
+   */
+  virtual void
+  onInterestLoop(const Interest& interest, const FaceEndpoint& ingress);
 
   /**
    * \brief Trigger after a matching Data is found in the Content Store.
@@ -337,6 +351,21 @@ protected: // actions
   sendNack(const lp::NackHeader& header, Face& egress, const shared_ptr<pit::Entry>& pitEntry)
   {
     return m_forwarder.onOutgoingNack(header, egress, pitEntry);
+  }
+
+  /**
+   * \brief Send a Nack packet without going through the outgoing Nack pipeline.
+   *
+   * \param nack the Nack packet
+   * \param egress face through which to send out the Nack
+   * \return Whether the Nack was sent (true) or dropped (false)
+   */
+  NFD_VIRTUAL_WITH_TESTS bool
+  sendNack(const lp::Nack& nack, Face& egress)
+  {
+    egress.sendNack(nack);
+    ++m_forwarder.m_counters.nOutNacks;
+    return true;
   }
 
   /**

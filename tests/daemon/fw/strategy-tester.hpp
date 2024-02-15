@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -99,8 +99,7 @@ public:
 
 protected:
   pit::OutRecord*
-  sendInterest(const Interest& interest, Face& egress,
-               const shared_ptr<pit::Entry>& pitEntry) override
+  sendInterest(const Interest& interest, Face& egress, const shared_ptr<pit::Entry>& pitEntry) override
   {
     sendInterestHistory.push_back({pitEntry->getInterest(), egress.getId(), interest});
     auto it = pitEntry->insertOrUpdateOutRecord(egress, interest);
@@ -117,11 +116,18 @@ protected:
   }
 
   bool
-  sendNack(const lp::NackHeader& header, Face& egress,
-           const shared_ptr<pit::Entry>& pitEntry) override
+  sendNack(const lp::NackHeader& header, Face& egress, const shared_ptr<pit::Entry>& pitEntry) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), egress.getId(), header});
     pitEntry->deleteInRecord(egress);
+    afterAction();
+    return true;
+  }
+
+  bool
+  sendNack(const lp::Nack& nack, Face& egress) override
+  {
+    sendNackHistory.push_back({nack.getInterest(), egress.getId(), nack.getHeader()});
     afterAction();
     return true;
   }
