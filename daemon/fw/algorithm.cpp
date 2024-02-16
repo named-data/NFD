@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -116,7 +116,7 @@ findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& int
     if (!isNextHopEligible(inFace, interest, *it, pitEntry))
       continue;
 
-    auto outRecord = pitEntry->getOutRecord(it->getFace());
+    auto outRecord = pitEntry->findOutRecord(it->getFace());
     BOOST_ASSERT(outRecord != pitEntry->out_end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;
@@ -142,7 +142,7 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 
   if (wantUnused) {
     // nexthop must not have unexpired out-record
-    auto outRecord = pitEntry->getOutRecord(outFace);
+    auto outRecord = pitEntry->findOutRecord(outFace);
     if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
       return false;
     }

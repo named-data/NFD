@@ -453,7 +453,7 @@ Forwarder::onIncomingNack(const lp::Nack& nack, const FaceEndpoint& ingress)
   }
 
   // has out-record?
-  auto outRecord = pitEntry->getOutRecord(ingress.face);
+  auto outRecord = pitEntry->findOutRecord(ingress.face);
   // if no out-record found, drop
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG("onIncomingNack in=" << ingress << " nack=" << nack.getInterest().getName()
@@ -495,7 +495,7 @@ Forwarder::onOutgoingNack(const lp::NackHeader& nack, Face& egress,
   }
 
   // has in-record?
-  auto inRecord = pitEntry->getInRecord(egress);
+  auto inRecord = pitEntry->findInRecord(egress);
 
   // if no in-record found, drop
   if (inRecord == pitEntry->in_end()) {
@@ -585,15 +585,14 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, const Face* upstream)
   // Dead Nonce List insert
   if (upstream == nullptr) {
     // insert all outgoing Nonces
-    const auto& outRecords = pitEntry.getOutRecords();
-    std::for_each(outRecords.begin(), outRecords.end(), [&] (const auto& outRecord) {
+    std::for_each(pitEntry.out_begin(), pitEntry.out_end(), [&] (const auto& outRecord) {
       m_deadNonceList.add(pitEntry.getName(), outRecord.getLastNonce());
     });
   }
   else {
     // insert outgoing Nonce of a specific face
-    auto outRecord = pitEntry.getOutRecord(*upstream);
-    if (outRecord != pitEntry.getOutRecords().end()) {
+    auto outRecord = pitEntry.findOutRecord(*upstream);
+    if (outRecord != pitEntry.out_end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }
   }

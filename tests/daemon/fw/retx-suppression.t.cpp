@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK(rs.decidePerUpstream(*pitEntry, *face2) == RetxSuppressionResult::FORWARD);
   // Assume interest is sent and increment interval
-  rs.incrementIntervalForOutRecord(*pitEntry->getOutRecord(*face2));
+  rs.incrementIntervalForOutRecord(*pitEntry->findOutRecord(*face2));
 
   pitEntry->insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK(rs.decidePerUpstream(*pitEntry, *face2) == RetxSuppressionResult::SUPPRESS);

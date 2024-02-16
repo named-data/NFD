@@ -119,7 +119,7 @@ protected:
   sendNack(const lp::NackHeader& header, Face& egress, const shared_ptr<pit::Entry>& pitEntry) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), egress.getId(), header});
-    auto it = pitEntry->getInRecord(egress);
+    auto it = pitEntry->findInRecord(egress);
     if (it != pitEntry->in_end()) {
       pitEntry->deleteInRecord(it);
     }

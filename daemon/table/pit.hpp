@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,23 +26,60 @@
 #ifndef NFD_DAEMON_TABLE_PIT_HPP
 #define NFD_DAEMON_TABLE_PIT_HPP
 
+#include "name-tree.hpp"
 #include "pit-entry.hpp"
-#include "pit-iterator.hpp"
 
 namespace nfd {
 namespace pit {
 
-/** \class nfd::pit::DataMatchResult
- *  \brief An unordered iterable of all PIT entries matching Data.
- *
- *  This type has the following member functions:
- *  - `iterator<shared_ptr<Entry>> begin()`
- *  - `iterator<shared_ptr<Entry>> end()`
- *  - `size_t size() const`
+/**
+ * \brief An unordered iterable of all PIT entries matching a Data packet.
  */
 using DataMatchResult = std::vector<shared_ptr<Entry>>;
 
-/** \brief Represents the Interest Table
+/**
+ * \brief PIT iterator.
+ */
+class Iterator : public boost::forward_iterator_helper<Iterator, const Entry>
+{
+public:
+  /**
+   * \brief Constructor.
+   * \param ntIt a name tree iterator that visits name tree entries with one or more PIT entries
+   * \param iPitEntry make this iterator to dereference to the i-th PIT entry in name tree entry
+   */
+  explicit
+  Iterator(const NameTree::const_iterator& ntIt = {}, size_t iPitEntry = 0)
+    : m_ntIt(ntIt)
+    , m_iPitEntry(iPitEntry)
+  {
+  }
+
+  const Entry&
+  operator*() const noexcept
+  {
+    BOOST_ASSERT(m_ntIt != NameTree::const_iterator());
+    BOOST_ASSERT(m_iPitEntry < m_ntIt->getPitEntries().size());
+    return *m_ntIt->getPitEntries()[m_iPitEntry];
+  }
+
+  Iterator&
+  operator++();
+
+  friend bool
+  operator==(const Iterator& lhs, const Iterator& rhs) noexcept
+  {
+    return lhs.m_ntIt == rhs.m_ntIt &&
+           lhs.m_iPitEntry == rhs.m_iPitEntry;
+  }
+
+private:
+  NameTree::const_iterator m_ntIt; ///< current name tree entry
+  size_t m_iPitEntry; ///< current PIT entry within m_ntIt->getPitEntries()
+};
+
+/**
+ * \brief NFD's Interest Table.
  */
 class Pit : noncopyable
 {
@@ -50,7 +87,8 @@ public:
   explicit
   Pit(NameTree& nameTree);
 
-  /** \return number of entries
+  /**
+   * \brief Returns the number of entries.
    */
   size_t
   size() const

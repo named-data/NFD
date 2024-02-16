@@ -26,18 +26,151 @@
 #ifndef NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 #define NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 
-#include "pit-in-record.hpp"
-#include "pit-out-record.hpp"
+#include "strategy-info-host.hpp"
 
 #include <ndn-cxx/util/scheduler.hpp>
 
 #include <list>
 
-namespace nfd::name_tree {
-class Entry;
-} // namespace nfd::name_tree
+namespace nfd {
 
-namespace nfd::pit {
+namespace face {
+class Face;
+} // namespace face
+using face::Face;
+
+namespace name_tree {
+class Entry;
+} // namespace name_tree
+
+namespace pit {
+
+/**
+ * \brief Contains information about an Interest on an incoming or outgoing face.
+ * \note This class is an implementation detail to extract common functionality
+ *       of InRecord and OutRecord.
+ */
+class FaceRecord : public StrategyInfoHost
+{
+public:
+  explicit
+  FaceRecord(Face& face)
+    : m_face(face)
+  {
+  }
+
+  Face&
+  getFace() const noexcept
+  {
+    return m_face;
+  }
+
+  Interest::Nonce
+  getLastNonce() const noexcept
+  {
+    return m_lastNonce;
+  }
+
+  time::steady_clock::time_point
+  getLastRenewed() const noexcept
+  {
+    return m_lastRenewed;
+  }
+
+  /**
+   * \brief Returns the time point at which this record expires.
+   * \return getLastRenewed() + InterestLifetime
+   */
+  time::steady_clock::time_point
+  getExpiry() const noexcept
+  {
+    return m_expiry;
+  }
+
+  /**
+   * \brief Updates lastNonce, lastRenewed, expiry fields.
+   */
+  void
+  update(const Interest& interest);
+
+private:
+  Face& m_face;
+  Interest::Nonce m_lastNonce{0, 0, 0, 0};
+  time::steady_clock::time_point m_lastRenewed = time::steady_clock::time_point::min();
+  time::steady_clock::time_point m_expiry = time::steady_clock::time_point::min();
+};
+
+/**
+ * \brief Contains information about an Interest from an incoming face.
+ */
+class InRecord : public FaceRecord
+{
+public:
+  using FaceRecord::FaceRecord;
+
+  const Interest&
+  getInterest() const noexcept
+  {
+    BOOST_ASSERT(m_interest != nullptr);
+    return *m_interest;
+  }
+
+  void
+  update(const Interest& interest);
+
+private:
+  shared_ptr<const Interest> m_interest;
+};
+
+/**
+ * \brief Contains information about an Interest toward an outgoing face.
+ */
+class OutRecord : public FaceRecord
+{
+public:
+  using FaceRecord::FaceRecord;
+
+  /**
+   * \brief Returns the last Nack returned by getFace().
+   *
+   * A nullptr return value means the Interest is still pending or has timed out.
+   * A non-null return value means the last outgoing Interest has been Nacked.
+   */
+  const lp::NackHeader*
+  getIncomingNack() const noexcept
+  {
+    return m_incomingNack.get();
+  }
+
+  /**
+   * \brief Sets a Nack received from getFace().
+   * \return whether incoming Nack is accepted
+   *
+   * This is invoked in incoming Nack pipeline.
+   *
+   * An incoming Nack is accepted if its Nonce matches getLastNonce().
+   * If accepted, `nack.getHeader()` will be copied, and any pointers
+   * previously returned by getIncomingNack() are invalidated.
+   */
+  bool
+  setIncomingNack(const lp::Nack& nack);
+
+  /**
+   * \brief Clears last Nack.
+   *
+   * This is invoked in outgoing Interest pipeline.
+   *
+   * Any pointers previously returned by getIncomingNack() are invalidated.
+   */
+  void
+  clearIncomingNack() noexcept
+  {
+    m_incomingNack.reset();
+  }
+
+private:
+  unique_ptr<lp::NackHeader> m_incomingNack;
+};
 
 /**
  * \brief An unordered collection of in-records.
@@ -142,7 +275,7 @@ public: // in-record
    * \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
-  getInRecord(const Face& face);
+  findInRecord(const Face& face);
 
   /**
    * \brief Insert or update an in-record.
@@ -156,13 +289,19 @@ public: // in-record
    * \param pos iterator to the in-record to remove; must be valid and dereferenceable.
    */
   void
-  deleteInRecord(InRecordCollection::const_iterator pos);
+  deleteInRecord(InRecordCollection::const_iterator pos)
+  {
+    m_inRecords.erase(pos);
+  }
 
   /**
    * \brief Removes all in-records.
    */
   void
-  clearInRecords();
+  clearInRecords() noexcept
+  {
+    m_inRecords.clear();
+  }
 
 public: // out-record
   /**
@@ -215,7 +354,7 @@ public: // out-record
    * \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
-  getOutRecord(const Face& face);
+  findOutRecord(const Face& face);
 
   /**
    * \brief Insert or update an out-record.
@@ -256,6 +395,7 @@ private:
   friend ::nfd::name_tree::Entry;
 };
 
-} // namespace nfd::pit
+} // namespace pit
+} // namespace nfd
 
 #endif // NFD_DAEMON_TABLE_PIT_ENTRY_HPP

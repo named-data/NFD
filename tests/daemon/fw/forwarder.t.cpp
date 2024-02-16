@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 1);
 
   // record Nack on PIT out-record
-  auto outRecord1 = pit1->getOutRecord(*face1);
+  auto outRecord1 = pit1->findOutRecord(*face1);
   BOOST_REQUIRE(outRecord1 != pit1->out_end());
   BOOST_REQUIRE(outRecord1->getIncomingNack() != nullptr);
   BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
@@ -657,7 +657,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(counters.nOutNacks, 1);
 
   // in-record is erased
-  auto inRecord2a = pit2->getInRecord(*face1);
+  auto inRecord2a = pit2->findInRecord(*face1);
   BOOST_CHECK(inRecord2a == pit2->in_end());
 
   // send Nack with correct Nonce
@@ -669,7 +669,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(counters.nOutNacks, 2);
 
   // in-record is erased
-  auto inRecord2b = pit2->getInRecord(*face2);
+  auto inRecord2b = pit2->findInRecord(*face2);
   BOOST_CHECK(inRecord2b == pit2->in_end());
 
   // don't send Nack to multi-access face

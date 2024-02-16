@@ -27,10 +27,18 @@
 
 namespace nfd::pit {
 
-static inline bool
-nteHasPitEntries(const name_tree::Entry& nte)
+Iterator&
+Iterator::operator++()
 {
-  return nte.hasPitEntries();
+  BOOST_ASSERT(m_ntIt != NameTree::const_iterator());
+  BOOST_ASSERT(m_iPitEntry < m_ntIt->getPitEntries().size());
+
+  if (++m_iPitEntry >= m_ntIt->getPitEntries().size()) {
+    ++m_ntIt;
+    m_iPitEntry = 0;
+    BOOST_ASSERT(m_ntIt == NameTree::const_iterator() || m_ntIt->hasPitEntries());
+  }
+  return *this;
 }
 
 Pit::Pit(NameTree& nameTree)
@@ -44,7 +52,7 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   // determine which NameTree entry should the PIT entry be attached onto
   const Name& name = interest.getName();
   bool hasDigest = name.size() > 0 && name[-1].isImplicitSha256Digest();
-  size_t nteDepth = name.size() - static_cast<int>(hasDigest);
+  size_t nteDepth = name.size() - static_cast<size_t>(hasDigest);
   nteDepth = std::min(nteDepth, NameTree::getMaxDepth());
 
   // ensure NameTree entry exists
@@ -81,6 +89,12 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   return {entry, true};
 }
 
+static bool
+nteHasPitEntries(const name_tree::Entry& nte)
+{
+  return nte.hasPitEntries();
+}
+
 DataMatchResult
 Pit::findAllDataMatches(const Data& data) const
 {
@@ -115,7 +129,7 @@ Pit::deleteInOutRecords(Entry* entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
-  auto in = entry->getInRecord(face);
+  auto in = entry->findInRecord(face);
   if (in != entry->in_end()) {
     entry->deleteInRecord(in);
   }

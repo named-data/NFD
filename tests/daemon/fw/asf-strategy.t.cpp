@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(Retransmission) // Bug #4874
   consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
   this->advanceClocks(time::milliseconds(100));
 
-  auto outRecord = pitEntry->getOutRecord(linkBC->getFace(nodeB));
+  auto outRecord = pitEntry->findOutRecord(linkBC->getFace(nodeB));
   BOOST_CHECK(outRecord != pitEntry->out_end());
 
   this->advanceClocks(time::milliseconds(100));
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       // Get pitEntry of node A
       auto pitEntry = topo.getForwarder(nodeA).getPit().find(*interest);
       // Get outRecord associated with face towards B
-      auto outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA));
+      auto outRecord = pitEntry->findOutRecord(linkAB->getFace(nodeA));
       BOOST_REQUIRE(outRecord != pitEntry->out_end());
 
       // Check that Nonce of interest is not equal to Nonce of Probe
@@ -470,12 +470,12 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       pitEntry = topo.getForwarder(nodeB).getPit().find(*interest);
 
       // Get outRecord associated with face towards D.
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
+      outRecord = pitEntry->findOutRecord(linkBD->getFace(nodeB));
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
       // RTT between B and D
       this->advanceClocks(5_ms, 160_ms);
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
+      outRecord = pitEntry->findOutRecord(linkBD->getFace(nodeB));
 
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nInData, i);
 

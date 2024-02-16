@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -166,7 +166,7 @@ BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, GlobalIoTimeFixture)
   // Interest-Nack
   entry.insertOrUpdateOutRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
-  pit::OutRecordCollection::iterator outR = entry.getOutRecord(*face2);
+  auto outR = entry.findOutRecord(*face2);
   BOOST_REQUIRE(outR != entry.out_end());
   lp::Nack nack = makeNack(*interest, lp::NackReason::DUPLICATE);
   bool isNackAccepted = outR->setIncomingNack(nack); // Nack arrival

@@ -73,7 +73,7 @@ SelfLearningStrategy::afterReceiveInterest(const Interest& interest, const FaceE
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   bool isNonDiscovery = interest.getTag<lp::NonDiscoveryTag>() != nullptr;
-  auto inRecordInfo = pitEntry->getInRecord(ingress.face)->insertStrategyInfo<InRecordInfo>().first;
+  auto inRecordInfo = pitEntry->findInRecord(ingress.face)->insertStrategyInfo<InRecordInfo>().first;
   if (isNonDiscovery) { // "non-discovery" Interest
     inRecordInfo->isNonDiscoveryInterest = true;
     if (nexthops.empty()) { // return NACK if no matching FIB entry exists
@@ -103,7 +103,7 @@ void
 SelfLearningStrategy::afterReceiveData(const Data& data, const FaceEndpoint& ingress,
                                        const shared_ptr<pit::Entry>& pitEntry)
 {
-  auto outRecord = pitEntry->getOutRecord(ingress.face);
+  auto outRecord = pitEntry->findOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DATA_FROM(data, ingress, "no-out-record");
     return;

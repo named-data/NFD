@@ -144,7 +144,7 @@ AsfStrategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress
     return;
   }
 
-  auto outRecord = pitEntry->getOutRecord(ingress.face);
+  auto outRecord = pitEntry->findOutRecord(ingress.face);
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DATA_FROM(data, ingress, "no-out-record");
   }

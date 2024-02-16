@@ -248,7 +248,7 @@ Strategy::sendData(const Data& data, Face& egress, const shared_ptr<pit::Entry>&
 {
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
 
-  auto inRecord = pitEntry->getInRecord(egress);
+  auto inRecord = pitEntry->findInRecord(egress);
   if (inRecord != pitEntry->in_end()) {
     auto pitToken = inRecord->getInterest().getTag<lp::PitToken>();
 
