@@ -275,7 +275,7 @@ public: // in-record
    * \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
-  findInRecord(const Face& face);
+  findInRecord(const Face& face) noexcept;
 
   /**
    * \brief Insert or update an in-record.
@@ -354,7 +354,7 @@ public: // out-record
    * \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
-  findOutRecord(const Face& face);
+  findOutRecord(const Face& face) noexcept;
 
   /**
    * \brief Insert or update an out-record.

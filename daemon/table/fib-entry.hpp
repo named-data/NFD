@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,23 +26,60 @@
 #ifndef NFD_DAEMON_TABLE_FIB_ENTRY_HPP
 #define NFD_DAEMON_TABLE_FIB_ENTRY_HPP
 
-#include "fib-nexthop.hpp"
+#include "core/common.hpp"
 
-namespace nfd::name_tree {
+namespace nfd {
+
+namespace face {
+class Face;
+} // namespace face
+using face::Face;
+
+namespace name_tree {
 class Entry;
-} // namespace nfd::name_tree
+} // namespace name_tree
 
-namespace nfd::fib {
+namespace fib {
 
 class Fib;
 
-/** \class nfd::fib::NextHopList
- *  \brief Represents a collection of nexthops.
- *
- *  This type has the following member functions:
- *  - `iterator<NextHop> begin()`
- *  - `iterator<NextHop> end()`
- *  - `size_t size()`
+/**
+ * \brief Represents a nexthop record in a FIB entry.
+ */
+class NextHop
+{
+public:
+  explicit
+  NextHop(Face& face) noexcept
+    : m_face(&face)
+  {
+  }
+
+  Face&
+  getFace() const noexcept
+  {
+    return *m_face;
+  }
+
+  uint64_t
+  getCost() const noexcept
+  {
+    return m_cost;
+  }
+
+  void
+  setCost(uint64_t cost) noexcept
+  {
+    m_cost = cost;
+  }
+
+private:
+  Face* m_face; // pointer instead of reference so that NextHop is movable
+  uint64_t m_cost = 0;
+};
+
+/**
+ * \brief A collection of nexthops in a FIB entry.
  */
 using NextHopList = std::vector<NextHop>;
 
@@ -57,29 +94,31 @@ public:
   Entry(const Name& prefix);
 
   const Name&
-  getPrefix() const
+  getPrefix() const noexcept
   {
     return m_prefix;
   }
 
   const NextHopList&
-  getNextHops() const
+  getNextHops() const noexcept
   {
     return m_nextHops;
   }
 
-  /** \return whether this Entry has any NextHop record
+  /**
+   * \brief Returns whether this Entry has any NextHop records.
    */
   bool
-  hasNextHops() const
+  hasNextHops() const noexcept
   {
     return !m_nextHops.empty();
   }
 
-  /** \return whether there is a NextHop record for \p face
+  /**
+   * \brief Returns whether there is a NextHop record for \p face.
    */
   bool
-  hasNextHop(const Face& face) const;
+  hasNextHop(const Face& face) const noexcept;
 
 private:
   /** \brief Adds a NextHop record to the entry.
@@ -102,7 +141,7 @@ private:
   /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
-  findNextHop(const Face& face);
+  findNextHop(const Face& face) noexcept;
 
   /** \brief Sorts the nexthop list.
    */
@@ -119,6 +158,7 @@ private:
   friend Fib;
 };
 
-} // namespace nfd::fib
+} // namespace fib
+} // namespace nfd
 
 #endif // NFD_DAEMON_TABLE_FIB_ENTRY_HPP

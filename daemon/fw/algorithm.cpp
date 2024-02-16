@@ -25,6 +25,7 @@
 
 #include "algorithm.hpp"
 #include "scope-prefix.hpp"
+#include "face/face.hpp"
 
 namespace nfd::fw {
 

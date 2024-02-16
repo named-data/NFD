@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 #define NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 
+#include "face/face-common.hpp"
 #include "fw/strategy-info.hpp"
 #include "table/measurements-accessor.hpp"
 
