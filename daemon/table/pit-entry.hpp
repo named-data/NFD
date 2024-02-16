@@ -93,10 +93,11 @@ public:
   canMatch(const Interest& interest, size_t nEqualNameComps = 0) const;
 
 public: // in-record
-  /** \return collection of in-records
+  /**
+   * \brief Returns the collection of in-records.
    */
   const InRecordCollection&
-  getInRecords() const
+  getInRecords() const noexcept
   {
     return m_inRecords;
   }
@@ -107,62 +108,68 @@ public: // in-record
    *                This implies the entry is new or has been satisfied or Nacked.
    */
   bool
-  hasInRecords() const
+  hasInRecords() const noexcept
   {
     return !m_inRecords.empty();
   }
 
   InRecordCollection::iterator
-  in_begin()
+  in_begin() noexcept
   {
     return m_inRecords.begin();
   }
 
   InRecordCollection::const_iterator
-  in_begin() const
+  in_begin() const noexcept
   {
     return m_inRecords.begin();
   }
 
   InRecordCollection::iterator
-  in_end()
+  in_end() noexcept
   {
     return m_inRecords.end();
   }
 
   InRecordCollection::const_iterator
-  in_end() const
+  in_end() const noexcept
   {
     return m_inRecords.end();
   }
 
-  /** \brief Get the in-record for \p face.
-   *  \return an iterator to the in-record, or in_end() if it does not exist
+  /**
+   * \brief Get the in-record for \p face.
+   * \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
   getInRecord(const Face& face);
 
-  /** \brief Insert or update an in-record.
-   *  \return an iterator to the new or updated in-record
+  /**
+   * \brief Insert or update an in-record.
+   * \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
   insertOrUpdateInRecord(Face& face, const Interest& interest);
 
-  /** \brief Delete the in-record for \p face if it exists.
+  /**
+   * \brief Removes the in-record at position \p pos.
+   * \param pos iterator to the in-record to remove; must be valid and dereferenceable.
    */
   void
-  deleteInRecord(const Face& face);
+  deleteInRecord(InRecordCollection::const_iterator pos);
 
-  /** \brief Delete all in-records.
+  /**
+   * \brief Removes all in-records.
    */
   void
   clearInRecords();
 
 public: // out-record
-  /** \return collection of in-records
+  /**
+   * \brief Returns the collection of out-records.
    */
   const OutRecordCollection&
-  getOutRecords() const
+  getOutRecords() const noexcept
   {
     return m_outRecords;
   }
@@ -174,48 +181,51 @@ public: // out-record
    *                This implies the Interest has not been forwarded.
    */
   bool
-  hasOutRecords() const
+  hasOutRecords() const noexcept
   {
     return !m_outRecords.empty();
   }
 
   OutRecordCollection::iterator
-  out_begin()
+  out_begin() noexcept
   {
     return m_outRecords.begin();
   }
 
   OutRecordCollection::const_iterator
-  out_begin() const
+  out_begin() const noexcept
   {
     return m_outRecords.begin();
   }
 
   OutRecordCollection::iterator
-  out_end()
+  out_end() noexcept
   {
     return m_outRecords.end();
   }
 
   OutRecordCollection::const_iterator
-  out_end() const
+  out_end() const noexcept
   {
     return m_outRecords.end();
   }
 
-  /** \brief Get the out-record for \p face.
-   *  \return an iterator to the out-record, or out_end() if it does not exist
+  /**
+   * \brief Get the out-record for \p face.
+   * \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
   getOutRecord(const Face& face);
 
-  /** \brief Insert or update an out-record.
-   *  \return an iterator to the new or updated out-record
+  /**
+   * \brief Insert or update an out-record.
+   * \return an iterator to the new or updated out-record
    */
   OutRecordCollection::iterator
   insertOrUpdateOutRecord(Face& face, const Interest& interest);
 
-  /** \brief Delete the out-record for \p face if it exists.
+  /**
+   * \brief Delete the out-record for \p face if it exists.
    */
   void
   deleteOutRecord(const Face& face);
@@ -232,7 +242,7 @@ public:
   bool isSatisfied = false;
 
   /** \brief Data freshness period.
-   *  \note This field is meaningful only if isSatisfied is true
+   *  \note This field is meaningful only if #isSatisfied is true
    */
   time::milliseconds dataFreshnessPeriod = 0_ms;
 

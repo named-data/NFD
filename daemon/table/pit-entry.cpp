@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ InRecordCollection::iterator
 Entry::getInRecord(const Face& face)
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+                      [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
 }
 
 InRecordCollection::iterator
@@ -60,7 +60,7 @@ Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+                         [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it == m_inRecords.end()) {
     m_inRecords.emplace_front(face);
     it = m_inRecords.begin();
@@ -71,13 +71,10 @@ Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
 }
 
 void
-Entry::deleteInRecord(const Face& face)
+Entry::deleteInRecord(InRecordCollection::const_iterator pos)
 {
-  auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
-  if (it != m_inRecords.end()) {
-    m_inRecords.erase(it);
-  }
+  BOOST_ASSERT(pos != m_inRecords.end());
+  m_inRecords.erase(pos);
 }
 
 void
@@ -90,7 +87,7 @@ OutRecordCollection::iterator
 Entry::getOutRecord(const Face& face)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+                      [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
 }
 
 OutRecordCollection::iterator
@@ -99,7 +96,7 @@ Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+                         [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it == m_outRecords.end()) {
     m_outRecords.emplace_front(face);
     it = m_outRecords.begin();
@@ -113,7 +110,7 @@ void
 Entry::deleteOutRecord(const Face& face)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+                         [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }

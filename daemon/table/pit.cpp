@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -115,7 +115,10 @@ Pit::deleteInOutRecords(Entry* entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
-  entry->deleteInRecord(face);
+  auto in = entry->getInRecord(face);
+  if (in != entry->in_end()) {
+    entry->deleteInRecord(in);
+  }
   entry->deleteOutRecord(face);
 
   /// \todo decide whether to delete PIT entry if there's no more in/out-record left

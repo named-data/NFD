@@ -377,8 +377,7 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       pitEntry->deleteOutRecord(ingress.face);
     }
 
-    // foreach pending downstream
-    for (const auto& pendingDownstream : pendingDownstreams) {
+    for (Face* pendingDownstream : pendingDownstreams) {
       if (pendingDownstream->getId() == ingress.face.getId() &&
           pendingDownstream->getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
@@ -520,7 +519,7 @@ Forwarder::onOutgoingNack(const lp::NackHeader& nack, Face& egress,
   nackPkt.setHeader(nack);
 
   // erase in-record
-  pitEntry->deleteInRecord(egress);
+  pitEntry->deleteInRecord(inRecord);
 
   // send Nack on face
   egress.sendNack(nackPkt);

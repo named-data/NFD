@@ -248,20 +248,19 @@ Strategy::sendData(const Data& data, Face& egress, const shared_ptr<pit::Entry>&
 {
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
 
-  shared_ptr<lp::PitToken> pitToken;
   auto inRecord = pitEntry->getInRecord(egress);
   if (inRecord != pitEntry->in_end()) {
-    pitToken = inRecord->getInterest().getTag<lp::PitToken>();
-  }
+    auto pitToken = inRecord->getInterest().getTag<lp::PitToken>();
 
-  // delete the PIT entry's in-record based on egress,
-  // since the Data is sent to the face from which the Interest was received
-  pitEntry->deleteInRecord(egress);
+    // delete the PIT entry's in-record based on egress,
+    // since the Data is sent to the face from which the Interest was received
+    pitEntry->deleteInRecord(inRecord);
 
-  if (pitToken != nullptr) {
-    Data data2 = data; // make a copy so each downstream can get a different PIT token
-    data2.setTag(pitToken);
-    return m_forwarder.onOutgoingData(data2, egress);
+    if (pitToken != nullptr) {
+      Data data2 = data; // make a copy so each downstream can get a different PIT token
+      data2.setTag(pitToken);
+      return m_forwarder.onOutgoingData(data2, egress);
+    }
   }
   return m_forwarder.onOutgoingData(data, egress);
 }
