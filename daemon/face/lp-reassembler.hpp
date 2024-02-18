@@ -43,17 +43,20 @@ namespace nfd::face {
 class LpReassembler : noncopyable
 {
 public:
-  /** \brief %Options that control the behavior of LpReassembler.
+  /**
+   * \brief %Options that control the behavior of LpReassembler.
    */
   struct Options
   {
-    /** \brief Maximum number of fragments in a packet.
+    /**
+     * \brief Maximum number of fragments in a packet.
      *
-     *  LpPackets with FragCount over this limit are dropped.
+     * LpPackets with FragCount over this limit are dropped.
      */
     size_t nMaxFragments = 400;
 
-    /** \brief Timeout before a partially reassembled packet is dropped.
+    /**
+     * \brief Timeout before a partially reassembled packet is dropped.
      */
     time::nanoseconds reassemblyTimeout = 500_ms;
   };
@@ -61,34 +64,47 @@ public:
   explicit
   LpReassembler(const Options& options, const LinkService* linkService = nullptr);
 
-  /** \brief Set options for reassembler.
+  /**
+   * \brief Set options for reassembler.
    */
   void
-  setOptions(const Options& options);
+  setOptions(const Options& options)
+  {
+    m_options = options;
+  }
 
-  /** \return LinkService that owns this instance
+  /**
+   * \brief Returns the LinkService that owns this instance.
    *
-   *  This is only used for logging, and may be nullptr.
+   * This is only used for logging, and may be nullptr.
    */
   const LinkService*
-  getLinkService() const;
+  getLinkService() const noexcept
+  {
+    return m_linkService;
+  }
 
-  /** \brief Adds received fragment to the buffer.
-   *  \param remoteEndpoint endpoint that sent the packet
-   *  \param packet received fragment; must have Fragment field
-   *  \return a tuple containing:
-   *          whether a network-layer packet has been completely received,
-   *          the reassembled network-layer packet,
-   *          the first fragment for inspecting other NDNLPv2 headers
-   *  \throw tlv::Error packet is malformed
+  /**
+   * \brief Adds received fragment to the buffer.
+   * \param remoteEndpoint endpoint that sent the packet
+   * \param packet received fragment; must have Fragment field
+   * \return a tuple containing:
+   *         whether a network-layer packet has been completely received,
+   *         the reassembled network-layer packet,
+   *         the first fragment for inspecting other NDNLPv2 headers
+   * \throw tlv::Error packet is malformed
    */
   std::tuple<bool, Block, lp::Packet>
   receiveFragment(const EndpointId& remoteEndpoint, const lp::Packet& packet);
 
-  /** \brief Count of partial packets.
+  /**
+   * \brief Count of partial packets.
    */
   size_t
-  size() const;
+  size() const noexcept
+  {
+    return m_partialPackets.size();
+  }
 
   /**
    * \brief Notifies before a partial packet is dropped due to timeout.
@@ -134,24 +150,6 @@ private:
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LpReassembler>& flh);
-
-inline void
-LpReassembler::setOptions(const Options& options)
-{
-  m_options = options;
-}
-
-inline const LinkService*
-LpReassembler::getLinkService() const
-{
-  return m_linkService;
-}
-
-inline size_t
-LpReassembler::size() const
-{
-  return m_partialPackets.size();
-}
 
 } // namespace nfd::face
 

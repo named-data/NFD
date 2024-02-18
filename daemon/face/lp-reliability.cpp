@@ -58,12 +58,6 @@ LpReliability::setOptions(const Options& options)
   m_options = options;
 }
 
-const GenericLinkService*
-LpReliability::getLinkService() const
-{
-  return m_linkService;
-}
-
 void
 LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, bool isInterest)
 {

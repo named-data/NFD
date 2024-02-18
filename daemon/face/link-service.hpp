@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,39 +32,27 @@
 
 namespace nfd::face {
 
-/** \brief Counters provided by LinkService.
- *  \note The type name LinkServiceCounters is an implementation detail.
- *        Use LinkService::Counters in public API.
+/**
+ * \brief Counters provided by LinkService.
+ * \note The type name LinkServiceCounters is an implementation detail.
+ *       Use LinkService::Counters in public API.
  */
 class LinkServiceCounters
 {
 public:
-  /** \brief Count of incoming Interests.
-   */
+  /// Count of incoming Interest packets.
   PacketCounter nInInterests;
-
-  /** \brief Count of outgoing Interests.
-   */
+  /// Count of outgoing Interest packets.
   PacketCounter nOutInterests;
-
-  /** \brief Count of Interests dropped by reliability system for exceeding allowed number of retx.
-   */
+  /// Count of Interests dropped by reliability system for exceeding allowed number of retx.
   PacketCounter nInterestsExceededRetx;
-
-  /** \brief Count of incoming Data packets.
-   */
+  /// Count of incoming Data packets.
   PacketCounter nInData;
-
-  /** \brief Count of outgoing Data packets.
-   */
+  /// Count of outgoing Data packets.
   PacketCounter nOutData;
-
-  /** \brief Count of incoming Nacks.
-   */
+  /// Count of incoming Nack packets.
   PacketCounter nInNacks;
-
-  /** \brief Count of outgoing Nacks.
-   */
+  /// Count of outgoing Nack packets.
   PacketCounter nOutNacks;
 };
 
@@ -125,87 +113,112 @@ public:
   }
 
   virtual ssize_t
-  getEffectiveMtu() const;
+  getEffectiveMtu() const
+  {
+    return m_transport->getMtu();
+  }
 
 public: // upper interface to be used by forwarding
-  /** \brief Send Interest.
-   *  \pre setFaceAndTransport() has been called.
+  /**
+   * \brief Send Interest.
+   * \pre setFaceAndTransport() has been called.
    */
   void
   sendInterest(const Interest& interest);
 
-  /** \brief Send Data.
-   *  \pre setFaceAndTransport() has been called.
+  /**
+   * \brief Send Data.
+   * \pre setFaceAndTransport() has been called.
    */
   void
   sendData(const Data& data);
 
-  /** \brief Send Nack.
-   *  \pre setFaceAndTransport() has been called.
+  /**
+   * \brief Send Nack.
+   * \pre setFaceAndTransport() has been called.
    */
   void
   sendNack(const ndn::lp::Nack& nack);
 
-  /** \brief Signals on Interest received.
+  /**
+   * \brief Called when an Interest packet is received.
    */
   signal::Signal<LinkService, Interest, EndpointId> afterReceiveInterest;
 
-  /** \brief Signals on Data received.
+  /**
+   * \brief Called when a Data packet is received.
    */
   signal::Signal<LinkService, Data, EndpointId> afterReceiveData;
 
-  /** \brief Signals on Nack received.
+  /**
+   * \brief Called when a Nack packet is received.
    */
   signal::Signal<LinkService, lp::Nack, EndpointId> afterReceiveNack;
 
-  /** \brief Signals on Interest dropped by reliability system for exceeding allowed number of retx.
+  /**
+   * \brief Called when an Interest is dropped by the reliability system
+   *        for exceeding the allowed number of retransmissions.
    */
   signal::Signal<LinkService, Interest> onDroppedInterest;
 
 public: // lower interface to be invoked by Transport
-  /** \brief Performs LinkService specific operations to receive a lower-layer packet.
+  /**
+   * \brief Performs LinkService-specific operations to receive a lower-layer packet.
    */
   void
-  receivePacket(const Block& packet, const EndpointId& endpoint);
+  receivePacket(const Block& packet, const EndpointId& endpoint)
+  {
+    doReceivePacket(packet, endpoint);
+  }
 
 protected: // upper interface to be invoked in subclass (receive path termination)
-  /** \brief Delivers received Interest to forwarding.
+  /**
+   * \brief Delivers received Interest to forwarding.
    */
   void
   receiveInterest(const Interest& interest, const EndpointId& endpoint);
 
-  /** \brief Delivers received Data to forwarding.
+  /**
+   * \brief Delivers received Data to forwarding.
    */
   void
   receiveData(const Data& data, const EndpointId& endpoint);
 
-  /** \brief Delivers received Nack to forwarding.
+  /**
+   * \brief Delivers received Nack to forwarding.
    */
   void
   receiveNack(const lp::Nack& nack, const EndpointId& endpoint);
 
 protected: // lower interface to be invoked in subclass (send path termination)
-  /** \brief Send a lower-layer packet via Transport.
+  /**
+   * \brief Send a lower-layer packet via Transport.
    */
   void
-  sendPacket(const Block& packet);
+  sendPacket(const Block& packet)
+  {
+    m_transport->send(packet);
+  }
 
 protected:
   void
   notifyDroppedInterest(const Interest& packet);
 
 private: // upper interface to be overridden in subclass (send path entrypoint)
-  /** \brief Performs LinkService specific operations to send an Interest.
+  /**
+   * \brief Performs LinkService-specific operations to send an Interest.
    */
   virtual void
   doSendInterest(const Interest& interest) = 0;
 
-  /** \brief Performs LinkService specific operations to send a Data.
+  /**
+   * \brief Performs LinkService-specific operations to send a Data.
    */
   virtual void
   doSendData(const Data& data) = 0;
 
-  /** \brief Performs LinkService specific operations to send a Nack.
+  /**
+   * \brief Performs LinkService-specific operations to send a Nack.
    */
   virtual void
   doSendNack(const lp::Nack& nack) = 0;
@@ -218,24 +231,6 @@ private:
   Face* m_face = nullptr;
   Transport* m_transport = nullptr;
 };
-
-inline ssize_t
-LinkService::getEffectiveMtu() const
-{
-  return m_transport->getMtu();
-}
-
-inline void
-LinkService::receivePacket(const Block& packet, const EndpointId& endpoint)
-{
-  doReceivePacket(packet, endpoint);
-}
-
-inline void
-LinkService::sendPacket(const Block& packet)
-{
-  m_transport->send(packet);
-}
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LinkService>& flh);

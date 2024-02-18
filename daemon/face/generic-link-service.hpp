@@ -35,60 +35,122 @@
 
 namespace nfd::face {
 
-/** \brief Counters provided by GenericLinkService.
- *  \note The type name GenericLinkServiceCounters is an implementation detail.
- *        Use GenericLinkService::Counters in public API.
+/**
+ * \brief Counters provided by GenericLinkService.
+ * \note The type name GenericLinkServiceCounters is an implementation detail.
+ *       Use GenericLinkService::Counters in public API.
  */
 class GenericLinkServiceCounters : public virtual LinkService::Counters
 {
 public:
-  /** \brief Count of failed fragmentations.
-   */
+  /// Count of failed fragmentations.
   PacketCounter nFragmentationErrors;
 
-  /** \brief Count of outgoing LpPackets dropped due to exceeding MTU limit.
+  /**
+   * \brief Count of outgoing LpPackets dropped due to exceeding MTU limit.
    *
-   *  If this counter is non-zero, the operator should enable fragmentation.
+   * If this counter is non-zero, the operator should enable fragmentation.
    */
   PacketCounter nOutOverMtu;
 
-  /** \brief Count of invalid LpPackets dropped before reassembly.
-   */
+  /// Count of invalid LpPackets dropped before reassembly.
   PacketCounter nInLpInvalid;
 
-  /** \brief Count of network-layer packets currently being reassembled.
-   */
+  /// Count of network-layer packets currently being reassembled.
   SizeCounter<LpReassembler> nReassembling;
 
-  /** \brief Count of dropped partial network-layer packets due to reassembly timeout.
-   */
+  /// Count of dropped partial network-layer packets due to reassembly timeout.
   PacketCounter nReassemblyTimeouts;
 
-  /** \brief Count of invalid reassembled network-layer packets dropped.
-   */
+  /// Count of invalid reassembled network-layer packets dropped.
   PacketCounter nInNetInvalid;
 
-  /** \brief Count of network-layer packets that did not require retransmission of a fragment.
-   */
+  /// Count of network-layer packets that did not require retransmission of a fragment.
   PacketCounter nAcknowledged;
 
-  /** \brief Count of network-layer packets that had at least one fragment retransmitted, but were
-   *         eventually received in full.
+  /**
+   * \brief Count of network-layer packets that had at least one fragment retransmitted,
+   *        but were eventually received in full.
    */
   PacketCounter nRetransmitted;
 
-  /** \brief Count of network-layer packets dropped because a fragment reached the maximum number
-   *         of retransmissions.
+  /**
+   * \brief Count of network-layer packets dropped because a fragment reached the maximum
+   *        number of retransmissions.
    */
   PacketCounter nRetxExhausted;
 
-  /** \brief Count of LpPackets dropped due to duplicate Sequence numbers.
-   */
+  /// Count of LpPackets dropped due to duplicate Sequence numbers.
   PacketCounter nDuplicateSequence;
 
-  /** \brief Count of outgoing LpPackets that were marked with congestion marks.
-   */
+  /// Count of outgoing LpPackets that were marked with congestion marks.
   PacketCounter nCongestionMarked;
+};
+
+/**
+ * \brief Options that control the behavior of GenericLinkService.
+ * \note The type name GenericLinkServiceOptions is an implementation detail.
+ *       Use GenericLinkService::Options in public API.
+ */
+struct GenericLinkServiceOptions
+{
+  /** \brief Enables encoding of IncomingFaceId, and decoding of NextHopFaceId and CachePolicy.
+   */
+  bool allowLocalFields = false;
+
+  /** \brief Enables fragmentation.
+   */
+  bool allowFragmentation = false;
+
+  /** \brief Options for fragmentation.
+   */
+  LpFragmenter::Options fragmenterOptions;
+
+  /** \brief Enables reassembly.
+   */
+  bool allowReassembly = false;
+
+  /** \brief Options for reassembly.
+   */
+  LpReassembler::Options reassemblerOptions;
+
+  /** \brief Options for reliability.
+   */
+  LpReliability::Options reliabilityOptions;
+
+  /** \brief Enables send queue congestion detection and marking.
+   */
+  bool allowCongestionMarking = false;
+
+  /** \brief Starting value for congestion marking interval.
+   *
+   *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
+   *
+   *  The default value (100 ms) is taken from RFC 8289 (CoDel).
+   */
+  time::nanoseconds baseCongestionMarkingInterval = 100_ms;
+
+  /** \brief Default congestion threshold in bytes.
+   *
+   *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
+   *
+   *  The default value (64 KiB) works well for a queue capacity of 200 KiB.
+   */
+  size_t defaultCongestionThreshold = 65536;
+
+  /** \brief Enables self-learning forwarding support.
+   */
+  bool allowSelfLearning = true;
+
+  /** \brief Overrides the MTU provided by Transport.
+   *
+   *  This MTU value will be used instead of the MTU provided by the transport if it is less than
+   *  the transport MTU. However, it will not be utilized when the transport MTU is unlimited.
+   *
+   *  Acceptable values for this option are values >= #MIN_MTU, which can be validated before
+   *  being set with canOverrideMtuTo().
+   */
+  ssize_t overrideMtu = std::numeric_limits<ssize_t>::max();
 };
 
 /**
@@ -99,83 +161,21 @@ class GenericLinkService NFD_FINAL_UNLESS_WITH_TESTS : public LinkService
                                                      , protected virtual GenericLinkServiceCounters
 {
 public:
-  /** \brief %Options that control the behavior of GenericLinkService.
-   */
-  class Options
-  {
-  public:
-    Options() noexcept
-    {
-    }
-
-  public:
-    /** \brief Enables encoding of IncomingFaceId, and decoding of NextHopFaceId and CachePolicy.
-     */
-    bool allowLocalFields = false;
-
-    /** \brief Enables fragmentation.
-     */
-    bool allowFragmentation = false;
-
-    /** \brief Options for fragmentation.
-     */
-    LpFragmenter::Options fragmenterOptions;
-
-    /** \brief Enables reassembly.
-     */
-    bool allowReassembly = false;
-
-    /** \brief Options for reassembly.
-     */
-    LpReassembler::Options reassemblerOptions;
-
-    /** \brief Options for reliability.
-     */
-    LpReliability::Options reliabilityOptions;
-
-    /** \brief Enables send queue congestion detection and marking.
-     */
-    bool allowCongestionMarking = false;
-
-    /** \brief Starting value for congestion marking interval.
-     *
-     *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
-     *
-     *  The default value (100 ms) is taken from RFC 8289 (CoDel).
-     */
-    time::nanoseconds baseCongestionMarkingInterval = 100_ms;
-
-    /** \brief Default congestion threshold in bytes.
-     *
-     *  Packets are marked if the queue size stays above THRESHOLD for at least one INTERVAL.
-     *
-     *  The default value (64 KiB) works well for a queue capacity of 200 KiB.
-     */
-    size_t defaultCongestionThreshold = 65536;
-
-    /** \brief Enables self-learning forwarding support.
-     */
-    bool allowSelfLearning = true;
-
-    /** \brief Overrides the MTU provided by Transport.
-     *
-     *  This MTU value will be used instead of the MTU provided by the transport if it is less than
-     *  the transport MTU. However, it will not be utilized when the transport MTU is unlimited.
-     *
-     *  Acceptable values for this option are values >= #MIN_MTU, which can be validated before
-     *  being set with canOverrideMtuTo().
-     */
-    ssize_t overrideMtu = std::numeric_limits<ssize_t>::max();
-  };
-
-  /** \brief %Counters provided by GenericLinkService.
+  /**
+   * \brief %Counters provided by GenericLinkService.
    */
   using Counters = GenericLinkServiceCounters;
+
+  /**
+   * \brief %Options for GenericLinkService.
+   */
+  using Options = GenericLinkServiceOptions;
 
   explicit
   GenericLinkService(const Options& options = {});
 
-  /** \brief Get the options used by GenericLinkService.
+  /**
+   * \brief Get the options used by GenericLinkService.
    */
   const Options&
   getOptions() const
@@ -183,7 +183,8 @@ public:
     return m_options;
   }
 
-  /** \brief Sets the options used by GenericLinkService.
+  /**
+   * \brief Sets the options used by GenericLinkService.
    */
   void
   setOptions(const Options& options);

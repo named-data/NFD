@@ -33,29 +33,29 @@
 
 namespace nfd::face {
 
-/** \brief Counters provided by WebSocketTransport.
- *  \note The type name WebSocketTransportCounters is an implementation detail.
- *        Use WebSocketTransport::Counters in public API.
+/**
+ * \brief Counters provided by WebSocketTransport.
+ * \note The type name WebSocketTransportCounters is an implementation detail.
+ *       Use WebSocketTransport::Counters in public API.
  */
 class WebSocketTransportCounters : public virtual Transport::Counters
 {
 public:
-  /** \brief Count of outgoing pings.
-   */
+  /// Count of outgoing pings.
   PacketCounter nOutPings;
-
-  /** \brief Count of incoming pongs.
-   */
+  /// Count of incoming pongs.
   PacketCounter nInPongs;
 };
 
-/** \brief A Transport that communicates on a WebSocket connection.
+/**
+ * \brief A Transport that communicates on a WebSocket connection.
  */
 class WebSocketTransport final : public Transport
                                , protected virtual WebSocketTransportCounters
 {
 public:
-  /** \brief %Counters provided by WebSocketTransport.
+  /**
+   * \brief %Counters provided by WebSocketTransport.
    */
   using Counters = WebSocketTransportCounters;
 
@@ -64,9 +64,13 @@ public:
                      time::milliseconds pingInterval);
 
   const Counters&
-  getCounters() const final;
+  getCounters() const final
+  {
+    return *this;
+  }
 
-  /** \brief Translates a message into a Block and delivers it to the link service.
+  /**
+   * \brief Translates a message into a Block and delivers it to the link service.
    */
   void
   receiveMessage(const std::string& msg);
@@ -100,12 +104,6 @@ private:
   time::milliseconds m_pingInterval;
   ndn::scheduler::ScopedEventId m_pingEventId;
 };
-
-inline const WebSocketTransport::Counters&
-WebSocketTransport::getCounters() const
-{
-  return *this;
-}
 
 } // namespace nfd::face
 

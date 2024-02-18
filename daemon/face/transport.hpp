@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,42 +46,51 @@ enum class TransportState {
 std::ostream&
 operator<<(std::ostream& os, TransportState state);
 
-/** \brief Counters provided by a transport.
- *  \note The type name TransportCounters is an implementation detail.
- *        Use Transport::Counters in public API.
+/**
+ * \brief Counters provided by a transport.
+ * \note The type name TransportCounters is an implementation detail.
+ *       Use Transport::Counters in public API.
  */
 class TransportCounters
 {
 public:
-  /** \brief Count of incoming packets.
+  /**
+   * \brief Count of incoming packets.
    *
-   *  A 'packet' typically means a top-level TLV block.
-   *  For a datagram-based transport, an incoming packet that cannot be parsed as TLV
-   *  would not be counted.
+   * A 'packet' typically means a top-level TLV element.
+   *
+   * For a datagram-based transport, an incoming packet that cannot be parsed as TLV
+   * will not be counted.
    */
   PacketCounter nInPackets;
 
-  /** \brief Count of outgoing packets.
+  /**
+   * \brief Count of outgoing packets.
    *
-   *  A 'packet' typically means a top-level TLV block.
-   *  This counter is incremented only if transport is UP.
+   * A 'packet' typically means a top-level TLV element.
+   *
+   * This counter is incremented only when the transport is UP.
    */
   PacketCounter nOutPackets;
 
-  /** \brief Total incoming bytes.
+  /**
+   * \brief Total bytes received.
    *
-   *  This counter includes headers imposed by NFD (such as NDNLP),
-   *  but excludes overhead of underlying protocol (such as IP header).
-   *  For a datagram-based transport, an incoming packet that cannot be parsed as TLV
-   *  would not be counted.
+   * This counter includes headers imposed by NFD (such as NDNLP), but excludes the
+   * overhead of the underlying protocol (such as IP header).
+   *
+   * For a datagram-based transport, an incoming packet that cannot be parsed as TLV
+   * will not be counted.
    */
   ByteCounter nInBytes;
 
-  /** \brief Total outgoing bytes.
+  /**
+   * \brief Total bytes sent.
    *
-   *  This counter includes headers imposed by NFD (such as NDNLP),
-   *  but excludes overhead of underlying protocol (such as IP header).
-   *  This counter is increased only if transport is UP.
+   * This counter includes headers imposed by NFD (such as NDNLP), but excludes the
+   * overhead of the underlying protocol (such as IP header).
+   *
+   * This counter is increased only when the transport is UP.
    */
   ByteCounter nOutBytes;
 };
@@ -294,9 +303,9 @@ public: // dynamic properties
   }
 
   /**
-   * \brief Signals when the transport state changes.
+   * \brief Called when the transport state changes.
    */
-  signal::Signal<Transport, TransportState/*old*/, TransportState/*new*/> afterStateChange;
+  signal::Signal<Transport, TransportState /*old*/, TransportState /*new*/> afterStateChange;
 
   /**
    * \brief Returns the expiration time of the transport.

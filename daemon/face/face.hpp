@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FACE_FACE_HPP
 
 #include "face-common.hpp"
-#include "face-counters.hpp"
 #include "link-service.hpp"
 #include "transport.hpp"
 
@@ -41,16 +40,79 @@ class Channel;
  */
 using FaceState = TransportState;
 
-/** \brief Generalization of a network interface.
+/**
+ * \brief Gives access to the counters provided by Face.
  *
- *  A face generalizes a network interface.
- *  It provides best-effort network-layer packet delivery services
- *  on a physical interface, an overlay tunnel, or a link to a local application.
+ * This type is a facade that exposes common counters of a Face.
  *
- *  A face combines two parts: LinkService and Transport.
- *  Transport is the lower part, which provides best-effort TLV block deliveries.
- *  LinkService is the upper part, which translates between network-layer packets
- *  and TLV blocks, and may provide additional services such as fragmentation and reassembly.
+ * get<T>() can be used to access extended counters provided by
+ * LinkService or Transport of the Face.
+ */
+class FaceCounters
+{
+public:
+  FaceCounters(const LinkService::Counters& linkServiceCounters,
+               const Transport::Counters& transportCounters);
+
+  /**
+   * \brief Returns the counters provided by (a subclass of) LinkService.
+   * \tparam T The desired counters type
+   * \throw std::bad_cast counters type mismatch
+   */
+  template<typename T>
+  std::enable_if_t<std::is_base_of_v<LinkService::Counters, T>, const T&>
+  get() const
+  {
+    return dynamic_cast<const T&>(m_linkServiceCounters);
+  }
+
+  /**
+   * \brief Returns the counters provided by (a subclass of) Transport.
+   * \tparam T The desired counters type
+   * \throw std::bad_cast counters type mismatch
+   */
+  template<typename T>
+  std::enable_if_t<std::is_base_of_v<Transport::Counters, T>, const T&>
+  get() const
+  {
+    return dynamic_cast<const T&>(m_transportCounters);
+  }
+
+public:
+  const PacketCounter& nInInterests;           ///< \copydoc LinkService::Counters::nInInterests
+  const PacketCounter& nOutInterests;          ///< \copydoc LinkService::Counters::nOutInterests
+  const PacketCounter& nInterestsExceededRetx; ///< \copydoc LinkService::Counters::nInterestsExceededRetx
+  const PacketCounter& nInData;                ///< \copydoc LinkService::Counters::nInData
+  const PacketCounter& nOutData;               ///< \copydoc LinkService::Counters::nOutData
+  const PacketCounter& nInNacks;               ///< \copydoc LinkService::Counters::nInNacks
+  const PacketCounter& nOutNacks;              ///< \copydoc LinkService::Counters::nOutNacks
+
+  const PacketCounter& nInPackets;  ///< \copydoc Transport::Counters::nInPackets
+  const PacketCounter& nOutPackets; ///< \copydoc Transport::Counters::nOutPackets
+  const ByteCounter& nInBytes;      ///< \copydoc Transport::Counters::nInBytes
+  const ByteCounter& nOutBytes;     ///< \copydoc Transport::Counters::nOutBytes
+
+  /// Count of incoming Interests dropped due to HopLimit == 0.
+  PacketCounter nInHopLimitZero;
+  /// Count of outgoing Interests dropped due to HopLimit == 0 on non-local faces.
+  PacketCounter nOutHopLimitZero;
+
+private:
+  const LinkService::Counters& m_linkServiceCounters;
+  const Transport::Counters& m_transportCounters;
+};
+
+/**
+ * \brief Generalization of a network interface.
+ *
+ * A face generalizes a network interface.
+ * It provides best-effort network-layer packet delivery services
+ * on a physical interface, an overlay tunnel, or a link to a local application.
+ *
+ * A face combines two parts: LinkService and Transport.
+ * Transport is the lower part, which provides best-effort TLV block deliveries.
+ * LinkService is the upper part, which translates between network-layer packets
+ * and TLV blocks, and may provide additional services such as fragmentation and reassembly.
  */
 class Face NFD_FINAL_UNLESS_WITH_TESTS : public std::enable_shared_from_this<Face>, noncopyable
 {
@@ -69,48 +131,60 @@ public:
     return m_transport.get();
   }
 
-  /** \brief Request that the face be closed.
+  /**
+   * \brief Request that the face be closed.
    *
-   *  This operation is effective only if face is in the UP or DOWN state; otherwise, it has no effect.
-   *  The face will change state to CLOSING, and then perform a cleanup procedure.
-   *  When the cleanup is complete, the state will be changed to CLOSED, which may happen
-   *  synchronously or asynchronously.
+   * This operation is effective only if face is in the UP or DOWN state; otherwise,
+   * it has no effect. The face will change state to CLOSING, and then perform a
+   * cleanup procedure. When the cleanup is complete, the state will be changed to
+   * CLOSED, which may happen synchronously or asynchronously.
    *
-   *  \warning The face must not be deallocated until its state changes to CLOSED.
+   * \warning The face must not be deallocated until its state changes to CLOSED.
    */
   void
-  close();
+  close()
+  {
+    m_transport->close();
+  }
 
 public: // upper interface connected to forwarding
-  /** \brief Send Interest.
+  /**
+   * \brief Send Interest.
    */
   void
-  sendInterest(const Interest& interest);
+  sendInterest(const Interest& interest)
+  {
+    m_service->sendInterest(interest);
+  }
 
-  /** \brief Send Data.
+  /**
+   * \brief Send Data.
    */
   void
-  sendData(const Data& data);
+  sendData(const Data& data)
+  {
+    m_service->sendData(data);
+  }
 
-  /** \brief Send Nack.
+  /**
+   * \brief Send Nack.
    */
   void
-  sendNack(const lp::Nack& nack);
+  sendNack(const lp::Nack& nack)
+  {
+    m_service->sendNack(nack);
+  }
 
-  /** \brief Signals on Interest received.
-   */
+  /// \copydoc LinkService::afterReceiveInterest
   signal::Signal<LinkService, Interest, EndpointId>& afterReceiveInterest;
 
-  /** \brief Signals on Data received.
-   */
+  /// \copydoc LinkService::afterReceiveData
   signal::Signal<LinkService, Data, EndpointId>& afterReceiveData;
 
-  /** \brief Signals on Nack received.
-   */
+  /// \copydoc LinkService::afterReceiveNack
   signal::Signal<LinkService, lp::Nack, EndpointId>& afterReceiveNack;
 
-  /** \brief Signals on Interest dropped by reliability system for exceeding allowed number of retx.
-   */
+  /// \copydoc LinkService::onDroppedInterest
   signal::Signal<LinkService, Interest>& onDroppedInterest;
 
 public: // properties
@@ -137,37 +211,55 @@ public: // properties
    * \brief Returns a FaceUri representing the local endpoint.
    */
   FaceUri
-  getLocalUri() const;
+  getLocalUri() const noexcept
+  {
+    return m_transport->getLocalUri();
+  }
 
   /**
    * \brief Returns a FaceUri representing the remote endpoint.
    */
   FaceUri
-  getRemoteUri() const;
+  getRemoteUri() const noexcept
+  {
+    return m_transport->getRemoteUri();
+  }
 
   /**
    * \brief Returns whether the face is local or non-local for scope control purposes.
    */
   ndn::nfd::FaceScope
-  getScope() const;
+  getScope() const noexcept
+  {
+    return m_transport->getScope();
+  }
 
   /**
    * \brief Returns the current persistency setting of the face.
    */
   ndn::nfd::FacePersistency
-  getPersistency() const;
+  getPersistency() const noexcept
+  {
+    return m_transport->getPersistency();
+  }
 
   /**
    * \brief Changes the face persistency setting.
    */
   void
-  setPersistency(ndn::nfd::FacePersistency persistency);
+  setPersistency(ndn::nfd::FacePersistency persistency)
+  {
+    return m_transport->setPersistency(persistency);
+  }
 
   /**
    * \brief Returns the link type of the face (point-to-point, multi-access, ...).
    */
   ndn::nfd::LinkType
-  getLinkType() const;
+  getLinkType() const noexcept
+  {
+    return m_transport->getLinkType();
+  }
 
   /**
    * \brief Returns the effective MTU of the face.
@@ -175,25 +267,32 @@ public: // properties
    * This function is a wrapper. The effective MTU of a face is determined by the link service.
    */
   ssize_t
-  getMtu() const;
+  getMtu() const
+  {
+    return m_service->getEffectiveMtu();
+  }
 
   /**
    * \brief Returns the face state.
    */
   FaceState
-  getState() const;
+  getState() const noexcept
+  {
+    return m_transport->getState();
+  }
 
-  /**
-   * \brief Signals after face state changed.
-   */
-  signal::Signal<Transport, FaceState/*old*/, FaceState/*new*/>& afterStateChange;
+  /// \copydoc Transport::afterStateChange
+  signal::Signal<Transport, FaceState /*old*/, FaceState /*new*/>& afterStateChange;
 
   /**
    * \brief Returns the expiration time of the face.
    * \retval time::steady_clock::time_point::max() The face has an indefinite lifetime.
    */
   time::steady_clock::time_point
-  getExpirationTime() const;
+  getExpirationTime() const noexcept
+  {
+    return m_transport->getExpirationTime();
+  }
 
   const FaceCounters&
   getCounters() const noexcept
@@ -211,7 +310,7 @@ public: // properties
    * \brief Get channel on which face was created (unicast) or the associated channel (multicast).
    */
   weak_ptr<Channel>
-  getChannel() const
+  getChannel() const noexcept
   {
     return m_channel;
   }
@@ -220,7 +319,7 @@ public: // properties
    * \brief Set channel on which face was created (unicast) or the associated channel (multicast).
    */
   void
-  setChannel(weak_ptr<Channel> channel)
+  setChannel(weak_ptr<Channel> channel) noexcept
   {
     m_channel = std::move(channel);
   }
@@ -232,84 +331,6 @@ private:
   FaceCounters m_counters;
   weak_ptr<Channel> m_channel;
 };
-
-inline void
-Face::close()
-{
-  m_transport->close();
-}
-
-inline void
-Face::sendInterest(const Interest& interest)
-{
-  m_service->sendInterest(interest);
-}
-
-inline void
-Face::sendData(const Data& data)
-{
-  m_service->sendData(data);
-}
-
-inline void
-Face::sendNack(const lp::Nack& nack)
-{
-  m_service->sendNack(nack);
-}
-
-inline FaceUri
-Face::getLocalUri() const
-{
-  return m_transport->getLocalUri();
-}
-
-inline FaceUri
-Face::getRemoteUri() const
-{
-  return m_transport->getRemoteUri();
-}
-
-inline ndn::nfd::FaceScope
-Face::getScope() const
-{
-  return m_transport->getScope();
-}
-
-inline ndn::nfd::FacePersistency
-Face::getPersistency() const
-{
-  return m_transport->getPersistency();
-}
-
-inline void
-Face::setPersistency(ndn::nfd::FacePersistency persistency)
-{
-  return m_transport->setPersistency(persistency);
-}
-
-inline ndn::nfd::LinkType
-Face::getLinkType() const
-{
-  return m_transport->getLinkType();
-}
-
-inline ssize_t
-Face::getMtu() const
-{
-  return m_service->getEffectiveMtu();
-}
-
-inline FaceState
-Face::getState() const
-{
-  return m_transport->getState();
-}
-
-inline time::steady_clock::time_point
-Face::getExpirationTime() const
-{
-  return m_transport->getExpirationTime();
-}
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<Face>& flh);

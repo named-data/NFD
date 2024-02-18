@@ -74,21 +74,27 @@ public:
 
   LpReliability(const Options& options, GenericLinkService* linkService);
 
-  /** \brief Signals on Interest dropped by reliability system for exceeding allowed number of retx.
+  /**
+   * \brief Called when an Interest is dropped for exceeding the allowed number of retransmissions.
    */
   signal::Signal<LpReliability, Interest> onDroppedInterest;
 
-  /** \brief Set options for reliability.
+  /**
+   * \brief Set options for reliability.
    */
   void
   setOptions(const Options& options);
 
-  /** \return GenericLinkService that owns this instance
+  /**
+   * \brief Returns the GenericLinkService that owns this instance.
    *
-   *  This is only used for logging, and may be nullptr.
+   * This is only used for logging, and may be nullptr.
    */
   const GenericLinkService*
-  getLinkService() const;
+  getLinkService() const noexcept
+  {
+    return m_linkService;
+  }
 
   /** \brief Observe outgoing fragment(s) of a network packet and store for potential retransmission.
    *  \param frags fragments of network packet
