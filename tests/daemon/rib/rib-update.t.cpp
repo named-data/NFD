@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,9 +33,10 @@ namespace nfd::tests {
 
 using namespace nfd::rib;
 
+BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_AUTO_TEST_SUITE(TestRibUpdate)
 
-BOOST_AUTO_TEST_CASE(BatchBasic)
+BOOST_AUTO_TEST_CASE(Batch)
 {
   const uint64_t faceId = 1;
   RibUpdateBatch batch(faceId);
@@ -75,5 +76,6 @@ BOOST_AUTO_TEST_CASE(BatchBasic)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibUpdate
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

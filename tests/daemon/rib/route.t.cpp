@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,7 @@ namespace nfd::tests {
 
 using rib::Route;
 
+BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestRoute, GlobalIoTimeFixture)
 
 BOOST_AUTO_TEST_SUITE(CreateFromAnnouncement)
@@ -123,10 +124,7 @@ BOOST_AUTO_TEST_CASE(Equality)
   a.expires = std::nullopt;
 
   BOOST_CHECK_EQUAL(a, b);
-}
 
-BOOST_AUTO_TEST_CASE(EqualityAnn)
-{
   auto ann1 = makePrefixAnn("/ann", 1_h);
   auto ann2 = makePrefixAnn("/ann", 2_h);
   BOOST_CHECK_EQUAL(Route(ann1, 7001), Route(ann1, 7001));
@@ -134,7 +132,7 @@ BOOST_AUTO_TEST_CASE(EqualityAnn)
   BOOST_CHECK_NE(Route(ann1, 7001), Route(ann2, 7001));
 }
 
-BOOST_AUTO_TEST_CASE(Output)
+BOOST_AUTO_TEST_CASE(Print)
 {
   Route r;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
@@ -160,5 +158,6 @@ BOOST_AUTO_TEST_CASE(Output)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRoute
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

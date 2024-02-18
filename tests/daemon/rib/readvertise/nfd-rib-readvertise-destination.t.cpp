@@ -65,7 +65,7 @@ protected:
   std::function<void(const std::string&)> failureCallback;
 };
 
-BOOST_AUTO_TEST_SUITE(Readvertise)
+BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestNfdRibReadvertiseDestination, NfdRibReadvertiseDestinationFixture)
 
 class AdvertiseSuccessScenario
@@ -249,6 +249,6 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNfdRibReadvertiseDestination
-BOOST_AUTO_TEST_SUITE_END() // Readvertise
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

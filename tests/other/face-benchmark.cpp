@@ -91,7 +91,7 @@ private:
     }
 
     if (m_faceUris.empty()) {
-      NDN_THROW(std::runtime_error("No supported FaceUri pairs found in config file"));
+      NDN_THROW_NO_STACK(std::runtime_error("No supported FaceUri pairs found in config file"));
     }
   }
 
@@ -162,7 +162,8 @@ private:
   [[noreturn]] static void
   onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
-    NDN_THROW(std::runtime_error("Failed to create face: [" + std::to_string(status) + "] " + reason));
+    NDN_THROW_NO_STACK(std::runtime_error("Failed to create face: [" +
+                                          std::to_string(status) + "] " + reason));
   }
 
 private:

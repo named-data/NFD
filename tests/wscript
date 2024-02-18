@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2023,  Regents of the University of California,
+Copyright (c) 2014-2024,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,19 +39,20 @@ def build(bld):
             headers='../core/common.hpp boost-test.hpp',
             defines=[tmpdir])
 
-        for module in ['core', 'daemon', 'rib', 'tools']:
+        for module in ['core', 'daemon', 'tools']:
             # main() for the module
-            bld.objects(target=f'unit-tests-{module}-main',
-                        source='main.cpp',
-                        use='BOOST_TESTS',
-                        defines=[f'BOOST_TEST_MODULE=NFD {module.capitalize()}'])
+            bld.objects(
+                target=f'unit-tests-{module}-main',
+                source='main.cpp',
+                use='BOOST_TESTS',
+                defines=[f'BOOST_TEST_MODULE=NFD {module.capitalize()}'])
 
-            subdir = 'daemon/rib' if module == 'rib' else module
-            node = bld.path.find_dir(subdir)
-            src = node.ant_glob('**/*.cpp', excl=['face/*ethernet*.cpp',
-                                                  'face/pcap*.cpp',
-                                                  'face/unix*.cpp',
-                                                  'face/websocket*.cpp'])
+            node = bld.path.find_dir(module)
+            src = node.ant_glob('**/*.cpp',
+                                excl=['face/*ethernet*.cpp',
+                                      'face/pcap*.cpp',
+                                      'face/unix*.cpp',
+                                      'face/websocket*.cpp'])
             if bld.env.HAVE_LIBPCAP:
                 src += node.ant_glob('face/*ethernet*.cpp')
                 src += node.ant_glob('face/pcap*.cpp')
@@ -59,19 +60,15 @@ def build(bld):
                 src += node.ant_glob('face/unix*.cpp')
             if bld.env.HAVE_WEBSOCKET:
                 src += node.ant_glob('face/websocket*.cpp')
-            if module == 'rib':
-                src += ['daemon/global-io-fixture.cpp',
-                        'daemon/limited-io.cpp',
-                        'daemon/rib-io-fixture.cpp']
 
-            objmod = 'daemon' if module == 'rib' else module
             # unit-tests binary for the module
-            bld.program(name=f'unit-tests-{module}',
-                        target=f'{top}/unit-tests-{module}',
-                        source=src,
-                        use=f'{objmod}-objects tests-common unit-tests-{module}-main',
-                        defines=[tmpdir],
-                        install_path=None)
+            bld.program(
+                name=f'unit-tests-{module}',
+                target=f'{top}/unit-tests-{module}',
+                source=src,
+                use=f'{module}-objects tests-common unit-tests-{module}-main',
+                defines=[tmpdir],
+                install_path=None)
 
     # Other tests (e.g., stress tests and benchmarks that can be enabled even if unit tests are disabled)
     if bld.env.WITH_TESTS or bld.env.WITH_OTHER_TESTS:

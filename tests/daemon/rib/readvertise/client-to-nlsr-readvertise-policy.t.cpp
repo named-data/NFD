@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,7 @@ namespace nfd::tests {
 
 using namespace nfd::rib;
 
-BOOST_AUTO_TEST_SUITE(Readvertise)
+BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestClientToNlsrReadvertisePolicy, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(ReadvertiseClientRoute)
@@ -68,6 +68,6 @@ BOOST_AUTO_TEST_CASE(DontReadvertiseRoute)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestClientToNlsrReadvertisePolicy
-BOOST_AUTO_TEST_SUITE_END() // Readvertise
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

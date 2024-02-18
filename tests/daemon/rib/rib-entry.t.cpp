@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,6 +33,7 @@ namespace nfd::tests {
 using rib::RibEntry;
 using rib::Route;
 
+BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestRibEntry, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
@@ -78,18 +79,13 @@ BOOST_AUTO_TEST_CASE(Basic)
 BOOST_FIXTURE_TEST_SUITE(GetAnnouncement, GlobalIoTimeFixture)
 
 static Route
-makeSimpleRoute(uint64_t faceId)
+makeSimpleRoute(uint64_t faceId, std::optional<time::nanoseconds> expiration = std::nullopt)
 {
   Route route;
   route.faceId = faceId;
-  return route;
-}
-
-static Route
-makeSimpleRoute(uint64_t faceId, time::nanoseconds expiration)
-{
-  Route route = makeSimpleRoute(faceId);
-  route.expires = time::steady_clock::now() + expiration;
+  if (expiration) {
+    route.expires = time::steady_clock::now() + *expiration;
+  }
   return route;
 }
 
@@ -170,5 +166,6 @@ BOOST_AUTO_TEST_CASE(MakeAnnouncementShortExpiration)
 BOOST_AUTO_TEST_SUITE_END() // GetAnnouncement
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibEntry
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

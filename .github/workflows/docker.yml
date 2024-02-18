@@ -1,12 +1,14 @@
 name: Publish Docker image
-
 on:
   push:
     branches:
       - master
     paths-ignore:
       - '*.md'
+      - '.jenkins'
+      - '.jenkins.d/**'
       - '.mailmap'
+      - 'tests/**'
   workflow_dispatch:
 
 permissions:

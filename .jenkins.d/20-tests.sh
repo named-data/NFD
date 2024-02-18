@@ -31,7 +31,6 @@ rm -rf ~/.ndn
 # First run all tests as unprivileged user
 ./build/unit-tests-core $(ut_log_args core)
 ./build/unit-tests-daemon $(ut_log_args daemon)
-./build/unit-tests-rib $(ut_log_args rib)
 ./build/unit-tests-tools $(ut_log_args tools)
 
 # Then use sudo to run those tests that need superuser powers
