@@ -34,7 +34,7 @@
 #include "tests/daemon/face/dummy-link-service.hpp"
 #include "tests/daemon/face/transport-test-common.hpp"
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
 
 namespace nfd::tests {
 

@@ -26,15 +26,16 @@
 #include "command-authenticator.hpp"
 #include "common/logger.hpp"
 
-#include <ndn-cxx/tag.hpp>
 #include <ndn-cxx/security/certificate-fetcher-offline.hpp>
 #include <ndn-cxx/security/certificate-request.hpp>
 #include <ndn-cxx/security/validation-policy.hpp>
 #include <ndn-cxx/security/validation-policy-accept-all.hpp>
 #include <ndn-cxx/security/validation-policy-command-interest.hpp>
+#include <ndn-cxx/tag.hpp>
 #include <ndn-cxx/util/io.hpp>
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 namespace security = ndn::security;
 

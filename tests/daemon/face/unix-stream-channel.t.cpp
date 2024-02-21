@@ -42,17 +42,12 @@ protected:
   UnixStreamChannelFixture()
   {
     listenerEp = unix_stream::Endpoint(socketPath.string());
-
-    // in case an earlier test run crashed without a chance to run the destructor
-    boost::system::error_code ec;
-    fs::remove_all(testDir, ec);
   }
 
   ~UnixStreamChannelFixture() override
   {
-    // cleanup
     boost::system::error_code ec;
-    fs::remove_all(testDir, ec);
+    fs::remove_all(testDir, ec); // ignore error
   }
 
   shared_ptr<UnixStreamChannel>
@@ -86,8 +81,8 @@ protected:
   }
 
 protected:
-  fs::path testDir = fs::path(UNIT_TESTS_TMPDIR) / "unix-stream-channel";
-  fs::path socketPath = testDir / "test" / "foo.sock";
+  static inline const fs::path testDir = fs::path(UNIT_TESTS_TMPDIR) / "unix-stream-channel";
+  static inline const fs::path socketPath = testDir / "test" / "foo.sock";
 };
 
 BOOST_AUTO_TEST_SUITE(Face)

@@ -28,7 +28,7 @@ top = '..'
 def build(bld):
     # Unit tests
     if bld.env.WITH_TESTS:
-        tmpdir = 'UNIT_TESTS_TMPDIR="%s"' % bld.bldnode.make_node('tmp-files')
+        tmpdir = 'UNIT_TESTS_TMPDIR="%s"' % bld.bldnode.make_node('tests-tmp')
 
         # common test objects
         bld.objects(

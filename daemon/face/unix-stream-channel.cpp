@@ -29,7 +29,9 @@
 #include "unix-stream-transport.hpp"
 #include "common/global.hpp"
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/exception.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 namespace nfd::face {
 

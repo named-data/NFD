@@ -25,7 +25,7 @@
 
 #include "unix-stream-factory.hpp"
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
 
 namespace nfd::face {
 
