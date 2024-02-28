@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
 # inspired by code by Hans-Martin von Gaudecker, 2012
 
 import os

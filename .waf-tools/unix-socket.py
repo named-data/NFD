@@ -1,5 +1,3 @@
-# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-#
 # Copyright (c) 2014-2019, Regents of the University of California
 #
 # GPL 3.0 license, see the COPYING.md file for more information

@@ -1,4 +1,4 @@
-# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+# Davide Pesavento (LIP6), 2016
 
 def options(opt):
     opt.add_option('--with-sanitizer', action='store', default='', dest='sanitizers',

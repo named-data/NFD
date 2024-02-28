@@ -1,9 +1,6 @@
-#! /usr/bin/env python
-# encoding: UTF-8
 # Thomas Nagy 2008-2010 (ita)
 
 """
-
 Doxygen support
 
 Variables passed to bld():

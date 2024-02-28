@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-#
 # partially based on boost.py written by Gernot Vormayr
 # written by Ruediger Sonderfeld <ruediger@c-plusplus.de>, 2008
 # modified by Bjoern Michaelsen, 2008

@@ -1,5 +1,3 @@
-# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-
 import platform
 from waflib import Configure, Logs, Utils
 
@@ -128,15 +126,15 @@ class CompilerFlags:
 
     def getGeneralFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are always needed"""
+        return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
+
+    def getDebugFlags(self, conf):
+        """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in debug mode"""
         return {
             'CXXFLAGS': [],
             'LINKFLAGS': [],
             'DEFINES': ['BOOST_FILESYSTEM_NO_DEPRECATED'],
         }
-
-    def getDebugFlags(self, conf):
-        """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in debug mode"""
-        return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
 
     def getOptimizedFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are needed only in optimized mode"""
@@ -245,6 +243,9 @@ class ClangFlags(GccClangCommonFlags):
         elif self.getCompilerVersion(conf) >= (15, 0, 0):
             # https://releases.llvm.org/15.0.0/projects/libcxx/docs/UsingLibcxx.html#enabling-the-safe-libc-mode
             flags['DEFINES'] += ['_LIBCPP_ENABLE_ASSERTIONS=1']
+        # Tell libc++ to avoid including transitive headers
+        # https://libcxx.llvm.org/DesignDocs/HeaderRemovalPolicy.html
+        flags['DEFINES'] += ['_LIBCPP_REMOVE_TRANSITIVE_INCLUDES=1']
         return flags
 
     def getOptimizedFlags(self, conf):
