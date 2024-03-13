@@ -36,7 +36,7 @@ def options(opt):
     opt.load(['default-compiler-flags', 'pch',
               'coverage', 'sanitizers', 'boost',
               'dependency-checker', 'unix-socket', 'websocket',
-              'doxygen', 'sphinx_build'],
+              'doxygen', 'sphinx'],
              tooldir=['.waf-tools'])
 
     optgrp = opt.add_option_group('NFD Options')
@@ -85,7 +85,7 @@ def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'pch',
                'boost', 'dependency-checker', 'websocket',
-               'doxygen', 'sphinx_build'])
+               'doxygen', 'sphinx'])
 
     conf.env.WITH_TESTS = conf.options.with_tests
     conf.env.WITH_OTHER_TESTS = conf.options.with_other_tests

@@ -1,5 +1,7 @@
 # inspired by code by Hans-Martin von Gaudecker, 2012
 
+"""Support for Sphinx documentation"""
+
 import os
 from waflib import Node, Task, TaskGen, Utils
 
@@ -34,8 +36,8 @@ def sig_hook(self, node):
     node.sig=Utils.h_file(node.abspath())
 
 
-@TaskGen.feature("sphinx")
-@TaskGen.before_method("process_source")
+@TaskGen.feature('sphinx')
+@TaskGen.before_method('process_source')
 def apply_sphinx(self):
     """Set up the task generator with a Sphinx instance and create a task."""
 
@@ -80,11 +82,12 @@ def apply_sphinx(self):
 
 
 def configure(conf):
+    """Check if sphinx-build program is available."""
     conf.find_program('sphinx-build', var='SPHINX_BUILD', mandatory=False)
 
 
-# sphinx docs
+# sphinx command
 from waflib.Build import BuildContext
 class sphinx(BuildContext):
-    cmd = "sphinx"
-    fun = "sphinx"
+    cmd = 'sphinx'
+    fun = 'sphinx'

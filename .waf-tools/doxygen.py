@@ -24,9 +24,8 @@ When using this tool, the wscript will look like:
 			bld(features="doxygen", doxyfile='Doxyfile', ...)
 """
 
-from fnmatch import fnmatchcase
-import os, os.path, re, stat
-from waflib import Task, Utils, Node, Logs, Errors, Build
+import os, os.path, re
+from waflib import Task, Utils, Node
 from waflib.TaskGen import feature
 
 DOXY_STR = '"${DOXYGEN}" - '
@@ -204,8 +203,8 @@ def configure(conf):
 	conf.find_program('doxygen', var='DOXYGEN', mandatory=False)
 	conf.find_program('tar', var='TAR', mandatory=False)
 
-# doxygen docs
+# doxygen command
 from waflib.Build import BuildContext
 class doxy(BuildContext):
-    cmd = "doxygen"
-    fun = "doxygen"
+    cmd = 'doxygen'
+    fun = 'doxygen'
