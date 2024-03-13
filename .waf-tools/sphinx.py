@@ -3,21 +3,15 @@
 """Support for Sphinx documentation"""
 
 import os
-from waflib import Node, Task, TaskGen, Utils
+from waflib import Task, TaskGen
 
 
 class sphinx_build(Task.Task):
     color = 'BLUE'
-    run_str = '${SPHINX_BUILD} -D ${VERSION} -D ${RELEASE} -q -b ${BUILDERNAME} -d ${DOCTREEDIR} ${SRCDIR} ${OUTDIR}'
+    run_str = '${SPHINX_BUILD} -q -b ${BUILDERNAME} -D ${VERSION} -D ${RELEASE} -d ${DOCTREEDIR} ${SRCDIR} ${OUTDIR}'
 
-    def __str__(self):
-        env = self.env
-        src_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.inputs])
-        tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
-        if self.outputs: sep = ' -> '
-        else: sep = ''
-        return'%s [%s]: %s%s%s\n'%(self.__class__.__name__.replace('_task',''),
-                                   self.env['BUILDERNAME'], src_str, sep, tgt_str)
+    def keyword(self):
+        return f'Processing ({self.env.BUILDERNAME})'
 
 
 # from https://docs.python.org/3.12/whatsnew/3.12.html#imp
@@ -31,54 +25,44 @@ def load_source(modname, filename):
     return module
 
 
-@TaskGen.extension('.py', '.rst')
-def sig_hook(self, node):
-    node.sig=Utils.h_file(node.abspath())
-
-
 @TaskGen.feature('sphinx')
 @TaskGen.before_method('process_source')
-def apply_sphinx(self):
+def process_sphinx(self):
     """Set up the task generator with a Sphinx instance and create a task."""
 
-    inputs = []
-    for i in Utils.to_list(self.source):
-        if not isinstance(i, Node.Node):
-            node = self.path.find_node(node)
-        else:
-            node = i
-        if not node:
-            raise ValueError('[%s] file not found' % i)
-        inputs.append(node)
-
-    task = self.create_task('sphinx_build', inputs)
-
     conf = self.path.find_node(self.config)
-    task.inputs.append(conf)
+    if not conf:
+        self.bld.fatal(f'Sphinx configuration file {repr(self.config)} not found')
+
+    inputs = [conf] + self.to_nodes(self.source)
+    task = self.create_task('sphinx_build', inputs, always_run=getattr(self, 'always', False))
 
     confdir = conf.parent.abspath()
     buildername = getattr(self, 'builder', 'html')
     srcdir = getattr(self, 'srcdir', confdir)
     outdir = self.path.find_or_declare(getattr(self, 'outdir', buildername)).get_bld()
     doctreedir = getattr(self, 'doctreedir', os.path.join(outdir.abspath(), '.doctrees'))
+    release = getattr(self, 'release', self.version)
 
     task.env['BUILDERNAME'] = buildername
     task.env['SRCDIR'] = srcdir
     task.env['OUTDIR'] = outdir.abspath()
     task.env['DOCTREEDIR'] = doctreedir
-    task.env['VERSION'] = 'version=%s' % self.version
-    task.env['RELEASE'] = 'release=%s' % getattr(self, 'release', self.version)
+    task.env['VERSION'] = f'version={self.version}'
+    task.env['RELEASE'] = f'release={release}'
 
     if buildername == 'man':
         confdata = load_source('sphinx_conf', conf.abspath())
         for i in confdata.man_pages:
-            target = outdir.find_or_declare('%s.%d' % (i[1], i[4]))
+            target = outdir.find_or_declare(f'{i[1]}.{i[4]}')
             task.outputs.append(target)
-
             if self.install_path:
-                self.bld.install_files('%s/man%d/' % (self.install_path, i[4]), target)
+                self.bld.install_files(f'{self.install_path}/man{i[4]}/', target)
     else:
         task.outputs.append(outdir)
+
+    # prevent process_source from complaining that there is no extension mapping for .rst files
+    self.source = []
 
 
 def configure(conf):
