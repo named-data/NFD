@@ -35,7 +35,7 @@ sudo rm -f /usr/local/lib{,64}/pkgconfig/libndn-cxx.pc
 
 pushd ndn-cxx >/dev/null
 
-./waf --color=yes configure --without-osx-keychain
+./waf --color=yes configure
 ./waf --color=yes build
 sudo ./waf --color=yes install
 
