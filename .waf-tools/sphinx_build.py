@@ -1,7 +1,8 @@
 # inspired by code by Hans-Martin von Gaudecker, 2012
 
 import os
-from waflib import Node, Task, TaskGen, Errors, Logs, Build, Utils
+from waflib import Node, Task, TaskGen, Utils
+
 
 class sphinx_build(Task.Task):
     color = 'BLUE'
@@ -16,9 +17,22 @@ class sphinx_build(Task.Task):
         return'%s [%s]: %s%s%s\n'%(self.__class__.__name__.replace('_task',''),
                                    self.env['BUILDERNAME'], src_str, sep, tgt_str)
 
+
+# from https://docs.python.org/3.12/whatsnew/3.12.html#imp
+def load_source(modname, filename):
+    import importlib.util
+    from importlib.machinery import SourceFileLoader
+    loader = SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
 @TaskGen.extension('.py', '.rst')
 def sig_hook(self, node):
     node.sig=Utils.h_file(node.abspath())
+
 
 @TaskGen.feature("sphinx")
 @TaskGen.before_method("process_source")
@@ -48,16 +62,14 @@ def apply_sphinx(self):
 
     task.env['BUILDERNAME'] = buildername
     task.env['SRCDIR'] = srcdir
-    task.env['DOCTREEDIR'] = doctreedir
     task.env['OUTDIR'] = outdir.abspath()
+    task.env['DOCTREEDIR'] = doctreedir
     task.env['VERSION'] = 'version=%s' % self.version
     task.env['RELEASE'] = 'release=%s' % getattr(self, 'release', self.version)
 
-    import imp
-    confData = imp.load_source('sphinx_conf', conf.abspath())
-
     if buildername == 'man':
-        for i in confData.man_pages:
+        confdata = load_source('sphinx_conf', conf.abspath())
+        for i in confdata.man_pages:
             target = outdir.find_or_declare('%s.%d' % (i[1], i[4]))
             task.outputs.append(target)
 
@@ -66,8 +78,10 @@ def apply_sphinx(self):
     else:
         task.outputs.append(outdir)
 
+
 def configure(conf):
     conf.find_program('sphinx-build', var='SPHINX_BUILD', mandatory=False)
+
 
 # sphinx docs
 from waflib.Build import BuildContext
