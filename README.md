@@ -59,3 +59,11 @@ and [`README-dev.md`](README-dev.md) to get started.
 
 NFD is free software distributed under the GNU General Public License version 3.
 See [`COPYING.md`](COPYING.md) for details.
+
+NFD contains third-party software, licensed under the following licenses:
+
+* *CityHash* is licensed under the
+  [MIT license](https://github.com/google/cityhash/blob/master/COPYING)
+* The *WebSocket++* library is licensed under the
+  [3-clause BSD license](https://github.com/zaphoyd/websocketpp/blob/0.8.1/COPYING)
+* The *waf* build system is licensed under the [3-clause BSD license](waf)

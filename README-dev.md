@@ -45,7 +45,7 @@ have a configuration file.  See `ndn-log(7)` manual page for syntax and examples
 
 ## Unit tests
 
-To run unit tests, NFD needs to be configured and build with unit test support:
+To run the unit tests, NFD needs to be configured and built with unit test support:
 
 ```shell
 ./waf configure --with-tests # --debug is also strongly recommended while developing
