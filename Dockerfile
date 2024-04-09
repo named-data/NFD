@@ -1,45 +1,53 @@
-FROM ghcr.io/named-data/ndn-cxx:latest as builder
+# syntax=docker/dockerfile:1
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpcap-dev \
+ARG NDN_CXX_VERSION=latest
+FROM ghcr.io/named-data/ndn-cxx-build:${NDN_CXX_VERSION} AS build
+ARG SOURCE_DATE_EPOCH
+
+RUN apt-get install -Uy --no-install-recommends \
+        libpcap-dev \
+    # use 'apt-get distclean' when we upgrade to ubuntu:24.04
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /NFD
+RUN --mount=type=bind,rw,target=/src <<EOF
+set -eux
+cd /src
+./waf configure \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --sharedstatedir=/var \
+    --without-systemd
+./waf build
+./waf install
 
-RUN cd /NFD \
-    && ./waf configure --without-pch --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-    && ./waf \
-    && ./waf install \
-    # get list of dependencies
-    && mkdir -p /shlibdeps/debian && cd /shlibdeps && touch debian/control \
-    && dpkg-shlibdeps --ignore-missing-info /usr/lib/libndn-cxx.so* /usr/bin/nfdc /usr/bin/nfd \
-    && sed -n '/^shlibs:Depends=/ s|shlibs:Depends=||p' debian/substvars | sed -e 's|,||g' -e 's| ([^)]*)||g' > /deps.txt
+mkdir -p /deps/debian
+touch /deps/debian/control
+cd /deps
+for binary in nfd nfdc nfd-autoreg; do
+    dpkg-shlibdeps --ignore-missing-info "/usr/bin/${binary}" -O \
+        | sed -n 's|^shlibs:Depends=||p' | sed 's| ([^)]*),\?||g' > "${binary}"
+done
+EOF
 
-# use same base distro version as named-data/ndn-cxx
-FROM debian:bookworm
+FROM ghcr.io/named-data/ndn-cxx-runtime:${NDN_CXX_VERSION} AS nfd
+ARG SOURCE_DATE_EPOCH
 
-COPY --from=builder /deps.txt /
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends $(cat /deps.txt) \
-    && rm -rf /var/lib/apt/lists/* /deps.txt
+RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+    apt-get install -Uy --no-install-recommends $(cat /deps/nfd /deps/nfdc) \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/lib/libndn-cxx.so* /usr/lib/
-COPY --from=builder /usr/bin/nfd /usr/bin/
-COPY --from=builder /usr/bin/nfdc /usr/bin/
-
-COPY --from=builder /usr/bin/nfd-status-http-server /usr/bin/
-COPY --from=builder /usr/share/ndn/ /usr/share/ndn/
-
-COPY --from=builder /etc/ndn/nfd.conf.sample /config/nfd.conf
+COPY --link --from=build /usr/bin/nfd /usr/bin/
+COPY --link --from=build /usr/bin/nfdc /usr/bin/
+COPY --link --from=build /etc/ndn/nfd.conf.sample /config/nfd.conf
 
 ENV HOME=/config
 
 VOLUME /config
 VOLUME /run/nfd
 
-EXPOSE 6363/tcp
-EXPOSE 6363/udp
-EXPOSE 9696/tcp
+EXPOSE 6363/tcp 6363/udp 9696/tcp
 
 ENTRYPOINT ["/usr/bin/nfd"]
 CMD ["--config", "/config/nfd.conf"]

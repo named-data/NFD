@@ -2,7 +2,8 @@
 set -eo pipefail
 
 APT_PKGS=(
-    build-essential
+    dpkg-dev
+    g++
     libboost-chrono-dev
     libboost-date-time-dev
     libboost-dev
@@ -17,7 +18,7 @@ APT_PKGS=(
     libssl-dev
     libsystemd-dev
     pkg-config
-    python3-minimal
+    python3
 )
 FORMULAE=(boost openssl pkg-config)
 PIP_PKGS=()
