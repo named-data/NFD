@@ -2,10 +2,14 @@ name: CI
 on:
   push:
     paths-ignore:
-      - 'docs/**'
       - '*.conf.sample*'
-      - '*.md'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docs/**'
+      - '.editorconfig'
+      - '.gitignore'
       - '.mailmap'
+      - '*.md'
   workflow_dispatch:
 
 permissions: {}
