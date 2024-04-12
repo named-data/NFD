@@ -31,19 +31,49 @@ for binary in nfd nfdc nfd-autoreg; do
 done
 EOF
 
+
+FROM ghcr.io/named-data/ndn-cxx-runtime:${NDN_CXX_VERSION} AS nfd-autoreg
+
+COPY --link --from=build /usr/bin/nfd-autoreg /usr/bin/
+
+RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+    apt-get install -Uy --no-install-recommends $(cat /deps/nfd-autoreg) \
+    && rm -rf /var/lib/apt/lists/*
+
+VOLUME /run/nfd
+
+ENTRYPOINT ["/usr/bin/nfd-autoreg"]
+
+
+FROM ghcr.io/named-data/ndn-cxx-runtime:${NDN_CXX_VERSION} AS nfd-status-http-server
+
+COPY --link --from=build /usr/bin/nfdc /usr/bin/
+COPY --link --from=build /usr/bin/nfd-status-http-server /usr/bin/
+COPY --link --from=build /usr/share/ndn/ /usr/share/ndn/
+
+RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+    apt-get install -Uy --no-install-recommends $(cat /deps/nfdc) \
+        python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+VOLUME /run/nfd
+
+EXPOSE 8080/tcp
+
+ENTRYPOINT ["/usr/bin/nfd-status-http-server", "--address", "0.0.0.0"]
+
+
 FROM ghcr.io/named-data/ndn-cxx-runtime:${NDN_CXX_VERSION} AS nfd
-ARG SOURCE_DATE_EPOCH
+
+COPY --link --from=build /usr/bin/nfdc /usr/bin/
+COPY --link --from=build /usr/bin/nfd /usr/bin/
+COPY --link --from=build /etc/ndn/nfd.conf.sample /config/nfd.conf
 
 RUN --mount=type=bind,from=build,source=/deps,target=/deps \
     apt-get install -Uy --no-install-recommends $(cat /deps/nfd /deps/nfdc) \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --link --from=build /usr/bin/nfd /usr/bin/
-COPY --link --from=build /usr/bin/nfdc /usr/bin/
-COPY --link --from=build /etc/ndn/nfd.conf.sample /config/nfd.conf
-
 ENV HOME=/config
-
 VOLUME /config
 VOLUME /run/nfd
 
