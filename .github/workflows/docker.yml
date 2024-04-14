@@ -1,16 +1,11 @@
 name: Docker
 on:
   push:
-    branches:
-      - master
-    paths-ignore:
-      - '.editorconfig'
-      - '.jenkins'
-      - '.jenkins.d/**'
-      - 'launchd/**'
-      - '.mailmap'
-      - 'systemd/**'
-      - 'tests/**'
+    tags:
+      - 'NFD-*'
+  schedule:
+    # twice a month
+    - cron: '20 8 5,20 * *'
   workflow_dispatch:
 
 permissions:

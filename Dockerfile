@@ -9,6 +9,7 @@ RUN apt-get install -Uy --no-install-recommends \
     # use 'apt-get distclean' when we upgrade to ubuntu:24.04
     && rm -rf /var/lib/apt/lists/*
 
+ARG JOBS
 RUN --mount=type=bind,rw,target=/src <<EOF
 set -eux
 cd /src
