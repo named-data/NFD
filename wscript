@@ -302,43 +302,41 @@ def version(ctx):
     Context.g_module.VERSION_SPLIT = VERSION_BASE.split('.')
 
     # first, try to get a version string from git
-    gotVersionFromGit = False
+    version_from_git = ''
     try:
-        cmd = ['git', 'describe', '--always', '--match', f'{GIT_TAG_PREFIX}*']
-        out = subprocess.run(cmd, capture_output=True, check=True, text=True).stdout.strip()
-        if out:
-            gotVersionFromGit = True
-            if out.startswith(GIT_TAG_PREFIX):
-                Context.g_module.VERSION = out.lstrip(GIT_TAG_PREFIX)
+        cmd = ['git', 'describe', '--abbrev=8', '--always', '--match', f'{GIT_TAG_PREFIX}*']
+        version_from_git = subprocess.run(cmd, capture_output=True, check=True, text=True).stdout.strip()
+        if version_from_git:
+            if version_from_git.startswith(GIT_TAG_PREFIX):
+                Context.g_module.VERSION = version_from_git.lstrip(GIT_TAG_PREFIX)
             else:
                 # no tags matched
-                Context.g_module.VERSION = f'{VERSION_BASE}-commit-{out}'
+                Context.g_module.VERSION = f'{VERSION_BASE}+git.{version_from_git}'
     except (OSError, subprocess.SubprocessError):
         pass
 
-    versionFile = ctx.path.find_node('VERSION.info')
-    if not gotVersionFromGit and versionFile is not None:
+    # fallback to the VERSION.info file, if it exists and is not empty
+    version_from_file = ''
+    version_file = ctx.path.find_node('VERSION.info')
+    if version_file is not None:
         try:
-            Context.g_module.VERSION = versionFile.read()
-            return
-        except EnvironmentError:
-            pass
+            version_from_file = version_file.read().strip()
+        except OSError as e:
+            Logs.warn(f'{e.filename} exists but is not readable ({e.strerror})')
+    if version_from_file and not version_from_git:
+        Context.g_module.VERSION = version_from_file
+        return
 
-    # version was obtained from git, update VERSION file if necessary
-    if versionFile is not None:
-        try:
-            if versionFile.read() == Context.g_module.VERSION:
-                # already up-to-date
-                return
-        except EnvironmentError as e:
-            Logs.warn(f'{versionFile} exists but is not readable ({e.strerror})')
-    else:
-        versionFile = ctx.path.make_node('VERSION.info')
-
+    # update VERSION.info if necessary
+    if version_from_file == Context.g_module.VERSION:
+        # already up-to-date
+        return
+    if version_file is None:
+        version_file = ctx.path.make_node('VERSION.info')
     try:
-        versionFile.write(Context.g_module.VERSION)
-    except EnvironmentError as e:
-        Logs.warn(f'{versionFile} is not writable ({e.strerror})')
+        version_file.write(Context.g_module.VERSION)
+    except OSError as e:
+        Logs.warn(f'{e.filename} is not writable ({e.strerror})')
 
 def dist(ctx):
     ctx.algo = 'tar.xz'
