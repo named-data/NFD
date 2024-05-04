@@ -307,10 +307,12 @@ def version(ctx):
         cmd = ['git', 'describe', '--abbrev=8', '--always', '--match', f'{GIT_TAG_PREFIX}*']
         version_from_git = subprocess.run(cmd, capture_output=True, check=True, text=True).stdout.strip()
         if version_from_git:
-            if version_from_git.startswith(GIT_TAG_PREFIX):
-                Context.g_module.VERSION = version_from_git.lstrip(GIT_TAG_PREFIX)
+            if GIT_TAG_PREFIX and version_from_git.startswith(GIT_TAG_PREFIX):
+                Context.g_module.VERSION = version_from_git[len(GIT_TAG_PREFIX):]
+            elif not GIT_TAG_PREFIX and ('.' in version_from_git or '-' in version_from_git):
+                Context.g_module.VERSION = version_from_git
             else:
-                # no tags matched
+                # no tags matched (or we are in a shallow clone)
                 Context.g_module.VERSION = f'{VERSION_BASE}+git.{version_from_git}'
     except (OSError, subprocess.SubprocessError):
         pass

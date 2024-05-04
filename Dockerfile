@@ -2,15 +2,14 @@
 
 ARG NDN_CXX_VERSION=latest
 FROM ghcr.io/named-data/ndn-cxx-build:${NDN_CXX_VERSION} AS build
-ARG SOURCE_DATE_EPOCH
 
 RUN apt-get install -Uy --no-install-recommends \
         libpcap-dev \
-    # use 'apt-get distclean' when we upgrade to ubuntu:24.04
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get distclean
 
 ARG JOBS
-RUN --mount=type=bind,rw,target=/src <<EOF
+ARG SOURCE_DATE_EPOCH
+RUN --mount=rw,target=/src <<EOF
 set -eux
 cd /src
 ./waf configure \
@@ -22,7 +21,6 @@ cd /src
     --without-systemd
 ./waf build
 ./waf install
-
 mkdir -p /deps/debian
 touch /deps/debian/control
 cd /deps
@@ -37,9 +35,9 @@ FROM ghcr.io/named-data/ndn-cxx-runtime:${NDN_CXX_VERSION} AS nfd-autoreg
 
 COPY --link --from=build /usr/bin/nfd-autoreg /usr/bin/
 
-RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+RUN --mount=from=build,source=/deps,target=/deps \
     apt-get install -Uy --no-install-recommends $(cat /deps/nfd-autoreg) \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get distclean
 
 VOLUME /run/nfd
 
@@ -52,10 +50,10 @@ COPY --link --from=build /usr/bin/nfdc /usr/bin/
 COPY --link --from=build /usr/bin/nfd-status-http-server /usr/bin/
 COPY --link --from=build /usr/share/ndn/ /usr/share/ndn/
 
-RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+RUN --mount=from=build,source=/deps,target=/deps \
     apt-get install -Uy --no-install-recommends $(cat /deps/nfdc) \
         python3 \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get distclean
 
 VOLUME /run/nfd
 
@@ -70,9 +68,9 @@ COPY --link --from=build /usr/bin/nfdc /usr/bin/
 COPY --link --from=build /usr/bin/nfd /usr/bin/
 COPY --link --from=build /etc/ndn/nfd.conf.sample /config/nfd.conf
 
-RUN --mount=type=bind,from=build,source=/deps,target=/deps \
+RUN --mount=from=build,source=/deps,target=/deps \
     apt-get install -Uy --no-install-recommends $(cat /deps/nfd /deps/nfdc) \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get distclean
 
 ENV HOME=/config
 VOLUME /config
