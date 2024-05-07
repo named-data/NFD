@@ -39,6 +39,8 @@ RUN --mount=from=build,source=/deps,target=/deps \
     apt-get install -Uy --no-install-recommends $(cat /deps/nfd-autoreg) \
     && apt-get distclean
 
+ENV HOME=/config
+VOLUME /config
 VOLUME /run/nfd
 
 ENTRYPOINT ["/usr/bin/nfd-autoreg"]
@@ -55,6 +57,8 @@ RUN --mount=from=build,source=/deps,target=/deps \
         python3 \
     && apt-get distclean
 
+ENV HOME=/config
+VOLUME /config
 VOLUME /run/nfd
 
 EXPOSE 8080/tcp
