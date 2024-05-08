@@ -2,15 +2,16 @@ name: Docker
 on:
   push:
     tags:
-      - 'NFD-*'
+      - 'NFD-[0-9]+*'
   schedule:
     # twice a month
     - cron: '20 8 5,20 * *'
   workflow_dispatch:
 
 permissions:
-  packages: write
+  attestations: write
   id-token: write
+  packages: write
 
 jobs:
   nfd-build:
