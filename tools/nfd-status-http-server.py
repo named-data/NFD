@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Copyright (c) 2014-2023,  Regents of the University of California,
+Copyright (c) 2014-2024,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,9 +23,13 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import argparse
+import ipaddress
+import os
+import socket
+import subprocess
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
-import argparse, ipaddress, os, socket, subprocess
 
 
 class NfdStatusHandler(SimpleHTTPRequestHandler):
@@ -57,11 +61,7 @@ class NfdStatusHandler(SimpleHTTPRequestHandler):
             # add stylesheet processing instruction after the XML document type declaration
             # (yes, this is a ugly hack)
             if (pos := output.find(">") + 1) != 0:
-                xml = (
-                    output[:pos]
-                    + '<?xml-stylesheet type="text/xsl" href="nfd-status.xsl"?>'
-                    + output[pos:]
-                )
+                xml = output[:pos] + '<?xml-stylesheet type="text/xsl" href="nfd-status.xsl"?>' + output[pos:]
                 self.send_response(200)
                 self.send_header("Content-Type", "text/xml; charset=UTF-8")
                 self.end_headers()
@@ -110,14 +110,12 @@ def main():
     parser.add_argument("-V", "--version", action="version", version="@VERSION@")
     parser.add_argument("-a", "--address", default="127.0.0.1", type=ip_address, metavar="ADDR",
                         help="bind to this IP address (default: %(default)s)")
-    parser.add_argument("-p", "--port", default=8080, type=port_number,
+    parser.add_argument("-p", "--port", default=6380, type=port_number,
                         help="bind to this port number (default: %(default)s)")
     parser.add_argument("-f", "--workdir", default="@DATAROOTDIR@/ndn", metavar="DIR",
                         help="server's working directory (default: %(default)s)")
-    parser.add_argument("-r", "--robots", action="store_true",
-                        help="allow crawlers and other HTTP bots")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="turn on verbose logging")
+    parser.add_argument("-r", "--robots", action="store_true", help="allow crawlers and other HTTP bots")
+    parser.add_argument("-v", "--verbose", action="store_true", help="turn on verbose logging")
     args = parser.parse_args()
 
     os.chdir(args.workdir)
