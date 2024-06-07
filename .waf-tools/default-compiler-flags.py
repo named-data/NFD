@@ -27,9 +27,9 @@ def configure(conf):
         if Utils.unversioned_sys_platform() == 'darwin':
             if ccver < (10, 0, 0):
                 errmsg = ('The version of Xcode you are using is too old.\n'
-                          'The minimum supported Xcode version is 12.4.')
-            elif ccver < (12, 0, 0):
-                warnmsg = ('Using a version of Xcode older than 12.4 is not '
+                          'The minimum supported Xcode version is 13.0.')
+            elif ccver < (13, 0, 0):
+                warnmsg = ('Using a version of Xcode older than 13.0 is not '
                            'officially supported and may result in build failures.')
         elif ccver < (7, 0, 0):
             errmsg = ('The version of clang you are using is too old.\n'
