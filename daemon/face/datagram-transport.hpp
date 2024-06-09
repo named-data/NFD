@@ -202,7 +202,7 @@ template<class T, class U>
 void
 DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error, size_t nBytesReceived)
 {
-  receiveDatagram(ndn::span(m_receiveBuffer).first(nBytesReceived), error);
+  receiveDatagram(ndn::make_span(m_receiveBuffer).first(nBytesReceived), error);
 
   if (m_socket.is_open())
     m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,

@@ -247,7 +247,7 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
 
   m_receiveBufferSize += nBytesReceived;
-  auto unparsedBytes = ndn::span(m_receiveBuffer).first(m_receiveBufferSize);
+  auto unparsedBytes = ndn::make_span(m_receiveBuffer).first(m_receiveBufferSize);
   while (!unparsedBytes.empty()) {
     auto [isOk, element] = Block::fromBuffer(unparsedBytes);
     if (!isOk)
