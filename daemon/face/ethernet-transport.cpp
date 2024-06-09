@@ -29,6 +29,8 @@
 
 #include <pcap/pcap.h>
 
+#include <array>
+
 #include <boost/asio/defer.hpp>
 #include <boost/endian/conversion.hpp>
 
@@ -118,11 +120,14 @@ EthernetTransport::sendPacket(const ndn::Block& block)
 
   // pad with zeroes if the payload is too short
   if (block.size() < ethernet::MIN_DATA_LEN) {
-    static const uint8_t padding[ethernet::MIN_DATA_LEN] = {};
-    buffer.appendBytes(ndn::make_span(padding).subspan(block.size()));
+    static const std::array<uint8_t, ethernet::MIN_DATA_LEN> padding{};
+    buffer.appendBytes(ndn::span(padding).subspan(block.size()));
   }
 
   // construct and prepend the ethernet header
+#if BOOST_VERSION >= 107200
+  constexpr
+#endif
   uint16_t ethertype = boost::endian::native_to_big(ethernet::ETHERTYPE_NDN);
   buffer.prependBytes({reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN});
   buffer.prependBytes(m_srcAddress);

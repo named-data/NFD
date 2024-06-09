@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, StreamTransportFixtures, T)
   TRANSPORT_TEST_INIT();
 
   const std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
-  auto pkt1 = ndn::encoding::makeBinaryBlock(300, ndn::make_span(bytes).subspan(6));
+  auto pkt1 = ndn::encoding::makeBinaryBlock(300, ndn::span(bytes).subspan(6));
   ndn::Buffer buf1(pkt1.begin(), pkt1.end());
   BOOST_REQUIRE_EQUAL(buf1.size(), ndn::MAX_NDN_PACKET_SIZE);
 

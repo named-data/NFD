@@ -30,6 +30,7 @@
 #include "socket-utils.hpp"
 #include "common/global.hpp"
 
+#include <array>
 #include <queue>
 
 #include <boost/asio/defer.hpp>
@@ -104,10 +105,10 @@ protected:
   NFD_LOG_MEMBER_DECL();
 
 private:
-  uint8_t m_receiveBuffer[ndn::MAX_NDN_PACKET_SIZE];
-  size_t m_receiveBufferSize = 0;
-  std::queue<Block> m_sendQueue;
   size_t m_sendQueueBytes = 0;
+  std::queue<Block> m_sendQueue;
+  size_t m_receiveBufferSize = 0;
+  std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
 };
 
 
@@ -230,8 +231,8 @@ StreamTransport<T>::startReceive()
 {
   BOOST_ASSERT(getState() == TransportState::UP);
 
-  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer + m_receiveBufferSize,
-                                             ndn::MAX_NDN_PACKET_SIZE - m_receiveBufferSize),
+  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer.data() + m_receiveBufferSize,
+                                             m_receiveBuffer.size() - m_receiveBufferSize),
                          [this] (auto&&... args) { this->handleReceive(std::forward<decltype(args)>(args)...); });
 }
 
@@ -246,36 +247,30 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
 
   m_receiveBufferSize += nBytesReceived;
-  auto bufferView = ndn::make_span(m_receiveBuffer, m_receiveBufferSize);
-  size_t offset = 0;
-  bool isOk = true;
-  while (offset < bufferView.size()) {
-    Block element;
-    std::tie(isOk, element) = Block::fromBuffer(bufferView.subspan(offset));
+  auto unparsedBytes = ndn::span(m_receiveBuffer).first(m_receiveBufferSize);
+  while (!unparsedBytes.empty()) {
+    auto [isOk, element] = Block::fromBuffer(unparsedBytes);
     if (!isOk)
       break;
 
-    offset += element.size();
-    BOOST_ASSERT(offset <= bufferView.size());
-
+    unparsedBytes = unparsedBytes.subspan(element.size());
     this->receive(element);
   }
 
-  if (!isOk && m_receiveBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0) {
+  if (unparsedBytes.empty()) {
+    // nothing left in the receive buffer
+    m_receiveBufferSize = 0;
+  }
+  else if (unparsedBytes.data() != m_receiveBuffer.data()) {
+    // move remaining unparsed bytes to the beginning of the receive buffer
+    std::copy(unparsedBytes.begin(), unparsedBytes.end(), m_receiveBuffer.begin());
+    m_receiveBufferSize = unparsedBytes.size();
+  }
+  else if (unparsedBytes.size() == m_receiveBuffer.size()) {
     NFD_LOG_FACE_ERROR("Failed to parse incoming packet or packet too large to process");
     this->setState(TransportState::FAILED);
     doClose();
     return;
-  }
-
-  if (offset > 0) {
-    if (offset != m_receiveBufferSize) {
-      std::copy(m_receiveBuffer + offset, m_receiveBuffer + m_receiveBufferSize, m_receiveBuffer);
-      m_receiveBufferSize -= offset;
-    }
-    else {
-      m_receiveBufferSize = 0;
-    }
   }
 
   startReceive();
