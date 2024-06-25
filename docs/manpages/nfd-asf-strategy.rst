@@ -5,7 +5,7 @@ Synopsis
 --------
 
 **nfdc strategy set** **prefix** *NAME* **strategy**
-/localhost/nfd/strategy/asf[/v=4][/**probing-interval**\ ~\ *INTERVAL*][/**max-timeouts**\ ~\ *TIMEOUTS*]
+/localhost/nfd/strategy/asf[/v=5][/**probing-interval**\ ~\ *INTERVAL*][/**max-timeouts**\ ~\ *TIMEOUTS*]
 
 Description
 -----------
@@ -17,14 +17,14 @@ next hops to learn their RTTs.
 Options
 -------
 
-.. option:: probing-interval
+.. option:: probing-interval <INTERVAL>
 
     This optional parameter tells ASF how often to send a probe to determine
     alternative paths. The value is specified in milliseconds (non-negative
     integer). Smaller values will result in higher overhead but faster reaction.
     The default value is 1 minute and the minimum value is 1 second.
 
-.. option:: max-timeouts
+.. option:: max-timeouts <TIMEOUTS>
 
     This optional parameter makes ASF switch to another appropriate face (if available)
     after it has encountered the specified number of timeouts. The value is a positive
@@ -36,24 +36,24 @@ Options
 Examples
 --------
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf
+``nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf``
     Use the default values for all parameters.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000
+``nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=5/probing-interval~30000``
     Set the probing interval to 30 seconds.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/max-timeouts~5
+``nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=5/max-timeouts~5``
     Set the maximum number of timeouts to 5.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/probing-interval~30000/max-timeouts~2
+``nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=5/probing-interval~30000/max-timeouts~2``
     Set the probing interval to 30 seconds and the maximum number of timeouts to 2.
 
-nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=4/retx-suppression-multiplier~2.5/probing-interval~45000
+``nfdc strategy set prefix /ndn strategy /localhost/nfd/strategy/asf/v=5/retx-suppression-multiplier~2.5/probing-interval~45000``
     Set the retransmission suppression multiplier to 2.5 and the probing interval
     to 45 seconds. See :manpage:`nfdc-strategy(1)` for more information on the
     retransmission suppression parameters.
 
-See also
+See Also
 --------
 
-nfdc(1), nfdc-strategy(1)
+:manpage:`nfdc-strategy(1)`

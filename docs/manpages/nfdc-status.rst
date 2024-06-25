@@ -1,13 +1,15 @@
 nfdc-status
 ===========
 
-SYNOPSIS
+Synopsis
 --------
-| nfdc status [show]
-| nfdc status report [<FORMAT>]
 
-DESCRIPTION
+| **nfdc status** [**show**]
+| **nfdc status** **report** [*FORMAT*]
+
+Description
 -----------
+
 The **nfdc status show** command shows general status of NFD, including its version,
 uptime, data structure counters, and global packet counters.
 
@@ -21,12 +23,19 @@ The **nfdc status report** command prints a comprehensive report of NFD status, 
 - CS statistics information (individually available from **nfdc cs info**)
 - list of strategy choices (individually available from **nfdc strategy list**)
 
-OPTIONS
+Options
 -------
-<FORMAT>
+
+.. option:: <FORMAT>
+
     The format of NFD status report, either ``text`` or ``xml``.
     The default is ``text``.
 
-SEE ALSO
+See Also
 --------
-nfdc(1), nfdc-channel(1), nfdc-face(1), nfdc-fib(1), nfdc-route(1), nfdc-strategy(1)
+
+:manpage:`nfdc(1)`,
+:manpage:`nfdc-cs(1)`,
+:manpage:`nfdc-face(1)`,
+:manpage:`nfdc-route(1)`,
+:manpage:`nfdc-strategy(1)`

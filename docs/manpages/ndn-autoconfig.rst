@@ -172,18 +172,23 @@ Send a DNS query to find home hub.
 If this query is answered, connect to the home hub and terminate auto-discovery.
 Otherwise, the auto-discovery fails.
 
-Exit status
+Exit Status
 -----------
 
-0: No error.
+0
+    No error.
 
-1: An unspecified error occurred.
+1
+    An unspecified error occurred.
 
-2: Malformed command line, e.g., invalid, missing, or unknown argument.
+2
+    Malformed command line, e.g., invalid, missing, or unknown argument.
 
-4: Insufficient privileges.
+4
+    Insufficient privileges.
 
-See also
+See Also
 --------
 
-:ref:`ndn-autoconfig-server`, :doc:`ndn-autoconfig.conf`
+:manpage:`ndn-autoconfig-server(1)`,
+:doc:`ndn-autoconfig.conf`

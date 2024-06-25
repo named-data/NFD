@@ -75,21 +75,23 @@ highlight_language = 'none'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manpages/nfd',            'nfd',              'the Named Data Networking Forwarding Daemon',          [], 1),
-    ('manpages/nfdc',           'nfdc',             'interact with NFD management from the command line',   [], 1),
-    ('manpages/nfdc-status',    'nfdc-status',      'show NFD status',                                      [], 1),
+    ('manpages/nfd',            'nfd',              'Named Data Networking Forwarding Daemon',              [], 1),
+    ('manpages/nfdc',           'nfdc',             'manage a running NFD from the command line',           [], 1),
+    ('manpages/nfdc-status',    'nfdc-status',      'show NFD\'s status',                                   [], 1),
     ('manpages/nfdc-face',      'nfdc-face',        'show and manipulate NFD\'s faces',                     [], 1),
     ('manpages/nfdc-route',     'nfdc-route',       'show and manipulate NFD\'s routes',                    [], 1),
     ('manpages/nfdc-cs',        'nfdc-cs',          'show and manipulate NFD\'s Content Store',             [], 1),
     ('manpages/nfdc-strategy',  'nfdc-strategy',    'show and manipulate NFD\'s strategy choices',          [], 1),
     ('manpages/nfd-status',     'nfd-status',       'show a comprehensive report of NFD\'s status',         [], 1),
-    ('manpages/nfd-status-http-server', 'nfd-status-http-server',   'NFD status HTTP server',               [], 1),
-    ('manpages/ndn-autoconfig-server',  'ndn-autoconfig-server',    'auto-configuration server for NDN',    [], 1),
-    ('manpages/ndn-autoconfig',         'ndn-autoconfig',           'auto-configuration client for NDN',    [], 1),
-    ('manpages/ndn-autoconfig.conf',    'ndn-autoconfig.conf',      'configuration file for ndn-autoconfig',    [], 5),
-    ('manpages/nfd-autoreg',            'nfd-autoreg',              'NFD automatic prefix registration daemon', [], 1),
-    ('manpages/nfd-asf-strategy',       'nfd-asf-strategy',         'NFD ASF strategy',                     [], 7),
+    ('manpages/nfd-status-http-server', 'nfd-status-http-server', 'NFD status HTTP server',                 [], 1),
+    ('manpages/nfd-autoreg',            'nfd-autoreg',            'NFD automatic prefix registration daemon', [], 1),
+    ('manpages/ndn-autoconfig',         'ndn-autoconfig',         'auto-configuration client for NDN',      [], 1),
+    ('manpages/ndn-autoconfig-server',  'ndn-autoconfig-server',  'auto-configuration server for NDN',      [], 1),
+    ('manpages/ndn-autoconfig.conf',    'ndn-autoconfig.conf',    'configuration file for ndn-autoconfig',  [], 5),
+    ('manpages/nfd-asf-strategy',       'nfd-asf-strategy',       'NFD ASF strategy',                       [], 7),
 ]
+
+man_show_urls = True
 
 
 # -- Misc options ------------------------------------------------------------

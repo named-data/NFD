@@ -1,14 +1,18 @@
 nfd-status
 ==========
 
-SYNOPSIS
+Synopsis
 --------
-| nfd-status
 
-DESCRIPTION
+**nfd-status**
+
+Description
 -----------
-**nfd-status** is an alias of **nfdc status report**, which prints a comprehensive report of NFD status.
 
-SEE ALSO
+:program:`nfd-status` is an alias of **nfdc status report**,
+which prints a comprehensive report of NFD status.
+
+See Also
 --------
-nfdc-status(1)
+
+:manpage:`nfdc-status(1)`

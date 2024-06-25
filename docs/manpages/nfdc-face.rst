@@ -1,20 +1,21 @@
 nfdc-face
 =========
 
-SYNOPSIS
+Synopsis
 --------
-| nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
-| nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>]
-|                  [reliability on|off] [congestion-marking on|off]
-|                  [congestion-marking-interval <MARKING-INTERVAL>]
-|                  [default-congestion-threshold <CONGESTION-THRESHOLD>]
-|                  [mtu <MTU>]
-| nfdc face destroy [face] <FACEID|FACEURI>
-| nfdc channel [list]
 
-DESCRIPTION
+| **nfdc face** [**list** [[**remote**] *FACEURI*] [**local** *FACEURI*] [**scheme** *SCHEME*]]
+| **nfdc face** **show** [**id**] *FACEID*
+| **nfdc face** **create** [**remote**] *FACEURI* [[**persistency**] *PERSISTENCY*] [**local** *FACEURI*]
+|               [**mtu** *MTU*] [**reliability** **on**\|\ **off**] [**congestion-marking** **on**\|\ **off**]
+|               [**congestion-marking-interval** *MARKING-INTERVAL*]
+|               [**default-congestion-threshold** *CONGESTION-THRESHOLD*]
+| **nfdc face** **destroy** [**face**] *FACEID*\|\ *FACEURI*
+| **nfdc channel** [**list**]
+
+Description
 -----------
+
 In NFD, a face is the generalization of network interface.
 It could be a physical network interface to communicate on a physical link,
 an overlay communication channel between NFD and a remote node,
@@ -50,13 +51,16 @@ The **nfdc face destroy** command destroys an existing face.
 The **nfdc channel list** command shows a list of channels.
 Channels are listening sockets that can accept incoming connections and create new faces.
 
-OPTIONS
+Options
 -------
-<FACEID>
+
+.. option:: <FACEID>
+
     Numerical identifier of the face.
     It is displayed in the output of **nfdc face list** and **nfdc face create** commands.
 
-<FACEURI>
+.. option:: <FACEURI>
+
     A URI representing the remote or local endpoint of a face.
     Examples:
 
@@ -71,9 +75,13 @@ OPTIONS
     - ether://[08:00:27:01:01:01]
     - dev://eth0
 
-    When a hostname is specified, a DNS query is used to obtain the IP address.
+    See the `FaceUri section <https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#FaceUri>`__
+    of the NFD Face Management protocol for more details on the syntax.
+    If a hostname is specified, :program:`nfdc` will perform a DNS resolution to obtain the
+    corresponding IP address.
 
-<SCHEME>
+.. option:: <SCHEME>
+
     The scheme portion of either remote or local endpoint.
     Examples:
 
@@ -81,75 +89,88 @@ OPTIONS
     - unix
     - dev
 
-<PERSISTENCY>
+.. option:: <PERSISTENCY>
+
     Either "persistent" or "permanent".
     A "persistent" face (the default) is closed when a socket error occurs.
     A "permanent" face survives socket errors, and is closed only with a **nfdc destroy** command.
 
-<MARKING-INTERVAL>
-    The initial marking interval (in milliseconds) during an incident of congestion.
+.. option:: <MTU>
 
-<CONGESTION-THRESHOLD>
-    This value serves two purposes:
-    It is the maximum bound of the congestion threshold for the face, as well as the default
-    threshold used if the face does not support retrieving the capacity of the send queue.
-
-<MTU>
     The MTU used to override the MTU of the underlying transport on Ethernet and UDP faces.
     This MTU serves as an upper bound for the MTU provided by the transport.
     The range of acceptable values may be limited by the forwarder.
     To unset this override, specify the MTU as "auto".
 
-EXIT CODES
-----------
-0: Success
+.. option:: <MARKING-INTERVAL>
 
-1: An unspecified error occurred
+    The initial marking interval (in milliseconds) during an incident of congestion.
 
-2: Malformed command line
+.. option:: <CONGESTION-THRESHOLD>
 
-3: Face not found (**nfdc face show** and **nfdc face destroy** only)
+    This value serves two purposes:
+    It is the maximum bound of the congestion threshold for the face, as well as the default
+    threshold used if the face does not support retrieving the capacity of the send queue.
 
-4: FaceUri canonization failed (**nfdc face create** and **nfdc face destroy** only)
+Exit Status
+-----------
 
-5: Ambiguous: multiple matching faces are found (**nfdc face destroy** only)
+0
+    Success.
 
-EXAMPLES
+1
+    An unspecified error occurred.
+
+2
+    Malformed command line.
+
+3
+    Face not found (**nfdc face show** and **nfdc face destroy** only).
+
+4
+    FaceUri canonization failed (**nfdc face create** and **nfdc face destroy** only).
+
+5
+    Ambiguous: multiple matching faces are found (**nfdc face destroy** only).
+
+Examples
 --------
-nfdc face list
+
+``nfdc face list``
     List all faces.
 
-nfdc face list scheme udp4
+``nfdc face list scheme udp4``
     List all UDP-over-IPv4 faces.
 
-nfdc face show id 300
+``nfdc face show id 300``
     Show information about the face whose FaceId is 300.
 
-nfdc face create remote udp://router.example.net
+``nfdc face create remote udp://router.example.net``
     Create a face with the specified remote FaceUri, keeping all other settings at their defaults.
 
-nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency permanent
+``nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency permanent``
     Create a face with the specified remote FaceUri, local FaceUri, and persistency.
 
-nfdc face create remote udp://router.example.net reliability on
+``nfdc face create remote udp://router.example.net reliability on``
     Create a face with the specified remote FaceUri and enable NDNLP reliability.
 
-nfdc face create remote udp://router.example.net congestion-marking-interval 100 default-congestion-threshold 65536
+``nfdc face create remote udp://router.example.net congestion-marking-interval 100 default-congestion-threshold 65536``
     Create a face with the specified remote FaceUri. Set the base congestion marking interval to
     100 ms and the default congestion threshold to 65536 bytes.
 
-nfdc face create remote udp://router.example.net congestion-marking off
+``nfdc face create remote udp://router.example.net congestion-marking off``
     Create a face with the specified remote FaceUri and explicitly disable congestion marking.
 
-nfdc face create remote udp://router.example.net mtu 4000
+``nfdc face create remote udp://router.example.net mtu 4000``
     Create a face with the specified remote FaceUri and set the override MTU to 4000 bytes.
 
-nfdc face destroy 300
+``nfdc face destroy 300``
     Destroy the face whose FaceId is 300.
 
-nfdc face destroy udp4://192.0.2.1:6363
+``nfdc face destroy udp4://192.0.2.1:6363``
     Destroy the face whose remote FaceUri is "udp4://192.0.2.1:6363".
 
-SEE ALSO
+See Also
 --------
-nfd(1), nfdc(1)
+
+:manpage:`nfdc(1)`

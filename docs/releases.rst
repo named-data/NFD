@@ -1,5 +1,5 @@
-All NFD Releases
-================
+Release History
+===============
 
 .. toctree::
    :glob:

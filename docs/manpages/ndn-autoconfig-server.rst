@@ -34,16 +34,20 @@ this block is the ``Uri`` for the HUB, preferably a UDP tunnel.
 ``-V``
   Print version number and exit.
 
-Exit status
+Exit Status
 -----------
 
-0: No error.
+0
+    No error.
 
-1: An unspecified error occurred.
+1
+    An unspecified error occurred.
 
-2: Malformed command line, e.g., invalid, missing, or unknown argument.
+2
+    Malformed command line, e.g., invalid, missing, or unknown argument.
 
-4: Insufficient privileges.
+4
+    Insufficient privileges.
 
 Examples
 --------
@@ -54,7 +58,7 @@ Examples
 
     ndn-autoconfig-server -p /ndn/edu/ucla tcp://spurs.cs.ucla.edu
 
-See also
+See Also
 --------
 
-:ref:`ndn-autoconfig`
+:manpage:`ndn-autoconfig(1)`

@@ -1,40 +1,49 @@
 nfdc-cs
 =======
 
-SYNOPSIS
+Synopsis
 --------
-| nfdc cs [info]
-| nfdc cs config [capacity <CAPACITY>] [admit on|off] [serve on|off]
-| nfdc cs erase <PREFIX> [count <COUNT>]
 
-DESCRIPTION
+| **nfdc cs** [**info**]
+| **nfdc cs** **config** [**capacity** *CAPACITY*] [**admit** **on**\|\ **off**] [**serve** **on**\|\ **off**]
+| **nfdc cs** **erase** *PREFIX* [**count** *COUNT*]
+
+Description
 -----------
+
 The **nfdc cs info** command shows CS statistics information.
 
 The **nfdc cs config** command updates CS configuration.
 
 The **nfdc cs erase** command erases cached Data under a name prefix.
 
-OPTIONS
+Options
 -------
-<CAPACITY>
+
+.. option:: <CAPACITY>
+
     Maximum number of Data packets the CS can store.
     Lowering the capacity causes the CS to evict excess Data packets.
 
-admit on|off
+.. option:: admit on|off
+
     Whether the CS can admit new Data.
 
-serve on|off
+.. option:: serve on|off
+
     Whether the CS can satisfy incoming Interests using cached Data.
     Turning this off causes all CS lookups to miss.
 
-<PREFIX>
+.. option:: <PREFIX>
+
     Name prefix of cached Data packets.
 
-<COUNT>
+.. option:: <COUNT>
+
     Maximum number of cached Data packets to erase.
     The default is "no limit".
 
-SEE ALSO
+See Also
 --------
-nfd(1), nfdc(1)
+
+:manpage:`nfdc(1)`
