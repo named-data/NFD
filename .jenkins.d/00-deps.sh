@@ -37,6 +37,7 @@ esac
 set -x
 
 if [[ $ID == macos ]]; then
+    export HOMEBREW_NO_ENV_HINTS=1
     if [[ -n $GITHUB_ACTIONS ]]; then
         export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
     fi
