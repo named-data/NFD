@@ -26,6 +26,7 @@
 #include "asf-strategy.hpp"
 #include "algorithm.hpp"
 #include "common/logger.hpp"
+#include <boost/lexical_cast.hpp>
 
 namespace nfd::fw::asf {
 
@@ -48,12 +49,21 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
                                                                       m_probing.getProbingInterval().count());
   m_probing.setProbingInterval(time::milliseconds(probingInterval));
   m_nMaxTimeouts = params.getOrDefault<size_t>("max-timeouts", m_nMaxTimeouts);
+  auto measurementsLifetime = time::milliseconds(params.getOrDefault<time::milliseconds::rep>("measurements-lifetime",
+                                                                      AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME.count()));
+  if (measurementsLifetime <= m_probing.getProbingInterval()) {
+    NDN_THROW(std::invalid_argument("Measurements lifetime (" + boost::lexical_cast<std::string>(measurementsLifetime) +
+                                    ") should be greater than the probing interval of " +
+                                    boost::lexical_cast<std::string>(m_probing.getProbingInterval())));
+  }
+  m_measurements.setMeasurementsLifetime(measurementsLifetime);
 
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
   NDN_LOG_DEBUG(*m_retxSuppression);
   NFD_LOG_DEBUG("probing-interval=" << m_probing.getProbingInterval()
-                << " max-timeouts=" << m_nMaxTimeouts);
+                << " max-timeouts=" << m_nMaxTimeouts
+                << " measurements-lifetime=" << m_measurements.getMeasurementsLifetime());
 }
 
 const Name&

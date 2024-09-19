@@ -132,8 +132,9 @@ public:
   }
 
   explicit
-  NamespaceInfo(shared_ptr<const ndn::util::RttEstimator::Options> opts)
+  NamespaceInfo(shared_ptr<const ndn::util::RttEstimator::Options> opts, time::milliseconds measurementLifetime)
     : m_rttEstimatorOpts(std::move(opts))
+    , m_measurementLifetime(measurementLifetime)
   {
   }
 
@@ -173,6 +174,7 @@ public:
 private:
   std::unordered_map<FaceId, FaceInfo> m_fiMap;
   shared_ptr<const ndn::util::RttEstimator::Options> m_rttEstimatorOpts;
+  time::milliseconds m_measurementLifetime;
   bool m_isProbingDue = false;
   bool m_isFirstProbeScheduled = false;
 };
@@ -201,14 +203,29 @@ public:
   NamespaceInfo&
   getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Name& prefix);
 
+  void
+  setMeasurementsLifetime(time::milliseconds measurementsLifetime)
+  {
+    // Measurement lifetime should not expire as soon as it is configured
+    BOOST_ASSERT(measurementsLifetime > 0_ms);
+    m_measurementsLifetime = measurementsLifetime;
+  }
+
+  time::milliseconds
+  getMeasurementsLifetime() const
+  {
+    return m_measurementsLifetime;
+  }
+
 private:
   void
   extendLifetime(measurements::Entry& me);
 
 public:
-  static constexpr time::microseconds MEASUREMENTS_LIFETIME = 5_min;
+  static constexpr time::milliseconds DEFAULT_MEASUREMENTS_LIFETIME = 5_min;
 
 private:
+  time::milliseconds m_measurementsLifetime = DEFAULT_MEASUREMENTS_LIFETIME;
   MeasurementsAccessor& m_measurements;
   shared_ptr<const ndn::util::RttEstimator::Options> m_rttEstimatorOpts;
 };

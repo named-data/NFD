@@ -32,7 +32,7 @@
 
 namespace nfd::fw::asf {
 
-static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::MEASUREMENTS_LIFETIME);
+static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME);
 
 ProbingModule::ProbingModule(AsfMeasurements& measurements)
   : m_probingInterval(DEFAULT_PROBING_INTERVAL)

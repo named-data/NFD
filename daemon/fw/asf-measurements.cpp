@@ -69,7 +69,7 @@ NamespaceInfo::getOrCreateFaceInfo(FaceId faceId)
 void
 NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
 {
-  info.m_measurementExpiration = getScheduler().schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
+  info.m_measurementExpiration = getScheduler().schedule(m_measurementLifetime,
                                                          [=] { m_fiMap.erase(faceId); });
 }
 
@@ -105,7 +105,7 @@ AsfMeasurements::getNamespaceInfo(const Name& prefix)
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts).first;
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts, m_measurementsLifetime).first;
   BOOST_ASSERT(info != nullptr);
   return info;
 }
@@ -129,7 +129,7 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Name
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts).first;
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>(m_rttEstimatorOpts, m_measurementsLifetime).first;
   BOOST_ASSERT(info != nullptr);
   return *info;
 }
@@ -137,7 +137,7 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Name
 void
 AsfMeasurements::extendLifetime(measurements::Entry& me)
 {
-  m_measurements.extendLifetime(me, MEASUREMENTS_LIFETIME);
+  m_measurements.extendLifetime(me, m_measurementsLifetime);
 }
 
 } // namespace nfd::fw::asf

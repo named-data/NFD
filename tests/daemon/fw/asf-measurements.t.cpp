@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,14 +75,14 @@ BOOST_FIXTURE_TEST_CASE(FaceInfo, GlobalIoTimeFixture)
 BOOST_FIXTURE_TEST_CASE(NamespaceInfo, GlobalIoTimeFixture)
 {
   using fw::asf::NamespaceInfo;
-  NamespaceInfo info(nullptr);
+  NamespaceInfo info(nullptr, fw::asf::AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME);
 
   BOOST_CHECK(info.getFaceInfo(1234) == nullptr);
 
   auto& faceInfo = info.getOrCreateFaceInfo(1234);
   BOOST_CHECK(info.getFaceInfo(1234) == &faceInfo);
 
-  this->advanceClocks(fw::asf::AsfMeasurements::MEASUREMENTS_LIFETIME + 1_s);
+  this->advanceClocks(fw::asf::AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME + 1_s);
   BOOST_CHECK(info.getFaceInfo(1234) == nullptr); // expired
 }
 

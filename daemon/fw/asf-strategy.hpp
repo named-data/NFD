@@ -85,9 +85,6 @@ private:
   void
   sendNoRouteNack(Face& face, const shared_ptr<pit::Entry>& pitEntry);
 
-private:
-  AsfMeasurements m_measurements{getMeasurements()};
-
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   struct FaceStatsForwardingCompare
   {
@@ -96,6 +93,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   };
   using FaceStatsForwardingSet = std::set<FaceStats, FaceStatsForwardingCompare>;
 
+  AsfMeasurements m_measurements{getMeasurements()};
   std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
   ProbingModule m_probing{m_measurements};
   size_t m_nMaxTimeouts = 3;

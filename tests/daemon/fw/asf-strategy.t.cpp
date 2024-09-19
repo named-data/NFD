@@ -561,18 +561,33 @@ BOOST_AUTO_TEST_CASE(Parameters)
   auto strategy = checkValidity("", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 3);
-  strategy = checkValidity("/probing-interval~30000/max-timeouts~5", true);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 5_min);
+  strategy = checkValidity("/probing-interval~30000/max-timeouts~5/measurements-lifetime~120000", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 30_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 5);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 2_min);
   strategy = checkValidity("/max-timeouts~5/probing-interval~30000", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 30_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 5);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 5_min);
+  strategy = checkValidity("/max-timeouts~5/measurements-lifetime~120000", true);
+  BOOST_TEST(strategy->m_nMaxTimeouts == 5);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 2_min);
+  strategy = checkValidity("/probing-interval~30000/measurements-lifetime~120000", true);
+  BOOST_TEST(strategy->m_probing.getProbingInterval() == 30_s);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 2_min);
   strategy = checkValidity("/probing-interval~1000", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 1_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 3);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 5_min);
   strategy = checkValidity("/max-timeouts~0", true);
   BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
   BOOST_TEST(strategy->m_nMaxTimeouts == 0);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 5_min);
+  strategy = checkValidity("/measurements-lifetime~120000", true);
+  BOOST_TEST(strategy->m_probing.getProbingInterval() == 60_s);
+  BOOST_TEST(strategy->m_nMaxTimeouts == 3);
+  BOOST_TEST(strategy->m_measurements.getMeasurementsLifetime() == 2_min);
   BOOST_TEST(strategy->m_retxSuppression->m_initialInterval == fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL);
   BOOST_TEST(strategy->m_retxSuppression->m_maxInterval == fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL);
   BOOST_TEST(strategy->m_retxSuppression->m_multiplier == fw::RetxSuppressionExponential::DEFAULT_MULTIPLIER);
@@ -585,6 +600,15 @@ BOOST_AUTO_TEST_CASE(Parameters)
   checkValidity("/max-timeouts~1/probing-interval~-30000", false);
   checkValidity("/probing-interval~foo", false);
   checkValidity("/max-timeouts~1~2", false);
+  checkValidity("/measurements-lifetime~1000", false); //Minimum is 60s by default
+  //Measurement lifetime must be greater than probing interval
+  checkValidity("/measurements-lifetime~1000/probing-interval~30000", false);
+  checkValidity("/measurements-lifetime~-120000", false);
+  checkValidity("/measurements-lifetime~ -120000", false);
+  checkValidity("/measurements-lifetime~0-120000", false);
+  checkValidity("/max-timeouts~1/measurements-lifetime~-120000", false);
+  checkValidity("/probing-interval~30000/measurements-lifetime~-120000", false);
+  checkValidity("/max-timeouts~1/probing-interval~30000/measurements-lifetime~-120000", false);
 }
 
 BOOST_AUTO_TEST_CASE(FaceRankingForForwarding)
