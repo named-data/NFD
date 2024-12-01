@@ -208,6 +208,19 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   NFD_VIRTUAL_WITH_TESTS void
   onNewNextHop(const Name& prefix, const fib::NextHop& nextHop);
 
+  bool
+  isTracerouteInterest(const Interest& interest);
+
+  void 
+  processTracerouteInterest(const Interest& interest, const FaceEndpoint& ingress);
+  
+  void
+  generateTracerouteReply(const Interest &interest, const FaceEndpoint &ingress, uint16_t replyCode);
+
+  ndn::Name
+  getAdministrativeName(); 
+
+
 private:
   /** \brief Set a new expiry timer (now + \p duration) on a PIT entry.
    */
@@ -234,6 +247,9 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
     /// Initial value of HopLimit that should be added to Interests that don't have one.
     /// A value of zero disables the feature.
     uint8_t defaultHopLimit = 0;
+
+    // Administrative Name of the forwarder
+    ndn::Name administrativeName = ndn::Name("/localhost/nfd");
   };
   Config m_config;
 
@@ -254,6 +270,16 @@ private:
 
   // allow Strategy (base class) to enter pipelines
   friend ::nfd::fw::Strategy;
+
+  // Addministrative Name of the forwarder
+  ndn::Name m_administrativeName;
+};
+
+enum TracerouteReplyCode {
+  NAME_MATCHED_ADMIN_NAME = 1,
+  NAME_MATCHED_APPLICATION = 2,
+  NAME_MATCHED_CONTENT_STORE = 3,
+  HOPLIMIT_REACHED_ZERO = 4
 };
 
 } // namespace nfd

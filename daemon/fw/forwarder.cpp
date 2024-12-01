@@ -89,6 +89,16 @@ Forwarder::Forwarder(FaceTable& faceTable)
 void
 Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingress)
 {
+  
+  if (isTracerouteInterest(interest)) {
+    
+    NFD_LOG_INFO("\n\n[onIcomingInterest] Interest is identified as a traceroute Interest: " << interest.getName().toUri()<<"\n\n");
+    
+
+    processTracerouteInterest(interest, ingress);
+    return;
+  }
+  
   interest.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
   ++m_counters.nInInterests;
 
@@ -616,6 +626,16 @@ Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, cons
     if (key == "default_hop_limit") {
       config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFG_FORWARDER);
     }
+    else if (key == "administrative_name") {
+      try {
+        std::string nameStr = pair.second.get_value<std::string>();
+        config.administrativeName = ndn::Name(nameStr);
+        NDN_LOG_INFO("\n\n\nAdministrative Name: " << config.administrativeName);
+      }
+      catch (const std::exception& e) {
+        NDN_THROW(ConfigFile::Error("Invalid Name value for " + CFG_FORWARDER + "." + key));
+      }
+    }
     else {
       NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_FORWARDER + "." + key));
     }
@@ -623,7 +643,158 @@ Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, cons
 
   if (!isDryRun) {
     m_config = config;
+    m_administrativeName = config.administrativeName;
   }
 }
 
+bool Forwarder::isTracerouteInterest(const Interest &interest)
+{
+  const ndn::Name &name = interest.getName();
+
+  NFD_LOG_DEBUG("[isTracerouteInterest] Checking Interest Name: " << name.toUri());
+
+  // Traceroute Interest format: /<prefix>/traceroute/<nonce>
+  if (name.size() < 2)
+  {
+    return false;
+  }
+
+  // Check if second to last component is "traceroute"
+  const ndn::Name::Component &tracerouteComponent = name.get(-2);
+  if (tracerouteComponent.toUri() != "traceroute")
+  {
+    return false;
+  }
+
+  // Last component should be a nonce and not a string
+  const ndn::Name::Component &nonceComponent = name.get(-1);
+  if (!nonceComponent.isNumber())
+  {
+    return false;
+  }
+
+  if (!interest.getHopLimit())
+  {
+    NFD_LOG_DEBUG("Interest does not have HopLimit, not a traceroute Interest");
+    return false;
+  }
+  // Ensure MustBeFresh is set to true
+  // if (!interest.getMustBeFresh())
+  // {
+  //   return false;
+  // }
+
+  return true;
+}
+
+void Forwarder::processTracerouteInterest(const Interest &interest, const FaceEndpoint &ingress)
+{
+  NFD_LOG_INFO("[processTracerouteInterest] Processing traceroute Interest: " << interest.getName().toUri());
+
+  // Since we've verified HopLimit exists in isTracerouteInterest function, we can safely get the value
+  uint8_t hopLimit = *interest.getHopLimit();
+
+  NFD_LOG_DEBUG("Current HopLimit: " << static_cast<int>(hopLimit));
+
+  if (hopLimit == 0)
+  {
+    NFD_LOG_INFO("[processTracerouteInterest] HopLimit is 0, generating traceroute reply");
+    generateTracerouteReply(interest, ingress, 4);
+    return;
+  }
+
+  // Decrement HopLimit
+  const_cast<Interest&>(interest).setHopLimit(hopLimit - 1);
+
+  // Extract the target name (remove 'traceroute' and nonce components)
+  ndn::Name targetName = interest.getName().getPrefix(-2);
+
+  NFD_LOG_INFO("Target Name: " << targetName.toUri());
+
+  // Check if the target name matches the administrative name
+  if (getAdministrativeName().isPrefixOf(targetName)) {
+    NFD_LOG_INFO("[processTracerouteInterest] Target name matches administrative name, generating traceroute reply");
+    generateTracerouteReply(interest, ingress, 1);
+    return;
+  }
+
+  // Check if there is a local application that can satisfy the Interest
+  // Try to find the longest prefix match in the FIB
+  try {
+    const fib::Entry& fibEntry = m_fib.findLongestPrefixMatch(targetName);
+    // Check if there's a local face among the next hops
+    for (const auto& nexthop : fibEntry.getNextHops()) {
+      if (nexthop.getFace().getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+        generateTracerouteReply(interest, ingress, 2);
+        return;
+      }
+    }
+  }
+  catch (const std::out_of_range&) {
+    // No matching FIB entry found, proceed to next step
+    NFD_LOG_DEBUG("No matching FIB entry found for target name: " << targetName);
+  }
+
+  //check if cs has the data
+  bool hasCshit = false;
+  m_cs.find(interest,
+            [&hasCshit] (const Interest& i, const Data& d) { hasCshit = true; },
+            [] (const Interest& i) { });
+
+  if (hasCshit) {
+    NFD_LOG_INFO("[processTracerouteInterest] Target Name has data in CS, generating traceroute reply");
+    generateTracerouteReply(interest, ingress, 3);
+    return;
+  }
+
+  //Forward the Interest
+  NFD_LOG_INFO("[processTracerouteInterest] Forwarding Interest to next hop: " << interest.getName().toUri());
+
+  // If none of the above, forward the Interest using onContentStoreMiss
+
+  shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
+
+  this->onContentStoreMiss(interest, ingress, pitEntry);
+
+}
+
+void Forwarder::generateTracerouteReply(const Interest& interest, const FaceEndpoint& ingress, uint16_t replyCode)
+{
+  NFD_LOG_INFO("[generateTracerouteReply] Generating traceroute reply for Interest: " << interest.getName().toUri());
+
+  ndn::Data data(interest.getName());
+
+  // Set freshness to 10ms to prevent caching
+  data.setFreshnessPeriod(ndn::time::milliseconds(10));
+
+  // Create content payload with sender name and reply code
+  ndn::Name senderName = getAdministrativeName();
+
+
+  ndn::Block content(ndn::tlv::Content);
+  content.push_back(senderName.wireEncode());
+  content.push_back(ndn::makeNonNegativeIntegerBlock(128, replyCode)); //custom tlv code 128
+  content.encode();
+
+  // Add content to Data packet
+  data.setContent(content);
+
+  // Sign the Data packet
+  // (Assume a signing key is available in KeyChain)
+  ndn::security::KeyChain keyChain;
+  keyChain.sign(data);
+
+  // Send the reply to the ingress face
+  ingress.face.sendData(data);
+
+  NFD_LOG_INFO("[generateTracerouteReply] Sent traceroute reply: " << data.getName().toUri());
+}
+
+
+ndn::Name
+Forwarder::getAdministrativeName()
+{
+  return this->m_administrativeName;
+}; 
+ 
 } // namespace nfd

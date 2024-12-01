@@ -309,7 +309,7 @@ main(int argc, char** argv)
       "without WebSocket++";
 #endif
 
-  std::clog << "NFD version " << NFD_VERSION_BUILD_STRING << " starting\n"
+  std::clog << "NFD version " << NFD_VERSION_BUILD_STRING << " with traceroute starting\n"
             << "Built with " BOOST_COMPILER ", with " BOOST_STDLIB
                ", " << boostBuildInfo <<
                ", " << pcapBuildInfo <<
