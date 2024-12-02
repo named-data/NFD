@@ -89,18 +89,17 @@ Forwarder::Forwarder(FaceTable& faceTable)
 void
 Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingress)
 {
-  
-  if (isTracerouteInterest(interest)) {
-    
-    NFD_LOG_INFO("\n\n[onIcomingInterest] Interest is identified as a traceroute Interest: " << interest.getName().toUri()<<"\n\n");
-    
+
+  interest.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
+  ++m_counters.nInInterests;
+
+  if (isTracerouteInterest(interest))
+  {
+    NFD_LOG_INFO("\n\n[onIcomingInterest] Interest is identified as a traceroute Interest: " << interest.getName().toUri() << "\n\n");
 
     processTracerouteInterest(interest, ingress);
     return;
   }
-  
-  interest.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
-  ++m_counters.nInInterests;
 
   // ensure the received Interest has a Nonce
   auto nonce = interest.getNonce();
@@ -694,17 +693,14 @@ void Forwarder::processTracerouteInterest(const Interest &interest, const FaceEn
   // Since we've verified HopLimit exists in isTracerouteInterest function, we can safely get the value
   uint8_t hopLimit = *interest.getHopLimit();
 
-  NFD_LOG_DEBUG("Current HopLimit: " << static_cast<int>(hopLimit));
-
-  if (hopLimit == 0)
-  {
-    NFD_LOG_INFO("[processTracerouteInterest] HopLimit is 0, generating traceroute reply");
-    generateTracerouteReply(interest, ingress, 4);
-    return;
-  }
+  NFD_LOG_INFO("\n\n\n[processTracerouteInterest] Current HopLimit: " << static_cast<int>(hopLimit));
 
   // Decrement HopLimit
-  const_cast<Interest&>(interest).setHopLimit(hopLimit - 1);
+  if (hopLimit > 0)
+    hopLimit = hopLimit - 1;
+
+  // Decrement HopLimit
+  const_cast<Interest&>(interest).setHopLimit(hopLimit);
 
   // Extract the target name (remove 'traceroute' and nonce components)
   ndn::Name targetName = interest.getName().getPrefix(-2);
@@ -746,6 +742,16 @@ void Forwarder::processTracerouteInterest(const Interest &interest, const FaceEn
     generateTracerouteReply(interest, ingress, 3);
     return;
   }
+
+  if (hopLimit == 0)
+  {
+    ++ingress.face.getCounters().nInHopLimitZero;
+
+    NFD_LOG_INFO("[processTracerouteInterest] HopLimit is 0, generating traceroute reply");
+    generateTracerouteReply(interest, ingress, 4);
+    return;
+  }
+
 
   //Forward the Interest
   NFD_LOG_INFO("[processTracerouteInterest] Forwarding Interest to next hop: " << interest.getName().toUri());
