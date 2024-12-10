@@ -13,7 +13,7 @@ following platforms:
 - Debian 11 (bullseye)
 - Debian 12 (bookworm)
 - CentOS Stream 9
-- macOS 12 / 13 / 14
+- macOS 12 / 13 / 14 / 15
 
 NFD should also work on the following platforms, although they are not officially
 supported:
@@ -98,7 +98,7 @@ Prerequisites
 Install the `ndn-cxx library <https://docs.named-data.net/ndn-cxx/current/INSTALL.html>`__
 and its prerequisites.
 
-On Linux, NFD needs the following dependencies to enable optional features:
+On Linux, NFD needs the following *optional* dependencies to enable additional features:
 
 - On **Debian** and **Ubuntu**:
 
