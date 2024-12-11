@@ -16,16 +16,16 @@ def configure(conf):
     errmsg = ''
     warnmsg = ''
     if cxx == 'gcc':
-        if ccver < (7, 4, 0):
+        if ccver < (9, 1, 0):
             errmsg = ('The version of gcc you are using is too old.\n'
-                      'The minimum supported gcc version is 9.3.')
-        elif ccver < (9, 3, 0):
-            warnmsg = ('Using a version of gcc older than 9.3 is not '
+                      'The minimum supported gcc version is 10.2.')
+        elif ccver < (10, 2, 0):
+            warnmsg = ('Using a version of gcc older than 10.2 is not '
                        'officially supported and may result in build failures.')
         conf.flags = GccFlags()
     elif cxx == 'clang':
         if Utils.unversioned_sys_platform() == 'darwin':
-            if ccver < (10, 0, 0):
+            if ccver < (11, 0, 0):
                 errmsg = ('The version of Xcode you are using is too old.\n'
                           'The minimum supported Xcode version is 13.0.')
             elif ccver < (13, 0, 0):
@@ -33,7 +33,10 @@ def configure(conf):
                            'officially supported and may result in build failures.')
         elif ccver < (7, 0, 0):
             errmsg = ('The version of clang you are using is too old.\n'
-                      'The minimum supported clang version is 7.0.')
+                      'The minimum supported clang version is 10.0.')
+        elif ccver < (10, 0, 0):
+            warnmsg = ('Using a version of clang older than 10.0 is not '
+                       'officially supported and may result in build failures.')
         conf.flags = ClangFlags()
     else:
         warnmsg = f'{cxx} compiler is unsupported'
