@@ -34,8 +34,7 @@
 #include <ndn-cxx/tag.hpp>
 #include <ndn-cxx/util/io.hpp>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 namespace security = ndn::security;
 
@@ -158,12 +157,12 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
                    "SHOULD NOT be used in production environments");
     }
     else {
-      using namespace boost::filesystem;
-      path certfilePath = absolute(certfile, path(filename).parent_path());
-      cert = ndn::io::load<security::Certificate>(certfilePath.string());
+      auto certfilePath = std::filesystem::absolute(filename).parent_path() / certfile;
+      certfilePath = certfilePath.lexically_normal();
+      cert = ndn::io::load<security::Certificate>(certfilePath);
       if (cert == nullptr) {
-        NDN_THROW(ConfigFile::Error("cannot load certfile " + certfilePath.string() +
-                                    " for authorize[" + std::to_string(authSectionIndex) + "]"));
+        NDN_THROW(ConfigFile::Error("cannot load certfile '" + certfilePath.native() +
+                                    "' for authorize[" + std::to_string(authSectionIndex) + "]"));
       }
     }
 

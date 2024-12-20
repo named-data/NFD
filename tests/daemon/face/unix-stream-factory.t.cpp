@@ -28,7 +28,7 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 namespace nfd::tests {
 
@@ -59,10 +59,7 @@ BOOST_AUTO_TEST_CASE(AbsolutePath)
 
   const auto& uri = factory.getChannels().front()->getUri();
   BOOST_TEST(uri.getScheme() == "unix");
-  boost::filesystem::path path(uri.getPath());
-  BOOST_TEST(path.filename() == "nfd-test.sock");
-  BOOST_TEST(boost::filesystem::canonical(path) == path); // path should already be in canonical form
-  BOOST_TEST(boost::filesystem::equivalent(path, "/tmp/nfd-test.sock"));
+  BOOST_TEST(uri.getPath() == std::filesystem::canonical("/tmp/nfd-test.sock"));
 }
 
 BOOST_AUTO_TEST_CASE(RelativePath)
@@ -85,10 +82,7 @@ BOOST_AUTO_TEST_CASE(RelativePath)
 
   const auto& uri = factory.getChannels().front()->getUri();
   BOOST_TEST(uri.getScheme() == "unix");
-  boost::filesystem::path path(uri.getPath());
-  BOOST_TEST(path.filename() == "nfd-test.sock");
-  BOOST_TEST(boost::filesystem::canonical(path) == path); // path should already be in canonical form
-  BOOST_TEST(boost::filesystem::equivalent(path, "nfd-test.sock"));
+  BOOST_TEST(uri.getPath() == std::filesystem::canonical("nfd-test.sock"));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -140,7 +134,7 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 {
   auto channel1 = factory.createChannel("./" + CHANNEL_PATH1); // test path normalization
   auto channel1a = factory.createChannel(CHANNEL_PATH1);
-  auto channel1b = factory.createChannel(boost::filesystem::absolute(CHANNEL_PATH1).string());
+  auto channel1b = factory.createChannel(std::filesystem::absolute(CHANNEL_PATH1));
   auto channel1c = factory.createChannel("foo//../" + CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1, channel1b);
@@ -152,7 +146,7 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
   BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
   BOOST_CHECK_EQUAL(uri.getHost(), "");
   BOOST_CHECK_EQUAL(uri.getPort(), "");
-  boost::filesystem::path path1(uri.getPath());
+  std::filesystem::path path1(uri.getPath());
   BOOST_TEST(path1.filename() == CHANNEL_PATH1);
   BOOST_TEST(path1.is_absolute()); // path should always be absolute
   BOOST_TEST(path1.lexically_normal() == path1); // path should be in normal form

@@ -34,7 +34,7 @@
 #include "tests/daemon/face/dummy-link-service.hpp"
 #include "tests/daemon/face/transport-test-common.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 namespace nfd::tests {
 
@@ -65,14 +65,15 @@ public:
 
   ~AcceptorWithCleanup()
   {
-    boost::system::error_code ec;
-    std::string path = local_endpoint(ec).path();
-    if (ec) {
-      return;
+    try {
+      std::string path = local_endpoint().path();
+      boost::system::error_code ec;
+      close(ec);
+      std::filesystem::remove(path);
     }
-
-    close(ec);
-    boost::filesystem::remove(path, ec);
+    catch (...) {
+      // ignore
+    }
   }
 };
 

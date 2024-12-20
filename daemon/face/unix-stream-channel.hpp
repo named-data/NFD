@@ -80,7 +80,7 @@ public:
    *                       returns an error)
    * \param backlog        The maximum length of the queue of pending incoming
    *                       connections
-   * \throw boost::system::system_error
+   * \throw std::system_error
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,

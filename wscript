@@ -114,7 +114,7 @@ def configure(conf):
 
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
-    conf.check_boost(lib='filesystem program_options', mt=True)
+    conf.check_boost(lib='program_options', mt=True)
     if conf.env.BOOST_VERSION_NUMBER < 107100:
         conf.fatal('The minimum supported version of Boost is 1.71.0.\n'
                    'Please upgrade your distribution or manually install a newer version of Boost.\n'

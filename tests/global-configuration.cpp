@@ -27,11 +27,10 @@
 
 #include <ndn-cxx/util/exception.hpp>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
+#include <filesystem>
 #include <stdexcept>
 #include <stdlib.h>
+#include <system_error>
 
 namespace nfd::tests {
 
@@ -45,10 +44,10 @@ public:
       m_home.assign(envHome);
 
     // in case an earlier test run crashed without a chance to run the destructor
-    boost::filesystem::remove_all(TESTDIR);
+    std::filesystem::remove_all(TESTDIR);
 
     auto testHome = TESTDIR / "test-home";
-    boost::filesystem::create_directories(testHome);
+    std::filesystem::create_directories(testHome);
 
     if (::setenv("HOME", testHome.c_str(), 1) != 0)
       NDN_THROW_NO_STACK(std::runtime_error("setenv() failed"));
@@ -61,12 +60,12 @@ public:
     else
       ::setenv("HOME", m_home.data(), 1);
 
-    boost::system::error_code ec;
-    boost::filesystem::remove_all(TESTDIR, ec); // ignore error
+    std::error_code ec;
+    std::filesystem::remove_all(TESTDIR, ec); // ignore error
   }
 
 private:
-  static inline const boost::filesystem::path TESTDIR{UNIT_TESTS_TMPDIR};
+  static inline const std::filesystem::path TESTDIR{UNIT_TESTS_TMPDIR};
   std::string m_home;
 };
 

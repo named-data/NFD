@@ -136,7 +136,7 @@ class CompilerFlags:
         return {
             'CXXFLAGS': [],
             'LINKFLAGS': [],
-            'DEFINES': ['BOOST_FILESYSTEM_NO_DEPRECATED'],
+            'DEFINES': [],
         }
 
     def getOptimizedFlags(self, conf):

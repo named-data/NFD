@@ -27,12 +27,16 @@
 
 #include "channel-fixture.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
+#include <system_error>
+
+BOOST_TEST_DONT_PRINT_LOG_VALUE(::std::filesystem::file_type)
+BOOST_TEST_DONT_PRINT_LOG_VALUE(::std::filesystem::perms)
 
 namespace nfd::tests {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace local = boost::asio::local;
 using face::UnixStreamChannel;
 
@@ -41,12 +45,12 @@ class UnixStreamChannelFixture : public ChannelFixture<UnixStreamChannel, unix_s
 protected:
   UnixStreamChannelFixture()
   {
-    listenerEp = unix_stream::Endpoint(socketPath.string());
+    listenerEp = unix_stream::Endpoint(socketPath);
   }
 
   ~UnixStreamChannelFixture() override
   {
-    boost::system::error_code ec;
+    std::error_code ec;
     fs::remove_all(testDir, ec); // ignore error
   }
 
@@ -141,16 +145,17 @@ BOOST_AUTO_TEST_SUITE(SocketFile)
 BOOST_AUTO_TEST_CASE(CreateAndRemove)
 {
   auto channel = makeChannel();
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::not_found);
 
   channel->listen(nullptr, nullptr);
   auto status = fs::symlink_status(socketPath);
-  BOOST_CHECK_EQUAL(status.type(), fs::socket_file);
-  BOOST_CHECK_EQUAL(status.permissions(), fs::owner_read | fs::group_read | fs::others_read |
-                                          fs::owner_write | fs::group_write | fs::others_write);
+  BOOST_TEST(status.type() == fs::file_type::socket);
+  BOOST_TEST(status.permissions() ==
+             (fs::perms::owner_read | fs::perms::group_read | fs::perms::others_read |
+              fs::perms::owner_write | fs::perms::group_write | fs::perms::others_write));
 
   channel.reset();
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::not_found);
 }
 
 BOOST_AUTO_TEST_CASE(InUse)
@@ -159,10 +164,10 @@ BOOST_AUTO_TEST_CASE(InUse)
   fs::create_directories(socketPath.parent_path());
 
   local::stream_protocol::acceptor acceptor(g_io, listenerEp);
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::socket);
 
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::address_in_use &&
+    return e.code() == std::errc::address_in_use &&
            e.path1() == socketPath &&
            std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
   });
@@ -176,23 +181,23 @@ BOOST_AUTO_TEST_CASE(Stale)
   local::stream_protocol::acceptor acceptor(g_io, listenerEp);
   acceptor.close();
   // the socket file is not removed when the acceptor is closed
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::socket);
 
   // drop write permission from the parent directory
-  fs::permissions(socketPath.parent_path(), fs::owner_all & ~fs::owner_write);
+  fs::permissions(socketPath.parent_path(), fs::perms::owner_all & ~fs::perms::owner_write);
   // removal of the "stale" socket fails due to insufficient permissions
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::permission_denied &&
+    return e.code() == std::errc::permission_denied &&
            e.path1() == socketPath &&
            std::string_view(e.what()).find("remove") != std::string_view::npos;
   });
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::socket);
 
   // restore all permissions
-  fs::permissions(socketPath.parent_path(), fs::owner_all);
+  fs::permissions(socketPath.parent_path(), fs::perms::owner_all);
   // the socket file should be considered "stale" and overwritten
   channel->listen(nullptr, nullptr);
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::socket);
 }
 
 BOOST_AUTO_TEST_CASE(NotASocket)
@@ -200,19 +205,19 @@ BOOST_AUTO_TEST_CASE(NotASocket)
   auto channel = makeChannel();
 
   fs::create_directories(socketPath);
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::directory_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::directory);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::not_a_socket &&
+    return e.code() == std::errc::not_a_socket &&
            e.path1() == socketPath &&
            std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
   });
 
   fs::remove(socketPath);
-  std::ofstream f(socketPath.string());
+  std::ofstream f(socketPath);
   f.close();
-  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::regular_file);
+  BOOST_TEST(fs::symlink_status(socketPath).type() == fs::file_type::regular);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::not_a_socket &&
+    return e.code() == std::errc::not_a_socket &&
            e.path1() == socketPath &&
            std::string_view(e.what()).find("UnixStreamChannel::listen") != std::string_view::npos;
   });
@@ -224,13 +229,14 @@ BOOST_AUTO_TEST_CASE(ParentConflict)
   fs::create_directories(testDir);
 
   auto parent = socketPath.parent_path();
-  std::ofstream f(parent.string());
+  std::ofstream f(parent);
   f.close();
-  BOOST_CHECK_EQUAL(fs::symlink_status(parent).type(), fs::regular_file);
+  BOOST_TEST(fs::symlink_status(parent).type() == fs::file_type::regular);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::file_exists &&
+    return (e.code() == std::errc::not_a_directory || // libstdc++
+            e.code() == std::errc::file_exists) &&    // libc++
            e.path1() == parent &&
-           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+           std::string_view(e.what()).find("create") != std::string_view::npos;
   });
 }
 
@@ -239,38 +245,40 @@ BOOST_AUTO_TEST_CASE(PermissionDenied)
   auto channel = makeChannel();
   fs::create_directories(testDir);
 
-  fs::permissions(testDir, fs::no_perms);
+  fs::permissions(testDir, fs::perms::none);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::permission_denied &&
+    return e.code() == std::errc::permission_denied &&
            e.path1() == socketPath.parent_path() &&
-           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+           std::string_view(e.what()).find("create") != std::string_view::npos;
   });
 
-  fs::permissions(testDir, fs::owner_read | fs::owner_exe);
+  fs::permissions(testDir, fs::perms::owner_read | fs::perms::owner_exec);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::permission_denied &&
+    return e.code() == std::errc::permission_denied &&
            e.path1() == socketPath.parent_path() &&
-           std::string_view(e.what()).find("create_dir") != std::string_view::npos;
+           std::string_view(e.what()).find("create") != std::string_view::npos;
   });
 
-  fs::permissions(testDir, fs::owner_all);
+  fs::permissions(testDir, fs::perms::owner_all);
   fs::create_directories(socketPath.parent_path());
 
-  fs::permissions(socketPath.parent_path(), fs::no_perms);
+  fs::permissions(socketPath.parent_path(), fs::perms::none);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::permission_denied &&
+    std::string_view what(e.what());
+    return e.code() == std::errc::permission_denied &&
            e.path1() == socketPath &&
-           std::string_view(e.what()).find("status") != std::string_view::npos;
+           (what.find("symlink_status") != std::string_view::npos ||  // libstdc++
+            what.find("posix_stat") != std::string_view::npos);       // libc++
   });
 
-  fs::permissions(socketPath.parent_path(), fs::owner_read | fs::owner_exe);
+  fs::permissions(socketPath.parent_path(), fs::perms::owner_read | fs::perms::owner_exec);
   BOOST_CHECK_EXCEPTION(channel->listen(nullptr, nullptr), fs::filesystem_error, [&] (const auto& e) {
-    return e.code() == boost::system::errc::permission_denied &&
+    return e.code() == std::errc::permission_denied &&
            e.path1() == socketPath &&
            std::string_view(e.what()).find("bind") != std::string_view::npos;
   });
 
-  fs::permissions(socketPath.parent_path(), fs::owner_all);
+  fs::permissions(socketPath.parent_path(), fs::perms::owner_all);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // SocketFile

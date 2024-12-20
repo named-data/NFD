@@ -27,7 +27,8 @@
 
 #include <ndn-cxx/util/io.hpp>
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
+#include <system_error>
 
 namespace nfd::tests {
 
@@ -40,9 +41,9 @@ KeyChainFixture::KeyChainFixture()
 
 KeyChainFixture::~KeyChainFixture()
 {
-  boost::system::error_code ec;
+  std::error_code ec;
   for (const auto& certFile : m_certFiles) {
-    boost::filesystem::remove(certFile, ec); // ignore error
+    std::filesystem::remove(certFile, ec); // ignore error
   }
 }
 

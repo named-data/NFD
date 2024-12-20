@@ -45,6 +45,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
+#include <system_error>
 #include <thread>
 
 #include <ndn-cxx/util/logging.hpp>
@@ -327,6 +328,14 @@ main(int argc, char** argv)
     NFD_LOG_FATAL(boost::diagnostic_information(e));
     if (e.code() == boost::system::errc::operation_not_permitted ||
         e.code() == boost::system::errc::permission_denied) {
+      return 4;
+    }
+    return 1;
+  }
+  catch (const std::system_error& e) {
+    NFD_LOG_FATAL(boost::diagnostic_information(e));
+    if (e.code() == std::errc::operation_not_permitted ||
+        e.code() == std::errc::permission_denied) {
       return 4;
     }
     return 1;

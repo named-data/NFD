@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,11 +27,18 @@
 
 #include "manager-common-fixture.hpp"
 
+#include <filesystem>
+
 namespace nfd::tests {
 
 class CommandAuthenticatorFixture : public InterestSignerFixture
 {
 protected:
+  CommandAuthenticatorFixture()
+  {
+    std::filesystem::create_directories(confDir);
+  }
+
   void
   makeModules(std::initializer_list<std::string> modules)
   {
@@ -45,7 +52,7 @@ protected:
   {
     ConfigFile cf;
     authenticator->setConfigFile(cf);
-    cf.parse(config, false, "command-authenticator-test.conf");
+    cf.parse(config, false, confDir / "test.conf");
   }
 
   bool
@@ -84,6 +91,8 @@ protected:
   }
 
 protected:
+  static inline const std::filesystem::path confDir{UNIT_TESTS_TMPDIR "/command-authenticator"};
+
   shared_ptr<CommandAuthenticator> authenticator = CommandAuthenticator::create();
   std::unordered_map<std::string, ndn::mgmt::Authorization> authorizations;
   std::string lastRequester;
@@ -99,8 +108,8 @@ BOOST_AUTO_TEST_CASE(Certs)
   Name id1("/localhost/CommandAuthenticator/1");
   Name id2("/localhost/CommandAuthenticator/2");
   BOOST_REQUIRE(m_keyChain.createIdentity(id0));
-  BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
-  BOOST_REQUIRE(saveIdentityCert(id2, "2.ndncert", true));
+  BOOST_REQUIRE(saveIdentityCert(id1, confDir / "1.ndncert", true));
+  BOOST_REQUIRE(saveIdentityCert(id2, confDir / "2.ndncert", true));
 
   makeModules({"module0", "module1", "module2", "module3", "module4", "module5", "module6", "module7"});
   const std::string config = R"CONFIG(
@@ -189,7 +198,7 @@ BOOST_AUTO_TEST_CASE(Requester)
   Name id0("/localhost/CommandAuthenticator/0");
   Name id1("/localhost/CommandAuthenticator/1");
   BOOST_REQUIRE(m_keyChain.createIdentity(id0));
-  BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
+  BOOST_REQUIRE(saveIdentityCert(id1, confDir / "1.ndncert", true));
 
   makeModules({"module0", "module1"});
   const std::string config = R"CONFIG(
@@ -232,7 +241,7 @@ class IdentityAuthorizedFixture : public CommandAuthenticatorFixture
 protected:
   IdentityAuthorizedFixture()
   {
-    BOOST_REQUIRE(saveIdentityCert(id1, "1.ndncert", true));
+    BOOST_REQUIRE(saveIdentityCert(id1, confDir / "1.ndncert", true));
 
     makeModules({"module1"});
     const std::string config = R"CONFIG(

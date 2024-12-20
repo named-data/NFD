@@ -29,9 +29,8 @@
 #include "unix-stream-transport.hpp"
 #include "common/global.hpp"
 
-#include <boost/filesystem/exception.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
+#include <system_error>
 
 namespace nfd::face {
 
@@ -51,10 +50,11 @@ UnixStreamChannel::~UnixStreamChannel()
 {
   if (isListening()) {
     // use the non-throwing variants during destruction and ignore any errors
-    boost::system::error_code ec;
-    m_acceptor.close(ec);
+    boost::system::error_code ec1;
+    m_acceptor.close(ec1);
     NFD_LOG_CHAN_TRACE("Removing socket file");
-    boost::filesystem::remove(m_endpoint.path(), ec);
+    std::error_code ec2;
+    std::filesystem::remove(m_endpoint.path(), ec2);
   }
 }
 
@@ -68,7 +68,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     return;
   }
 
-  namespace fs = boost::filesystem;
+  namespace fs = std::filesystem;
 
   fs::path socketPath = m_endpoint.path();
   // ensure parent directory exists
@@ -77,18 +77,18 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     NFD_LOG_CHAN_TRACE("Created directory " << parent);
   }
 
-  boost::system::error_code ec;
-  fs::file_type type = fs::symlink_status(socketPath).type();
-  if (type == fs::socket_file) {
+  auto type = fs::symlink_status(socketPath).type();
+  if (type == fs::file_type::socket) {
     // if the socket file already exists, there may be another instance
     // of NFD running on the system: make sure we don't steal its socket
+    boost::system::error_code ec;
     boost::asio::local::stream_protocol::socket socket(getGlobalIoService());
     socket.connect(m_endpoint, ec);
     NFD_LOG_CHAN_TRACE("connect() on existing socket file returned: " << ec.message());
     if (!ec) {
       // someone answered, leave the socket alone
-      ec = boost::system::errc::make_error_code(boost::system::errc::address_in_use);
-      NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath, ec));
+      NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath,
+                                              std::make_error_code(std::errc::address_in_use)));
     }
     else if (ec == boost::asio::error::connection_refused ||
              ec == boost::asio::error::timed_out) {
@@ -97,11 +97,11 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
       fs::remove(socketPath);
     }
   }
-  else if (type != fs::file_not_found) {
+  else if (type != fs::file_type::not_found) {
     // the file exists but is not a socket: this is a fatal error as we cannot
     // safely overwrite the file without potentially risking data loss
-    ec = boost::system::errc::make_error_code(boost::system::errc::not_a_socket);
-    NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath, ec));
+    NDN_THROW_NO_STACK(fs::filesystem_error("UnixStreamChannel::listen", socketPath,
+                                            std::make_error_code(std::errc::not_a_socket)));
   }
 
   try {
@@ -119,8 +119,8 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   // the destructor will still remove the socket file
   m_isListening = true;
 
-  fs::permissions(socketPath, fs::owner_read | fs::group_read | fs::others_read |
-                              fs::owner_write | fs::group_write | fs::others_write);
+  fs::permissions(socketPath, fs::perms::owner_read | fs::perms::group_read | fs::perms::others_read |
+                              fs::perms::owner_write | fs::perms::group_write | fs::perms::others_write);
 
   accept(onFaceCreated, onAcceptFailed);
   NFD_LOG_CHAN_DEBUG("Started listening");

@@ -25,7 +25,7 @@
 
 #include "unix-stream-factory.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 namespace nfd::face {
 
@@ -86,8 +86,8 @@ UnixStreamFactory::doProcessConfig(OptionalConfigSection configSection,
 shared_ptr<UnixStreamChannel>
 UnixStreamFactory::createChannel(const std::string& socketPath)
 {
-  auto normalizedPath = boost::filesystem::weakly_canonical(boost::filesystem::absolute(socketPath));
-  unix_stream::Endpoint endpoint(normalizedPath.string());
+  auto normalizedPath = std::filesystem::weakly_canonical(std::filesystem::absolute(socketPath));
+  unix_stream::Endpoint endpoint(normalizedPath);
 
   auto it = m_channels.find(endpoint);
   if (it != m_channels.end())
