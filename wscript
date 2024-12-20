@@ -130,7 +130,10 @@ def configure(conf):
                              errmsg='not found, but required for Ethernet face support. '
                                     'Specify --without-libpcap to disable Ethernet face support.')
 
-    conf.checkWebsocket()
+    # WebSocket++ is incompatible with Boost 1.87.0
+    # https://github.com/zaphoyd/websocketpp/issues/1157
+    if conf.env.BOOST_VERSION_NUMBER < 108700:
+        conf.checkWebsocket()
 
     conf.check_compiler_flags()
 
