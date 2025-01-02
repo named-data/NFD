@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,24 +29,21 @@
 
 namespace nfd::tests {
 
-class TestCommandVoidParameters : public ControlCommand
+class TestCommandVoidParameters : public ndn::nfd::ControlCommand<TestCommandVoidParameters>
 {
-public:
-  TestCommandVoidParameters()
-    : ControlCommand("test-module", "test-void-parameters")
-  {
-  }
+  NDN_CXX_CONTROL_COMMAND(TestCommandVoidParameters, "test-module", "test-void-parameters");
 };
 
-class TestCommandRequireName : public ControlCommand
+const TestCommandVoidParameters::RequestFormat TestCommandVoidParameters::s_requestFormat;
+
+class TestCommandRequireName : public ndn::nfd::ControlCommand<TestCommandRequireName>
 {
-public:
-  TestCommandRequireName()
-    : ControlCommand("test-module", "test-require-name")
-  {
-    m_requestValidator.required(ndn::nfd::CONTROL_PARAMETER_NAME);
-  }
+  NDN_CXX_CONTROL_COMMAND(TestCommandRequireName, "test-module", "test-require-name");
 };
+
+const TestCommandRequireName::RequestFormat TestCommandRequireName::s_requestFormat =
+    RequestFormat()
+    .required(ndn::nfd::CONTROL_PARAMETER_NAME);
 
 class DummyManager final : public ManagerBase
 {
@@ -59,12 +56,12 @@ public:
 
 private:
   ndn::mgmt::Authorization
-  makeAuthorization(const std::string& verb) final
+  makeAuthorization(const std::string&) final
   {
     return [] (const Name& prefix, const Interest& interest,
-               const ndn::mgmt::ControlParameters* params,
-               ndn::mgmt::AcceptContinuation accept,
-               ndn::mgmt::RejectContinuation reject) {
+               const ndn::mgmt::ControlParametersBase* params,
+               const ndn::mgmt::AcceptContinuation& accept,
+               const ndn::mgmt::RejectContinuation& reject) {
       accept("requester");
     };
   }
@@ -98,6 +95,10 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 
   testRegisterCommandHandler("/localhost/nfd/test-module/test-require-name");
   BOOST_CHECK(!wasHandlerCalled);
+
+  testRegisterCommandHandler(Name("/localhost/nfd/test-module/test-require-name")
+                             .append(ControlParameters().setName("test-name").wireEncode()));
+  BOOST_CHECK(wasHandlerCalled);
 }
 
 BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
@@ -147,19 +148,6 @@ BOOST_AUTO_TEST_CASE(ExtractSigner)
   BOOST_CHECK_EQUAL(signer,
                     m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY)
                     .getDefaultKey().getDefaultCertificate().getName().toUri());
-}
-
-BOOST_AUTO_TEST_CASE(ValidateParameters)
-{
-  ControlParameters params;
-  TestCommandVoidParameters commandVoidParams;
-  TestCommandRequireName commandRequireName;
-
-  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandVoidParams, params), true); // succeeds
-  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandRequireName, params), false); // fails
-
-  params.setName("test-name");
-  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandRequireName, params), true); // succeeds
 }
 
 BOOST_AUTO_TEST_CASE(MakeRelPrefix)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,16 +43,16 @@ StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
   , m_table(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { setStrategy(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { setStrategy(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::StrategyChoiceUnsetCommand>("unset",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { unsetStrategy(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { unsetStrategy(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("list",
     [this] (auto&&, auto&&, auto&&... args) { listChoices(std::forward<decltype(args)>(args)...); });
 }
 
 void
 StrategyChoiceManager::setStrategy(ControlParameters parameters,
-                                   const ndn::mgmt::CommandContinuation& done)
+                                   const CommandContinuation& done)
 {
   const Name& prefix = parameters.getName();
   const Name& strategy = parameters.getStrategy();
@@ -72,7 +72,7 @@ StrategyChoiceManager::setStrategy(ControlParameters parameters,
 
 void
 StrategyChoiceManager::unsetStrategy(ControlParameters parameters,
-                                     const ndn::mgmt::CommandContinuation& done)
+                                     const CommandContinuation& done)
 {
   const Name& prefix = parameters.getName();
   // no need to test for ndn:/ , parameter validation takes care of that

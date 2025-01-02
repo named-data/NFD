@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,16 +45,16 @@ FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
   , m_faceTable(faceTable)
 {
   registerCommandHandler<ndn::nfd::FibAddNextHopCommand>("add-nexthop",
-    [this] (auto&&, auto&&, auto&&... args) { addNextHop(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&... args) { addNextHop(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::FibRemoveNextHopCommand>("remove-nexthop",
-    [this] (auto&&, auto&&, auto&&... args) { removeNextHop(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&... args) { removeNextHop(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("list",
     [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
 }
 
 void
 FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
-                       const ndn::mgmt::CommandContinuation& done)
+                       const CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
   const Name& prefix = parameters.getName();
@@ -84,7 +84,7 @@ FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
 
 void
 FibManager::removeNextHop(const Interest& interest, ControlParameters parameters,
-                          const ndn::mgmt::CommandContinuation& done)
+                          const CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
   const Name& prefix = parameters.getName();

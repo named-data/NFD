@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -112,7 +112,7 @@ public: // verify
    * @brief Check a specified response data with the expected ControlResponse.
    *
    * @param idx the index of the specified Data in m_responses
-   * @param expectedDataName the expected name of this Data
+   * @param expectedName the expected name of this Data
    * @param expectedResponse the expected ControlResponse
    * @param expectedContentType the expected content type of this Data, use -1 to skip this check
    *
@@ -157,7 +157,8 @@ operator<<(std::ostream& os, ManagerCommonFixture::CheckResponseResult result);
 class ManagerFixtureWithAuthenticator : public ManagerCommonFixture
 {
 public:
-  /** \brief Grant m_identityName privilege to sign commands for the management module.
+  /**
+   * \brief Grant m_identityName privilege to sign commands for the management module.
    */
   void
   setPrivilege(const std::string& privilege);

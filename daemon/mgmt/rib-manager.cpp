@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,9 +62,9 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
-    [this] (auto&&, auto&&, auto&&... args) { registerEntry(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&... args) { registerEntry(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::RibUnregisterCommand>("unregister",
-    [this] (auto&&, auto&&, auto&&... args) { unregisterEntry(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&... args) { unregisterEntry(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("list",
     [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
 }
@@ -218,7 +218,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
 
 void
 RibManager::registerEntry(const Interest& interest, ControlParameters parameters,
-                          const ndn::mgmt::CommandContinuation& done)
+                          const CommandContinuation& done)
 {
   if (parameters.getName().size() > Fib::getMaxDepth()) {
     done(ControlResponse(414, "Route prefix cannot exceed " + std::to_string(Fib::getMaxDepth()) +
@@ -248,7 +248,7 @@ RibManager::registerEntry(const Interest& interest, ControlParameters parameters
 
 void
 RibManager::unregisterEntry(const Interest& interest, ControlParameters parameters,
-                            const ndn::mgmt::CommandContinuation& done)
+                            const CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
 
@@ -304,7 +304,7 @@ ndn::mgmt::Authorization
 RibManager::makeAuthorization(const std::string&)
 {
   return [this] (const Name& prefix, const Interest& interest,
-                 const ndn::mgmt::ControlParameters* params,
+                 const ndn::mgmt::ControlParametersBase* params,
                  const ndn::mgmt::AcceptContinuation& accept,
                  const ndn::mgmt::RejectContinuation& reject) {
     BOOST_ASSERT(params != nullptr);

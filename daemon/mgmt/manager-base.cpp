@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -80,35 +80,6 @@ ManagerBase::makeAuthorization(const std::string& verb)
 {
   BOOST_ASSERT(m_authenticator != nullptr);
   return m_authenticator->makeAuthorization(m_module, verb);
-}
-
-bool
-ManagerBase::validateParameters(const ControlCommand& command,
-                                const ndn::mgmt::ControlParameters& parameters)
-{
-  BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&parameters) != nullptr);
-
-  try {
-    command.validateRequest(static_cast<const ControlParameters&>(parameters));
-  }
-  catch (const ControlCommand::ArgumentError&) {
-    return false;
-  }
-  return true;
-}
-
-void
-ManagerBase::handleCommand(shared_ptr<ControlCommand> command,
-                           const ControlCommandHandler& handler,
-                           const Name& prefix, const Interest& interest,
-                           const ndn::mgmt::ControlParameters& params,
-                           const ndn::mgmt::CommandContinuation& done)
-{
-  BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
-
-  ControlParameters parameters = static_cast<const ControlParameters&>(params);
-  command->applyDefaultsToRequest(parameters);
-  handler(*command, prefix, interest, parameters, done);
 }
 
 } // namespace nfd

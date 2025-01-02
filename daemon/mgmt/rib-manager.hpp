@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -197,19 +197,22 @@ private: // management Dispatcher related
   void
   registerTopPrefix(const Name& topPrefix);
 
-  /** \brief Serve rib/register command.
+  /**
+   * \brief Serve `rib/register` command.
    */
   void
   registerEntry(const Interest& interest, ControlParameters parameters,
-                const ndn::mgmt::CommandContinuation& done);
+                const CommandContinuation& done);
 
-  /** \brief Serve rib/unregister command.
+  /**
+   * \brief Serve `rib/unregister` command.
    */
   void
   unregisterEntry(const Interest& interest, ControlParameters parameters,
-                  const ndn::mgmt::CommandContinuation& done);
+                  const CommandContinuation& done);
 
-  /** \brief Serve rib/list dataset.
+  /**
+   * \brief Serve `rib/list` dataset.
    */
   void
   listEntries(ndn::mgmt::StatusDatasetContext& context);

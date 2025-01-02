@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -213,7 +213,7 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
   m_validators[module]; // declares module, so that privilege is recognized
 
   return [module, self = shared_from_this()] (const Name&, const Interest& interest,
-                                              const ndn::mgmt::ControlParameters*,
+                                              const ndn::mgmt::ControlParametersBase*,
                                               const ndn::mgmt::AcceptContinuation& accept,
                                               const ndn::mgmt::RejectContinuation& reject) {
     auto validator = self->m_validators.at(module);

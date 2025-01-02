@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,16 +40,16 @@ CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCounters,
   , m_fwCounters(fwCounters)
 {
   registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { changeConfig(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { changeConfig(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::CsEraseCommand>("erase",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { erase(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { erase(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("info",
     [this] (auto&&, auto&&, auto&&... args) { serveInfo(std::forward<decltype(args)>(args)...); });
 }
 
 void
 CsManager::changeConfig(const ControlParameters& parameters,
-                        const ndn::mgmt::CommandContinuation& done)
+                        const CommandContinuation& done)
 {
   using ndn::nfd::CsFlagBit;
 
@@ -74,7 +74,7 @@ CsManager::changeConfig(const ControlParameters& parameters,
 
 void
 CsManager::erase(const ControlParameters& parameters,
-                 const ndn::mgmt::CommandContinuation& done)
+                 const CommandContinuation& done)
 {
   size_t count = parameters.hasCount() ?
                  parameters.getCount() :

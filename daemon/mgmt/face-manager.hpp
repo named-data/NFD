@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,22 +47,22 @@ public:
 private: // ControlCommand
   void
   createFace(const ControlParameters& parameters,
-             const ndn::mgmt::CommandContinuation& done);
+             const CommandContinuation& done);
 
   void
   updateFace(const Interest& interest,
              const ControlParameters& parameters,
-             const ndn::mgmt::CommandContinuation& done);
+             const CommandContinuation& done);
 
   void
   destroyFace(const ControlParameters& parameters,
-              const ndn::mgmt::CommandContinuation& done);
+              const CommandContinuation& done);
 
 private: // helpers for ControlCommand
   void
   afterCreateFaceSuccess(const shared_ptr<Face>& face,
                          const ControlParameters& parameters,
-                         const ndn::mgmt::CommandContinuation& done);
+                         const CommandContinuation& done);
 
 private: // StatusDataset
   void

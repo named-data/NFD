@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #include "core/version.hpp"
 
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/status-dataset.hpp>

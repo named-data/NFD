@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,19 +47,20 @@ public:
             Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
-  /** \brief Process cs/config command.
+  /**
+   * \brief Process `cs/config` command.
    */
   void
-  changeConfig(const ControlParameters& parameters,
-               const ndn::mgmt::CommandContinuation& done);
+  changeConfig(const ControlParameters& parameters, const CommandContinuation& done);
 
-  /** \brief Process cs/erase command.
+  /**
+   * \brief Process `cs/erase` command.
    */
   void
-  erase(const ControlParameters& parameters,
-        const ndn::mgmt::CommandContinuation& done);
+  erase(const ControlParameters& parameters, const CommandContinuation& done);
 
-  /** \brief Serve CS information dataset.
+  /**
+   * \brief Serve CS information dataset.
    */
   void
   serveInfo(ndn::mgmt::StatusDatasetContext& context) const;

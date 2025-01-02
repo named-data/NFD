@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,11 +50,11 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
 {
   // register handlers for ControlCommand
   registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { createFace(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { createFace(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
-    [this] (auto&&, auto&&, auto&&... args) { updateFace(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&... args) { updateFace(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
-    [this] (auto&&, auto&&, auto&&, auto&&... args) { destroyFace(std::forward<decltype(args)>(args)...); });
+    [this] (auto&&, auto&&, auto&&... args) { destroyFace(std::forward<decltype(args)>(args)...); });
 
   // register handlers for StatusDataset
   registerStatusDatasetHandler("list",
@@ -77,7 +77,7 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
 
 void
 FaceManager::createFace(const ControlParameters& parameters,
-                        const ndn::mgmt::CommandContinuation& done)
+                        const CommandContinuation& done)
 {
   FaceUri remoteUri;
   if (!remoteUri.parse(parameters.getUri())) {
@@ -203,7 +203,7 @@ makeCreateFaceResponse(const Face& face)
 void
 FaceManager::afterCreateFaceSuccess(const shared_ptr<Face>& face,
                                     const ControlParameters& parameters,
-                                    const ndn::mgmt::CommandContinuation& done)
+                                    const CommandContinuation& done)
 {
   if (face->getId() != face::INVALID_FACEID) { // Face already exists
     NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
@@ -262,7 +262,7 @@ updateLinkServiceOptions(Face& face, const ControlParameters& parameters)
 void
 FaceManager::updateFace(const Interest& interest,
                         const ControlParameters& parameters,
-                        const ndn::mgmt::CommandContinuation& done)
+                        const CommandContinuation& done)
 {
   FaceId faceId = parameters.getFaceId();
   if (faceId == face::INVALID_FACEID) { // Self-update
@@ -336,7 +336,7 @@ FaceManager::updateFace(const Interest& interest,
 
 void
 FaceManager::destroyFace(const ControlParameters& parameters,
-                         const ndn::mgmt::CommandContinuation& done)
+                         const CommandContinuation& done)
 {
   Face* face = m_faceTable.get(parameters.getFaceId());
   if (face != nullptr) {

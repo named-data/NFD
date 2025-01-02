@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -207,9 +207,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
     }
 
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
-    ndn::nfd::RibRegisterCommand cmd;
-    cmd.validateRequest(req);
-    cmd.applyDefaultsToRequest(req);
+    ndn::nfd::RibRegisterCommand::validateRequest(req);
+    ndn::nfd::RibRegisterCommand::applyDefaultsToRequest(req);
     BOOST_CHECK_EQUAL(req.getName(), "/vxXoEaWeDB");
     BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
     BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
@@ -235,9 +234,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
     }
 
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
-    ndn::nfd::RibRegisterCommand cmd;
-    cmd.validateRequest(req);
-    cmd.applyDefaultsToRequest(req);
+    ndn::nfd::RibRegisterCommand::validateRequest(req);
+    ndn::nfd::RibRegisterCommand::applyDefaultsToRequest(req);
     BOOST_CHECK_EQUAL(req.getName(), "/FLQAsaYnYf");
     BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
     BOOST_CHECK_EQUAL(req.getOrigin(), 17591);
@@ -280,9 +278,8 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
     }
     else if (Name("/localhost/nfd/faces/create").isPrefixOf(interest.getName())) {
       ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
-      ndn::nfd::FaceCreateCommand cmd;
-      cmd.validateRequest(req);
-      cmd.applyDefaultsToRequest(req);
+      ndn::nfd::FaceCreateCommand::validateRequest(req);
+      ndn::nfd::FaceCreateCommand::applyDefaultsToRequest(req);
       BOOST_CHECK_EQUAL(req.getUri(), "udp4://202.83.168.28:6363");
 
       ControlParameters resp = req;
@@ -297,15 +294,13 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
     }
     else if (Name("/localhost/nfd/rib/register").isPrefixOf(interest.getName())) {
       ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
-      ndn::nfd::RibRegisterCommand cmd;
-      cmd.validateRequest(req);
-      cmd.applyDefaultsToRequest(req);
+      ndn::nfd::RibRegisterCommand::validateRequest(req);
+      ndn::nfd::RibRegisterCommand::applyDefaultsToRequest(req);
       BOOST_CHECK_EQUAL(req.getName(), "/634jfAfdf");
       BOOST_CHECK_EQUAL(req.getFaceId(), 255);
       BOOST_CHECK_EQUAL(req.getOrigin(), 17591);
       BOOST_CHECK_EQUAL(req.getCost(), 702);
-      BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAG_CHILD_INHERIT |
-                                        ndn::nfd::ROUTE_FLAG_CAPTURE);
+      BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE);
       BOOST_REQUIRE_EQUAL(req.hasExpirationPeriod(), true);
       BOOST_REQUIRE_EQUAL(req.getExpirationPeriod(), 727411987_ms);
 
@@ -405,9 +400,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
     }
 
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
-    ndn::nfd::RibUnregisterCommand cmd;
-    cmd.validateRequest(req);
-    cmd.applyDefaultsToRequest(req);
+    ndn::nfd::RibUnregisterCommand::validateRequest(req);
+    ndn::nfd::RibUnregisterCommand::applyDefaultsToRequest(req);
     BOOST_CHECK_EQUAL(req.getName(), "/2B5NUGjpt");
     BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
     BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
@@ -429,9 +423,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
     }
 
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
-    ndn::nfd::RibUnregisterCommand cmd;
-    cmd.validateRequest(req);
-    cmd.applyDefaultsToRequest(req);
+    ndn::nfd::RibUnregisterCommand::validateRequest(req);
+    ndn::nfd::RibUnregisterCommand::applyDefaultsToRequest(req);
     BOOST_CHECK_EQUAL(req.getName(), "/wHdNn0BtUF");
     BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
     BOOST_CHECK_EQUAL(req.getOrigin(), 15246);
@@ -454,9 +447,8 @@ BOOST_AUTO_TEST_CASE(MultipleFaces)
     }
 
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
-    ndn::nfd::RibUnregisterCommand cmd;
-    cmd.validateRequest(req);
-    cmd.applyDefaultsToRequest(req);
+    ndn::nfd::RibUnregisterCommand::validateRequest(req);
+    ndn::nfd::RibUnregisterCommand::applyDefaultsToRequest(req);
     BOOST_TEST_INFO_SCOPE("FaceId=" << req.getFaceId());
     BOOST_CHECK_EQUAL(req.getName(), "/nm5y8X8b2");
     BOOST_CHECK(faceIds.erase(req.getFaceId()));

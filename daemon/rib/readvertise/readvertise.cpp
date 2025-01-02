@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -161,7 +161,7 @@ Readvertise::advertise(ReadvertisedRouteContainer::iterator rrIt)
                                                [=] { advertise(rrIt); });
     },
     [=] (const std::string& msg) {
-      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " failure " << msg);
+      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " failure: " << msg);
       rrIt->retryDelay = std::min(RETRY_DELAY_MAX, rrIt->retryDelay * 2);
       rrIt->retryEvt = getScheduler().schedule(randomizeTimer(rrIt->retryDelay),
                                                [=] { advertise(rrIt); });
@@ -185,7 +185,7 @@ Readvertise::withdraw(ReadvertisedRouteContainer::iterator rrIt)
       m_rrs.erase(rrIt);
     },
     [=] (const std::string& msg) {
-      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " failure " << msg);
+      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " failure: " << msg);
       rrIt->retryDelay = std::min(RETRY_DELAY_MAX, rrIt->retryDelay * 2);
       rrIt->retryEvt = getScheduler().schedule(randomizeTimer(rrIt->retryDelay),
                                                [=] { withdraw(rrIt); });

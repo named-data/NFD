@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@
 namespace nfd {
 
 using ndn::mgmt::Dispatcher;
-using ndn::nfd::ControlCommand;
+using ndn::mgmt::CommandContinuation;
 using ndn::nfd::ControlParameters;
 using ndn::nfd::ControlResponse;
 
@@ -76,16 +76,15 @@ protected:
   ~ManagerBase();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
-  // difference from mgmt::ControlCommand: accepts nfd::ControlParameters
-  using ControlCommandHandler = std::function<void(const ControlCommand& command,
-                                                   const Name& prefix, const Interest& interest,
+  // difference from ndn::mgmt::ControlCommandHandler: accepts nfd::ControlParameters
+  using ControlCommandHandler = std::function<void(const Name& prefix, const Interest& interest,
                                                    const ControlParameters& parameters,
-                                                   const ndn::mgmt::CommandContinuation done)>;
+                                                   const CommandContinuation& done)>;
 
   template<typename Command>
   void
   registerCommandHandler(const std::string& verb,
-                         const ControlCommandHandler& handler);
+                         ControlCommandHandler handler);
 
   void
   registerStatusDatasetHandler(const std::string& verb,
@@ -112,33 +111,13 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   makeAuthorization(const std::string& verb);
 
   /**
-   * @brief Validates the @p parameters for a given @p command.
-   *
-   * @param parameters the original ControlParameters
-   * @return whether the original ControlParameters can be validated
-   */
-  [[nodiscard]] static bool
-  validateParameters(const ControlCommand& command,
-                     const ndn::mgmt::ControlParameters& parameters);
-
-  /**
-   * @brief Handles a control command.
-   */
-  static void
-  handleCommand(shared_ptr<ControlCommand> command,
-                const ControlCommandHandler& handler,
-                const Name& prefix, const Interest& interest,
-                const ndn::mgmt::ControlParameters& params,
-                const ndn::mgmt::CommandContinuation& done);
-
-  /**
    * @brief Generates the relative prefix for a handler by appending the verb name to the module name.
    *
    * @param verb the verb name
    * @return the generated relative prefix
    */
   PartialName
-  makeRelPrefix(const std::string& verb)
+  makeRelPrefix(const std::string& verb) const
   {
     return PartialName(m_module).append(verb);
   }
@@ -151,16 +130,30 @@ private:
 
 template<typename Command>
 void
-ManagerBase::registerCommandHandler(const std::string& verb,
-                                    const ControlCommandHandler& handler)
+ManagerBase::registerCommandHandler(const std::string& verb, ControlCommandHandler handler)
 {
-  auto command = make_shared<Command>();
+  auto validate = [] (const ndn::mgmt::ControlParametersBase& params) {
+    BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
+    try {
+      Command::validateRequest(static_cast<const ControlParameters&>(params));
+      return true;
+    }
+    catch (const std::invalid_argument&) {
+      return false;
+    }
+  };
 
-  m_dispatcher.addControlCommand<ControlParameters>(
-    makeRelPrefix(verb),
-    makeAuthorization(verb),
-    [=] (const auto& params) { return validateParameters(*command, params); },
-    [=] (auto&&... args) { handleCommand(command, handler, std::forward<decltype(args)>(args)...); });
+  auto handle = [handler = std::move(handler)] (const Name& prefix, const Interest& interest,
+                                                const ndn::mgmt::ControlParametersBase& params,
+                                                const CommandContinuation& done) {
+    BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
+    ControlParameters parameters = static_cast<const ControlParameters&>(params);
+    Command::applyDefaultsToRequest(parameters);
+    handler(prefix, interest, parameters, done);
+  };
+
+  m_dispatcher.addControlCommand<ControlParameters>(makeRelPrefix(verb), makeAuthorization(verb),
+                                                    std::move(validate), std::move(handle));
 }
 
 } // namespace nfd
