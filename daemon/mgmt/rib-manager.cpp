@@ -61,12 +61,15 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_paValidator(make_unique<ndn::security::CertificateFetcherDirectFetch>(face))
   , m_isLocalhopEnabled(false)
 {
-  registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
-    [this] (auto&&, auto&&... args) { registerEntry(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::RibUnregisterCommand>("unregister",
-    [this] (auto&&, auto&&... args) { unregisterEntry(std::forward<decltype(args)>(args)...); });
-  registerStatusDatasetHandler("list",
-    [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::RibRegisterCommand>([this] (auto&&, auto&&... args) {
+    registerEntry(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::RibUnregisterCommand>([this] (auto&&, auto&&... args) {
+    unregisterEntry(std::forward<decltype(args)>(args)...);
+  });
+  registerStatusDatasetHandler("list", [this] (auto&&, auto&&, auto&&... args) {
+    listEntries(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

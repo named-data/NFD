@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@ InterestSignerFixture::makeControlCommandRequest(Name commandName,
                                                  ndn::security::SignedInterestFormat format,
                                                  const Name& identity)
 {
-  commandName.append(tlv::GenericNameComponent, params.wireEncode());
+  commandName.append(params.wireEncode());
 
   switch (format) {
     case ndn::security::SignedInterestFormat::V02:

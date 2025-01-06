@@ -39,12 +39,15 @@ CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCounters,
   , m_cs(cs)
   , m_fwCounters(fwCounters)
 {
-  registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
-    [this] (auto&&, auto&&, auto&&... args) { changeConfig(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::CsEraseCommand>("erase",
-    [this] (auto&&, auto&&, auto&&... args) { erase(std::forward<decltype(args)>(args)...); });
-  registerStatusDatasetHandler("info",
-    [this] (auto&&, auto&&, auto&&... args) { serveInfo(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::CsConfigCommand>([this] (auto&&, auto&&, auto&&... args) {
+    changeConfig(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::CsEraseCommand>([this] (auto&&, auto&&, auto&&... args) {
+    erase(std::forward<decltype(args)>(args)...);
+  });
+  registerStatusDatasetHandler("info", [this] (auto&&, auto&&, auto&&... args) {
+    serveInfo(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

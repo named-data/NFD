@@ -42,12 +42,15 @@ StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
   : ManagerBase("strategy-choice", dispatcher, authenticator)
   , m_table(strategyChoice)
 {
-  registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
-    [this] (auto&&, auto&&, auto&&... args) { setStrategy(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::StrategyChoiceUnsetCommand>("unset",
-    [this] (auto&&, auto&&, auto&&... args) { unsetStrategy(std::forward<decltype(args)>(args)...); });
-  registerStatusDatasetHandler("list",
-    [this] (auto&&, auto&&, auto&&... args) { listChoices(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>([this] (auto&&, auto&&, auto&&... args) {
+    setStrategy(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::StrategyChoiceUnsetCommand>([this] (auto&&, auto&&, auto&&... args) {
+    unsetStrategy(std::forward<decltype(args)>(args)...);
+  });
+  registerStatusDatasetHandler("list", [this] (auto&&, auto&&, auto&&... args) {
+    listChoices(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

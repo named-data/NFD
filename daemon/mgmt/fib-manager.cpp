@@ -44,12 +44,15 @@ FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
   , m_fib(fib)
   , m_faceTable(faceTable)
 {
-  registerCommandHandler<ndn::nfd::FibAddNextHopCommand>("add-nexthop",
-    [this] (auto&&, auto&&... args) { addNextHop(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::FibRemoveNextHopCommand>("remove-nexthop",
-    [this] (auto&&, auto&&... args) { removeNextHop(std::forward<decltype(args)>(args)...); });
-  registerStatusDatasetHandler("list",
-    [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::FibAddNextHopCommand>([this] (auto&&, auto&&... args) {
+    addNextHop(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::FibRemoveNextHopCommand>([this] (auto&&, auto&&... args) {
+    removeNextHop(std::forward<decltype(args)>(args)...);
+  });
+  registerStatusDatasetHandler("list", [this] (auto&&, auto&&, auto&&... args) {
+    listEntries(std::forward<decltype(args)>(args)...);
+  });
 }
 
 void

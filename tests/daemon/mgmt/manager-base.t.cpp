@@ -31,14 +31,14 @@ namespace nfd::tests {
 
 class TestCommandVoidParameters : public ndn::nfd::ControlCommand<TestCommandVoidParameters>
 {
-  NDN_CXX_CONTROL_COMMAND(TestCommandVoidParameters, "test-module", "test-void-parameters");
+  NDN_CXX_CONTROL_COMMAND("test-module", "test-void");
 };
 
 const TestCommandVoidParameters::RequestFormat TestCommandVoidParameters::s_requestFormat;
 
 class TestCommandRequireName : public ndn::nfd::ControlCommand<TestCommandRequireName>
 {
-  NDN_CXX_CONTROL_COMMAND(TestCommandRequireName, "test-module", "test-require-name");
+  NDN_CXX_CONTROL_COMMAND("test-module", "test-name-required");
 };
 
 const TestCommandRequireName::RequestFormat TestCommandRequireName::s_requestFormat =
@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
   bool wasHandlerCalled = false;
   auto handler = [&] (auto&&...) { wasHandlerCalled = true; };
 
-  m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
-  m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
+  m_manager.registerCommandHandler<TestCommandVoidParameters>(handler);
+  m_manager.registerCommandHandler<TestCommandRequireName>(handler);
   setTopPrefix();
 
   auto testRegisterCommandHandler = [&] (const Name& commandName) {
@@ -93,11 +93,11 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
   testRegisterCommandHandler("/localhost/nfd/test-module/test-void");
   BOOST_CHECK(wasHandlerCalled);
 
-  testRegisterCommandHandler("/localhost/nfd/test-module/test-require-name");
+  testRegisterCommandHandler("/localhost/nfd/test-module/test-name-required");
   BOOST_CHECK(!wasHandlerCalled);
 
-  testRegisterCommandHandler(Name("/localhost/nfd/test-module/test-require-name")
-                             .append(ControlParameters().setName("test-name").wireEncode()));
+  testRegisterCommandHandler(Name("/localhost/nfd/test-module/test-name-required")
+                             .append(ControlParameters().setName("/foo").wireEncode()));
   BOOST_CHECK(wasHandlerCalled);
 }
 

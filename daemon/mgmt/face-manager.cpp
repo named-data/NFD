@@ -49,12 +49,15 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   , m_faceTable(faceSystem.getFaceTable())
 {
   // register handlers for ControlCommand
-  registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
-    [this] (auto&&, auto&&, auto&&... args) { createFace(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
-    [this] (auto&&, auto&&... args) { updateFace(std::forward<decltype(args)>(args)...); });
-  registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
-    [this] (auto&&, auto&&, auto&&... args) { destroyFace(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::FaceCreateCommand>([this] (auto&&, auto&&, auto&&... args) {
+    createFace(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::FaceUpdateCommand>([this] (auto&&, auto&&... args) {
+    updateFace(std::forward<decltype(args)>(args)...);
+  });
+  registerCommandHandler<ndn::nfd::FaceDestroyCommand>([this] (auto&&, auto&&, auto&&... args) {
+    destroyFace(std::forward<decltype(args)>(args)...);
+  });
 
   // register handlers for StatusDataset
   registerStatusDatasetHandler("list",

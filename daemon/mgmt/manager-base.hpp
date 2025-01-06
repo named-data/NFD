@@ -76,15 +76,23 @@ protected:
   ~ManagerBase();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
-  // difference from ndn::mgmt::ControlCommandHandler: accepts nfd::ControlParameters
+  template<typename Command>
   using ControlCommandHandler = std::function<void(const Name& prefix, const Interest& interest,
-                                                   const ControlParameters& parameters,
+                                                   const typename Command::RequestParameters& parameters,
                                                    const CommandContinuation& done)>;
 
   template<typename Command>
   void
-  registerCommandHandler(const std::string& verb,
-                         ControlCommandHandler handler);
+  registerCommandHandler(ControlCommandHandler<Command> handler)
+  {
+    auto handle = [h = std::move(handler)] (const auto& prefix, const auto& interest,
+                                            const auto& params, const auto& done) {
+      const auto& reqParams = static_cast<const typename Command::RequestParameters&>(params);
+      h(prefix, interest, reqParams, done);
+    };
+    m_dispatcher.addControlCommand<Command>(makeAuthorization(Command::verb.toUri()),
+                                            std::move(handle));
+  }
 
   void
   registerStatusDatasetHandler(const std::string& verb,
@@ -127,34 +135,6 @@ private:
   Dispatcher& m_dispatcher;
   CommandAuthenticator* m_authenticator = nullptr;
 };
-
-template<typename Command>
-void
-ManagerBase::registerCommandHandler(const std::string& verb, ControlCommandHandler handler)
-{
-  auto validate = [] (const ndn::mgmt::ControlParametersBase& params) {
-    BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
-    try {
-      Command::validateRequest(static_cast<const ControlParameters&>(params));
-      return true;
-    }
-    catch (const std::invalid_argument&) {
-      return false;
-    }
-  };
-
-  auto handle = [handler = std::move(handler)] (const Name& prefix, const Interest& interest,
-                                                const ndn::mgmt::ControlParametersBase& params,
-                                                const CommandContinuation& done) {
-    BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
-    ControlParameters parameters = static_cast<const ControlParameters&>(params);
-    Command::applyDefaultsToRequest(parameters);
-    handler(prefix, interest, parameters, done);
-  };
-
-  m_dispatcher.addControlCommand<ControlParameters>(makeRelPrefix(verb), makeAuthorization(verb),
-                                                    std::move(validate), std::move(handle));
-}
 
 } // namespace nfd
 
