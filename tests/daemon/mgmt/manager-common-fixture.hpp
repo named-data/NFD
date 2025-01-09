@@ -59,6 +59,19 @@ protected:
                             ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
+  /**
+   * \brief Create a ControlCommand request for a Prefix Announcement.
+   * \param commandName Command name including prefix, such as `/localhost/nfd/rib/announce`
+   * \param prefixAnnouncement Prefix Announcement object
+   * \param identity Signing identity
+   *
+   * Per specification, Prefix Announcements use Signed Interest v0.3 only.
+   */
+  Interest
+  makeControlCommandRequest(Name commandName,
+                            const ndn::PrefixAnnouncement& prefixAnnouncement,
+                            const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
+
 protected:
   static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/InterestSignerFixture-identity"};
 

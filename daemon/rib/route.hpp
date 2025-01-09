@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -90,6 +90,9 @@ public: // non-member operators (hidden friends)
   }
 
 public:
+  /// Cost of route created by prefix announcement.
+  static constexpr uint64_t PA_ROUTE_COST = 2048;
+
   uint64_t faceId = 0;
   ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
   uint64_t cost = 0;

@@ -67,6 +67,9 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   registerCommandHandler<ndn::nfd::RibUnregisterCommand>([this] (auto&&, auto&&... args) {
     unregisterEntry(std::forward<decltype(args)>(args)...);
   });
+  registerCommandHandler<ndn::nfd::RibAnnounceCommand>([this] (auto&&, auto&&... args) {
+    announceEntry(std::forward<decltype(args)>(args)...);
+  });
   registerStatusDatasetHandler("list", [this] (auto&&, auto&&, auto&&... args) {
     listEntries(std::forward<decltype(args)>(args)...);
   });
@@ -266,6 +269,44 @@ RibManager::unregisterEntry(const Interest& interest, ControlParameters paramete
 }
 
 void
+RibManager::announceEntry(const Interest& interest, const ndn::nfd::RibAnnounceParameters& parameters,
+                          const CommandContinuation& done)
+{
+  const auto& announcement = parameters.getPrefixAnnouncement();
+  if (announcement.getAnnouncedName().size() > Fib::getMaxDepth()) {
+    done(ControlResponse(414, "Route prefix cannot exceed " + std::to_string(Fib::getMaxDepth()) +
+                         " components"));
+    return;
+  }
+
+  // Prepare parameters for response
+  ControlParameters responseParams;
+  responseParams.setFaceId(0);
+  setFaceForSelfRegistration(interest, responseParams);
+
+  Route route(announcement, responseParams.getFaceId());
+
+  responseParams
+    .setName(announcement.getAnnouncedName())
+    .setOrigin(route.origin)
+    .setCost(route.cost)
+    .setFlags(route.flags)
+    .setExpirationPeriod(time::duration_cast<time::milliseconds>(route.annExpires - time::steady_clock::now()));
+
+  BOOST_ASSERT(announcement.getData());
+  m_paValidator.validate(*announcement.getData(),
+    [=, name = announcement.getAnnouncedName(), route = std::move(route)] (const Data&) {
+      // Respond since command is valid and authorized
+      done(ControlResponse(200, "Success").setBody(responseParams.wireEncode()));
+      beginAddRoute(name, std::move(route), std::nullopt, [] (RibUpdateResult) {});
+    },
+    [=] (const Data&, ndn::security::ValidationError err) {
+      done(ControlResponse(403, "Validation error: " + err.getInfo()));
+    }
+  );
+}
+
+void
 RibManager::listEntries(ndn::mgmt::StatusDatasetContext& context)
 {
   auto now = time::steady_clock::now();
@@ -311,7 +352,8 @@ RibManager::makeAuthorization(const std::string&)
                  const ndn::mgmt::AcceptContinuation& accept,
                  const ndn::mgmt::RejectContinuation& reject) {
     BOOST_ASSERT(params != nullptr);
-    BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
+    BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters) ||
+                 typeid(*params) == typeid(ndn::nfd::RibAnnounceParameters));
     BOOST_ASSERT(prefix == LOCALHOST_TOP_PREFIX || prefix == LOCALHOP_TOP_PREFIX);
 
     auto& validator = prefix == LOCALHOST_TOP_PREFIX ? m_localhostValidator : m_localhopValidator;

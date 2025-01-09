@@ -212,6 +212,13 @@ private: // management Dispatcher related
                   const CommandContinuation& done);
 
   /**
+   * \brief Serve `rib/announce` command.
+   */
+  void
+  announceEntry(const Interest& interest, const ndn::nfd::RibAnnounceParameters& parameters,
+                const CommandContinuation& done);
+
+  /**
    * \brief Serve `rib/list` dataset.
    */
   void

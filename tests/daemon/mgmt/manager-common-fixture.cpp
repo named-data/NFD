@@ -52,6 +52,20 @@ InterestSignerFixture::makeControlCommandRequest(Name commandName,
   NDN_CXX_UNREACHABLE;
 }
 
+Interest
+InterestSignerFixture::makeControlCommandRequest(Name commandName,
+                                                 const ndn::PrefixAnnouncement& prefixAnnouncement,
+                                                 const Name& identity)
+{
+  const Block& paBlock = prefixAnnouncement.getData().value().wireEncode();
+
+  Interest interest(commandName);
+  interest.setApplicationParameters(paBlock);
+  m_signer.makeSignedInterest(interest, ndn::security::signingByIdentity(identity));
+
+  return interest;
+}
+
 void
 ManagerCommonFixture::setTopPrefix()
 {
