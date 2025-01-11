@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -101,13 +101,6 @@ public:
 class FibUpdatesFixture : public GlobalIoFixture, public KeyChainFixture
 {
 public:
-  FibUpdatesFixture()
-    : face(g_io, m_keyChain)
-    , controller(face, m_keyChain)
-    , fibUpdater(rib, controller)
-  {
-  }
-
   void
   insertRoute(const Name& name, uint64_t faceId,
               std::underlying_type_t<ndn::nfd::RouteOrigin> origin,
@@ -115,13 +108,7 @@ public:
               std::underlying_type_t<ndn::nfd::RouteFlags> flags)
   {
     auto route = createRoute(faceId, origin, cost, flags);
-
-    rib::RibUpdate update;
-    update.setAction(rib::RibUpdate::REGISTER)
-          .setName(name)
-          .setRoute(route);
-
-    rib.beginApplyUpdate(update, nullptr, nullptr);
+    rib.beginApplyUpdate({rib::RibUpdate::REGISTER, name, route}, nullptr, nullptr);
     pollIo();
   }
 
@@ -130,13 +117,7 @@ public:
              std::underlying_type_t<ndn::nfd::RouteOrigin> origin)
   {
     auto route = createRoute(faceId, origin, 0, 0);
-
-    rib::RibUpdate update;
-    update.setAction(rib::RibUpdate::UNREGISTER)
-          .setName(name)
-          .setRoute(route);
-
-    rib.beginApplyUpdate(update, nullptr, nullptr);
+    rib.beginApplyUpdate({rib::RibUpdate::UNREGISTER, name, route}, nullptr, nullptr);
     pollIo();
   }
 
@@ -167,11 +148,10 @@ public:
   }
 
 public:
-  ndn::DummyClientFace face;
-  ndn::nfd::Controller controller;
-
+  ndn::DummyClientFace face{g_io, m_keyChain};
+  ndn::nfd::Controller controller{face, m_keyChain};
   rib::Rib rib;
-  MockFibUpdater fibUpdater;
+  MockFibUpdater fibUpdater{rib, controller};
 };
 
 } // namespace nfd::tests

@@ -40,7 +40,6 @@
 
 namespace nfd {
 
-using rib::RibUpdate;
 using rib::Route;
 
 NFD_LOG_INIT(RibManager);
@@ -156,11 +155,7 @@ RibManager::beginAddRoute(const Name& name, Route route, std::optional<time::nan
     NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
   }
 
-  RibUpdate update;
-  update.setAction(RibUpdate::REGISTER)
-        .setName(name)
-        .setRoute(route);
-  beginRibUpdate(update, done);
+  beginRibUpdate({rib::RibUpdate::REGISTER, name, route}, done);
 }
 
 void
@@ -170,15 +165,11 @@ RibManager::beginRemoveRoute(const Name& name, const Route& route,
   NFD_LOG_INFO("Removing route " << name << " nexthop=" << route.faceId <<
                " origin=" << route.origin);
 
-  RibUpdate update;
-  update.setAction(RibUpdate::UNREGISTER)
-        .setName(name)
-        .setRoute(route);
-  beginRibUpdate(update, done);
+  beginRibUpdate({rib::RibUpdate::UNREGISTER, name, route}, done);
 }
 
 void
-RibManager::beginRibUpdate(const RibUpdate& update,
+RibManager::beginRibUpdate(const rib::RibUpdate& update,
                            const std::function<void(RibUpdateResult)>& done)
 {
   m_rib.beginApplyUpdate(update,

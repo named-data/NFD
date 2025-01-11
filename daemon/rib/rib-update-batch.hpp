@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,11 +26,37 @@
 #ifndef NFD_DAEMON_RIB_RIB_UPDATE_BATCH_HPP
 #define NFD_DAEMON_RIB_RIB_UPDATE_BATCH_HPP
 
-#include "rib-update.hpp"
+#include "route.hpp"
 
 #include <list>
 
 namespace nfd::rib {
+
+/**
+ * \brief Represents a route that will be added to or removed from a namespace.
+ */
+struct RibUpdate
+{
+  enum Action {
+    REGISTER    = 0,
+    UNREGISTER  = 1,
+    /**
+     * \brief An update triggered by a face destruction notification
+     * \note indicates a Route needs to be removed after a face is destroyed
+     */
+    REMOVE_FACE = 2,
+  };
+
+  Action action;
+  Name name;
+  Route route;
+};
+
+std::ostream&
+operator<<(std::ostream& os, RibUpdate::Action action);
+
+std::ostream&
+operator<<(std::ostream& os, const RibUpdate& update);
 
 using RibUpdateList = std::list<RibUpdate>;
 
@@ -46,7 +72,7 @@ public:
   RibUpdateBatch(uint64_t faceId);
 
   uint64_t
-  getFaceId() const
+  getFaceId() const noexcept
   {
     return m_faceId;
   }
@@ -55,13 +81,22 @@ public:
   add(const RibUpdate& update);
 
   const_iterator
-  begin() const;
+  begin() const noexcept
+  {
+    return m_updates.begin();
+  }
 
   const_iterator
-  end() const;
+  end() const noexcept
+  {
+    return m_updates.end();
+  }
 
   size_t
-  size() const;
+  size() const noexcept
+  {
+    return m_updates.size();
+  }
 
 private:
   uint64_t m_faceId;

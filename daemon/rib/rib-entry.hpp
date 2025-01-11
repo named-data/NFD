@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,29 +42,35 @@ public:
   using iterator = RouteList::iterator;
   using const_iterator = RouteList::const_iterator;
 
-  void
-  setName(const Name& prefix);
-
   const Name&
-  getName() const;
+  getName() const noexcept
+  {
+    return m_name;
+  }
+
+  void
+  setName(const Name& prefix)
+  {
+    m_name = prefix;
+  }
 
   shared_ptr<RibEntry>
-  getParent() const;
+  getParent() const
+  {
+    return m_parent;
+  }
 
-  bool
-  hasParent() const;
+  const std::list<shared_ptr<RibEntry>>&
+  getChildren() const noexcept
+  {
+    return m_children;
+  }
 
   void
   addChild(shared_ptr<RibEntry> child);
 
   void
   removeChild(shared_ptr<RibEntry> child);
-
-  const std::list<shared_ptr<RibEntry>>&
-  getChildren() const;
-
-  bool
-  hasChildren() const;
 
   /** \brief Inserts a new route into the entry's route list.
    *
@@ -95,20 +101,11 @@ public:
   bool
   hasFaceId(uint64_t faceId) const;
 
-  const RouteList&
-  getRoutes() const;
-
-  size_t
-  getNRoutes() const;
-
   iterator
   findRoute(const Route& route);
 
   const_iterator
   findRoute(const Route& route) const;
-
-  bool
-  hasRoute(const Route& route);
 
   void
   addInheritedRoute(const Route& route);
@@ -122,7 +119,10 @@ public:
    * The inherited routes returned represent inherited routes this namespace has in the FIB.
    */
   const RouteList&
-  getInheritedRoutes() const;
+  getInheritedRoutes() const noexcept
+  {
+    return m_inheritedRoutes;
+  }
 
   /**
    * \brief Finds an inherited route with a matching face ID.
@@ -140,7 +140,10 @@ public:
   hasInheritedRoute(const Route& route) const;
 
   bool
-  hasCapture() const;
+  hasCapture() const noexcept
+  {
+    return m_nRoutesWithCaptureSet > 0;
+  }
 
   /** \brief Determines if the entry has an inherited route with the passed
    *         face ID and its child inherit flag set.
@@ -180,21 +183,41 @@ public:
   getPrefixAnnouncement(time::milliseconds minExpiration = 15_s,
                         time::milliseconds maxExpiration = 1_h) const;
 
-  const_iterator
-  begin() const;
+  const RouteList&
+  getRoutes() const noexcept
+  {
+    return m_routes;
+  }
+
+  bool
+  empty() const noexcept
+  {
+    return m_routes.empty();
+  }
 
   const_iterator
-  end() const;
+  begin() const noexcept
+  {
+    return m_routes.begin();
+  }
+
+  const_iterator
+  end() const noexcept
+  {
+    return m_routes.end();
+  }
 
   iterator
-  begin();
+  begin() noexcept
+  {
+    return m_routes.begin();
+  }
 
   iterator
-  end();
-
-private:
-  void
-  setParent(shared_ptr<RibEntry> parent);
+  end() noexcept
+  {
+    return m_routes.end();
+  }
 
 private:
   Name m_name;
@@ -211,72 +234,6 @@ private:
    */
   uint64_t m_nRoutesWithCaptureSet = 0;
 };
-
-inline void
-RibEntry::setName(const Name& prefix)
-{
-  m_name = prefix;
-}
-
-inline const Name&
-RibEntry::getName() const
-{
-  return m_name;
-}
-
-inline void
-RibEntry::setParent(shared_ptr<RibEntry> parent)
-{
-  m_parent = std::move(parent);
-}
-
-inline shared_ptr<RibEntry>
-RibEntry::getParent() const
-{
-  return m_parent;
-}
-
-inline const std::list<shared_ptr<RibEntry>>&
-RibEntry::getChildren() const
-{
-  return m_children;
-}
-
-inline const RibEntry::RouteList&
-RibEntry::getRoutes() const
-{
-  return m_routes;
-}
-
-inline const RibEntry::RouteList&
-RibEntry::getInheritedRoutes() const
-{
-  return m_inheritedRoutes;
-}
-
-inline RibEntry::const_iterator
-RibEntry::begin() const
-{
-  return m_routes.begin();
-}
-
-inline RibEntry::const_iterator
-RibEntry::end() const
-{
-  return m_routes.end();
-}
-
-inline RibEntry::iterator
-RibEntry::begin()
-{
-  return m_routes.begin();
-}
-
-inline RibEntry::iterator
-RibEntry::end()
-{
-  return m_routes.end();
-}
 
 std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry);

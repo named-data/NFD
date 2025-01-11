@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,26 @@
 
 namespace nfd::rib {
 
+std::ostream&
+operator<<(std::ostream& os, RibUpdate::Action action)
+{
+  switch (action) {
+  case RibUpdate::REGISTER:
+    return os << "REGISTER";
+  case RibUpdate::UNREGISTER:
+    return os << "UNREGISTER";
+  case RibUpdate::REMOVE_FACE:
+    return os << "REMOVE_FACE";
+  }
+  return os;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const RibUpdate& update)
+{
+  return os << "RibUpdate{" << update.action << ", " << update.name << ", " << update.route << "}";
+}
+
 RibUpdateBatch::RibUpdateBatch(uint64_t faceId)
   : m_faceId(faceId)
 {
@@ -35,27 +55,8 @@ RibUpdateBatch::RibUpdateBatch(uint64_t faceId)
 void
 RibUpdateBatch::add(const RibUpdate& update)
 {
-  BOOST_ASSERT(m_faceId == update.getRoute().faceId);
-
+  BOOST_ASSERT(m_faceId == update.route.faceId);
   m_updates.push_back(update);
-}
-
-RibUpdateBatch::const_iterator
-RibUpdateBatch::begin() const
-{
-  return m_updates.begin();
-}
-
-RibUpdateBatch::const_iterator
-RibUpdateBatch::end() const
-{
-  return m_updates.end();
-}
-
-size_t
-RibUpdateBatch::size() const
-{
-  return m_updates.size();
 }
 
 } // namespace nfd::rib

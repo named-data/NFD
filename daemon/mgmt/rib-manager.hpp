@@ -27,7 +27,6 @@
 #define NFD_DAEMON_MGMT_RIB_MANAGER_HPP
 
 #include "manager-base.hpp"
-#include "rib/route.hpp"
 
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
@@ -39,8 +38,9 @@
 namespace nfd {
 
 namespace rib {
+class Route;
 class Rib;
-class RibUpdate;
+struct RibUpdate;
 } // namespace rib
 
 /**

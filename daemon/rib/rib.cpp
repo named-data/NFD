@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -179,7 +179,7 @@ Rib::erase(const Name& prefix, const Route& route)
     }
 
     // If a RibEntry's route list is empty, remove it from the tree
-    if (entry->getRoutes().empty()) {
+    if (entry->empty()) {
       eraseEntry(ribIt);
     }
   }
@@ -189,13 +189,7 @@ void
 Rib::onRouteExpiration(const Name& prefix, const Route& route)
 {
   NFD_LOG_DEBUG(route << " for " << prefix << " has expired");
-
-  RibUpdate update;
-  update.setAction(RibUpdate::UNREGISTER)
-        .setName(prefix)
-        .setRoute(route);
-
-  beginApplyUpdate(update, nullptr, nullptr);
+  beginApplyUpdate({RibUpdate::UNREGISTER, prefix, route}, nullptr, nullptr);
 }
 
 shared_ptr<RibEntry>
@@ -370,12 +364,7 @@ Rib::enqueueRemoveFace(const RibEntry& entry, uint64_t faceId)
     if (route.faceId != faceId) {
       continue;
     }
-
-    RibUpdate update;
-    update.setAction(RibUpdate::REMOVE_FACE)
-          .setName(entry.getName())
-          .setRoute(route);
-    addUpdateToQueue(update, nullptr, nullptr);
+    addUpdateToQueue({RibUpdate::REMOVE_FACE, entry.getName(), route}, nullptr, nullptr);
   }
 }
 
@@ -384,7 +373,7 @@ Rib::addUpdateToQueue(const RibUpdate& update,
                       const Rib::UpdateSuccessCallback& onSuccess,
                       const Rib::UpdateFailureCallback& onFailure)
 {
-  RibUpdateBatch batch(update.getRoute().faceId);
+  RibUpdateBatch batch(update.route.faceId);
   batch.add(update);
 
   UpdateQueueItem item{batch, onSuccess, onFailure};
@@ -421,13 +410,13 @@ Rib::onFibUpdateSuccess(const RibUpdateBatch& batch,
                         const Rib::UpdateSuccessCallback& onSuccess)
 {
   for (const RibUpdate& update : batch) {
-    switch (update.getAction()) {
+    switch (update.action) {
     case RibUpdate::REGISTER:
-      insert(update.getName(), update.getRoute());
+      insert(update.name, update.route);
       break;
     case RibUpdate::UNREGISTER:
     case RibUpdate::REMOVE_FACE:
-      erase(update.getName(), update.getRoute());
+      erase(update.name, update.route);
       break;
     }
   }
@@ -463,16 +452,16 @@ void
 Rib::modifyInheritedRoutes(const RibUpdateList& inheritedRoutes)
 {
   for (const RibUpdate& update : inheritedRoutes) {
-    auto ribIt = m_rib.find(update.getName());
+    auto ribIt = m_rib.find(update.name);
     BOOST_ASSERT(ribIt != m_rib.end());
     shared_ptr<RibEntry> entry(ribIt->second);
 
-    switch (update.getAction()) {
+    switch (update.action) {
     case RibUpdate::REGISTER:
-      entry->addInheritedRoute(update.getRoute());
+      entry->addInheritedRoute(update.route);
       break;
     case RibUpdate::UNREGISTER:
-      entry->removeInheritedRoute(update.getRoute());
+      entry->removeInheritedRoute(update.route);
       break;
     case RibUpdate::REMOVE_FACE:
       break;
@@ -486,7 +475,6 @@ operator<<(std::ostream& os, const Rib& rib)
   for (const auto& item : rib) {
     os << *item.second << "\n";
   }
-
   return os;
 }
 

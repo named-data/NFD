@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -72,35 +72,20 @@ RibEntry::insertRoute(const Route& route)
 void
 RibEntry::eraseRoute(const Route& route)
 {
-  auto it = findRoute(route);
-  eraseRoute(it);
-}
-
-bool
-RibEntry::hasRoute(const Route& route)
-{
-  auto it = findRoute(route);
-  return it != end();
+  eraseRoute(findRoute(route));
 }
 
 bool
 RibEntry::hasFaceId(uint64_t faceId) const
 {
-  auto it = std::find_if(begin(), end(), [faceId] (const auto& r) { return r.faceId == faceId; });
-  return it != end();
-}
-
-size_t
-RibEntry::getNRoutes() const
-{
-  return m_routes.size();
+  return std::find_if(begin(), end(), [=] (const auto& r) { return r.faceId == faceId; }) != end();
 }
 
 void
 RibEntry::addChild(shared_ptr<RibEntry> child)
 {
   BOOST_ASSERT(!child->getParent());
-  child->setParent(this->shared_from_this());
+  child->m_parent = shared_from_this();
   m_children.push_back(std::move(child));
 }
 
@@ -108,7 +93,7 @@ void
 RibEntry::removeChild(shared_ptr<RibEntry> child)
 {
   BOOST_ASSERT(child->getParent().get() == this);
-  child->setParent(nullptr);
+  child->m_parent = nullptr;
   m_children.remove(child);
 }
 
@@ -153,12 +138,6 @@ bool
 RibEntry::hasInheritedRoute(const Route& route) const
 {
   return findInheritedRoute(route) != m_inheritedRoutes.end();
-}
-
-bool
-RibEntry::hasCapture() const
-{
-  return m_nRoutesWithCaptureSet > 0;
 }
 
 bool

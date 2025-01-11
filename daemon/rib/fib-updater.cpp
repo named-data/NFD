@@ -68,7 +68,7 @@ FibUpdater::computeUpdates(const RibUpdateBatch& batch)
 
   // Compute updates and add to m_fibUpdates
   for (const RibUpdate& update : batch) {
-    switch (update.getAction()) {
+    switch (update.action) {
     case RibUpdate::REGISTER:
       computeUpdatesForRegistration(update);
       break;
@@ -88,42 +88,38 @@ FibUpdater::computeUpdates(const RibUpdateBatch& batch)
 void
 FibUpdater::computeUpdatesForRegistration(const RibUpdate& update)
 {
-  const Name& prefix = update.getName();
-  const Route& route = update.getRoute();
-
-  auto it = m_rib.find(prefix);
+  auto it = m_rib.find(update.name);
 
   // Name prefix exists
   if (it != m_rib.end()) {
     shared_ptr<const RibEntry> entry(it->second);
-
-    auto existingRoute = entry->findRoute(route);
+    auto existingRoute = entry->findRoute(update.route);
 
     // Route will be new
     if (existingRoute == entry->end()) {
       // Will the new route change the namespace's capture flag?
-      bool willCaptureBeTurnedOn = (entry->hasCapture() == false && route.isRibCapture());
+      bool willCaptureBeTurnedOn = (!entry->hasCapture() && update.route.isRibCapture());
 
-      createFibUpdatesForNewRoute(*entry, route, willCaptureBeTurnedOn);
+      createFibUpdatesForNewRoute(*entry, update.route, willCaptureBeTurnedOn);
     }
     else {
       // Route already exists
       RibEntry entryCopy = *entry;
 
-      Route& routeToUpdate = *entryCopy.findRoute(route);
-      routeToUpdate.flags = route.flags;
-      routeToUpdate.cost = route.cost;
-      routeToUpdate.expires = route.expires;
+      Route& routeToUpdate = *entryCopy.findRoute(update.route);
+      routeToUpdate.flags = update.route.flags;
+      routeToUpdate.cost = update.route.cost;
+      routeToUpdate.expires = update.route.expires;
 
-      createFibUpdatesForUpdatedRoute(entryCopy, route, *existingRoute);
+      createFibUpdatesForUpdatedRoute(entryCopy, update.route, *existingRoute);
     }
   }
   else {
     // New name in RIB
     // Find prefix's parent
-    shared_ptr<RibEntry> parent = m_rib.findParent(prefix);
+    shared_ptr<RibEntry> parent = m_rib.findParent(update.name);
 
-    Rib::RibEntryList descendants = m_rib.findDescendantsForNonInsertedName(prefix);
+    Rib::RibEntryList descendants = m_rib.findDescendantsForNonInsertedName(update.name);
     Rib::RibEntryList children;
 
     for (const auto& descendant : descendants) {
@@ -134,44 +130,40 @@ FibUpdater::computeUpdatesForRegistration(const RibUpdate& update)
       }
     }
 
-    createFibUpdatesForNewRibEntry(prefix, route, children);
+    createFibUpdatesForNewRibEntry(update.name, update.route, children);
   }
 }
 
 void
 FibUpdater::computeUpdatesForUnregistration(const RibUpdate& update)
 {
-  const Name& prefix = update.getName();
-  const Route& route = update.getRoute();
-
-  auto ribIt = m_rib.find(prefix);
+  auto ribIt = m_rib.find(update.name);
 
   // Name prefix exists
   if (ribIt != m_rib.end()) {
     shared_ptr<const RibEntry> entry(ribIt->second);
     const bool hadCapture = entry->hasCapture();
 
-    auto existing = entry->findRoute(route);
+    auto existing = entry->findRoute(update.route);
     if (existing != entry->end()) {
       RibEntry temp = *entry;
 
       // Erase route in temp entry
-      temp.eraseRoute(route);
+      temp.eraseRoute(update.route);
 
-      const bool captureWasTurnedOff = (hadCapture && !temp.hasCapture());
-
+      bool captureWasTurnedOff = (hadCapture && !temp.hasCapture());
       createFibUpdatesForErasedRoute(temp, *existing, captureWasTurnedOff);
 
       // The RibEntry still has the face ID; need to update FIB
       // with lowest cost for the same face instead of removing the face from the FIB
-      const Route* next = entry->getRouteWithSecondLowestCostByFaceId(route.faceId);
+      const Route* next = entry->getRouteWithSecondLowestCostByFaceId(update.route.faceId);
 
       if (next != nullptr) {
         createFibUpdatesForNewRoute(temp, *next, false);
       }
 
       // The RibEntry will be empty after this removal
-      if (entry->getNRoutes() == 1) {
+      if (entry->getRoutes().size() == 1) {
         createFibUpdatesForErasedRibEntry(*entry);
       }
     }
@@ -562,7 +554,7 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
     // If capture is turned off for the route and another route is installed in the RibEntry,
     // add ancestors to self
     Rib::RouteSet routesToAdd;
-    if (captureWasTurnedOff && entry.getNRoutes() != 0) {
+    if (captureWasTurnedOff && !entry.empty()) {
       // Look for an ancestors that were blocked previously
       routesToAdd = m_rib.getAncestorRoutes(entry);
 
@@ -589,7 +581,7 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
     // If capture is turned off for the route and another route is installed in the RibEntry,
     // add ancestors to self
     Rib::RouteSet routesToAdd;
-    if (captureWasTurnedOff && entry.getNRoutes() != 0) {
+    if (captureWasTurnedOff && !entry.empty()) {
       // Look for an ancestors that were blocked previously
       routesToAdd = m_rib.getAncestorRoutes(entry);
 
@@ -604,11 +596,10 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
   Rib::RouteSet ancestorRoutes = m_rib.getAncestorRoutes(entry);
 
   // If the current entry has capture set or is pending removal, don't add inherited route
-  if (!entry.hasCapture() && entry.getNRoutes() != 0) {
+  if (!entry.hasCapture() && !entry.empty()) {
     // If there is an ancestor route which is the same as the erased route, add that route
     // to the current entry
     auto it = ancestorRoutes.find(route);
-
     if (it != ancestorRoutes.end()) {
       addInheritedRoute(entry.getName(), *it);
       addFibUpdate(FibUpdate::createAddUpdate(entry.getName(), it->faceId, it->cost));
@@ -684,23 +675,13 @@ FibUpdater::traverseSubTree(const RibEntry& entry, Rib::Rib::RouteSet routesToAd
 void
 FibUpdater::addInheritedRoute(const Name& name, const Route& route)
 {
-  RibUpdate update;
-  update.setAction(RibUpdate::REGISTER)
-        .setName(name)
-        .setRoute(route);
-
-  m_inheritedRoutes.push_back(update);
+  m_inheritedRoutes.push_back({RibUpdate::REGISTER, name, route});
 }
 
 void
 FibUpdater::removeInheritedRoute(const Name& name, const Route& route)
 {
-  RibUpdate update;
-  update.setAction(RibUpdate::UNREGISTER)
-        .setName(name)
-        .setRoute(route);
-
-  m_inheritedRoutes.push_back(update);
+  m_inheritedRoutes.push_back({RibUpdate::UNREGISTER, name, route});
 }
 
 } // namespace nfd::rib
