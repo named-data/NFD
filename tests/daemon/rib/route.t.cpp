@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(Print)
 {
   Route r;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
-                    "Route(faceid: 0, origin: app, cost: 0, flags: 0x0, never expires)");
+                    "Route{face: 0, origin: app, cost: 0, flags: 0x0, expires: never}");
 
   r.faceId = 4980;
   r.origin = ndn::nfd::ROUTE_ORIGIN_STATIC;
@@ -144,17 +144,17 @@ BOOST_AUTO_TEST_CASE(Print)
   r.cost = 2312;
   r.expires = time::steady_clock::now() + 791214234_ms;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
-                    "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, expires in: "
-                    "791214234 milliseconds)");
+                    "Route{face: 4980, origin: static, cost: 2312, flags: 0x1, expires in: "
+                    "791214234 milliseconds}");
 
   r.expires = std::nullopt;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
-                    "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, never expires)");
+                    "Route{face: 4980, origin: static, cost: 2312, flags: 0x1, expires: never}");
 
   r = Route(makePrefixAnn("/ann", 1_h), 3247);
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
-                    "Route(faceid: 3247, origin: prefixann, cost: 2048, flags: 0x1, expires in: "
-                    "3600000 milliseconds, announcement: (/ann expires=3600000 milliseconds))");
+                    "Route{face: 3247, origin: prefixann, cost: 2048, flags: 0x1, expires in: "
+                    "3600000 milliseconds, announcement: (/ann expires=3600000 milliseconds)}");
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRoute

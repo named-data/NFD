@@ -35,13 +35,14 @@ static time::steady_clock::time_point
 computeExpiration(const ndn::PrefixAnnouncement& ann)
 {
   auto validityEnd = time::steady_clock::duration::max();
-  if (ann.getValidityPeriod()) {
+  const auto& validityPeriod = ann.getValidityPeriod();
+  if (validityPeriod) {
     auto now = time::system_clock::now();
-    if (!ann.getValidityPeriod()->isValid(now)) {
+    if (!validityPeriod->isValid(now)) {
       validityEnd = time::steady_clock::duration::zero();
     }
     else {
-      validityEnd = ann.getValidityPeriod()->getPeriod().second - now;
+      validityEnd = validityPeriod->getPeriod().second - now;
     }
   }
   return time::steady_clock::now() +
@@ -62,8 +63,8 @@ Route::Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId)
 std::ostream&
 operator<<(std::ostream& os, const Route& route)
 {
-  os << "Route("
-     << "faceid: " << route.faceId
+  os << "Route{"
+     << "face: " << route.faceId
      << ", origin: " << route.origin
      << ", cost: " << route.cost
      << ", flags: " << ndn::AsHex{route.flags};
@@ -72,14 +73,14 @@ operator<<(std::ostream& os, const Route& route)
     os << ", expires in: " << time::duration_cast<time::milliseconds>(*route.expires - time::steady_clock::now());
   }
   else {
-    os << ", never expires";
+    os << ", expires: never";
   }
 
   if (route.announcement) {
     os << ", announcement: (" << *route.announcement << ')';
   }
 
-  return os << ')';
+  return os << '}';
 }
 
 } // namespace nfd::rib

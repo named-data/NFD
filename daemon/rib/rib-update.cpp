@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,10 +44,9 @@ operator<<(std::ostream& os, RibUpdate::Action action)
 std::ostream&
 operator<<(std::ostream& os, const RibUpdate& update)
 {
-  return os << "RibUpdate {\n"
-            << "  Name: " << update.getName() << "\n"
-            << "  Action: " << update.getAction() << "\n"
-            << "  " << update.getRoute() << "\n"
+  return os << "RibUpdate{" << update.getAction()
+            << ", " << update.getName()
+            << ", " << update.getRoute()
             << "}";
 }
 

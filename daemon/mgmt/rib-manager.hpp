@@ -224,9 +224,6 @@ private: // management Dispatcher related
   void
   listEntries(ndn::mgmt::StatusDatasetContext& context);
 
-  void
-  setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters);
-
   ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) final;
 
@@ -234,12 +231,9 @@ private: // Face monitor
   void
   fetchActiveFaces();
 
-  void
-  onFetchActiveFacesFailure(uint32_t code, const std::string& reason);
-
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  scheduleActiveFaceFetch(const time::seconds& timeToWait);
+  scheduleActiveFaceFetch(time::seconds timeToWait);
 
   void
   removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFaces);

@@ -31,6 +31,7 @@
 #include "table/fib.hpp"
 
 #include <boost/asio/defer.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
@@ -122,11 +123,11 @@ RibManager::enableLocalFields()
   m_nfdController.start<ndn::nfd::FaceUpdateCommand>(
     ControlParameters().setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true),
     [] (const ControlParameters&) {
-      NFD_LOG_DEBUG("Local fields enabled");
+      NFD_LOG_TRACE("Local fields enabled");
     },
     [] (const ControlResponse& res) {
-      NDN_THROW(Error("Couldn't enable local fields (" + std::to_string(res.getCode()) +
-                      " " + res.getText() + ")"));
+      NDN_THROW(Error("Could not enable local fields (error " +
+                      std::to_string(res.getCode()) + ": " + res.getText() + ")"));
     });
 }
 
@@ -182,11 +183,11 @@ RibManager::beginRibUpdate(const RibUpdate& update,
 {
   m_rib.beginApplyUpdate(update,
     [=] {
-      NFD_LOG_DEBUG("RIB update succeeded for " << update);
+      NFD_LOG_DEBUG(update << " -> OK");
       done(RibUpdateResult::OK);
     },
     [=] (uint32_t code, const std::string& error) {
-      NFD_LOG_DEBUG("RIB update failed for " << update << " (" << code << " " << error << ")");
+      NFD_LOG_DEBUG(update << " -> error " << code << ": " << error);
 
       // Since the FIB rejected the update, clean up invalid routes
       scheduleActiveFaceFetch(1_s);
@@ -200,10 +201,9 @@ RibManager::registerTopPrefix(const Name& topPrefix)
 {
   // add FIB nexthop
   m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters().setName(Name(topPrefix).append(MGMT_MODULE_NAME))
-                       .setFaceId(0),
+    ControlParameters().setName(Name(topPrefix).append(MGMT_MODULE_NAME)).setFaceId(0),
     [=] (const ControlParameters& res) {
-      NFD_LOG_DEBUG("Successfully registered " << topPrefix << " with NFD");
+      NFD_LOG_DEBUG("Successfully registered " << topPrefix << " with the forwarder");
 
       // Routes must be inserted into the RIB so route flags can be applied
       Route route;
@@ -214,12 +214,23 @@ RibManager::registerTopPrefix(const Name& topPrefix)
       m_rib.insert(topPrefix, route);
     },
     [=] (const ControlResponse& res) {
-      NDN_THROW(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
-                      std::to_string(res.getCode()) + " " + res.getText() + ")"));
+      NDN_THROW(Error("Could not add FIB entry " + topPrefix.toUri() + " (error " +
+                      std::to_string(res.getCode()) + ": " + res.getText() + ")"));
     });
 
   // add top prefix to the dispatcher without prefix registration
   m_dispatcher.addTopPrefix(topPrefix, false);
+}
+
+static uint64_t
+getIncomingFaceId(const Interest& request)
+{
+  auto incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
+  // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
+  // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
+  // and is initialized synchronously with IncomingFaceId field enabled.
+  BOOST_ASSERT(incomingFaceIdTag != nullptr);
+  return incomingFaceIdTag->get();
 }
 
 void
@@ -232,10 +243,12 @@ RibManager::registerEntry(const Interest& interest, ControlParameters parameters
     return;
   }
 
-  setFaceForSelfRegistration(interest, parameters);
+  if (parameters.getFaceId() == 0) { // self registration
+    parameters.setFaceId(getIncomingFaceId(interest));
+  }
 
   // Respond since command is valid and authorized
-  done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
+  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 
   Route route;
   route.faceId = parameters.getFaceId();
@@ -256,10 +269,12 @@ void
 RibManager::unregisterEntry(const Interest& interest, ControlParameters parameters,
                             const CommandContinuation& done)
 {
-  setFaceForSelfRegistration(interest, parameters);
+  if (parameters.getFaceId() == 0) { // self unregistration
+    parameters.setFaceId(getIncomingFaceId(interest));
+  }
 
   // Respond since command is valid and authorized
-  done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
+  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 
   Route route;
   route.faceId = parameters.getFaceId();
@@ -273,37 +288,38 @@ RibManager::announceEntry(const Interest& interest, const ndn::nfd::RibAnnounceP
                           const CommandContinuation& done)
 {
   const auto& announcement = parameters.getPrefixAnnouncement();
-  if (announcement.getAnnouncedName().size() > Fib::getMaxDepth()) {
+  const auto& name = announcement.getAnnouncedName();
+  if (name.size() > Fib::getMaxDepth()) {
     done(ControlResponse(414, "Route prefix cannot exceed " + std::to_string(Fib::getMaxDepth()) +
                          " components"));
     return;
   }
 
+  Route route(announcement, getIncomingFaceId(interest));
+
   // Prepare parameters for response
   ControlParameters responseParams;
-  responseParams.setFaceId(0);
-  setFaceForSelfRegistration(interest, responseParams);
-
-  Route route(announcement, responseParams.getFaceId());
-
   responseParams
-    .setName(announcement.getAnnouncedName())
+    .setName(name)
+    .setFaceId(route.faceId)
     .setOrigin(route.origin)
     .setCost(route.cost)
     .setFlags(route.flags)
     .setExpirationPeriod(time::duration_cast<time::milliseconds>(route.annExpires - time::steady_clock::now()));
 
+  NDN_LOG_TRACE("Validating announcement " << announcement);
   BOOST_ASSERT(announcement.getData());
   m_paValidator.validate(*announcement.getData(),
-    [=, name = announcement.getAnnouncedName(), route = std::move(route)] (const Data&) {
+    [=, route = std::move(route)] (const Data&) {
       // Respond since command is valid and authorized
-      done(ControlResponse(200, "Success").setBody(responseParams.wireEncode()));
+      done(ControlResponse(200, "OK").setBody(responseParams.wireEncode()));
       beginAddRoute(name, std::move(route), std::nullopt, [] (RibUpdateResult) {});
     },
-    [=] (const Data&, ndn::security::ValidationError err) {
-      done(ControlResponse(403, "Validation error: " + err.getInfo()));
-    }
-  );
+    [=] (const Data&, const ndn::security::ValidationError& err) {
+      NDN_LOG_DEBUG("announce " << name << " -> " << err);
+      done(ControlResponse(403, "Prefix announcement rejected: " +
+                           boost::lexical_cast<std::string>(err.getCode())));
+    });
 }
 
 void
@@ -328,20 +344,6 @@ RibManager::listEntries(ndn::mgmt::StatusDatasetContext& context)
     context.append(item.wireEncode());
   }
   context.end();
-}
-
-void
-RibManager::setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters)
-{
-  bool isSelfRegistration = (parameters.getFaceId() == 0);
-  if (isSelfRegistration) {
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
-    // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
-    // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
-    // and is initialized synchronously with IncomingFaceId field enabled.
-    BOOST_ASSERT(incomingFaceIdTag != nullptr);
-    parameters.setFaceId(*incomingFaceIdTag);
-  }
 }
 
 ndn::mgmt::Authorization
@@ -408,16 +410,15 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
       beginAddRoute(pa.getAnnouncedName(), route, std::nullopt,
         [=] (RibUpdateResult ribRes) {
           auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << ": " << res);
+          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << " -> " << res);
           cb(res);
         });
     },
-    [=] (const Data&, ndn::security::ValidationError err) {
+    [=] (const Data&, const ndn::security::ValidationError& err) {
       NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
-                   " validation error: " << err);
+                   " -> validation error: " << err);
       cb(SlAnnounceResult::VALIDATION_FAILURE);
-    }
-  );
+    });
 }
 
 void
@@ -430,7 +431,7 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
   Route* oldRoute = m_rib.findLongestPrefix(name, routeQuery);
 
   if (oldRoute == nullptr || !oldRoute->announcement) {
-    NFD_LOG_DEBUG("slRenew " << name << " " << faceId << ": not found");
+    NFD_LOG_DEBUG("slRenew " << name << " " << faceId << " -> not found");
     return cb(SlAnnounceResult::NOT_FOUND);
   }
   Name routeName = oldRoute->announcement->getAnnouncedName();
@@ -440,7 +441,7 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
   beginAddRoute(routeName, route, std::nullopt,
     [=] (RibUpdateResult ribRes) {
       auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-      NFD_LOG_INFO("slRenew " << name << " " << faceId << ": " << res << " " << routeName);
+      NFD_LOG_INFO("slRenew " << name << " " << faceId << " -> " << res << " " << routeName);
       cb(res);
     });
 }
@@ -472,18 +473,14 @@ RibManager::fetchActiveFaces()
 
   m_nfdController.fetch<ndn::nfd::FaceDataset>(
     [this] (auto&&... args) { removeInvalidFaces(std::forward<decltype(args)>(args)...); },
-    [this] (auto&&... args) { onFetchActiveFacesFailure(std::forward<decltype(args)>(args)...); });
+    [this] (uint32_t code, const std::string& reason) {
+      NFD_LOG_WARN("Failed to fetch face dataset (error " << code << ": " << reason << ")");
+      scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
+    });
 }
 
 void
-RibManager::onFetchActiveFacesFailure(uint32_t code, const std::string& reason)
-{
-  NFD_LOG_DEBUG("Face Status Dataset request failure " << code << " " << reason);
-  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
-}
-
-void
-RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
+RibManager::scheduleActiveFaceFetch(time::seconds timeToWait)
 {
   m_activeFaceFetchEvent = getScheduler().schedule(timeToWait, [this] { fetchActiveFaces(); });
 }
@@ -507,10 +504,9 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
 void
 RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
 {
-  NFD_LOG_TRACE("onNotification: " << notification);
+  NFD_LOG_TRACE("Received notification " << notification);
 
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
-    NFD_LOG_DEBUG("Received notification for destroyed FaceId " << notification.getFaceId());
     boost::asio::defer(getGlobalIoService(),
                        [this, id = notification.getFaceId()] { m_rib.beginRemoveFace(id); });
   }

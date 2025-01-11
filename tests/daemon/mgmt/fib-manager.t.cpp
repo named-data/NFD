@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
     req.setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
     m_responses.clear();
     expectedName = req.getName();
-    expectedResponse = makeResponse(200, "Success", parameters.setFaceId(faceId));
+    expectedResponse = makeResponse(200, "OK", parameters.setFaceId(faceId));
     receiveInterest(req);
   };
 
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(InitialAdd)
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
-  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "Success", parameters)),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "OK", parameters)),
                     CheckResponseResult::OK);
   BOOST_CHECK_EQUAL(checkNextHop("/hello", 1, addedFaceId, 101), CheckNextHopResult::OK);
 }
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(ImplicitCost)
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
-  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "Success", parameters)),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "OK", parameters)),
                     CheckResponseResult::OK);
   BOOST_CHECK_EQUAL(checkNextHop("/hello", 1, addedFaceId, 0), CheckNextHopResult::OK);
 }
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(AddToExisting)
     m_responses.clear();
     auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters);
     expectedName = req.getName();
-    expectedResponse = makeResponse(200, "Success", parameters);
+    expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);
   };
 
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(Basic)
     m_responses.clear();
     auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
     expectedName = req.getName();
-    expectedResponse = makeResponse(200, "Success", parameters);
+    expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);
   };
 
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(PrefixNotFound)
   receiveInterest(req);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
 
-  auto expectedResponse = makeResponse(200, "Success", parameters);
+  auto expectedResponse = makeResponse(200, "OK", parameters);
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResponse), CheckResponseResult::OK);
 }
 
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
     auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
     req.setTag(make_shared<lp::IncomingFaceIdTag>(face));
     expectedName = req.getName();
-    expectedResponse = makeResponse(200, "Success", parameters.setFaceId(face));
+    expectedResponse = makeResponse(200, "OK", parameters.setFaceId(face));
     receiveInterest(req);
   };
 
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
     m_responses.clear();
     auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
     expectedName = req.getName();
-    expectedResponse = makeResponse(200, "Success", parameters);
+    expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);
   };
 

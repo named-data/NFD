@@ -341,7 +341,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
   if (this->m_status.isLocalhopConfigured) {
     commandHop.setTag(std::make_shared<lp::IncomingFaceIdTag>(123));
   }
-  auto successResp = this->makeResponse(200, "Success", parameters);
+  auto successResp = this->makeResponse(200, "OK", parameters);
   auto failureResp = ControlResponse(403, "authorization rejected");
 
   BOOST_CHECK_EQUAL(this->m_responses.size(), 0);
@@ -377,9 +377,9 @@ BOOST_AUTO_TEST_CASE(Basic)
   receiveInterest(commandUnregister);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "Success", paramsRegister)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "OK", paramsRegister)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "OK", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
@@ -409,9 +409,9 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
   paramsUnregister.setFaceId(inFaceId);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "Success", paramsRegister)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "OK", paramsRegister)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "OK", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
@@ -495,14 +495,15 @@ BOOST_AUTO_TEST_CASE(Basic)
   paramsUnregister.setFaceId(announceFaceId);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "Success", paramsAnnounceResponse)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "OK", paramsAnnounceResponse)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "OK", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
-                    rib::FibUpdate::createAddUpdate("/test-prefix-announce", announceFaceId, rib::Route::PA_ROUTE_COST));
+                    rib::FibUpdate::createAddUpdate("/test-prefix-announce", announceFaceId,
+                                                    rib::Route::PA_ROUTE_COST));
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
                     rib::FibUpdate::createRemoveUpdate("/test-prefix-announce", announceFaceId));
 }
@@ -532,14 +533,15 @@ BOOST_AUTO_TEST_CASE(UnregisterFromDifferentFace)
     .setExpirationPeriod(10_s);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "Success", paramsAnnounceResponse)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "OK", paramsAnnounceResponse)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "OK", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
-                    rib::FibUpdate::createAddUpdate("/test-prefix-announce", announceFaceId, rib::Route::PA_ROUTE_COST));
+                    rib::FibUpdate::createAddUpdate("/test-prefix-announce", announceFaceId,
+                                                    rib::Route::PA_ROUTE_COST));
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
                     rib::FibUpdate::createRemoveUpdate("/test-prefix-announce", announceFaceId));
 }

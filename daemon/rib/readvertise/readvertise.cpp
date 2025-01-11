@@ -68,16 +68,16 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
 {
   std::optional<ReadvertiseAction> action = m_policy->handleNewRoute(ribRoute);
   if (!action) {
-    NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                  ',' << ribRoute.route->origin << ") not-readvertising");
+    NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                  " origin=" << ribRoute.route->origin << " -> not-readvertising");
     return;
   }
 
   auto [rrIt, isNewRr] = m_rrs.emplace(action->prefix);
   if (!isNewRr && rrIt->signer != action->signer) {
-    NFD_LOG_WARN("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                 ',' << ribRoute.route->origin << ") readvertising-as " << action->prefix <<
-                 " old-signer " << rrIt->signer << " new-signer " << action->signer);
+    NFD_LOG_WARN("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                 " origin=" << ribRoute.route->origin << " -> readvertising-as " << action->prefix <<
+                 " old-signer=" << rrIt->signer << " new-signer=" << action->signer);
   }
   rrIt->signer = action->signer;
 
@@ -85,14 +85,14 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
   BOOST_VERIFY(isNewInMap);
 
   if (rrIt->nRibRoutes++ > 0) {
-    NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                  ',' << ribRoute.route->origin << ") already-readvertised-as " << action->prefix);
+    NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                  " origin=" << ribRoute.route->origin << " -> already-readvertised-as " << action->prefix);
     return;
   }
 
-  NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                ',' << ribRoute.route->origin << ") readvertising-as " << action->prefix <<
-                " signer " << action->signer);
+  NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                " origin=" << ribRoute.route->origin << " -> readvertising-as " << action->prefix <<
+                " signer=" << action->signer);
   rrIt->retryDelay = RETRY_DELAY_MIN;
   this->advertise(rrIt);
 }
@@ -102,8 +102,8 @@ Readvertise::beforeRemoveRoute(const RibRouteRef& ribRoute)
 {
   auto indexIt = m_routeToRr.find(ribRoute);
   if (indexIt == m_routeToRr.end()) {
-    NFD_LOG_DEBUG("remove-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                  ',' << ribRoute.route->origin << ") not-readvertised");
+    NFD_LOG_DEBUG("remove-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                  " origin=" << ribRoute.route->origin << " -> not-readvertised");
     return;
   }
 
@@ -111,8 +111,8 @@ Readvertise::beforeRemoveRoute(const RibRouteRef& ribRoute)
   m_routeToRr.erase(indexIt);
 
   if (--rrIt->nRibRoutes > 0) {
-    NFD_LOG_DEBUG("remove-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
-                  ',' << ribRoute.route->origin << ") needed-by " << rrIt->nRibRoutes);
+    NFD_LOG_DEBUG("remove-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
+                  " origin=" << ribRoute.route->origin << " -> needed-by " << rrIt->nRibRoutes);
     return;
   }
 
@@ -149,19 +149,19 @@ Readvertise::advertise(ReadvertisedRouteContainer::iterator rrIt)
   BOOST_ASSERT(rrIt->nRibRoutes > 0);
 
   if (!m_destination->isAvailable()) {
-    NFD_LOG_DEBUG("advertise " << rrIt->prefix << " destination-unavailable");
+    NFD_LOG_DEBUG("advertise " << rrIt->prefix << " -> destination unavailable");
     return;
   }
 
   m_destination->advertise(*rrIt,
     [=] {
-      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " success");
+      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " -> success");
       rrIt->retryDelay = RETRY_DELAY_MIN;
       rrIt->retryEvt = getScheduler().schedule(randomizeTimer(m_policy->getRefreshInterval()),
                                                [=] { advertise(rrIt); });
     },
     [=] (const std::string& msg) {
-      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " failure: " << msg);
+      NFD_LOG_DEBUG("advertise " << rrIt->prefix << " -> failure: " << msg);
       rrIt->retryDelay = std::min(RETRY_DELAY_MAX, rrIt->retryDelay * 2);
       rrIt->retryEvt = getScheduler().schedule(randomizeTimer(rrIt->retryDelay),
                                                [=] { advertise(rrIt); });
@@ -174,18 +174,18 @@ Readvertise::withdraw(ReadvertisedRouteContainer::iterator rrIt)
   BOOST_ASSERT(rrIt->nRibRoutes == 0);
 
   if (!m_destination->isAvailable()) {
-    NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " destination-unavailable");
+    NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " -> destination unavailable");
     m_rrs.erase(rrIt);
     return;
   }
 
   m_destination->withdraw(*rrIt,
     [=] {
-      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " success");
+      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " -> success");
       m_rrs.erase(rrIt);
     },
     [=] (const std::string& msg) {
-      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " failure: " << msg);
+      NFD_LOG_DEBUG("withdraw " << rrIt->prefix << " -> failure: " << msg);
       rrIt->retryDelay = std::min(RETRY_DELAY_MAX, rrIt->retryDelay * 2);
       rrIt->retryEvt = getScheduler().schedule(randomizeTimer(rrIt->retryDelay),
                                                [=] { withdraw(rrIt); });

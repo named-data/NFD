@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -315,15 +315,15 @@ BOOST_AUTO_TEST_CASE(Print)
   const std::string ribStr = std::string(R"TEXT(
 RibEntry {
   Name: /
-  Route(faceid: 1, origin: 20, cost: 0, flags: 0x0, never expires)
+  Route{face: 1, origin: 20, cost: 0, flags: 0x0, expires: never}
 }
 RibEntry {
   Name: /hello
-  Route(faceid: 2, origin: 20, cost: 0, flags: 0x0, never expires)
+  Route{face: 2, origin: 20, cost: 0, flags: 0x0, expires: never}
 }
 RibEntry {
   Name: /hello/world
-  Route(faceid: 3, origin: 20, cost: 0, flags: 0x0, never expires)
+  Route{face: 3, origin: 20, cost: 0, flags: 0x0, expires: never}
 }
 )TEXT").substr(1);
 

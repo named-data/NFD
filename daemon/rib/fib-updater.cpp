@@ -64,24 +64,23 @@ FibUpdater::computeAndSendFibUpdates(const RibUpdateBatch& batch,
 void
 FibUpdater::computeUpdates(const RibUpdateBatch& batch)
 {
-  NFD_LOG_DEBUG("Computing updates for batch with faceID: " << batch.getFaceId());
+  NFD_LOG_TRACE("Computing updates for batch with faceid=" << batch.getFaceId());
 
   // Compute updates and add to m_fibUpdates
   for (const RibUpdate& update : batch) {
     switch (update.getAction()) {
-      case RibUpdate::REGISTER:
-        computeUpdatesForRegistration(update);
-        break;
-      case RibUpdate::UNREGISTER:
-        computeUpdatesForUnregistration(update);
-        break;
-      case RibUpdate::REMOVE_FACE:
-        computeUpdatesForUnregistration(update);
-
-        // Do not apply updates with the same face ID as the destroyed face
-        // since they will be rejected by the FIB
-        m_updatesForBatchFaceId.clear();
-        break;
+    case RibUpdate::REGISTER:
+      computeUpdatesForRegistration(update);
+      break;
+    case RibUpdate::UNREGISTER:
+      computeUpdatesForUnregistration(update);
+      break;
+    case RibUpdate::REMOVE_FACE:
+      computeUpdatesForUnregistration(update);
+      // Do not apply updates with the same face ID as the destroyed face
+      // since they will be rejected by the FIB
+      m_updatesForBatchFaceId.clear();
+      break;
     }
   }
 }

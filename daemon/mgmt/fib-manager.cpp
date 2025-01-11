@@ -65,24 +65,24 @@ FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
   uint64_t cost = parameters.getCost();
 
   if (prefix.size() > Fib::getMaxDepth()) {
-    NFD_LOG_DEBUG("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
-                  "): FAIL prefix-too-long");
+    NFD_LOG_DEBUG("add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
+                  ") -> FAIL prefix-too-long");
     return done(ControlResponse(414, "FIB entry prefix cannot exceed " +
                                 std::to_string(Fib::getMaxDepth()) + " components"));
   }
 
   Face* face = m_faceTable.get(faceId);
   if (face == nullptr) {
-    NFD_LOG_DEBUG("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
-                  "): FAIL unknown-faceid");
+    NFD_LOG_DEBUG("add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
+                  ") -> FAIL unknown-faceid");
     return done(ControlResponse(410, "Face not found"));
   }
 
   fib::Entry* entry = m_fib.insert(prefix).first;
   m_fib.addOrUpdateNextHop(*entry, *face, cost);
 
-  NFD_LOG_TRACE("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost << "): OK");
-  return done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
+  NFD_LOG_TRACE("add-nexthop(" << prefix << ',' << faceId << ',' << cost << ") -> OK");
+  return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 }
 
 void
@@ -93,30 +93,30 @@ FibManager::removeNextHop(const Interest& interest, ControlParameters parameters
   const Name& prefix = parameters.getName();
   FaceId faceId = parameters.getFaceId();
 
-  done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
+  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 
   Face* face = m_faceTable.get(faceId);
   if (face == nullptr) {
-    NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK no-face");
+    NFD_LOG_TRACE("remove-nexthop(" << prefix << ',' << faceId << ") -> OK no-face");
     return;
   }
 
   fib::Entry* entry = m_fib.findExactMatch(parameters.getName());
   if (entry == nullptr) {
-    NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK no-entry");
+    NFD_LOG_TRACE("remove-nexthop(" << prefix << ',' << faceId << ") -> OK no-entry");
     return;
   }
 
   auto status = m_fib.removeNextHop(*entry, *face);
   switch (status) {
     case Fib::RemoveNextHopResult::NO_SUCH_NEXTHOP:
-      NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK no-nexthop");
+      NFD_LOG_TRACE("remove-nexthop(" << prefix << ',' << faceId << ") -> OK no-nexthop");
       break;
     case Fib::RemoveNextHopResult::FIB_ENTRY_REMOVED:
-      NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK entry-erased");
+      NFD_LOG_TRACE("remove-nexthop(" << prefix << ',' << faceId << ") -> OK entry-erased");
       break;
     case Fib::RemoveNextHopResult::NEXTHOP_REMOVED:
-      NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK nexthop-removed");
+      NFD_LOG_TRACE("remove-nexthop(" << prefix << ',' << faceId << ") -> OK nexthop-removed");
       break;
   }
 }
