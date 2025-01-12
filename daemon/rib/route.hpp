@@ -60,9 +60,9 @@ public:
   }
 
   void
-  setExpirationEvent(const ndn::scheduler::EventId& eid)
+  setExpirationEvent(ndn::scheduler::EventId&& eid)
   {
-    m_expirationEvent = eid;
+    m_expirationEvent = std::move(eid);
   }
 
   void

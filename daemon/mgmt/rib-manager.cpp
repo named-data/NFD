@@ -131,41 +131,29 @@ RibManager::enableLocalFields()
 }
 
 void
-RibManager::beginAddRoute(const Name& name, Route route, std::optional<time::nanoseconds> expires,
-                          const std::function<void(RibUpdateResult)>& done)
+RibManager::addRoute(const Name& name, Route route, const time::steady_clock::time_point& now,
+                     const std::function<void(RibUpdateResult)>& done)
 {
-  if (expires) {
-    route.expires = time::steady_clock::now() + *expires;
-  }
-  else if (route.expires) {
-    expires = *route.expires - time::steady_clock::now();
-  }
-
-  if (expires && *expires <= 0_s) {
+  if (route.expires && *route.expires <= now) {
     m_rib.onRouteExpiration(name, route);
-    return done(RibUpdateResult::EXPIRED);
+    if (done) {
+      done(RibUpdateResult::EXPIRED);
+    }
+    return;
   }
 
   NFD_LOG_INFO("Adding route " << name << " nexthop=" << route.faceId <<
                " origin=" << route.origin << " cost=" << route.cost);
 
-  if (expires) {
-    auto event = getScheduler().schedule(*expires, [=] { m_rib.onRouteExpiration(name, route); });
-    route.setExpirationEvent(event);
-    NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
+  if (route.expires) {
+    auto delay = *route.expires - now;
+    auto event = getScheduler().schedule(delay, [=] { m_rib.onRouteExpiration(name, route); });
+    route.setExpirationEvent(std::move(event));
+    // cast to milliseconds to make the logs easier to read
+    NFD_LOG_TRACE("Route will expire in " << time::duration_cast<time::milliseconds>(delay));
   }
 
-  beginRibUpdate({rib::RibUpdate::REGISTER, name, route}, done);
-}
-
-void
-RibManager::beginRemoveRoute(const Name& name, const Route& route,
-                             const std::function<void(RibUpdateResult)>& done)
-{
-  NFD_LOG_INFO("Removing route " << name << " nexthop=" << route.faceId <<
-               " origin=" << route.origin);
-
-  beginRibUpdate({rib::RibUpdate::UNREGISTER, name, route}, done);
+  beginRibUpdate({rib::RibUpdate::REGISTER, name, std::move(route)}, done);
 }
 
 void
@@ -175,7 +163,9 @@ RibManager::beginRibUpdate(const rib::RibUpdate& update,
   m_rib.beginApplyUpdate(update,
     [=] {
       NFD_LOG_DEBUG(update << " -> OK");
-      done(RibUpdateResult::OK);
+      if (done) {
+        done(RibUpdateResult::OK);
+      }
     },
     [=] (uint32_t code, const std::string& error) {
       NFD_LOG_DEBUG(update << " -> error " << code << ": " << error);
@@ -183,7 +173,9 @@ RibManager::beginRibUpdate(const rib::RibUpdate& update,
       // Since the FIB rejected the update, clean up invalid routes
       scheduleActiveFaceFetch(1_s);
 
-      done(RibUpdateResult::ERROR);
+      if (done) {
+        done(RibUpdateResult::ERROR);
+      }
     });
 }
 
@@ -247,13 +239,13 @@ RibManager::registerEntry(const Interest& interest, ControlParameters parameters
   route.cost = parameters.getCost();
   route.flags = parameters.getFlags();
 
-  std::optional<time::nanoseconds> expires;
+  auto now = time::steady_clock::now();
   if (parameters.hasExpirationPeriod() &&
       parameters.getExpirationPeriod() != time::milliseconds::max()) {
-    expires = time::duration_cast<time::nanoseconds>(parameters.getExpirationPeriod());
+    route.expires = now + parameters.getExpirationPeriod();
   }
 
-  beginAddRoute(parameters.getName(), std::move(route), expires, [] (RibUpdateResult) {});
+  addRoute(parameters.getName(), std::move(route), now);
 }
 
 void
@@ -271,7 +263,10 @@ RibManager::unregisterEntry(const Interest& interest, ControlParameters paramete
   route.faceId = parameters.getFaceId();
   route.origin = parameters.getOrigin();
 
-  beginRemoveRoute(parameters.getName(), route, [] (auto&&...) {});
+  NFD_LOG_INFO("Removing route " << parameters.getName() <<
+               " nexthop=" << route.faceId << " origin=" << route.origin);
+
+  beginRibUpdate({rib::RibUpdate::UNREGISTER, parameters.getName(), route}, nullptr);
 }
 
 void
@@ -286,25 +281,28 @@ RibManager::announceEntry(const Interest& interest, const ndn::nfd::RibAnnounceP
     return;
   }
 
-  Route route(announcement, getIncomingFaceId(interest));
-
-  // Prepare parameters for response
-  ControlParameters responseParams;
-  responseParams
-    .setName(name)
-    .setFaceId(route.faceId)
-    .setOrigin(route.origin)
-    .setCost(route.cost)
-    .setFlags(route.flags)
-    .setExpirationPeriod(time::duration_cast<time::milliseconds>(route.annExpires - time::steady_clock::now()));
+  auto inFaceId = getIncomingFaceId(interest);
 
   NDN_LOG_TRACE("Validating announcement " << announcement);
   BOOST_ASSERT(announcement.getData());
   m_paValidator.validate(*announcement.getData(),
-    [=, route = std::move(route)] (const Data&) {
+    [=] (const Data&) {
+      auto now = time::steady_clock::now();
+      Route route(announcement, inFaceId);
+
+      // Prepare parameters for response
+      ControlParameters responseParams;
+      responseParams
+        .setName(announcement.getAnnouncedName())
+        .setFaceId(route.faceId)
+        .setOrigin(route.origin)
+        .setCost(route.cost)
+        .setFlags(route.flags)
+        .setExpirationPeriod(time::duration_cast<time::milliseconds>(route.annExpires - now));
+
       // Respond since command is valid and authorized
       done(ControlResponse(200, "OK").setBody(responseParams.wireEncode()));
-      beginAddRoute(name, std::move(route), std::nullopt, [] (RibUpdateResult) {});
+      addRoute(announcement.getAnnouncedName(), std::move(route), now);
     },
     [=] (const Data&, const ndn::security::ValidationError& err) {
       NDN_LOG_DEBUG("announce " << name << " -> " << err);
@@ -314,7 +312,7 @@ RibManager::announceEntry(const Interest& interest, const ndn::nfd::RibAnnounceP
 }
 
 void
-RibManager::listEntries(ndn::mgmt::StatusDatasetContext& context)
+RibManager::listEntries(ndn::mgmt::StatusDatasetContext& context) const
 {
   auto now = time::steady_clock::now();
   for (const auto& kv : m_rib) {
@@ -396,14 +394,14 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
 
   m_paValidator.validate(*pa.getData(),
     [=] (const Data&) {
+      auto now = time::steady_clock::now();
       Route route(pa, faceId);
-      route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
-      beginAddRoute(pa.getAnnouncedName(), route, std::nullopt,
-        [=] (RibUpdateResult ribRes) {
-          auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << " -> " << res);
-          cb(res);
-        });
+      route.expires = std::min(route.annExpires, now + maxLifetime);
+      addRoute(pa.getAnnouncedName(), std::move(route), now, [=] (RibUpdateResult ribRes) {
+        auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
+        NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << " -> " << res);
+        cb(res);
+      });
     },
     [=] (const Data&, const ndn::security::ValidationError& err) {
       NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
@@ -425,16 +423,17 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
     NFD_LOG_DEBUG("slRenew " << name << " " << faceId << " -> not found");
     return cb(SlAnnounceResult::NOT_FOUND);
   }
-  Name routeName = oldRoute->announcement->getAnnouncedName();
 
+  auto now = time::steady_clock::now();
+  Name routeName = oldRoute->announcement->getAnnouncedName();
   Route route = *oldRoute;
-  route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
-  beginAddRoute(routeName, route, std::nullopt,
-    [=] (RibUpdateResult ribRes) {
-      auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-      NFD_LOG_INFO("slRenew " << name << " " << faceId << " -> " << res << " " << routeName);
-      cb(res);
-    });
+  route.expires = std::min(route.annExpires, now + maxLifetime);
+
+  addRoute(routeName, std::move(route), now, [=] (RibUpdateResult ribRes) {
+    auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
+    NFD_LOG_INFO("slRenew " << name << " " << faceId << " -> " << res << " " << routeName);
+    cb(res);
+  });
 }
 
 void

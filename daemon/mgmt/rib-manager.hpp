@@ -159,7 +159,7 @@ public: // self-learning support
   void
   slFindAnn(const Name& name, const SlFindAnnCallback& cb) const;
 
-private: // RIB and FibUpdater actions
+private: // RIB update actions
   enum class RibUpdateResult
   {
     OK,
@@ -170,24 +170,12 @@ private: // RIB and FibUpdater actions
   static SlAnnounceResult
   getSlAnnounceResultFromRibUpdateResult(RibUpdateResult r);
 
-  /** \brief Start adding a route to RIB and FIB.
-   *  \param name route name
-   *  \param route route parameters; may contain absolute expiration time
-   *  \param expires relative expiration time; if specified, overwrites \c route.expires
-   *  \param done completion callback
+  /**
+   * \brief Start adding a route to RIB and FIB.
    */
   void
-  beginAddRoute(const Name& name, rib::Route route, std::optional<time::nanoseconds> expires,
-                const std::function<void(RibUpdateResult)>& done);
-
-  /** \brief Start removing a route from RIB and FIB.
-   *  \param name route name
-   *  \param route route parameters
-   *  \param done completion callback
-   */
-  void
-  beginRemoveRoute(const Name& name, const rib::Route& route,
-                   const std::function<void(RibUpdateResult)>& done);
+  addRoute(const Name& name, rib::Route route, const time::steady_clock::time_point& now,
+           const std::function<void(RibUpdateResult)>& done = nullptr);
 
   void
   beginRibUpdate(const rib::RibUpdate& update,
@@ -222,7 +210,7 @@ private: // management Dispatcher related
    * \brief Serve `rib/list` dataset.
    */
   void
-  listEntries(ndn::mgmt::StatusDatasetContext& context);
+  listEntries(ndn::mgmt::StatusDatasetContext& context) const;
 
   ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) final;
