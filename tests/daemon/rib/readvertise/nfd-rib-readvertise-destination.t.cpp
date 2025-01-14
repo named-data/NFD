@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 #include <ndn-cxx/security/signing-info.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -40,7 +41,7 @@ using namespace nfd::rib;
 
 class NfdRibReadvertiseDestinationFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
-public:
+protected:
   NfdRibReadvertiseDestinationFixture()
     : nSuccessCallbacks(0)
     , nFailureCallbacks(0)
@@ -57,6 +58,11 @@ public:
   uint32_t nFailureCallbacks;
 
 protected:
+  static inline const Name RIB_REGISTER_COMMAND_PREFIX = Name("/localhost/nlsr")
+                                                         .append(ndn::nfd::RibRegisterCommand::getName());
+  static inline const Name RIB_UNREGISTER_COMMAND_PREFIX = Name("/localhost/nlsr")
+                                                           .append(ndn::nfd::RibUnregisterCommand::getName());
+
   ndn::DummyClientFace face;
   ndn::nfd::Controller controller;
   Rib rib;
@@ -122,7 +128,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
   ReadvertisedRoute rr(prefix);
-  const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/register");
 
   dest.advertise(rr, successCallback, failureCallback);
   advanceClocks(100_ms);
@@ -200,7 +205,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
   ReadvertisedRoute rr(prefix);
-  const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/unregister");
 
   dest.withdraw(rr, successCallback, failureCallback);
   this->advanceClocks(10_ms);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -109,12 +109,12 @@ FaceManagerCommandFixture::FaceManagerCommandFixture()
   : node1(m_keyChain, 16363)
   , node2(m_keyChain, 26363)
 {
-  advanceClocks(1_ms, 5);
+  advanceClocks(1_ms, 10);
 }
 
 FaceManagerCommandFixture::~FaceManagerCommandFixture()
 {
-  advanceClocks(1_ms, 5);
+  advanceClocks(1_ms, 10);
 }
 
 } // namespace nfd::tests

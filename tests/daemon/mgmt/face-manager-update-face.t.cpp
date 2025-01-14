@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,7 +82,7 @@ public:
   void
   createFace(const ControlParameters& createParams, bool isForOnDemandFace = false)
   {
-    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", createParams);
+    Interest req = makeControlCommandRequest(CREATE_REQUEST, createParams);
 
     // if this creation if for on-demand face then create it on node2
     FaceManagerCommandNode& target = isForOnDemandFace ? this->node2 : this->node1;
@@ -112,11 +112,11 @@ public:
       });
 
     target.face.receive(req);
-    advanceClocks(1_ms, 5);
+    advanceClocks(1_ms, 10);
 
     if (isForOnDemandFace) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100)); // allow wallclock time for socket IO
-      advanceClocks(1_ms, 5); // let node1 accept Interest and create on-demand face
+      advanceClocks(1_ms, 10); // let node1 accept Interest and create on-demand face
     }
 
     BOOST_REQUIRE(hasCallbackFired);
@@ -127,7 +127,7 @@ public:
              bool isSelfUpdating,
              const std::function<void(const ControlResponse& resp)>& checkResp)
   {
-    Interest req = makeControlCommandRequest("/localhost/nfd/faces/update", requestParams);
+    Interest req = makeControlCommandRequest(UPDATE_REQUEST, requestParams);
     if (isSelfUpdating) {
       // Attach IncomingFaceIdTag to interest
       req.setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
@@ -147,7 +147,7 @@ public:
       });
 
     this->node1.face.receive(req);
-    advanceClocks(1_ms, 5);
+    advanceClocks(1_ms, 10);
     BOOST_REQUIRE(hasCallbackFired);
   }
 
@@ -161,7 +161,7 @@ private:
 
     ControlParameters params;
     params.setFaceId(faceId);
-    Interest req = makeControlCommandRequest("/localhost/nfd/faces/destroy", params);
+    Interest req = makeControlCommandRequest(DESTROY_REQUEST, params);
 
     bool hasCallbackFired = false;
     signal::ScopedConnection connection = this->node1.face.onSendData.connect(
@@ -178,7 +178,7 @@ private:
       });
 
     this->node1.face.receive(req);
-    advanceClocks(1_ms, 5);
+    advanceClocks(1_ms, 10);
     BOOST_REQUIRE(hasCallbackFired);
   }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,6 +66,11 @@ public:
   }
 
 protected:
+  static inline const Name SET_SC_REQUEST = Name("/localhost/nfd")
+                                            .append(ndn::nfd::StrategyChoiceSetCommand::getName());
+  static inline const Name UNSET_SC_REQUEST = Name("/localhost/nfd")
+                                              .append(ndn::nfd::StrategyChoiceUnsetCommand::getName());
+
   StrategyChoice& sc;
   StrategyChoiceManager manager;
 
@@ -80,7 +85,7 @@ BOOST_AUTO_TEST_CASE(SetSuccess)
   ControlParameters reqParams;
   reqParams.setName("/A")
            .setStrategy(strategyNameP.getPrefix(-1)); // use unversioned strategy name in request
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/set", reqParams);
+  auto req = makeControlCommandRequest(SET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlParameters expectedParams;
@@ -104,7 +109,7 @@ BOOST_AUTO_TEST_CASE(SetUnknownStrategy)
   ControlParameters reqParams;
   reqParams.setName("/A")
            .setStrategy("/strategy-choice-manager-unknown");
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/set", reqParams);
+  auto req = makeControlCommandRequest(SET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlResponse expectedResp;
@@ -125,7 +130,7 @@ BOOST_AUTO_TEST_CASE(SetNameTooLong)
   ControlParameters reqParams;
   reqParams.setName(prefix)
            .setStrategy(strategyNameP);
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/set", reqParams);
+  auto req = makeControlCommandRequest(SET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlResponse expectedResp;
@@ -145,7 +150,7 @@ BOOST_AUTO_TEST_CASE(UnsetSuccess)
 
   ControlParameters reqParams;
   reqParams.setName("/A");
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/unset", reqParams);
+  auto req = makeControlCommandRequest(UNSET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlParameters expectedParams(reqParams);
@@ -163,7 +168,7 @@ BOOST_AUTO_TEST_CASE(UnsetNoop)
 {
   ControlParameters reqParams;
   reqParams.setName("/A");
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/unset", reqParams);
+  auto req = makeControlCommandRequest(UNSET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlParameters expectedParams(reqParams);
@@ -181,7 +186,7 @@ BOOST_AUTO_TEST_CASE(UnsetRootForbidden)
 {
   ControlParameters reqParams;
   reqParams.setName("/");
-  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/unset", reqParams);
+  auto req = makeControlCommandRequest(UNSET_SC_REQUEST, reqParams);
   receiveInterest(req);
 
   ControlResponse expectedResp;

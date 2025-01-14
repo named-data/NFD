@@ -199,7 +199,7 @@ private:
       boost::asio::post(m_face.getIoContext(), [this, data] { m_face.receive(*data); });
     };
 
-    const Name commandPrefix("/localhost/nfd/fib/add-nexthop");
+    const Name commandPrefix = Name("/localhost/nfd").append(ndn::nfd::FibAddNextHopCommand::getName());
     for (const auto& command : m_face.sentInterests) {
       if (commandPrefix.isPrefixOf(command.getName())) {
         replyFibAddCommand(command);
@@ -244,6 +244,10 @@ public:
   }
 
 protected:
+  static inline const Name REG_REQUEST = Name("/localhost/nfd").append(ndn::nfd::RibRegisterCommand::getName());
+  static inline const Name UNREG_REQUEST = Name("/localhost/nfd").append(ndn::nfd::RibUnregisterCommand::getName());
+  static inline const Name ANNOUNCE_REQUEST = Name("/localhost/nfd").append(ndn::nfd::RibAnnounceCommand::getName());
+
   ConfigurationStatus m_status;
   Name m_anchorId;
   Name m_derivedId;
@@ -334,10 +338,10 @@ using AllFixtures = boost::mp11::mp_product<
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
 {
   auto parameters  = this->makeRegisterParameters("/test-authorization", 9527);
-  auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters,
-                                                     T::signedInterestFmt);
-  auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters,
-                                                     T::signedInterestFmt, this->m_derivedId);
+  auto commandHost = this->makeControlCommandRequest(this->REG_REQUEST, parameters, T::signedInterestFmt);
+  auto commandHop  = this->makeControlCommandRequest(
+                       Name("/localhop/nfd").append(ndn::nfd::RibRegisterCommand::getName()),
+                       parameters, T::signedInterestFmt, this->m_derivedId);
   if (this->m_status.isLocalhopConfigured) {
     commandHop.setTag(std::make_shared<lp::IncomingFaceIdTag>(123));
   }
@@ -368,9 +372,9 @@ BOOST_AUTO_TEST_CASE(Basic)
   auto paramsRegister    = makeRegisterParameters("/test-register-unregister", 9527);
   auto paramsUnregister  = makeUnregisterParameters("/test-register-unregister", 9527);
 
-  auto commandRegister = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister);
+  auto commandRegister = makeControlCommandRequest(REG_REQUEST, paramsRegister);
   commandRegister.setTag(make_shared<lp::IncomingFaceIdTag>(1234));
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  auto commandUnregister = makeControlCommandRequest(UNREG_REQUEST, paramsUnregister);
   commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(1234));
 
   receiveInterest(commandRegister);
@@ -397,9 +401,9 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
   BOOST_CHECK_EQUAL(paramsUnregister.getFaceId(), 0);
 
   const uint64_t inFaceId = 9527;
-  auto commandRegister = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister);
+  auto commandRegister = makeControlCommandRequest(REG_REQUEST, paramsRegister);
   commandRegister.setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  auto commandUnregister = makeControlCommandRequest(UNREG_REQUEST, paramsUnregister);
   commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
 
   receiveInterest(commandRegister);
@@ -425,7 +429,7 @@ BOOST_AUTO_TEST_CASE(Expiration)
 {
   auto paramsRegister = makeRegisterParameters("/test-expiry", 9527, 50_ms);
   auto paramsUnregister = makeRegisterParameters("/test-expiry", 9527);
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, paramsRegister));
 
   advanceClocks(55_ms);
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2); // the registered route has expired
@@ -436,7 +440,7 @@ BOOST_AUTO_TEST_CASE(Expiration)
 
   m_fibUpdater.updates.clear();
   paramsRegister.setExpirationPeriod(100_ms);
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, paramsRegister));
 
   advanceClocks(55_ms);
   BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 1); // the registered route is still active
@@ -451,7 +455,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
     prefix.append("A");
   }
   auto params = makeRegisterParameters(prefix, 2899);
-  auto command = makeControlCommandRequest("/localhost/nfd/rib/register", params);
+  auto command = makeControlCommandRequest(REG_REQUEST, params);
 
   receiveInterest(command);
 
@@ -473,13 +477,13 @@ BOOST_AUTO_TEST_CASE(Basic)
   const uint64_t announceFaceId = 1234;
 
   ndn::PrefixAnnouncement pa = signPrefixAnn(makePrefixAnn("/test-prefix-announce", 10_s), m_keyChain);
-  auto commandAnnounce = makeControlCommandRequest("/localhost/nfd/rib/announce", pa);
+  auto commandAnnounce = makeControlCommandRequest(ANNOUNCE_REQUEST, pa);
   commandAnnounce.setTag(make_shared<lp::IncomingFaceIdTag>(announceFaceId));
 
   auto paramsUnregister = makeUnregisterParameters("/test-prefix-announce");
   paramsUnregister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN);
   BOOST_CHECK_EQUAL(paramsUnregister.getFaceId(), 0);
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  auto commandUnregister = makeControlCommandRequest(UNREG_REQUEST, paramsUnregister);
   commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(announceFaceId)); // same incoming face
 
   receiveInterest(commandAnnounce);
@@ -513,12 +517,12 @@ BOOST_AUTO_TEST_CASE(UnregisterFromDifferentFace)
   const uint64_t announceFaceId = 1234;
 
   ndn::PrefixAnnouncement pa = signPrefixAnn(makePrefixAnn("/test-prefix-announce", 10_s), m_keyChain);
-  auto commandAnnounce = makeControlCommandRequest("/localhost/nfd/rib/announce", pa);
+  auto commandAnnounce = makeControlCommandRequest(ANNOUNCE_REQUEST, pa);
   commandAnnounce.setTag(make_shared<lp::IncomingFaceIdTag>(announceFaceId));
 
   auto paramsUnregister = makeUnregisterParameters("/test-prefix-announce", announceFaceId);
   paramsUnregister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN);
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  auto commandUnregister = makeControlCommandRequest(UNREG_REQUEST, paramsUnregister);
   commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(999)); // unregister from different face
 
   receiveInterest(commandAnnounce);
@@ -553,7 +557,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
     prefix.append("A");
   }
   ndn::PrefixAnnouncement pa = signPrefixAnn(makePrefixAnn(prefix, 10_s), m_keyChain);
-  auto command = makeControlCommandRequest("/localhost/nfd/rib/announce", pa);
+  auto command = makeControlCommandRequest(ANNOUNCE_REQUEST, pa);
   command.setTag(make_shared<lp::IncomingFaceIdTag>(333));
 
   receiveInterest(command);
@@ -642,9 +646,9 @@ BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)
 {
   auto parameters1 = makeRegisterParameters("/test-remove-invalid-faces-1");
   auto parameters2 = makeRegisterParameters("/test-remove-invalid-faces-2");
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1.setFaceId(1)));
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1.setFaceId(2)));
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters2.setFaceId(2)));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, parameters1.setFaceId(1)));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, parameters1.setFaceId(2)));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, parameters2.setFaceId(2)));
   BOOST_REQUIRE_EQUAL(m_rib.size(), 3);
 
   ndn::nfd::FaceStatus status;
@@ -668,8 +672,8 @@ BOOST_AUTO_TEST_CASE(OnNotification)
 {
   auto parameters1 = makeRegisterParameters("/test-face-event-notification-1", 1);
   auto parameters2 = makeRegisterParameters("/test-face-event-notification-2", 1);
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1));
-  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters2));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, parameters1));
+  receiveInterest(makeControlCommandRequest(REG_REQUEST, parameters2));
   BOOST_REQUIRE_EQUAL(m_rib.size(), 2);
 
   auto makeNotification = [] (ndn::nfd::FaceEventKind kind, uint64_t faceId) {

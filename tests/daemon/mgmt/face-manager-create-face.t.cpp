@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -332,7 +332,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
   using FaceType = boost::mp11::mp_first<T>;
   using CreateResult = boost::mp11::mp_second<T>;
 
-  Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
+  Interest req = makeControlCommandRequest(this->CREATE_REQUEST, FaceType::getParameters());
 
   bool hasCallbackFired = false;
   this->node1.face.onSendData.connect([this, req, &hasCallbackFired] (const Data& response) {
@@ -417,7 +417,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
   });
 
   this->node1.face.receive(req);
-  this->advanceClocks(1_ms, 5);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasCallbackFired);
 }
@@ -428,9 +428,9 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
   {
     // create face
-    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
+    Interest req = makeControlCommandRequest(CREATE_REQUEST, FaceType::getParameters());
     this->node1.face.receive(req);
-    this->advanceClocks(1_ms, 5);
+    this->advanceClocks(1_ms, 10);
   }
 
   // find the created face
@@ -439,7 +439,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
   {
     // re-create face
-    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
+    Interest req = makeControlCommandRequest(CREATE_REQUEST, FaceType::getParameters());
 
     bool hasCallbackFired = false;
     this->node1.face.onSendData.connect(
@@ -465,7 +465,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
       });
 
     this->node1.face.receive(req);
-    this->advanceClocks(1_ms, 5);
+    this->advanceClocks(1_ms, 10);
 
     BOOST_CHECK(hasCallbackFired);
   }

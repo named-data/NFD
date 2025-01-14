@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,6 @@ public:
 
   ~FaceManagerCommandNode();
 
-public:
   const Face*
   findFaceByUri(const std::string& uri) const;
 
@@ -59,12 +58,17 @@ public:
 
 class FaceManagerCommandFixture : public InterestSignerFixture
 {
-public:
+protected:
   FaceManagerCommandFixture();
 
   ~FaceManagerCommandFixture() override;
 
 public:
+  static inline const Name CREATE_REQUEST = Name("/localhost/nfd").append(ndn::nfd::FaceCreateCommand::getName());
+  static inline const Name UPDATE_REQUEST = Name("/localhost/nfd").append(ndn::nfd::FaceUpdateCommand::getName());
+  static inline const Name DESTROY_REQUEST = Name("/localhost/nfd").append(ndn::nfd::FaceDestroyCommand::getName());
+
+protected:
   FaceManagerCommandNode node1; // used to test FaceManager
   FaceManagerCommandNode node2; // acts as a remote endpoint
 };

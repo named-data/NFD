@@ -26,7 +26,7 @@
 #include "mgmt/face-manager.hpp"
 #include "face/protocol-factory.hpp"
 
-#include "manager-common-fixture.hpp"
+#include "face-manager-command-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/daemon/face/dummy-transport.hpp"
 
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(Existing)
   auto addedFace = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // clear notification for creation
 
   auto parameters = ControlParameters().setFaceId(addedFace->getId());
-  auto req = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
+  auto req = makeControlCommandRequest(FaceManagerCommandFixture::DESTROY_REQUEST, parameters);
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2); // one response and one notification
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(Existing)
 BOOST_AUTO_TEST_CASE(NonExisting)
 {
   auto parameters = ControlParameters().setFaceId(65535);
-  auto req = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
+  auto req = makeControlCommandRequest(FaceManagerCommandFixture::DESTROY_REQUEST, parameters);
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);

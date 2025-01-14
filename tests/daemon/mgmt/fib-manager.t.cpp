@@ -123,6 +123,11 @@ public: // for check
   }
 
 protected:
+  static inline const Name ADD_NH_REQUEST = Name("/localhost/nfd")
+                                            .append(ndn::nfd::FibAddNextHopCommand::getName());
+  static inline const Name REMOVE_NH_REQUEST = Name("/localhost/nfd")
+                                               .append(ndn::nfd::FibRemoveNextHopCommand::getName());
+
   Fib&       m_fib;
   FibManager m_manager;
 };
@@ -152,8 +157,7 @@ BOOST_AUTO_TEST_SUITE(AddNextHop)
 
 BOOST_AUTO_TEST_CASE(UnknownFaceId)
 {
-  auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop",
-                                       makeParameters("hello", face::FACEID_NULL, 101));
+  auto req = makeControlCommandRequest(ADD_NH_REQUEST, makeParameters("hello", face::FACEID_NULL, 101));
   receiveInterest(req);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
 
@@ -173,8 +177,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
     prefix.append("A");
   }
 
-  auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop",
-                                       makeParameters(prefix, addFace()));
+  auto req = makeControlCommandRequest(ADD_NH_REQUEST, makeParameters(prefix, addFace()));
   receiveInterest(req);
 
   ControlResponse expected(414, "FIB entry prefix cannot exceed " +
@@ -194,7 +197,7 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   Name expectedName;
   ControlResponse expectedResponse;
   auto testAddNextHop = [&] (ControlParameters parameters, const FaceId& faceId) {
-    auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters);
+    auto req = makeControlCommandRequest(ADD_NH_REQUEST, parameters);
     req.setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
     m_responses.clear();
     expectedName = req.getName();
@@ -219,7 +222,7 @@ BOOST_AUTO_TEST_CASE(InitialAdd)
   BOOST_REQUIRE_NE(addedFaceId, face::INVALID_FACEID);
 
   auto parameters = makeParameters("hello", addedFaceId, 101);
-  auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters);
+  auto req = makeControlCommandRequest(ADD_NH_REQUEST, parameters);
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -235,7 +238,7 @@ BOOST_AUTO_TEST_CASE(ImplicitCost)
 
   auto originalParameters = ControlParameters().setName("/hello").setFaceId(addedFaceId);
   auto parameters = makeParameters("/hello", addedFaceId, 0);
-  auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", originalParameters);
+  auto req = makeControlCommandRequest(ADD_NH_REQUEST, originalParameters);
   receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -253,7 +256,7 @@ BOOST_AUTO_TEST_CASE(AddToExisting)
   ControlResponse expectedResponse;
   auto testAddNextHop = [&] (const ControlParameters& parameters) {
     m_responses.clear();
-    auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters);
+    auto req = makeControlCommandRequest(ADD_NH_REQUEST, parameters);
     expectedName = req.getName();
     expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);
@@ -284,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   ControlResponse expectedResponse;
   auto testRemoveNextHop = [&] (const ControlParameters& parameters) {
     m_responses.clear();
-    auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
+    auto req = makeControlCommandRequest(REMOVE_NH_REQUEST, parameters);
     expectedName = req.getName();
     expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);
@@ -324,7 +327,7 @@ BOOST_AUTO_TEST_CASE(PrefixNotFound)
   BOOST_REQUIRE_NE(addedFaceId, face::INVALID_FACEID);
 
   auto parameters = makeParameters("hello", addedFaceId);
-  auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
+  auto req = makeControlCommandRequest(REMOVE_NH_REQUEST, parameters);
   receiveInterest(req);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
 
@@ -343,7 +346,7 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   ControlResponse expectedResponse;
   auto testWithImplicitFaceId = [&] (ControlParameters parameters, FaceId face) {
     m_responses.clear();
-    auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
+    auto req = makeControlCommandRequest(REMOVE_NH_REQUEST, parameters);
     req.setTag(make_shared<lp::IncomingFaceIdTag>(face));
     expectedName = req.getName();
     expectedResponse = makeResponse(200, "OK", parameters.setFaceId(face));
@@ -376,7 +379,7 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
   ControlResponse expectedResponse;
   auto testRemoveNextHop = [&] (ControlParameters parameters) {
     m_responses.clear();
-    auto req = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
+    auto req = makeControlCommandRequest(REMOVE_NH_REQUEST, parameters);
     expectedName = req.getName();
     expectedResponse = makeResponse(200, "OK", parameters);
     receiveInterest(req);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,7 +55,7 @@ BOOST_FIXTURE_TEST_SUITE(TestCsManager, CsManagerFixture)
 BOOST_AUTO_TEST_CASE(Config)
 {
   using ndn::nfd::CsFlagBit;
-  const Name cmdPrefix("/localhost/nfd/cs/config");
+  const Name cmdPrefix = Name("/localhost/nfd").append(ndn::nfd::CsConfigCommand::getName());
 
   // setup initial CS config
   m_cs.setLimit(22129);
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   for (size_t i = 0; i < CsManager::ERASE_LIMIT + 1; ++i) {
     m_cs.insert(*makeData(Name("/H").appendSequenceNumber(i)));
   }
-  const Name cmdPrefix("/localhost/nfd/cs/erase");
+  const Name cmdPrefix = Name("/localhost/nfd").append(ndn::nfd::CsEraseCommand::getName());
 
   // requested Name matches no Data
   auto req = makeControlCommandRequest(cmdPrefix,
