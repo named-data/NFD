@@ -186,11 +186,8 @@ private:
     auto replyFibAddCommand = [this] (const Interest& interest) {
       ControlParameters params(interest.getName().at(4).blockFromValue());
       BOOST_CHECK(params.getName() == "/localhost/nfd/rib" || params.getName() == "/localhop/nfd/rib");
-      params.setFaceId(1)
-            .setCost(0);
-      ControlResponse resp;
-      resp.setCode(200)
-          .setBody(params.wireEncode());
+      params.setFaceId(1).setCost(0);
+      ControlResponse resp = makeResponse(200, "OK", params);
 
       auto data = make_shared<Data>(interest.getName());
       data->setContent(resp.wireEncode());
@@ -603,8 +600,8 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
   std::vector<ndn::nfd::RibEntry> receivedRecords, expectedRecords;
-  for (size_t idx = 0; idx < nEntries; ++idx) {
-    ndn::nfd::RibEntry decodedEntry(content.elements()[idx]);
+  for (const auto& el : content.elements()) {
+    ndn::nfd::RibEntry decodedEntry(el);
     BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getName());
@@ -613,7 +610,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     BOOST_REQUIRE(matchedEntryIt != m_rib.end());
 
     auto matchedEntry = matchedEntryIt->second;
-    BOOST_REQUIRE(matchedEntry != nullptr);
+    BOOST_TEST_REQUIRE(matchedEntry != nullptr);
 
     expectedRecords.emplace_back();
     expectedRecords.back().setName(matchedEntry->getName());
@@ -664,8 +661,8 @@ BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)
   auto it2 = m_rib.find("/test-remove-invalid-faces-2");
   BOOST_CHECK(it2 == m_rib.end());
   BOOST_REQUIRE(it1 != m_rib.end());
-  BOOST_CHECK(it1->second->hasFaceId(1));
-  BOOST_CHECK(!it1->second->hasFaceId(2));
+  BOOST_TEST(it1->second->hasFaceId(1));
+  BOOST_TEST(!it1->second->hasFaceId(2));
 }
 
 BOOST_AUTO_TEST_CASE(OnNotification)

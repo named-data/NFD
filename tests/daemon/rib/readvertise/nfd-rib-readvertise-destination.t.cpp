@@ -42,46 +42,32 @@ using namespace nfd::rib;
 class NfdRibReadvertiseDestinationFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 protected:
-  NfdRibReadvertiseDestinationFixture()
-    : nSuccessCallbacks(0)
-    , nFailureCallbacks(0)
-    , face(g_io, m_keyChain, {true, false})
-    , controller(face, m_keyChain)
-    , dest(controller, rib, ndn::nfd::CommandOptions().setPrefix("/localhost/nlsr"))
-    , successCallback([this] { nSuccessCallbacks++; })
-    , failureCallback([this] (const std::string&) { nFailureCallbacks++; })
-  {
-  }
-
-public:
-  uint32_t nSuccessCallbacks;
-  uint32_t nFailureCallbacks;
-
-protected:
   static inline const Name RIB_REGISTER_COMMAND_PREFIX = Name("/localhost/nlsr")
                                                          .append(ndn::nfd::RibRegisterCommand::getName());
   static inline const Name RIB_UNREGISTER_COMMAND_PREFIX = Name("/localhost/nlsr")
                                                            .append(ndn::nfd::RibUnregisterCommand::getName());
 
-  ndn::DummyClientFace face;
-  ndn::nfd::Controller controller;
+  ndn::DummyClientFace face{g_io, m_keyChain, {true, false}};
+  ndn::nfd::Controller controller{face, m_keyChain};
   Rib rib;
-  NfdRibReadvertiseDestination dest;
-  std::function<void()> successCallback;
-  std::function<void(const std::string&)> failureCallback;
+  NfdRibReadvertiseDestination dest{controller, rib, ndn::nfd::CommandOptions().setPrefix("/localhost/nlsr")};
+
+  std::function<void()> successCallback = [this] { nSuccessCallbacks++; };
+  std::function<void(const std::string&)> failureCallback = [this] (auto&&) { nFailureCallbacks++; };
+
+  int nSuccessCallbacks = 0;
+  int nFailureCallbacks = 0;
 };
 
 BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestNfdRibReadvertiseDestination, NfdRibReadvertiseDestinationFixture)
 
-class AdvertiseSuccessScenario
+struct AdvertiseSuccessScenario
 {
-public:
-  ndn::nfd::ControlResponse
+  static ndn::nfd::ControlResponse
   makeResponse(const ControlParameters& sentCp)
   {
     ControlParameters response;
-
     response.setFaceId(1)
       .setName(sentCp.getName())
       .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)
@@ -92,40 +78,30 @@ public:
     responsePayload.setCode(200)
       .setText("Successfully registered.")
       .setBody(response.wireEncode());
+
     return responsePayload;
   }
 
-  void
-  checkCommandOutcome(NfdRibReadvertiseDestinationFixture* fixture)
-  {
-    BOOST_CHECK_EQUAL(fixture->nSuccessCallbacks, 1);
-    BOOST_CHECK_EQUAL(fixture->nFailureCallbacks, 0);
-  }
+  static constexpr int nExpectedSuccessCalls = 1;
+  static constexpr int nExpectedFailureCalls = 0;
 };
 
-class AdvertiseFailureScenario
+struct AdvertiseFailureScenario
 {
-public:
-  ndn::nfd::ControlResponse
-  makeResponse(ControlParameters sentCp)
+  static ndn::nfd::ControlResponse
+  makeResponse(const ControlParameters& sentCp)
   {
-    ndn::nfd::ControlResponse responsePayload(403, "Not Authenticated");
-    return responsePayload;
+    return ndn::nfd::ControlResponse(403, "Not Authenticated");
   }
 
-  void
-  checkCommandOutcome(NfdRibReadvertiseDestinationFixture* fixture)
-  {
-    BOOST_CHECK_EQUAL(fixture->nFailureCallbacks, 1);
-    BOOST_CHECK_EQUAL(fixture->nSuccessCallbacks, 0);
-  }
+  static constexpr int nExpectedSuccessCalls = 0;
+  static constexpr int nExpectedFailureCalls = 1;
 };
 
 using AdvertiseScenarios = boost::mp11::mp_list<AdvertiseSuccessScenario, AdvertiseFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
-  Scenario scenario;
   Name prefix("/ndn/memphis/test");
   ReadvertisedRoute rr(prefix);
 
@@ -139,27 +115,27 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 
   // Parse the sent command Interest to check correctness.
   ControlParameters sentCp;
-  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_REGISTER_COMMAND_PREFIX.size()).blockFromValue()));
+  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_REGISTER_COMMAND_PREFIX.size())
+                                         .blockFromValue()));
   BOOST_CHECK_EQUAL(sentCp.getOrigin(), ndn::nfd::ROUTE_ORIGIN_CLIENT);
   BOOST_CHECK_EQUAL(sentCp.getName(), prefix);
 
-  ndn::nfd::ControlResponse responsePayload = scenario.makeResponse(sentCp);
+  ndn::nfd::ControlResponse responsePayload = Scenario::makeResponse(sentCp);
   auto responseData = makeData(sentInterest.getName());
   responseData->setContent(responsePayload.wireEncode());
   face.receive(*responseData);
   this->advanceClocks(10_ms);
 
-  scenario.checkCommandOutcome(this);
+  BOOST_TEST(nSuccessCallbacks == Scenario::nExpectedSuccessCalls);
+  BOOST_TEST(nFailureCallbacks == Scenario::nExpectedFailureCalls);
 }
 
-class WithdrawSuccessScenario
+struct WithdrawSuccessScenario
 {
-public:
-  ndn::nfd::ControlResponse
+  static ndn::nfd::ControlResponse
   makeResponse(const ControlParameters& sentCp)
   {
     ControlParameters response;
-
     response.setFaceId(1)
       .setName(sentCp.getName())
       .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT);
@@ -172,37 +148,26 @@ public:
     return responsePayload;
   }
 
-  void
-  checkCommandOutcome(NfdRibReadvertiseDestinationFixture* fixture)
-  {
-    BOOST_CHECK_EQUAL(fixture->nSuccessCallbacks, 1);
-    BOOST_CHECK_EQUAL(fixture->nFailureCallbacks, 0);
-  }
+  static constexpr int nExpectedSuccessCalls = 1;
+  static constexpr int nExpectedFailureCalls = 0;
 };
 
-class WithdrawFailureScenario
+struct WithdrawFailureScenario
 {
-public:
-  ndn::nfd::ControlResponse
-  makeResponse(ControlParameters sentCp)
+  static ndn::nfd::ControlResponse
+  makeResponse(const ControlParameters& sentCp)
   {
-    ndn::nfd::ControlResponse responsePayload(403, "Not authenticated");
-    return responsePayload;
+    return ndn::nfd::ControlResponse(403, "Not authenticated");
   }
 
-  void
-  checkCommandOutcome(NfdRibReadvertiseDestinationFixture* fixture)
-  {
-    BOOST_CHECK_EQUAL(fixture->nFailureCallbacks, 1);
-    BOOST_CHECK_EQUAL(fixture->nSuccessCallbacks, 0);
-  }
+  static constexpr int nExpectedSuccessCalls = 0;
+  static constexpr int nExpectedFailureCalls = 1;
 };
 
 using WithdrawScenarios = boost::mp11::mp_list<WithdrawSuccessScenario, WithdrawFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
-  Scenario scenario;
   Name prefix("/ndn/memphis/test");
   ReadvertisedRoute rr(prefix);
 
@@ -215,18 +180,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   BOOST_CHECK(RIB_UNREGISTER_COMMAND_PREFIX.isPrefixOf(sentInterest.getName()));
 
   ControlParameters sentCp;
-  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_UNREGISTER_COMMAND_PREFIX.size()).blockFromValue()));
+  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_UNREGISTER_COMMAND_PREFIX.size())
+                                         .blockFromValue()));
   BOOST_CHECK_EQUAL(sentCp.getOrigin(), ndn::nfd::ROUTE_ORIGIN_CLIENT);
   BOOST_CHECK_EQUAL(sentCp.getName(), prefix);
 
-  ndn::nfd::ControlResponse responsePayload = scenario.makeResponse(sentCp);
+  ndn::nfd::ControlResponse responsePayload = Scenario::makeResponse(sentCp);
   auto responseData = makeData(sentInterest.getName());
   responseData->setContent(responsePayload.wireEncode());
 
   face.receive(*responseData);
   this->advanceClocks(1_ms);
 
-  scenario.checkCommandOutcome(this);
+  BOOST_TEST(nSuccessCallbacks == Scenario::nExpectedSuccessCalls);
+  BOOST_TEST(nFailureCallbacks == Scenario::nExpectedFailureCalls);
 }
 
 BOOST_AUTO_TEST_CASE(DestinationAvailability)
@@ -235,8 +202,7 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
   Name commandPrefix("/localhost/nlsr");
   Route route;
 
-  dest.afterAvailabilityChange.connect(
-    std::bind(&std::vector<bool>::push_back, &availabilityChangeHistory, _1));
+  dest.afterAvailabilityChange.connect([&] (bool val) { availabilityChangeHistory.push_back(val); });
   BOOST_CHECK_EQUAL(dest.isAvailable(), false);
 
   rib.insert(commandPrefix, route);

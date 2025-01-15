@@ -117,7 +117,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true);
   }
 };
@@ -130,7 +129,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, false);
   }
 };
@@ -143,7 +141,6 @@ public:
   {
     return ControlParameters()
       .setUri("udp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true);
   }
 };
@@ -156,7 +153,6 @@ public:
   {
     return ControlParameters()
       .setUri("udp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, false);
   }
 };
@@ -169,7 +165,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
   }
 };
@@ -182,7 +177,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
   }
 };
@@ -195,7 +189,6 @@ public:
   {
     return ControlParameters()
       .setUri("udp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
   }
 };
@@ -208,7 +201,6 @@ public:
   {
     return ControlParameters()
       .setUri("udp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
   }
 };
@@ -221,7 +213,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setBaseCongestionMarkingInterval(50_ms)
       .setDefaultCongestionThreshold(1000)
       .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true);
@@ -236,7 +227,34 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setBaseCongestionMarkingInterval(50_ms)
+      .setDefaultCongestionThreshold(1000)
+      .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
+  }
+};
+
+class UdpFaceCongestionMarkingEnabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setBaseCongestionMarkingInterval(50_ms)
+      .setDefaultCongestionThreshold(1000)
+      .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true);
+  }
+};
+
+class UdpFaceCongestionMarkingDisabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
       .setBaseCongestionMarkingInterval(50_ms)
       .setDefaultCongestionThreshold(1000)
       .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
@@ -251,7 +269,6 @@ public:
   {
     return ControlParameters()
       .setUri("tcp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setMtu(1000);
   }
 };
@@ -264,12 +281,11 @@ public:
   {
     return ControlParameters()
       .setUri("udp4://127.0.0.1:26363")
-      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setMtu(1000);
   }
 };
 
-class FaceUriMalformed
+class RemoteUriMalformed
 {
 public:
   static ControlParameters
@@ -280,7 +296,7 @@ public:
   }
 };
 
-class FaceUriNonCanonical
+class RemoteUriNonCanonical
 {
 public:
   static ControlParameters
@@ -291,7 +307,43 @@ public:
   }
 };
 
-class FaceUriUnsupportedScheme
+class LocalUriMalformed
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setLocalUri("udp4://127.0.0.1:not-a-port");
+  }
+};
+
+class LocalUriNonCanonical
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setLocalUri("udp://localhost");
+  }
+};
+
+class LocalUriUnsupported
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setLocalUri("udp4://127.0.0.1:36363");
+  }
+};
+
+class UnsupportedProtocol
 {
 public:
   static ControlParameters
@@ -302,7 +354,7 @@ public:
   }
 };
 
-// Pairs of CreateCommand and success/failure status
+// Pairs of FaceCreateCommand request and success/failure response
 using TestCases = boost::mp11::mp_list<
   boost::mp11::mp_list<TcpFaceOnDemand, CommandFailure<406>>,
   boost::mp11::mp_list<TcpFacePersistent, CommandSuccess>,
@@ -320,19 +372,24 @@ using TestCases = boost::mp11::mp_list<
   boost::mp11::mp_list<UdpFaceLpReliabilityDisabled, CommandSuccess>,
   boost::mp11::mp_list<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
   boost::mp11::mp_list<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceCongestionMarkingEnabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceCongestionMarkingDisabled, CommandSuccess>,
   boost::mp11::mp_list<TcpFaceMtuOverride, CommandFailure<406>>,
   boost::mp11::mp_list<UdpFaceMtuOverride, CommandSuccess>,
-  boost::mp11::mp_list<FaceUriMalformed, CommandFailure<400>>,
-  boost::mp11::mp_list<FaceUriNonCanonical, CommandFailure<400>>,
-  boost::mp11::mp_list<FaceUriUnsupportedScheme, CommandFailure<406>>
+  boost::mp11::mp_list<RemoteUriMalformed, CommandFailure<400>>,
+  boost::mp11::mp_list<RemoteUriNonCanonical, CommandFailure<400>>,
+  boost::mp11::mp_list<LocalUriMalformed, CommandFailure<400>>,
+  boost::mp11::mp_list<LocalUriNonCanonical, CommandFailure<400>>,
+  boost::mp11::mp_list<LocalUriUnsupported, CommandFailure<406>>,
+  boost::mp11::mp_list<UnsupportedProtocol, CommandFailure<406>>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixture)
 {
-  using FaceType = boost::mp11::mp_first<T>;
+  using CreateRequest = boost::mp11::mp_first<T>;
   using CreateResult = boost::mp11::mp_second<T>;
 
-  Interest req = makeControlCommandRequest(this->CREATE_REQUEST, FaceType::getParameters());
+  Interest req = makeControlCommandRequest(this->CREATE_REQUEST, CreateRequest::getParameters());
 
   bool hasCallbackFired = false;
   this->node1.face.onSendData.connect([this, req, &hasCallbackFired] (const Data& response) {
@@ -342,15 +399,18 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
 
     ControlResponse actual(response.getContent().blockFromValue());
     ControlResponse expected(CreateResult::getExpected());
-    BOOST_TEST_MESSAGE(actual.getText());
-    BOOST_CHECK_EQUAL(expected.getCode(), actual.getCode());
+    BOOST_TEST(expected.getCode() == actual.getCode(), actual.getText());
 
     if (actual.getBody().hasWire()) {
-      ControlParameters expectedParams(FaceType::getParameters());
+      ControlParameters expectedParams(CreateRequest::getParameters());
+      ndn::nfd::FaceCreateCommand::applyDefaultsToRequest(expectedParams);
       ControlParameters actualParams(actual.getBody());
 
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
+      BOOST_TEST(actualParams.hasFaceId());
+      BOOST_TEST(expectedParams.getUri() == actualParams.getUri());
+      BOOST_TEST(actualParams.hasLocalUri());
+      BOOST_TEST(actualParams.hasFlags());
+      BOOST_TEST(expectedParams.getFacePersistency() == actualParams.getFacePersistency());
 
       if (actual.getCode() == 200) {
         if (expectedParams.hasFlags()) {
@@ -363,15 +423,16 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
                               actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
           }
           else {
-            BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+            // congestion marking is enabled by default
+            BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
           }
         }
         else {
-          // local fields and LpReliability are disabled by default, congestion marking is enabled
-          // by default on TCP, UDP, and Unix stream
-          BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
-          BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
-          BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+          // local fields and reliability are disabled by default
+          // congestion marking is enabled by default on TCP, UDP, and Unix stream
+          BOOST_TEST(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+          BOOST_TEST(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+          BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
         }
 
         if (expectedParams.hasBaseCongestionMarkingInterval()) {
@@ -394,14 +455,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
           BOOST_CHECK_EQUAL(expectedParams.getMtu(), actualParams.getMtu());
         }
       }
-      else {
-        BOOST_CHECK_EQUAL(expectedParams.getUri(), actualParams.getUri());
-      }
     }
 
     if (actual.getCode() != 200) {
       FaceUri uri;
-      if (uri.parse(FaceType::getParameters().getUri())) {
+      if (uri.parse(CreateRequest::getParameters().getUri())) {
         // ensure face not created
         const auto& faceTable = this->node1.faceTable;
         BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
@@ -419,7 +477,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
   this->node1.face.receive(req);
   this->advanceClocks(1_ms, 10);
 
-  BOOST_CHECK(hasCallbackFired);
+  BOOST_TEST(hasCallbackFired);
 }
 
 BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
@@ -435,7 +493,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
   // find the created face
   auto foundFace = this->node1.findFaceByUri(FaceType::getParameters().getUri());
-  BOOST_REQUIRE(foundFace != nullptr);
+  BOOST_TEST_REQUIRE(foundFace != nullptr);
 
   {
     // re-create face
@@ -467,7 +525,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
     this->node1.face.receive(req);
     this->advanceClocks(1_ms, 10);
 
-    BOOST_CHECK(hasCallbackFired);
+    BOOST_TEST(hasCallbackFired);
   }
 }
 

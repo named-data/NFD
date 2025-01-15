@@ -147,7 +147,7 @@ operator<<(std::ostream& os, FibManagerFixture::CheckNextHopResult result)
   case FibManagerFixture::CheckNextHopResult::WRONG_COST:
     return os << "WRONG_COST";
   }
-  return os << static_cast<int>(result);
+  return os << ndn::to_underlying(result);
 }
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
@@ -422,14 +422,14 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
   std::vector<ndn::nfd::FibEntry> receivedRecords, expectedRecords;
-  for (size_t idx = 0; idx < nEntries; ++idx) {
-    ndn::nfd::FibEntry decodedEntry(content.elements()[idx]);
+  for (const auto& el : content.elements()) {
+    ndn::nfd::FibEntry decodedEntry(el);
     BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getPrefix());
 
     auto matchedEntry = m_fib.findExactMatch(decodedEntry.getPrefix());
-    BOOST_REQUIRE(matchedEntry != nullptr);
+    BOOST_TEST_REQUIRE(matchedEntry != nullptr);
 
     expectedRecords.emplace_back();
     expectedRecords.back().setPrefix(matchedEntry->getPrefix());

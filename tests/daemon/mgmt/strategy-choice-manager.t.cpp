@@ -91,10 +91,7 @@ BOOST_AUTO_TEST_CASE(SetSuccess)
   ControlParameters expectedParams;
   expectedParams.setName("/A")
                 .setStrategy(strategyNameP); // response should have versioned strategy name
-  ControlResponse expectedResp;
-  expectedResp.setCode(200)
-              .setText("OK")
-              .setBody(expectedParams.wireEncode());
+  ControlResponse expectedResp = makeResponse(200, "OK", expectedParams);
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
@@ -146,7 +143,7 @@ BOOST_AUTO_TEST_CASE(SetNameTooLong)
 BOOST_AUTO_TEST_CASE(UnsetSuccess)
 {
   auto insertRes = sc.insert("/A", strategyNameP);
-  BOOST_REQUIRE(insertRes);
+  BOOST_TEST_REQUIRE(insertRes);
 
   ControlParameters reqParams;
   reqParams.setName("/A");
@@ -154,10 +151,7 @@ BOOST_AUTO_TEST_CASE(UnsetSuccess)
   receiveInterest(req);
 
   ControlParameters expectedParams(reqParams);
-  ControlResponse expectedResp;
-  expectedResp.setCode(200)
-              .setText("OK")
-              .setBody(expectedParams.wireEncode());
+  ControlResponse expectedResp = makeResponse(200, "OK", expectedParams);
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
@@ -172,10 +166,7 @@ BOOST_AUTO_TEST_CASE(UnsetNoop)
   receiveInterest(req);
 
   ControlParameters expectedParams(reqParams);
-  ControlResponse expectedResp;
-  expectedResp.setCode(200)
-              .setText("OK")
-              .setBody(expectedParams.wireEncode());
+  ControlResponse expectedResp = makeResponse(200, "OK", expectedParams);
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
@@ -201,7 +192,7 @@ BOOST_AUTO_TEST_CASE(UnsetRootForbidden)
 BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
 {
   std::map<Name, Name> expected; // namespace => strategy instance name
-  for (const strategy_choice::Entry& entry : sc) {
+  for (const auto& entry : sc) {
     expected[entry.getPrefix()] = entry.getStrategyInstanceName();
   }
 
@@ -211,7 +202,7 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
     Name strategy = DummyStrategy::getStrategyName(i);
 
     auto insertRes = sc.insert(name, strategy);
-    BOOST_CHECK(insertRes);
+    BOOST_TEST(insertRes);
     expected[name] = strategy;
   }
 
@@ -221,8 +212,8 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
   dataset.parse();
   BOOST_CHECK_EQUAL(dataset.elements_size(), expected.size());
 
-  for (auto i = dataset.elements_begin(); i != dataset.elements_end(); ++i) {
-    ndn::nfd::StrategyChoice record(*i);
+  for (const auto& el : dataset.elements()) {
+    ndn::nfd::StrategyChoice record(el);
     BOOST_TEST_INFO_SCOPE(record);
     auto found = expected.find(record.getName());
     if (found == expected.end()) {

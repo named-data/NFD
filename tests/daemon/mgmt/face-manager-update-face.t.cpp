@@ -88,28 +88,25 @@ public:
     FaceManagerCommandNode& target = isForOnDemandFace ? this->node2 : this->node1;
 
     bool hasCallbackFired = false;
-    signal::ScopedConnection connection = target.face.onSendData.connect(
-      [&, req, isForOnDemandFace, this] (const Data& response) {
-        if (!req.getName().isPrefixOf(response.getName())) {
-          return;
-        }
+    signal::ScopedConnection conn = target.face.onSendData.connect([&] (const Data& response) {
+      if (!req.getName().isPrefixOf(response.getName())) {
+        return;
+      }
 
-        ControlResponse create(response.getContent().blockFromValue());
-        BOOST_REQUIRE_EQUAL(create.getCode(), 200);
-        BOOST_REQUIRE(create.getBody().hasWire());
+      ControlResponse create(response.getContent().blockFromValue());
+      BOOST_TEST_REQUIRE(create.getCode() == 200);
+      ControlParameters faceParams(create.getBody());
+      BOOST_TEST_REQUIRE(faceParams.hasFaceId());
+      this->faceId = faceParams.getFaceId();
 
-        ControlParameters faceParams(create.getBody());
-        BOOST_REQUIRE(faceParams.hasFaceId());
-        this->faceId = faceParams.getFaceId();
+      hasCallbackFired = true;
 
-        hasCallbackFired = true;
-
-        if (isForOnDemandFace) {
-          auto face = target.faceTable.get(static_cast<FaceId>(this->faceId));
-          // to force creation of on-demand face
-          face->sendInterest(*makeInterest("/hello/world"));
-        }
-      });
+      if (isForOnDemandFace) {
+        auto face = target.faceTable.get(this->faceId);
+        // to force creation of on-demand face
+        face->sendInterest(*makeInterest("/hello/world"));
+      }
+    });
 
     target.face.receive(req);
     advanceClocks(1_ms, 10);
@@ -119,12 +116,11 @@ public:
       advanceClocks(1_ms, 10); // let node1 accept Interest and create on-demand face
     }
 
-    BOOST_REQUIRE(hasCallbackFired);
+    BOOST_TEST_REQUIRE(hasCallbackFired);
   }
 
   void
-  updateFace(const ControlParameters& requestParams,
-             bool isSelfUpdating,
+  updateFace(const ControlParameters& requestParams, bool isSelfUpdating,
              const std::function<void(const ControlResponse& resp)>& checkResp)
   {
     Interest req = makeControlCommandRequest(UPDATE_REQUEST, requestParams);
@@ -134,21 +130,20 @@ public:
     }
 
     bool hasCallbackFired = false;
-    signal::ScopedConnection connection = this->node1.face.onSendData.connect(
-      [req, &hasCallbackFired, &checkResp] (const Data& response) {
-        if (!req.getName().isPrefixOf(response.getName())) {
-          return;
-        }
+    signal::ScopedConnection conn = node1.face.onSendData.connect([&] (const Data& response) {
+      if (!req.getName().isPrefixOf(response.getName())) {
+        return;
+      }
 
-        ControlResponse actual(response.getContent().blockFromValue());
-        checkResp(actual);
+      ControlResponse actual(response.getContent().blockFromValue());
+      checkResp(actual);
 
-        hasCallbackFired = true;
-      });
+      hasCallbackFired = true;
+    });
 
     this->node1.face.receive(req);
     advanceClocks(1_ms, 10);
-    BOOST_REQUIRE(hasCallbackFired);
+    BOOST_TEST_REQUIRE(hasCallbackFired);
   }
 
 private:
@@ -164,22 +159,21 @@ private:
     Interest req = makeControlCommandRequest(DESTROY_REQUEST, params);
 
     bool hasCallbackFired = false;
-    signal::ScopedConnection connection = this->node1.face.onSendData.connect(
-      [this, req, &hasCallbackFired] (const Data& response) {
-        if (!req.getName().isPrefixOf(response.getName())) {
-          return;
-        }
+    signal::ScopedConnection conn = node1.face.onSendData.connect([&] (const Data& response) {
+      if (!req.getName().isPrefixOf(response.getName())) {
+        return;
+      }
 
-        ControlResponse destroy(response.getContent().blockFromValue());
-        BOOST_CHECK_EQUAL(destroy.getCode(), 200);
+      ControlResponse destroy(response.getContent().blockFromValue());
+      BOOST_CHECK_EQUAL(destroy.getCode(), 200);
 
-        faceId = 0;
-        hasCallbackFired = true;
-      });
+      faceId = 0;
+      hasCallbackFired = true;
+    });
 
     this->node1.face.receive(req);
     advanceClocks(1_ms, 10);
-    BOOST_REQUIRE(hasCallbackFired);
+    BOOST_TEST_REQUIRE(hasCallbackFired);
   }
 
 protected:
@@ -194,9 +188,8 @@ BOOST_AUTO_TEST_CASE(FaceDoesNotExist)
   requestParams.setFaceId(65535);
 
   updateFace(requestParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(404, "Specified face does not exist");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 404);
+    BOOST_TEST(actual.getText() == "Specified face does not exist");
   });
 }
 
@@ -219,15 +212,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, F
     .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
   updateFace(parameters, false, [] (const ControlResponse& actual) {
-      BOOST_TEST_MESSAGE(actual.getText());
-      BOOST_CHECK_EQUAL(actual.getCode(), ResultType::getExpected().getCode());
+    BOOST_TEST(actual.getCode() == ResultType::getExpected().getCode(), actual.getText());
 
-      // the response for either 200 or 409 will have a content body
-      BOOST_REQUIRE(actual.getBody().hasWire());
-
-      ControlParameters resp;
-      resp.wireDecode(actual.getBody());
-      BOOST_CHECK_EQUAL(resp.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+    // the response for either 200 or 409 will have a content body
+    ControlParameters resp(actual.getBody());
+    BOOST_CHECK_EQUAL(resp.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   });
 }
 
@@ -244,37 +233,24 @@ BOOST_AUTO_TEST_CASE(UpdateMtu)
   mtuTooLow.setMtu(63);
 
   updateFace(validParams, false, [] (const ControlResponse& actual) {
-    BOOST_CHECK_EQUAL(actual.getCode(), 200);
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_REQUIRE(actualParams.hasMtu());
-      // Check for changed MTU
-      BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
-    }
-    else {
-      BOOST_ERROR("Valid: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST_REQUIRE(actualParams.hasMtu());
+    // Check for changed MTU
+    BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
   });
 
   updateFace(mtuTooLow, false, [] (const ControlResponse& actual) {
-    BOOST_CHECK_EQUAL(actual.getCode(), 409);
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 409);
+    BOOST_TEST(actual.getText() == "Invalid properties specified");
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(!actualParams.hasFaceId());
-      BOOST_REQUIRE(actualParams.hasMtu());
-      // Check for returned invalid parameter
-      BOOST_CHECK_EQUAL(actualParams.getMtu(), 63);
-    }
-    else {
-      BOOST_ERROR("Too low: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(!actualParams.hasFaceId());
+    BOOST_TEST_REQUIRE(actualParams.hasMtu());
+    // Check for returned invalid parameter
+    BOOST_CHECK_EQUAL(actualParams.getMtu(), 63);
   });
 }
 
@@ -287,231 +263,62 @@ BOOST_AUTO_TEST_CASE(UpdateMtuUnsupportedFace)
   updateParams.setMtu(4000);
 
   updateFace(updateParams, false, [] (const ControlResponse& actual) {
-    BOOST_CHECK_EQUAL(actual.getCode(), 409);
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 409);
+    BOOST_TEST(actual.getText() == "Invalid properties specified");
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(!actualParams.hasFaceId());
-      BOOST_REQUIRE(actualParams.hasMtu());
-      // Check for returned invalid parameter
-      BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
-    }
-    else {
-      BOOST_ERROR("Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(!actualParams.hasFaceId());
+    BOOST_TEST_REQUIRE(actualParams.hasMtu());
+    // Check for returned invalid parameter
+    BOOST_CHECK_EQUAL(actualParams.getMtu(), 4000);
   });
 }
 
-class TcpLocalFieldsEnable
+template<bool EnableLocalFields>
+struct TcpLocalFields
 {
-public:
-  static std::string
-  getUri()
-  {
-    return "tcp4://127.0.0.1:26363";
-  }
-
-  static constexpr ndn::nfd::FacePersistency
-  getPersistency()
-  {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  }
-
-  static constexpr bool
-  getInitLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabled()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabledMask()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  shouldHaveWire()
-  {
-    return false;
-  }
+  static inline const std::string uri = "tcp4://127.0.0.1:26363";
+  static constexpr bool localFieldsInit = !EnableLocalFields;
+  static constexpr bool localFieldsEnabled = EnableLocalFields;
+  static constexpr bool mask = true;
+  static constexpr bool shouldHaveBody = false;
 };
 
-class TcpLocalFieldsDisable
+// UDP faces are non-local by definition.
+struct UdpLocalFieldsEnable
 {
-public:
-  static std::string
-  getUri()
-  {
-    return "tcp4://127.0.0.1:26363";
-  }
-
-  static constexpr ndn::nfd::FacePersistency
-  getPersistency()
-  {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  }
-
-  static constexpr bool
-  getInitLocalFieldsEnabled()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabledMask()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  shouldHaveWire()
-  {
-    return false;
-  }
+  static inline const std::string uri = "udp4://127.0.0.1:26363";
+  static constexpr bool localFieldsInit = false;
+  static constexpr bool localFieldsEnabled = true;
+  static constexpr bool mask = true;
+  static constexpr bool shouldHaveBody = true;
 };
 
-// UDP faces are non-local by definition
-class UdpLocalFieldsEnable
+// UDP faces are non-local by definition.
+// In this test case, attempt to disable local fields on face with local fields already disabled.
+struct UdpLocalFieldsDisable
 {
-public:
-  static std::string
-  getUri()
-  {
-    return "udp4://127.0.0.1:26363";
-  }
-
-  static constexpr ndn::nfd::FacePersistency
-  getPersistency()
-  {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  }
-
-  static constexpr bool
-  getInitLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabled()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabledMask()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  shouldHaveWire()
-  {
-    return true;
-  }
-};
-
-// UDP faces are non-local by definition
-// In this test case, attempt to disable local fields on face with local fields already disabled
-class UdpLocalFieldsDisable
-{
-public:
-  static std::string
-  getUri()
-  {
-    return "udp4://127.0.0.1:26363";
-  }
-
-  static constexpr ndn::nfd::FacePersistency
-  getPersistency()
-  {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  }
-
-  static constexpr bool
-  getInitLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabledMask()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  shouldHaveWire()
-  {
-    return false;
-  }
+  static inline const std::string uri = "udp4://127.0.0.1:26363";
+  static constexpr bool localFieldsInit = false;
+  static constexpr bool localFieldsEnabled = false;
+  static constexpr bool mask = true;
+  static constexpr bool shouldHaveBody = false;
 };
 
 // In this test case, set Flags to enable local fields on non-local face, but exclude local fields
 // from Mask. This test case will pass as no action is taken due to the missing Mask bit.
-class UdpLocalFieldsEnableNoMaskBit
+struct UdpLocalFieldsEnableNoMaskBit
 {
-public:
-  static std::string
-  getUri()
-  {
-    return "udp4://127.0.0.1:26363";
-  }
-
-  static constexpr ndn::nfd::FacePersistency
-  getPersistency()
-  {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-  }
-
-  static constexpr bool
-  getInitLocalFieldsEnabled()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabled()
-  {
-    return true;
-  }
-
-  static constexpr bool
-  getLocalFieldsEnabledMask()
-  {
-    return false;
-  }
-
-  static constexpr bool
-  shouldHaveWire()
-  {
-    return false;
-  }
+  static inline const std::string uri = "udp4://127.0.0.1:26363";
+  static constexpr bool localFieldsInit = false;
+  static constexpr bool localFieldsEnabled = true;
+  static constexpr bool mask = false;
+  static constexpr bool shouldHaveBody = false;
 };
 
 using LocalFieldFaces = boost::mp11::mp_list<
-  boost::mp11::mp_list<TcpLocalFieldsEnable, CommandSuccess>,
-  boost::mp11::mp_list<TcpLocalFieldsDisable, CommandSuccess>,
+  boost::mp11::mp_list<TcpLocalFields<true>, CommandSuccess>,
+  boost::mp11::mp_list<TcpLocalFields<false>, CommandSuccess>,
   boost::mp11::mp_list<UdpLocalFieldsEnable, CommandFailure<409>>,
   boost::mp11::mp_list<UdpLocalFieldsDisable, CommandSuccess>,
   boost::mp11::mp_list<UdpLocalFieldsEnableNoMaskBit, CommandSuccess>
@@ -522,28 +329,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(UpdateLocalFields, T, LocalFieldFaces)
   using TestType = boost::mp11::mp_first<T>;
   using ResultType = boost::mp11::mp_second<T>;
 
-  createFace(TestType::getUri(), TestType::getPersistency(), {}, {},
-             TestType::getInitLocalFieldsEnabled());
+  createFace(TestType::uri, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, TestType::localFieldsInit);
 
   ControlParameters requestParams;
   requestParams.setFaceId(faceId);
-  requestParams.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, TestType::getLocalFieldsEnabled());
-  if (!TestType::getLocalFieldsEnabledMask()) {
+  requestParams.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, TestType::localFieldsEnabled);
+  if constexpr (!TestType::mask) {
     requestParams.unsetFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
   }
 
   updateFace(requestParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(ResultType::getExpected());
-    BOOST_TEST_MESSAGE(actual.getText());
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    BOOST_TEST(actual.getCode() == ResultType::getExpected().getCode(), actual.getText());
 
-    if (TestType::shouldHaveWire() && actual.getBody().hasWire()) {
+    if constexpr (TestType::shouldHaveBody) {
       ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(!actualParams.hasFacePersistency());
-      BOOST_CHECK(actualParams.hasFlags());
-      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
-      BOOST_CHECK(actualParams.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+      BOOST_TEST(!actualParams.hasFacePersistency());
+      BOOST_TEST(actualParams.hasFlags());
+      BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+      BOOST_TEST(actualParams.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
     }
   });
 }
@@ -561,41 +364,25 @@ BOOST_AUTO_TEST_CASE(UpdateLocalFieldsEnableDisable)
   disableParams.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, false);
 
   updateFace(enableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate local fields enabled
-      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Enable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate local fields enabled
+    BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
   });
 
   updateFace(disableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate local fields disabled
-      BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Disable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate local fields disabled
+    BOOST_TEST(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
   });
 }
 
@@ -612,41 +399,25 @@ BOOST_AUTO_TEST_CASE(UpdateReliabilityEnableDisable)
   disableParams.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
 
   updateFace(enableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate reliability enabled
-      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Enable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate reliability enabled
+    BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
   });
 
   updateFace(disableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate reliability disabled
-      BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Disable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate reliability disabled
+    BOOST_TEST(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
   });
 }
 
@@ -667,51 +438,35 @@ BOOST_AUTO_TEST_CASE(UpdateCongestionMarkingEnableDisable)
   disableParams.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
 
   updateFace(enableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      // Check that congestion marking parameters changed
-      BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
-      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 50_ms);
-      BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
-      BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 10000);
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate congestion marking enabled
-      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Enable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    // Check that congestion marking parameters changed
+    BOOST_TEST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
+    BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 50_ms);
+    BOOST_TEST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
+    BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 10000);
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate congestion marking enabled
+    BOOST_TEST(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
   });
 
   updateFace(disableParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
 
-    if (actual.getBody().hasWire()) {
-      ControlParameters actualParams(actual.getBody());
-
-      BOOST_CHECK(actualParams.hasFaceId());
-      BOOST_CHECK(actualParams.hasFacePersistency());
-      // Check that congestion marking parameters changed, even though feature disabled
-      BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
-      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 70_ms);
-      BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
-      BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 5000);
-      BOOST_REQUIRE(actualParams.hasFlags());
-      // Check if flags indicate marking disabled
-      BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
-    }
-    else {
-      BOOST_ERROR("Disable: Response does not contain ControlParameters");
-    }
+    ControlParameters actualParams(actual.getBody());
+    BOOST_TEST(actualParams.hasFaceId());
+    BOOST_TEST(actualParams.hasFacePersistency());
+    // Check that congestion marking parameters changed, even though feature disabled
+    BOOST_TEST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
+    BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 70_ms);
+    BOOST_TEST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
+    BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 5000);
+    BOOST_TEST_REQUIRE(actualParams.hasFlags());
+    // Check if flags indicate marking disabled
+    BOOST_TEST(!actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
   });
 }
 
@@ -719,13 +474,18 @@ BOOST_AUTO_TEST_CASE(SelfUpdating)
 {
   createFace();
 
-  // Send a command that does nothing (will return 200) and does not contain a FaceId
+  // Send a command that does nothing and does not contain a FaceId
   ControlParameters sentParams;
 
+  // Success case: FaceId is obtained automatically from IncomingFaceIdTag
   updateFace(sentParams, true, [] (const ControlResponse& actual) {
-    ControlResponse expected(200, "OK");
-    BOOST_REQUIRE_EQUAL(actual.getCode(), expected.getCode());
-    BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_TEST(actual.getCode() == 200, actual.getText());
+  });
+
+  // Error case: IncomingFaceIdTag is missing
+  updateFace(sentParams, false, [] (const ControlResponse& actual) {
+    BOOST_TEST(actual.getCode() == 404);
+    BOOST_TEST(actual.getText() == "No FaceId specified and IncomingFaceId not available");
   });
 }
 

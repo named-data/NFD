@@ -84,7 +84,7 @@ private:
  */
 class ManagerCommonFixture : public InterestSignerFixture
 {
-public: // initialize
+public:
   /**
    * @brief Add `/localhost/nfd` as a top prefix to the dispatcher.
    *
@@ -93,21 +93,20 @@ public: // initialize
   void
   setTopPrefix();
 
-public: // test
   /**
    * @brief Cause management to receive an Interest.
    *
-   * call DummyClientFace::receive to receive Interest and then call advanceClocks to ensure
-   * the Interest dispatched
-   *
-   * @param interest the Interest to receive
+   * Calls DummyClientFace::receive() to receive the Interest and then calls advanceClocks()
+   * to ensure the Interest is dispatched.
    */
   void
   receiveInterest(const Interest& interest);
 
-public: // verify
   static ControlResponse
-  makeResponse(uint32_t code, const std::string& text, const ControlParameters& parameters);
+  makeResponse(uint32_t code, const std::string& text, const ControlParameters& parameters)
+  {
+    return ControlResponse(code, text).setBody(parameters.wireEncode());
+  }
 
   enum class CheckResponseResult {
     OK,
@@ -118,7 +117,7 @@ public: // verify
     WRONG_CODE,
     WRONG_TEXT,
     WRONG_BODY_SIZE,
-    WRONG_BODY_VALUE
+    WRONG_BODY_VALUE,
   };
 
   /**

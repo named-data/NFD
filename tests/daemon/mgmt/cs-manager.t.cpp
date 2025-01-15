@@ -71,8 +71,7 @@ BOOST_AUTO_TEST_CASE(Config)
   body.setCapacity(22129);
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, false, false);
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, true, false);
-  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // send filled cs/config command
@@ -87,8 +86,7 @@ BOOST_AUTO_TEST_CASE(Config)
   body.setCapacity(18609);
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, true, false);
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, false, false);
-  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // CS shall have updated config
@@ -119,28 +117,24 @@ BOOST_AUTO_TEST_CASE(Erase)
   const Name cmdPrefix = Name("/localhost/nfd").append(ndn::nfd::CsEraseCommand::getName());
 
   // requested Name matches no Data
-  auto req = makeControlCommandRequest(cmdPrefix,
-    ControlParameters().setName("/A").setCount(1));
+  auto req = makeControlCommandRequest(cmdPrefix, ControlParameters().setName("/A").setCount(1));
   receiveInterest(req);
 
   // response should include zero as actual Count
   ControlParameters body;
   body.setName("/A");
   body.setCount(0);
-  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // requested Count is less than erase limit
-  req = makeControlCommandRequest(cmdPrefix,
-    ControlParameters().setName("/B").setCount(3));
+  req = makeControlCommandRequest(cmdPrefix, ControlParameters().setName("/B").setCount(3));
   receiveInterest(req);
 
   // response should include actual Count and omit Capacity
   body.setName("/B");
   body.setCount(3);
-  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // requested Count equals erase limit
@@ -151,8 +145,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   // response should include actual Count and omit Capacity
   body.setName("/E");
   body.setCount(CsManager::ERASE_LIMIT - 1);
-  BOOST_CHECK_EQUAL(checkResponse(2, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(2, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // requested Count exceeds erase limit, but there are no more Data
@@ -163,8 +156,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   // response should include actual Count and omit Capacity
   body.setName("/F");
   body.setCount(CsManager::ERASE_LIMIT);
-  BOOST_CHECK_EQUAL(checkResponse(3, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(3, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // requested Count exceeds erase limit, and there are more Data
@@ -176,21 +168,18 @@ BOOST_AUTO_TEST_CASE(Erase)
   body.setName("/G");
   body.setCount(CsManager::ERASE_LIMIT);
   body.setCapacity(CsManager::ERASE_LIMIT);
-  BOOST_CHECK_EQUAL(checkResponse(4, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(4, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // request omit Count, which implies "no limit" aka exceeds erase limit
-  req = makeControlCommandRequest(cmdPrefix,
-    ControlParameters().setName("/H"));
+  req = makeControlCommandRequest(cmdPrefix, ControlParameters().setName("/H"));
   receiveInterest(req);
 
   // response should include both actual Count and Capacity since there are more Data
   body.setName("/H");
   body.setCount(CsManager::ERASE_LIMIT);
   body.setCapacity(CsManager::ERASE_LIMIT);
-  BOOST_CHECK_EQUAL(checkResponse(5, req.getName(),
-                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+  BOOST_CHECK_EQUAL(checkResponse(5, req.getName(), makeResponse(200, "OK", body)),
                     CheckResponseResult::OK);
 
   // one Data each under /A, /G, /H remain, all other Data are erased

@@ -29,7 +29,8 @@ namespace nfd::tests {
 
 InterestSignerFixture::InterestSignerFixture()
 {
-  BOOST_REQUIRE(m_keyChain.createIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY));
+  auto id = m_keyChain.createIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY);
+  BOOST_VERIFY(id);
 }
 
 Interest
@@ -80,18 +81,11 @@ ManagerCommonFixture::receiveInterest(const Interest& interest)
   advanceClocks(1_ms);
 }
 
-ControlResponse
-ManagerCommonFixture::makeResponse(uint32_t code, const std::string& text,
-                                   const ControlParameters& parameters)
-{
-  return ControlResponse(code, text).setBody(parameters.wireEncode());
-}
-
 ManagerCommonFixture::CheckResponseResult
 ManagerCommonFixture::checkResponse(size_t idx,
                                     const Name& expectedName,
                                     const ControlResponse& expectedResponse,
-                                    int expectedContentType /*= -1*/)
+                                    int expectedContentType)
 {
   Data data;
   try {
@@ -103,7 +97,7 @@ ManagerCommonFixture::checkResponse(size_t idx,
   }
 
   if (data.getName() != expectedName) {
-    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong name " << data.getName());
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong name " << std::quoted(data.getName().toUri()));
     return CheckResponseResult::WRONG_NAME;
   }
 
@@ -117,8 +111,8 @@ ManagerCommonFixture::checkResponse(size_t idx,
   try {
     response.wireDecode(data.getContent().blockFromValue());
   }
-  catch (const tlv::Error&) {
-    BOOST_TEST_MESSAGE("response[" << idx << "] cannot be decoded");
+  catch (const tlv::Error& e) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] cannot be decoded: " << e.what());
     return CheckResponseResult::INVALID_RESPONSE;
   }
 
@@ -128,7 +122,7 @@ ManagerCommonFixture::checkResponse(size_t idx,
   }
 
   if (response.getText() != expectedResponse.getText()) {
-    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong StatusText " << response.getText());
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong StatusText " << std::quoted(response.getText()));
     return CheckResponseResult::WRONG_TEXT;
   }
 
@@ -138,7 +132,8 @@ ManagerCommonFixture::checkResponse(size_t idx,
     BOOST_TEST_MESSAGE("response[" << idx << "] has wrong body size " << body.value_size());
     return CheckResponseResult::WRONG_BODY_SIZE;
   }
-  if (body.value_size() > 0 && memcmp(body.value(), expectedBody.value(), body.value_size()) != 0) {
+
+  if (!std::equal(body.value_begin(), body.value_end(), expectedBody.value_begin())) {
     BOOST_TEST_MESSAGE("response[" << idx << "] has wrong body value");
     return CheckResponseResult::WRONG_BODY_VALUE;
   }
@@ -176,26 +171,26 @@ std::ostream&
 operator<<(std::ostream& os, ManagerCommonFixture::CheckResponseResult result)
 {
   switch (result) {
-    case ManagerCommonFixture::CheckResponseResult::OK:
-      return os << "OK";
-    case ManagerCommonFixture::CheckResponseResult::OUT_OF_BOUNDARY:
-      return os << "OUT_OF_BOUNDARY";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_NAME:
-      return os << "WRONG_NAME";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_CONTENT_TYPE:
-      return os << "WRONG_CONTENT_TYPE";
-    case ManagerCommonFixture::CheckResponseResult::INVALID_RESPONSE:
-      return os << "INVALID_RESPONSE";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_CODE:
-      return os << "WRONG_CODE";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_TEXT:
-      return os << "WRONG_TEXT";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_SIZE:
-      return os << "WRONG_BODY_SIZE";
-    case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_VALUE:
-      return os << "WRONG_BODY_VALUE";
+  case ManagerCommonFixture::CheckResponseResult::OK:
+    return os << "OK";
+  case ManagerCommonFixture::CheckResponseResult::OUT_OF_BOUNDARY:
+    return os << "OUT_OF_BOUNDARY";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_NAME:
+    return os << "WRONG_NAME";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_CONTENT_TYPE:
+    return os << "WRONG_CONTENT_TYPE";
+  case ManagerCommonFixture::CheckResponseResult::INVALID_RESPONSE:
+    return os << "INVALID_RESPONSE";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_CODE:
+    return os << "WRONG_CODE";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_TEXT:
+    return os << "WRONG_TEXT";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_SIZE:
+    return os << "WRONG_BODY_SIZE";
+  case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_VALUE:
+    return os << "WRONG_BODY_VALUE";
   }
-  return os << static_cast<int>(result);
+  return os << ndn::to_underlying(result);
 }
 
 void

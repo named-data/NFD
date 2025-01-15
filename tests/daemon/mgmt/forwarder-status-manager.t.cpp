@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -85,9 +85,8 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
   auto afterRequest = time::system_clock::now();
 
   // verify
-  Block response = this->concatenateResponses(0, m_responses.size());
-  ndn::nfd::ForwarderStatus status;
-  BOOST_REQUIRE_NO_THROW(status.wireDecode(response));
+  Block content = concatenateResponses();
+  ndn::nfd::ForwarderStatus status(content);
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
   BOOST_CHECK_EQUAL(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(m_startTime));

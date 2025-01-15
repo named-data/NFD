@@ -43,7 +43,7 @@ namespace nfd::tests {
 
 class FaceManagerFixture : public ManagerFixtureWithAuthenticator
 {
-public:
+protected:
   FaceManagerFixture()
     : m_faceSystem(m_faceTable, make_shared<ndn::net::NetworkMonitorStub>(0))
     , m_manager(m_faceSystem, m_dispatcher, *m_authenticator)
@@ -52,32 +52,20 @@ public:
     setPrivilege("faces");
   }
 
-public:
   enum AddFaceFlags {
     REMOVE_LAST_NOTIFICATION = 1 << 0,
-    SET_SCOPE_LOCAL          = 1 << 1,
-    SET_URI_TEST             = 1 << 2,
-    RANDOMIZE_COUNTERS       = 1 << 3,
+    RANDOMIZE_COUNTERS       = 1 << 1,
   };
 
   /**
    * \brief Adds a face to the FaceTable.
    * \param flags bitwise OR'ed AddFaceFlags
    */
+  template<typename... Args>
   shared_ptr<Face>
-  addFace(unsigned int flags = 0)
+  addFace(unsigned int flags = 0, Args&&... args)
   {
-    std::string uri = "dummy://";
-    ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL;
-
-    if (flags & SET_SCOPE_LOCAL) {
-      scope = ndn::nfd::FACE_SCOPE_LOCAL;
-    }
-    if (flags & SET_URI_TEST) {
-      uri = "test://";
-    }
-
-    auto face = make_shared<DummyFace>(uri, uri, scope);
+    auto face = make_shared<DummyFace>(std::forward<Args>(args)...);
     m_faceTable.add(face);
 
     if (flags & RANDOMIZE_COUNTERS) {
@@ -96,7 +84,7 @@ public:
 
     advanceClocks(1_ms, 10); // wait for notification posted
     if (flags & REMOVE_LAST_NOTIFICATION) {
-      BOOST_REQUIRE(!m_responses.empty());
+      BOOST_TEST_REQUIRE(!m_responses.empty());
       m_responses.pop_back();
     }
 
@@ -124,7 +112,7 @@ BOOST_AUTO_TEST_SUITE(DestroyFace)
 
 BOOST_AUTO_TEST_CASE(Existing)
 {
-  auto addedFace = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // clear notification for creation
+  auto addedFace = addFace(REMOVE_LAST_NOTIFICATION); // clear notification for creation
 
   auto parameters = ControlParameters().setFaceId(addedFace->getId());
   auto req = makeControlCommandRequest(FaceManagerCommandFixture::DESTROY_REQUEST, parameters);
@@ -158,7 +146,7 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
 {
   const size_t nEntries = 32;
   for (size_t i = 0; i < nEntries; ++i) {
-    addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST | RANDOMIZE_COUNTERS);
+    addFace(REMOVE_LAST_NOTIFICATION | RANDOMIZE_COUNTERS, "test://", "test://");
   }
 
   receiveInterest(Interest("/localhost/nfd/faces/list").setCanBePrefix(true));
@@ -167,9 +155,9 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
   content.parse();
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
-  std::set<FaceId> faceIds;
-  for (size_t idx = 0; idx < nEntries; ++idx) {
-    ndn::nfd::FaceStatus decodedStatus(content.elements()[idx]);
+  std::unordered_set<FaceId> faceIds;
+  for (const auto& el : content.elements()) {
+    ndn::nfd::FaceStatus decodedStatus(el);
     BOOST_TEST_INFO_SCOPE(decodedStatus);
     BOOST_CHECK(m_faceTable.get(decodedStatus.getFaceId()) != nullptr);
     faceIds.insert(decodedStatus.getFaceId());
@@ -178,16 +166,15 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
 
   ndn::nfd::FaceStatus status(content.elements().front());
   const Face* face = m_faceTable.get(status.getFaceId());
-  BOOST_REQUIRE(face != nullptr);
+  BOOST_TEST_REQUIRE(face != nullptr);
 
   // check face properties
   BOOST_CHECK_EQUAL(status.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(status.getLocalUri(), face->getLocalUri().toString());
-  BOOST_CHECK_EQUAL(status.hasExpirationPeriod(),
-                    face->getExpirationTime() != time::steady_clock::time_point::max());
-  BOOST_CHECK_EQUAL(status.getFaceScope(), face->getScope());
-  BOOST_CHECK_EQUAL(status.getFacePersistency(), face->getPersistency());
-  BOOST_CHECK_EQUAL(status.getLinkType(), face->getLinkType());
+  BOOST_TEST(!status.hasExpirationPeriod());
+  BOOST_CHECK_EQUAL(status.getFaceScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(status.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(status.getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   // check link service properties
   BOOST_CHECK_EQUAL(status.hasBaseCongestionMarkingInterval(), false);
@@ -195,7 +182,7 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
   BOOST_CHECK_EQUAL(status.getFlags(), 0);
 
   // check transport properties
-  BOOST_CHECK_EQUAL(status.hasMtu(), true);
+  BOOST_TEST_REQUIRE(status.hasMtu());
   BOOST_CHECK_EQUAL(status.getMtu(), ndn::MAX_NDN_PACKET_SIZE);
 
   // check counters
@@ -213,56 +200,82 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
 {
   using ndn::nfd::FaceQueryFilter;
 
-  auto face1 = addFace(REMOVE_LAST_NOTIFICATION); // dummy://
-  auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
-  auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
+  auto face1 = addFace(REMOVE_LAST_NOTIFICATION, "dummy://one", "dummy://one",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  auto face2 = addFace(REMOVE_LAST_NOTIFICATION, "dummy://two", "remote://foo",
+                       ndn::nfd::FACE_SCOPE_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  auto face3 = addFace(REMOVE_LAST_NOTIFICATION, "local://bar", "remote://foo",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                       ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  auto face4 = addFace(REMOVE_LAST_NOTIFICATION, "local://bar", "dummy://four",
+                       ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                       ndn::nfd::LINK_TYPE_AD_HOC);
 
   auto generateQuery = [] (const auto& filter) {
     return Interest(Name("/localhost/nfd/faces/query").append(filter.wireEncode()))
            .setCanBePrefix(true);
   };
 
-  auto schemeQuery = generateQuery(FaceQueryFilter().setUriScheme("dummy"));
+  auto allQuery = generateQuery(FaceQueryFilter());
+  auto noneQuery = generateQuery(FaceQueryFilter().setUriScheme("nomatch"));
   auto idQuery = generateQuery(FaceQueryFilter().setFaceId(face1->getId()));
-  auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL));
+  auto schemeQuery = generateQuery(FaceQueryFilter().setUriScheme("dummy"));
+  auto remoteQuery = generateQuery(FaceQueryFilter().setRemoteUri("remote://foo"));
+  auto localQuery = generateQuery(FaceQueryFilter().setLocalUri("local://bar"));
+  auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL));
+  auto persistencyQuery = generateQuery(FaceQueryFilter().setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT));
+  auto linkQuery = generateQuery(FaceQueryFilter().setLinkType(ndn::nfd::LINK_TYPE_AD_HOC));
   auto invalidQueryName = Name("/localhost/nfd/faces/query")
                           .append(ndn::makeStringBlock(tlv::Content, "invalid"));
   auto invalidQuery = Interest(invalidQueryName).setCanBePrefix(true);
 
-  receiveInterest(schemeQuery); // face1 and face2 expected
+  receiveInterest(allQuery); // all 4 faces expected
+  receiveInterest(noneQuery); // no faces expected
   receiveInterest(idQuery); // face1 expected
-  receiveInterest(scopeQuery); // face1 and face3 expected
+  receiveInterest(schemeQuery); // face1, face2, face4 expected
+  receiveInterest(remoteQuery); // face2 and face3 expected
+  receiveInterest(localQuery); // face3 and face4 expected
+  receiveInterest(scopeQuery); // face2 expected
+  receiveInterest(persistencyQuery); // face3 expected
+  receiveInterest(linkQuery); // face4 expected
   receiveInterest(invalidQuery); // nack expected
 
-  BOOST_REQUIRE_EQUAL(m_responses.size(), 4);
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 10);
 
-  Block content;
-  ndn::nfd::FaceStatus status;
+  auto checkQueryResponse = [this] (size_t idx, const std::unordered_set<FaceId>& expected) {
+    BOOST_TEST_INFO("Response index = " << idx);
+    const Block& content = m_responses.at(idx).getContent();
+    content.parse();
+    std::unordered_set<FaceId> actual;
+    std::string actualStr;
+    for (const auto& el : content.elements()) {
+      ndn::nfd::FaceStatus status(el);
+      actual.insert(status.getFaceId());
+      actualStr += std::to_string(status.getFaceId()) + " ";
+    }
+    BOOST_TEST_INFO("Content = { " << actualStr << "}");
+    BOOST_TEST(actual == expected);
+  };
 
-  content = m_responses[0].getContent();
-  content.parse();
-  BOOST_CHECK_EQUAL(content.elements().size(), 2); // face1 and face2
-  status.wireDecode(content.elements()[0]);
-  BOOST_CHECK_EQUAL(face1->getId(), status.getFaceId());
-  status.wireDecode(content.elements()[1]);
-  BOOST_CHECK_EQUAL(face2->getId(), status.getFaceId());
+  checkQueryResponse(0, {face1->getId(), face2->getId(), face3->getId(), face4->getId()});
+  checkQueryResponse(1, {});
+  checkQueryResponse(2, {face1->getId()});
+  checkQueryResponse(3, {face1->getId(), face2->getId(), face4->getId()});
+  checkQueryResponse(4, {face2->getId(), face3->getId()});
+  checkQueryResponse(5, {face3->getId(), face4->getId()});
+  checkQueryResponse(6, {face2->getId()});
+  checkQueryResponse(7, {face3->getId()});
+  checkQueryResponse(8, {face4->getId()});
 
-  content = m_responses[1].getContent();
-  content.parse();
-  BOOST_CHECK_EQUAL(content.elements().size(), 1); // face1
-  status.wireDecode(content.elements()[0]);
-  BOOST_CHECK_EQUAL(face1->getId(), status.getFaceId());
-
-  content = m_responses[2].getContent();
-  content.parse();
-  BOOST_CHECK_EQUAL(content.elements().size(), 2); // face1 and face3
-  status.wireDecode(content.elements()[0]);
-  BOOST_CHECK_EQUAL(face1->getId(), status.getFaceId());
-  status.wireDecode(content.elements()[1]);
-  BOOST_CHECK_EQUAL(face3->getId(), status.getFaceId());
-
-  ControlResponse expectedResponse(400, "Malformed filter"); // nack, 400, malformed filter
-  BOOST_CHECK_EQUAL(checkResponse(3, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
+  // nack, 400, malformed filter
+  ControlResponse expectedResponse(400, "Malformed filter");
+  BOOST_CHECK_EQUAL(checkResponse(9, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
                     CheckResponseResult::OK);
 }
 
@@ -330,10 +343,10 @@ BOOST_AUTO_TEST_CASE(ChannelDataset)
   content.parse();
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
-  for (size_t idx = 0; idx < nEntries; ++idx) {
-    ndn::nfd::ChannelStatus decodedStatus(content.elements()[idx]);
+  for (const auto& el : content.elements()) {
+    ndn::nfd::ChannelStatus decodedStatus(el);
     BOOST_TEST_INFO_SCOPE(decodedStatus);
-    BOOST_CHECK(addedChannels.find(decodedStatus.getLocalUri()) != addedChannels.end());
+    BOOST_TEST(addedChannels.count(decodedStatus.getLocalUri()) == 1);
   }
 }
 
