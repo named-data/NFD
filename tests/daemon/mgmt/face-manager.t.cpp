@@ -63,7 +63,7 @@ protected:
    */
   template<typename... Args>
   shared_ptr<Face>
-  addFace(unsigned int flags = 0, Args&&... args)
+  addFace(unsigned int flags, Args&&... args)
   {
     auto face = make_shared<DummyFace>(std::forward<Args>(args)...);
     m_faceTable.add(face);
@@ -89,6 +89,15 @@ protected:
     }
 
     return face;
+  }
+
+  // We cannot combine this overload with the previous one
+  // because clang 10 (and earlier) doesn't like it.
+  // This is a workaround for https://github.com/llvm/llvm-project/issues/23403
+  shared_ptr<Face>
+  addFace()
+  {
+    return addFace(0);
   }
 
 private:
