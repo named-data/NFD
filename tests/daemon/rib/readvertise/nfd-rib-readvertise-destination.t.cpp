@@ -103,7 +103,7 @@ using AdvertiseScenarios = boost::mp11::mp_list<AdvertiseSuccessScenario, Advert
 BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix);
+  ReadvertisedRoute rr(prefix, 100);
 
   dest.advertise(rr, successCallback, failureCallback);
   advanceClocks(100_ms);
@@ -111,14 +111,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
   // Retrieve the sent Interest to build the response
   BOOST_REQUIRE_EQUAL(face.sentInterests.size(), 1);
   const Interest& sentInterest = face.sentInterests[0];
-  BOOST_CHECK(RIB_REGISTER_COMMAND_PREFIX.isPrefixOf(sentInterest.getName()));
+  BOOST_TEST(RIB_REGISTER_COMMAND_PREFIX.isPrefixOf(sentInterest.getName()));
 
-  // Parse the sent command Interest to check correctness.
-  ControlParameters sentCp;
-  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_REGISTER_COMMAND_PREFIX.size())
-                                         .blockFromValue()));
-  BOOST_CHECK_EQUAL(sentCp.getOrigin(), ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  BOOST_CHECK_EQUAL(sentCp.getName(), prefix);
+  // Parse the sent command Interest parameters to check correctness
+  ControlParameters sentCp(sentInterest.getName().get(RIB_REGISTER_COMMAND_PREFIX.size()).blockFromValue());
+  BOOST_TEST(sentCp.getName() == prefix);
+  BOOST_TEST(sentCp.getOrigin() == ndn::nfd::ROUTE_ORIGIN_CLIENT);
+  BOOST_TEST(sentCp.getCost() == 100);
 
   ndn::nfd::ControlResponse responsePayload = Scenario::makeResponse(sentCp);
   auto responseData = makeData(sentInterest.getName());
@@ -169,7 +168,7 @@ using WithdrawScenarios = boost::mp11::mp_list<WithdrawSuccessScenario, Withdraw
 BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix);
+  ReadvertisedRoute rr(prefix, 100);
 
   dest.withdraw(rr, successCallback, failureCallback);
   this->advanceClocks(10_ms);
@@ -177,13 +176,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   // Retrieve the sent Interest to build the response
   BOOST_REQUIRE_EQUAL(face.sentInterests.size(), 1);
   const Interest& sentInterest = face.sentInterests[0];
-  BOOST_CHECK(RIB_UNREGISTER_COMMAND_PREFIX.isPrefixOf(sentInterest.getName()));
+  BOOST_TEST(RIB_UNREGISTER_COMMAND_PREFIX.isPrefixOf(sentInterest.getName()));
 
-  ControlParameters sentCp;
-  BOOST_CHECK_NO_THROW(sentCp.wireDecode(sentInterest.getName().get(RIB_UNREGISTER_COMMAND_PREFIX.size())
-                                         .blockFromValue()));
-  BOOST_CHECK_EQUAL(sentCp.getOrigin(), ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  BOOST_CHECK_EQUAL(sentCp.getName(), prefix);
+  // Parse the sent command Interest parameters to check correctness
+  ControlParameters sentCp(sentInterest.getName().get(RIB_UNREGISTER_COMMAND_PREFIX.size()).blockFromValue());
+  BOOST_TEST(sentCp.getName() == prefix);
+  BOOST_TEST(sentCp.getOrigin() == ndn::nfd::ROUTE_ORIGIN_CLIENT);
 
   ndn::nfd::ControlResponse responsePayload = Scenario::makeResponse(sentCp);
   auto responseData = makeData(sentInterest.getName());

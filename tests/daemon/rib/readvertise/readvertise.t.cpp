@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -166,7 +166,7 @@ BOOST_FIXTURE_TEST_SUITE(TestReadvertise, ReadvertiseFixture)
 
 BOOST_AUTO_TEST_CASE(AddRemoveRoute)
 {
-  policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
+  policy->decision = ReadvertiseAction{"/A", 200, ndn::security::SigningInfo()};
 
   // advertising /A
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
@@ -209,9 +209,9 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
 {
   this->setDestinationAvailability(false);
 
-  policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
+  policy->decision = ReadvertiseAction{"/A", 200, ndn::security::SigningInfo()};
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  policy->decision = ReadvertiseAction{"/B", ndn::security::SigningInfo()};
+  policy->decision = ReadvertiseAction{"/B", 200, ndn::security::SigningInfo()};
   this->insertRoute("/B/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
   BOOST_CHECK_EQUAL(destination->advertiseHistory.size(), 0);
 
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(AdvertiseRetryInterval)
 {
   destination->shouldSucceed = false;
 
-  policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
+  policy->decision = ReadvertiseAction{"/A", 200, ndn::security::SigningInfo()};
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
 
   this->advanceClocks(10_s, 1_h);
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(AdvertiseRetryInterval)
 BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
 {
   destination->shouldSucceed = false;
-  policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
+  policy->decision = ReadvertiseAction{"/A", 200, ndn::security::SigningInfo()};
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
   this->advanceClocks(10_s, 300_s);
   BOOST_CHECK_GT(destination->advertiseHistory.size(), 0);

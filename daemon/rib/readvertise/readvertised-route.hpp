@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,9 +41,9 @@ namespace nfd::rib {
 class ReadvertisedRoute : noncopyable
 {
 public:
-  explicit
-  ReadvertisedRoute(const Name& prefix)
+  ReadvertisedRoute(const Name& prefix, uint64_t cost)
     : prefix(prefix)
+    , cost(cost)
   {
   }
 
@@ -55,6 +55,7 @@ public:
 
 public:
   Name prefix; ///< readvertised prefix
+  uint64_t cost; ///< cost to reach the prefix
   mutable ndn::security::SigningInfo signer; ///< signer for commands
   mutable size_t nRibRoutes = 0; ///< number of RIB routes that cause the readvertisement
   mutable time::milliseconds retryDelay = 0_ms; ///< retry interval (not used for refresh)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,7 @@ std::optional<ReadvertiseAction>
 ClientToNlsrReadvertisePolicy::handleNewRoute(const RibRouteRef& ribRoute) const
 {
   if (ribRoute.route->origin == ndn::nfd::ROUTE_ORIGIN_CLIENT) {
-    return ReadvertiseAction{ribRoute.entry->getName(), ndn::security::SigningInfo()};
+    return ReadvertiseAction{ribRoute.entry->getName(), ribRoute.route->cost, ndn::security::SigningInfo()};
   }
   else {
     return std::nullopt;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,7 +64,7 @@ NfdRibReadvertiseDestination::advertise(const nfd::rib::ReadvertisedRoute& rr,
   NFD_LOG_DEBUG("advertise " << rr.prefix << " on " << m_commandOptions.getPrefix());
 
   m_controller.start<ndn::nfd::RibRegisterCommand>(
-    getControlParameters().setName(rr.prefix),
+    getControlParameters().setName(rr.prefix).setCost(rr.cost),
     [=] (const ControlParameters&) { successCb(); },
     [=] (const ControlResponse& cr) { failureCb(cr.getText()); },
     getCommandOptions().setSigningInfo(rr.signer));

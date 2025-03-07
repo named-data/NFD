@@ -73,7 +73,7 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
     return;
   }
 
-  auto [rrIt, isNewRr] = m_rrs.emplace(action->prefix);
+  auto [rrIt, isNewRr] = m_rrs.emplace(action->prefix, action->cost);
   if (!isNewRr && rrIt->signer != action->signer) {
     NFD_LOG_WARN("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
                  " origin=" << ribRoute.route->origin << " -> readvertising-as " << action->prefix <<
@@ -92,7 +92,7 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
 
   NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << " face=" << ribRoute.route->faceId <<
                 " origin=" << ribRoute.route->origin << " -> readvertising-as " << action->prefix <<
-                " signer=" << action->signer);
+                " cost=" << action->cost << " signer=" << action->signer);
   rrIt->retryDelay = RETRY_DELAY_MIN;
   this->advertise(rrIt);
 }

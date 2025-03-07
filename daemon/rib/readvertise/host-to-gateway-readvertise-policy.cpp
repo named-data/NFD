@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,7 +75,7 @@ HostToGatewayReadvertisePolicy::handleNewRoute(const RibRouteRef& ribRoute) cons
   if (!isFound) {
     return std::nullopt;
   }
-  return ReadvertiseAction{prefixToAdvertise, ndn::security::signingByIdentity(signingIdentity)};
+  return ReadvertiseAction{prefixToAdvertise, ribRoute.route->cost, ndn::security::signingByIdentity(signingIdentity)};
 }
 
 time::milliseconds

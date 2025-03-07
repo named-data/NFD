@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,6 +43,7 @@ public:
     entry->setName(prefix);
 
     Route route;
+    route.cost = 200;
     auto routeIt = entry->insertRoute(route).first;
     return RibRouteRef{entry, routeIt};
   }
@@ -63,45 +64,46 @@ BOOST_AUTO_TEST_CASE(PrefixToAdvertise)
   BOOST_REQUIRE(m_keyChain.createIdentity("/A/B"));
   BOOST_REQUIRE(m_keyChain.createIdentity("/C/nrd"));
 
-  auto test = [this] (Name routeName, std::optional<ReadvertiseAction> expectedAction) {
-    auto policy = makePolicy();
+  auto policy = makePolicy();
+  auto test = [&policy] (Name routeName, std::optional<ReadvertiseAction> expectedAction) {
     auto action = policy->handleNewRoute(makeNewRoute(routeName));
 
     if (expectedAction) {
       BOOST_REQUIRE(action);
-      BOOST_CHECK_EQUAL(action->prefix, expectedAction->prefix);
-      BOOST_REQUIRE_EQUAL(action->signer, expectedAction->signer);
+      BOOST_TEST(action->prefix == expectedAction->prefix);
+      BOOST_TEST(action->cost == expectedAction->cost);
+      BOOST_TEST(action->signer == expectedAction->signer);
     }
     else {
-      BOOST_REQUIRE(!action);
+      BOOST_TEST(!action);
     }
   };
 
   test("/D/app", std::nullopt);
-  test("/A/B/app", ReadvertiseAction{"/A", ndn::security::signingByIdentity("/A")});
-  test("/C/nrd", ReadvertiseAction{"/C", ndn::security::signingByIdentity("/C/nrd")});
+  test("/A/B/app", ReadvertiseAction{"/A", 200, ndn::security::signingByIdentity("/A")});
+  test("/C/nrd", ReadvertiseAction{"/C", 200, ndn::security::signingByIdentity("/C/nrd")});
 }
 
 BOOST_AUTO_TEST_CASE(DontReadvertise)
 {
   auto policy = makePolicy();
-  BOOST_REQUIRE(!policy->handleNewRoute(makeNewRoute("/localhost/test")));
-  BOOST_REQUIRE(!policy->handleNewRoute(makeNewRoute("/localhop/nfd")));
+  BOOST_TEST(!policy->handleNewRoute(makeNewRoute("/localhost/test")));
+  BOOST_TEST(!policy->handleNewRoute(makeNewRoute("/localhop/nfd")));
 }
 
 BOOST_AUTO_TEST_CASE(LoadRefreshInterval)
 {
   auto policy = makePolicy();
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 25_s); // default setting is 25
+  BOOST_TEST(policy->getRefreshInterval() == 25_s); // default setting is 25s
 
   ConfigSection section;
   section.put("refresh_interval_wrong", 10);
   policy = makePolicy(section);
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 25_s); // wrong formate
+  BOOST_TEST(policy->getRefreshInterval() == 25_s); // wrong syntax
 
   section.put("refresh_interval", 10);
   policy = makePolicy(section);
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 10_s);
+  BOOST_TEST(policy->getRefreshInterval() == 10_s);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestHostToGatewayReadvertisePolicy
