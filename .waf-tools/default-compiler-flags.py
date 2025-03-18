@@ -11,7 +11,7 @@ def configure(conf):
     conf.start_msg('Checking C++ compiler version')
 
     cxx = conf.env.CXX_NAME # generic name of the compiler
-    ccver = tuple(int(i) for i in conf.env.CC_VERSION)
+    ccver = get_compiler_ver(conf)
     ccverstr = '.'.join(conf.env.CC_VERSION)
     errmsg = ''
     warnmsg = ''
@@ -58,6 +58,10 @@ def configure(conf):
     conf.add_supported_cxxflags(generalFlags['CXXFLAGS'])
     conf.add_supported_linkflags(generalFlags['LINKFLAGS'])
     conf.env.DEFINES += generalFlags['DEFINES']
+
+
+def get_compiler_ver(conf):
+    return tuple(int(i) for i in conf.env.CC_VERSION)
 
 
 @Configure.conf
@@ -124,9 +128,6 @@ def add_supported_linkflags(self, linkflags):
 
 
 class CompilerFlags:
-    def getCompilerVersion(self, conf):
-        return tuple(int(i) for i in conf.env.CC_VERSION)
-
     def getGeneralFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are always needed"""
         return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
@@ -226,7 +227,7 @@ class ClangFlags(GccClangCommonFlags):
         elif Utils.unversioned_sys_platform() == 'freebsd':
             # Bug #4790
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
-        if self.getCompilerVersion(conf) >= (18, 0, 0):
+        if get_compiler_ver(conf) >= (18, 0, 0) and get_compiler_ver(conf) < (20, 1, 0):
             # Bug #5300
             flags['CXXFLAGS'] += ['-Wno-enum-constexpr-conversion']
         return flags
@@ -240,10 +241,10 @@ class ClangFlags(GccClangCommonFlags):
         flags = super().getDebugFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
         # Enable assertions in libc++
-        if self.getCompilerVersion(conf) >= (18, 0, 0):
+        if get_compiler_ver(conf) >= (18, 0, 0):
             # https://libcxx.llvm.org/Hardening.html
             flags['DEFINES'] += ['_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
-        elif self.getCompilerVersion(conf) >= (15, 0, 0):
+        elif get_compiler_ver(conf) >= (15, 0, 0):
             # https://releases.llvm.org/15.0.0/projects/libcxx/docs/UsingLibcxx.html#enabling-the-safe-libc-mode
             flags['DEFINES'] += ['_LIBCPP_ENABLE_ASSERTIONS=1']
         # Tell libc++ to avoid including transitive headers
