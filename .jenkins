@@ -10,13 +10,17 @@ case $(uname) in
         fi
         export ID VERSION_ID
         export ID_LIKE="${ID} ${ID_LIKE} linux"
-        export PATH="${HOME}/.local/bin${PATH:+:}${PATH}"
+        if [[ -z $GITHUB_ACTIONS ]]; then
+            export PATH="${HOME}/.local/bin${PATH:+:}${PATH}"
+        fi
         ;;
     Darwin)
         # Emulate a subset of os-release(5)
         export ID=macos
         export VERSION_ID=$(sw_vers -productVersion)
-        export PATH="/usr/local/bin${PATH:+:}${PATH}"
+        if [[ -z $GITHUB_ACTIONS ]]; then
+            export PATH="/usr/local/bin${PATH:+:}${PATH}"
+        fi
         if [[ -x /opt/homebrew/bin/brew ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         elif [[ -x /usr/local/bin/brew ]]; then
@@ -27,9 +31,9 @@ esac
 
 export CACHE_DIR=${CACHE_DIR:-/tmp}
 
-if [[ $JOB_NAME == *"code-coverage" ]]; then
-    export DISABLE_ASAN=yes
-    export DISABLE_HEADERS_CHECK=yes
+if [[ $JOB_NAME == *code-coverage ]]; then
+    export DISABLE_ASAN=1
+    export DISABLE_HEADERS_CHECK=1
 fi
 
 # https://reproducible-builds.org/docs/source-date-epoch/
