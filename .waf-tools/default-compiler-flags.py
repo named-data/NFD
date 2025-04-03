@@ -224,12 +224,13 @@ class ClangFlags(GccClangCommonFlags):
                 ['-isystem', f'{brewdir}/include'], # for Homebrew
                 ['-isystem', '/opt/local/include'], # for MacPorts
             ]
-        elif Utils.unversioned_sys_platform() == 'freebsd':
-            # Bug #4790
-            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
-        if get_compiler_ver(conf) >= (18, 0, 0) and get_compiler_ver(conf) < (20, 1, 0):
-            # Bug #5300
-            flags['CXXFLAGS'] += ['-Wno-enum-constexpr-conversion']
+        else:
+            if Utils.unversioned_sys_platform() == 'freebsd':
+                # Bug #4790
+                flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
+            if get_compiler_ver(conf) >= (18, 0, 0) and get_compiler_ver(conf) < (20, 1, 0):
+                # Bug #5300
+                flags['CXXFLAGS'] += ['-Wno-enum-constexpr-conversion']
         return flags
 
     __cxxFlags = [
@@ -240,11 +241,13 @@ class ClangFlags(GccClangCommonFlags):
     def getDebugFlags(self, conf):
         flags = super().getDebugFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
+        ccver = get_compiler_ver(conf)
+        darwin = Utils.unversioned_sys_platform() == 'darwin'
         # Enable assertions in libc++
-        if get_compiler_ver(conf) >= (18, 0, 0):
+        if (darwin and ccver >= (17, 0, 0)) or (not darwin and ccver >= (18, 0, 0)):
             # https://libcxx.llvm.org/Hardening.html
             flags['DEFINES'] += ['_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
-        elif get_compiler_ver(conf) >= (15, 0, 0):
+        elif ccver >= (15, 0, 0):
             # https://releases.llvm.org/15.0.0/projects/libcxx/docs/UsingLibcxx.html#enabling-the-safe-libc-mode
             flags['DEFINES'] += ['_LIBCPP_ENABLE_ASSERTIONS=1']
         # Tell libc++ to avoid including transitive headers
