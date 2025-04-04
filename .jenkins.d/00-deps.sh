@@ -34,7 +34,7 @@ DNF_PKGS=(
 FORMULAE=(boost openssl pkgconf)
 case $JOB_NAME in
     *code-coverage)
-        APT_PKGS+=(lcov)
+        APT_PKGS+=(lcov libjson-xs-perl)
         ;;
     *Docs)
         APT_PKGS+=(doxygen graphviz)
