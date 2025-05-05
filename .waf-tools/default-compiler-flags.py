@@ -241,18 +241,14 @@ class ClangFlags(GccClangCommonFlags):
     def getDebugFlags(self, conf):
         flags = super().getDebugFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
-        ccver = get_compiler_ver(conf)
-        darwin = Utils.unversioned_sys_platform() == 'darwin'
-        # Enable assertions in libc++
-        if (darwin and ccver >= (17, 0, 0)) or (not darwin and ccver >= (18, 0, 0)):
+        flags['DEFINES'] += [
+            # Enable assertions in libc++
             # https://libcxx.llvm.org/Hardening.html
-            flags['DEFINES'] += ['_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
-        elif ccver >= (15, 0, 0):
-            # https://releases.llvm.org/15.0.0/projects/libcxx/docs/UsingLibcxx.html#enabling-the-safe-libc-mode
-            flags['DEFINES'] += ['_LIBCPP_ENABLE_ASSERTIONS=1']
-        # Tell libc++ to avoid including transitive headers
-        # https://libcxx.llvm.org/DesignDocs/HeaderRemovalPolicy.html
-        flags['DEFINES'] += ['_LIBCPP_REMOVE_TRANSITIVE_INCLUDES=1']
+            '_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE',
+            # Disable transitive includes in libc++
+            # https://libcxx.llvm.org/DesignDocs/HeaderRemovalPolicy.html
+            '_LIBCPP_REMOVE_TRANSITIVE_INCLUDES=1',
+        ]
         return flags
 
     def getOptimizedFlags(self, conf):
