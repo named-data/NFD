@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -176,8 +176,6 @@ Strategy::~Strategy() = default;
 void
 Strategy::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
 {
-  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " name=" << interest.getName());
-
   lp::Nack nack(interest);
   nack.setReason(lp::NackReason::DUPLICATE);
   this->sendNack(nack, ingress.face);
@@ -187,42 +185,30 @@ void
 Strategy::afterContentStoreHit(const Data& data, const FaceEndpoint& ingress,
                                const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("afterContentStoreHit pitEntry=" << pitEntry->getName()
-                << " in=" << ingress << " data=" << data.getName());
-
   this->sendData(data, ingress.face, pitEntry);
 }
 
 void
-Strategy::beforeSatisfyInterest(const Data& data, const FaceEndpoint& ingress,
-                                const shared_ptr<pit::Entry>& pitEntry)
+Strategy::beforeSatisfyInterest(const Data&, const FaceEndpoint&, const shared_ptr<pit::Entry>&)
 {
-  NFD_LOG_DEBUG("beforeSatisfyInterest pitEntry=" << pitEntry->getName()
-                << " in=" << ingress << " data=" << data.getName());
 }
 
 void
 Strategy::afterReceiveData(const Data& data, const FaceEndpoint& ingress,
                            const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("afterReceiveData pitEntry=" << pitEntry->getName()
-                << " in=" << ingress << " data=" << data.getName());
-
   this->beforeSatisfyInterest(data, ingress, pitEntry);
   this->sendDataToAll(data, pitEntry, ingress.face);
 }
 
 void
-Strategy::afterReceiveNack(const lp::Nack&, const FaceEndpoint& ingress,
-                           const shared_ptr<pit::Entry>& pitEntry)
+Strategy::afterReceiveNack(const lp::Nack&, const FaceEndpoint&, const shared_ptr<pit::Entry>&)
 {
-  NFD_LOG_DEBUG("afterReceiveNack in=" << ingress << " pitEntry=" << pitEntry->getName());
 }
 
 void
-Strategy::onDroppedInterest(const Interest& interest, Face& egress)
+Strategy::onDroppedInterest(const Interest&, Face&)
 {
-  NFD_LOG_DEBUG("onDroppedInterest out=" << egress.getId() << " name=" << interest.getName());
 }
 
 void
@@ -319,7 +305,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
   if (interest.getForwardingHint().empty()) {
     // FIB lookup with Interest name
     const fib::Entry& fibEntry = fib.findLongestPrefixMatch(pitEntry);
-    NFD_LOG_TRACE("lookupFib noForwardingHint found=" << fibEntry.getPrefix());
+    NFD_LOG_TRACE("lookupFib no-forwarding-hint found=" << fibEntry.getPrefix());
     return fibEntry;
   }
 
@@ -333,7 +319,7 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
     if (fibEntry->hasNextHops()) {
       if (fibEntry->getPrefix().empty()) {
         // in consumer region, return the default route
-        NFD_LOG_TRACE("lookupFib inConsumerRegion found=" << fibEntry->getPrefix());
+        NFD_LOG_TRACE("lookupFib in-consumer-region found=" << fibEntry->getPrefix());
       }
       else {
         // in default-free zone, use the first delegation that finds a FIB entry
