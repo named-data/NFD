@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,10 +125,7 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   }
 
   // construct and prepend the ethernet header
-#if BOOST_VERSION >= 107200
-  constexpr
-#endif
-  uint16_t ethertype = boost::endian::native_to_big(ethernet::ETHERTYPE_NDN);
+  constexpr uint16_t ethertype = boost::endian::native_to_big(ethernet::ETHERTYPE_NDN);
   buffer.prependBytes({reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN});
   buffer.prependBytes(m_srcAddress);
   buffer.prependBytes(m_destAddress);

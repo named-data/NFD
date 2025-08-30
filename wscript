@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2024,  Regents of the University of California,
+Copyright (c) 2014-2025,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -115,8 +115,8 @@ def configure(conf):
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
     conf.check_boost(lib='program_options', mt=True)
-    if conf.env.BOOST_VERSION_NUMBER < 107100:
-        conf.fatal('The minimum supported version of Boost is 1.71.0.\n'
+    if conf.env.BOOST_VERSION_NUMBER < 107400:
+        conf.fatal('The minimum supported version of Boost is 1.74.0.\n'
                    'Please upgrade your distribution or manually install a newer version of Boost.\n'
                    'For more information, see https://redmine.named-data.net/projects/nfd/wiki/Boost')
 

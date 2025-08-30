@@ -65,7 +65,7 @@ The simplest way to run the tests is to launch the compiled binary without any p
 ./build/unit-tests-tools
 ```
 
-The [Boost.Test framework](https://www.boost.org/doc/libs/1_71_0/libs/test/doc/html/index.html)
+The [Boost.Test framework](https://www.boost.org/doc/libs/1_74_0/libs/test/doc/html/index.html)
 is very flexible and allows a number of run-time customization of what tests should be run.
 For example, it is possible to choose to run only a specific test suite, only a specific
 test case within a suite, specific test cases across multiple test suites, and so on:
@@ -102,4 +102,4 @@ or `-p` to show a progress bar:
 
 There are many more command line options available, information about which can be obtained
 either from the command line using the `--help` switch, or online on the
-[Boost.Test website](https://www.boost.org/doc/libs/1_71_0/libs/test/doc/html/boost_test/runtime_config.html).
+[Boost.Test website](https://www.boost.org/doc/libs/1_74_0/libs/test/doc/html/boost_test/runtime_config/summary.html).
