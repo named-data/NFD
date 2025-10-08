@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,6 +31,8 @@
 #include <ndn-cxx/util/random.hpp>
 
 namespace nfd::fw::asf {
+
+NFD_LOG_INIT(AsfProbingModule);
 
 static_assert(ProbingModule::DEFAULT_PROBING_INTERVAL < AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME);
 
@@ -163,6 +165,13 @@ ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
     }
     else {
       rankedFaces.insert({&hopFace, info->getLastRtt(), info->getSrtt(), hop.getCost()});
+    }
+  }
+
+  if (ndn_cxx_getLogger().isLevelEnabled(ndn::util::LogLevel::TRACE)) {
+    NFD_LOG_TRACE("Current ranking of the faces for probing: " << interest.getName());
+    for (const FaceStats& probeRank : rankedFaces) {
+      NFD_LOG_TRACE("  Face: " << probeRank.face->getId() << ", " << probeRank.rtt << ", " << probeRank.srtt);
     }
   }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -290,6 +290,13 @@ AsfStrategy::getBestFaceForForwarding(const Interest& interest, const Face& inFa
     }
   }
 
+  if (ndn_cxx_getLogger().isLevelEnabled(ndn::util::LogLevel::TRACE)) {
+    NFD_LOG_TRACE("Current ranking of the faces for forwarding: " << interest.getName());
+    for (const FaceStats& fwRank : rankedFaces) {
+      NFD_LOG_TRACE("  Face: " << fwRank.face->getId() << ", " << fwRank.rtt << ", " << fwRank.srtt);
+    }
+  }
+
   auto it = rankedFaces.begin();
   return it != rankedFaces.end() ? it->face : nullptr;
 }
@@ -320,7 +327,15 @@ AsfStrategy::onTimeoutOrNack(const Name& interestName, FaceId faceId, bool isNac
     faceInfo.cancelTimeout(interestName);
   }
   else {
-    NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts);
+    if (faceInfo.getLastRtt() == FaceInfo::RTT_TIMEOUT) {
+      NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts << " persistent-failure");
+    }
+    else if (isNack) {
+      NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts << " nack");
+    }
+    else {
+     NFD_LOG_TRACE(interestName << " face=" << faceId << " timeout-count=" << nTimeouts << " timeout");
+    }
     faceInfo.recordTimeout(interestName);
     faceInfo.setNTimeouts(0);
   }
