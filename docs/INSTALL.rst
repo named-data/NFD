@@ -9,10 +9,10 @@ following platforms:
 
 - Ubuntu 22.04 (jammy)
 - Ubuntu 24.04 (noble)
-- Debian 11 (bullseye)
 - Debian 12 (bookworm)
+- Debian 13 (trixie)
 - CentOS Stream 9
-- macOS 13 / 14 / 15
+- macOS 14 / 15 / 26
 
 NFD should also work on the following platforms, although they are not officially
 supported:
@@ -20,7 +20,7 @@ supported:
 - Any other recent version of Ubuntu not listed above
 - Fedora >= 34
 - Alpine >= 3.14
-- Any version of Raspberry Pi OS based on Debian 11 (bullseye) or later
+- Any version of Raspberry Pi OS based on Debian 12 (bookworm) or later
 - macOS >= 11
 - FreeBSD >= 12.2
 
