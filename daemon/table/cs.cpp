@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -124,15 +124,6 @@ Cs::findImpl(const Interest& interest) const
   NFD_LOG_DEBUG("find " << prefix << " matching " << match->getName());
   m_policy->beforeUse(match);
   return match;
-}
-
-void
-Cs::dump()
-{
-  NFD_LOG_DEBUG("dump table");
-  for (const Entry& entry : m_table) {
-    NFD_LOG_TRACE(entry.getFullName());
-  }
 }
 
 void

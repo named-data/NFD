@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -184,10 +184,6 @@ private:
 
   void
   setPolicyImpl(unique_ptr<Policy> policy);
-
-NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  void
-  dump();
 
 private:
   Table m_table;
