@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2025,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,6 +33,8 @@
 
 #include <ndn-cxx/lp/fields.hpp>
 #include <ndn-cxx/lp/tags.hpp>
+
+#include <cmath>
 
 namespace nfd::tests {
 
