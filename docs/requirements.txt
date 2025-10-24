@@ -1,3 +1,4 @@
 docutils>=0.20
+furo==2025.9.25
 sphinx>=7.0.1,<9
 sphinxcontrib-doxylink~=1.13

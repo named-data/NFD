@@ -24,42 +24,42 @@ NFD is a core component of the `NDN Platform <https://named-data.net/codebase/pl
 Documentation
 -------------
 
-* :doc:`overview`
+- :doc:`overview`
 
   A brief overview of NFD and its major modules.
 
-* :doc:`INSTALL`
+- :doc:`INSTALL`
 
   Instructions for obtaining, installing, and running NFD.
 
-* :doc:`FAQ`
+- :doc:`FAQ`
 
   Suggestions for configuring and running non-standard NFD setups.
 
-* :doc:`manpages`
-* :doc:`release-notes`
-* :doc:`releases`
+- :doc:`manpages`
+- :doc:`release-notes`
+- :doc:`releases`
 
 For developers
 ^^^^^^^^^^^^^^
 
-* `NFD Developer's Guide <https://named-data.net/publications/techreports/ndn-0021-11-nfd-guide/>`__
+- `NFD Developer's Guide <https://named-data.net/publications/techreports/ndn-0021-11-nfd-guide/>`__
 
   A comprehensive guide to the design and implementation of NFD. The developer's guide
   also contains suggestions and hints for anyone wanting to modify or extend NFD.
 
-* `NDN Software Contributor's Guide <https://github.com/named-data/.github/blob/main/CONTRIBUTING.md>`__
+- `NDN Software Contributor's Guide <https://github.com/named-data/.github/blob/main/CONTRIBUTING.md>`__
   (guide for newcomers to the NDN community of software)
 
-* `NFD Wiki <https://redmine.named-data.net/projects/nfd/wiki>`__
+- `NFD Wiki <https://redmine.named-data.net/projects/nfd/wiki>`__
 
-  The NFD Wiki contains detailed protocol specifications and information for building
-  on unsupported platforms.
+  The Wiki contains detailed protocol specifications, additional information for installing NFD
+  on various platforms, and tutorials on other topics.
 
-  + `NFD management protocol <https://redmine.named-data.net/projects/nfd/wiki/Management>`__
-  + `NDNLPv2 link protocol <https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2>`__
+  * `NFD management protocol <https://redmine.named-data.net/projects/nfd/wiki/Management>`__
+  * `NDNLPv2 link protocol <https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2>`__
 
-* `API documentation (doxygen) <doxygen/annotated.html>`__
+- `API documentation (doxygen) <doxygen/annotated.html>`__
 
 Issues
 ------

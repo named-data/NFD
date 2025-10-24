@@ -1,6 +1,6 @@
 <div align="center">
 
-[<img alt height="65" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
+[<img alt height="65" src="docs/ndn-logo.svg"/>](https://named-data.net/)
 
 # NFD: Named Data Networking Forwarding Daemon
 

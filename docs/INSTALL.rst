@@ -38,20 +38,21 @@ Preliminary steps if you have not used PPA packages before
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To simplify adding new PPA repositories, Ubuntu provides the ``add-apt-repository`` tool,
-which is not installed by default on some systems.
+which may not be installed by default on some systems.
 
-::
+.. code-block:: shell
 
     sudo apt install software-properties-common
 
 Adding the NDN PPA
 ~~~~~~~~~~~~~~~~~~
 
-After installing ``add-apt-repository``, run the following commands to add the `NDN PPA
-repository`_::
+After installing ``add-apt-repository``, run the following command to add the `NDN PPA
+repository`_:
 
-    sudo add-apt-repository ppa:named-data/ppa
-    sudo apt update
+.. code-block:: shell
+
+    sudo add-apt-repository -P named-data/ppa
 
 Installing NFD and other NDN packages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,7 +60,7 @@ Installing NFD and other NDN packages
 After you have added the `NDN PPA repository`_, NFD and other NDN packages can be easily
 installed either using ``apt``, as shown below, or any other compatible package manager.
 
-::
+.. code-block:: shell
 
     sudo apt install nfd
 
@@ -77,7 +78,7 @@ The first step is to obtain the source code for NFD and its main dependency, the
 *ndn-cxx* library. If you do not want a development version of NFD, make sure you
 checkout the correct release tag (e.g., ``*-0.8.1``) from both repositories.
 
-.. code-block:: sh
+.. code-block:: shell
 
     # Download ndn-cxx
     git clone https://github.com/named-data/ndn-cxx.git
@@ -99,15 +100,15 @@ and its prerequisites.
 
 On Linux, NFD needs the following *optional* dependencies to enable additional features:
 
-- On **Debian** and **Ubuntu**:
+- On **Debian** and **Ubuntu**, run in a terminal:
 
-  .. code-block:: sh
+  .. code-block:: shell
 
     sudo apt install libpcap-dev libsystemd-dev
 
-- On **CentOS** and **Fedora**:
+- On **CentOS** and **Fedora**, run in a terminal:
 
-  .. code-block:: sh
+  .. code-block:: shell
 
     sudo dnf install libpcap-devel systemd-devel
 
@@ -116,7 +117,7 @@ Build
 
 The following commands can be used to build and install NFD from source:
 
-.. code-block:: sh
+.. code-block:: shell
 
     ./waf configure
     ./waf
@@ -126,7 +127,7 @@ If you have installed ndn-cxx and/or any other dependencies into a non-standard 
 you may need to modify the ``PKG_CONFIG_PATH`` environment variable before running
 ``./waf configure``. For example:
 
-.. code-block:: sh
+.. code-block:: shell
 
     export PKG_CONFIG_PATH="/custom/lib/pkgconfig:$PKG_CONFIG_PATH"
     ./waf configure
@@ -135,10 +136,10 @@ you may need to modify the ``PKG_CONFIG_PATH`` environment variable before runni
 
 Refer to ``./waf --help`` for more options that can be used during the ``configure`` stage.
 
-.. note::
+.. important::
     If you are working on a source repository that has been compiled before, and you have
-    upgraded one of the dependencies, please execute ``./waf distclean`` to clear object files
-    and start over.
+    upgraded one of the dependencies, please execute ``./waf distclean`` to clear all object
+    files and start over.
 
 Debug symbols
 ~~~~~~~~~~~~~
@@ -150,7 +151,7 @@ If this is not desired, the default flags can be overridden to disable debug sym
 The following example shows how to completely disable debug symbols and configure
 NFD to be installed into ``/usr`` with configuration in the ``/etc`` directory.
 
-.. code-block:: sh
+.. code-block:: shell
 
     CXXFLAGS="-O2" ./waf configure --prefix=/usr --sysconfdir=/etc
     ./waf
@@ -165,7 +166,7 @@ To build NFD with a different compiler (rather than the platform default), set t
 ``CXX`` environment variable to point to the compiler binary. For example, to build
 with clang on Linux, use the following:
 
-.. code-block:: sh
+.. code-block:: shell
 
     CXX=clang++ ./waf configure
 
@@ -174,7 +175,7 @@ Building the documentation
 
 Tutorials and API documentation can be built using the following commands:
 
-.. code-block:: sh
+.. code-block:: shell
 
     # Full set of documentation (tutorials + API) in build/docs
     ./waf docs
@@ -197,21 +198,20 @@ For further details, please refer to ``./waf --help``.
 Initial configuration
 ---------------------
 
-.. note::
+.. tip::
     If you have installed NFD from binary packages, the package manager has already
     installed a working configuration and you can safely skip this section.
 
-General
-~~~~~~~
-
 After installing NFD from source, you need to create a proper configuration file.
 If the default installation directories were used with ``./waf configure``, this
-can be accomplished by simply copying the sample configuration file as follows::
+can be accomplished by simply copying the sample configuration file as follows:
+
+.. code-block:: shell
 
     sudo cp /usr/local/etc/ndn/nfd.conf.sample /usr/local/etc/ndn/nfd.conf
 
-NFD Security
-~~~~~~~~~~~~
+Security
+~~~~~~~~
 
 NFD provides mechanisms to enable strict authorization for all management commands. In
 particular, one can authorize only specific public keys to create new faces or change the
@@ -222,7 +222,7 @@ NFD management commands, refer to the :ref:`How do I configure NFD security` FAQ
 In the sample configuration file, all security mechanisms are disabled for local clients,
 effectively allowing anybody on the local machine to issue NFD management commands.
 
-.. note::
+.. warning::
     The sample configuration file is intended only for demo purposes and should NOT be
     used in production environments.
 
@@ -233,7 +233,9 @@ Starting
 ~~~~~~~~
 
 If you have installed NFD from source, it is recommended to start NFD with the
-``nfd-start`` script::
+``nfd-start`` script:
+
+.. code-block:: shell
 
     nfd-start
 
@@ -249,7 +251,9 @@ Connecting to remote forwarders
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To create a UDP tunnel to a remote instance of NFD, execute the following command
-in a terminal::
+in a terminal:
+
+.. code-block:: shell
 
     nfdc face create udp://<other-host>
 
@@ -259,7 +263,9 @@ where ``<other-host>`` is the name or IP address of the other host (e.g.,
     face-created id=308 local=udp4://10.0.2.15:6363 remote=udp4://131.179.196.46:6363 persistency=persistent
 
 To add a route ``/ndn`` toward this remote forwarder, execute the following command
-in a terminal::
+in a terminal:
+
+.. code-block:: shell
 
     nfdc route add /ndn udp://<other-host>
 
@@ -281,12 +287,12 @@ of NDN using the following applications and libraries.
 
 Sample applications:
 
-    + `Simple examples using the ndn-cxx library <https://docs.named-data.net/ndn-cxx/current/examples.html>`__
-    + `Simple examples using the python-ndn library <https://python-ndn.readthedocs.io/en/latest/src/examples/basic_app.html>`__
+- `Simple examples using the ndn-cxx library <https://docs.named-data.net/ndn-cxx/current/examples.html>`__
+- `Simple examples using the python-ndn library <https://python-ndn.readthedocs.io/en/latest/src/examples/basic_app.html>`__
 
 Real applications and libraries:
 
-    + `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`__
-    + `ndn-traffic-generator - Simple traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`__
-    + `ndn-svs - State Vector Sync library <https://github.com/named-data/ndn-svs>`__
-    + `PSync - Partial and full Sync library <https://github.com/named-data/PSync>`__
+- `ndn-tools - Essential NDN command-line tools <https://github.com/named-data/ndn-tools>`__
+- `ndn-traffic-generator - Simple traffic generator for NDN <https://github.com/named-data/ndn-traffic-generator>`__
+- `ndn-svs - State Vector Sync library <https://github.com/named-data/ndn-svs>`__
+- `PSync - Partial and full Sync library <https://github.com/named-data/PSync>`__
