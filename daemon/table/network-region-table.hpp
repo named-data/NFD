@@ -30,6 +30,57 @@
 
 #include <set>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NetworkRegionTable.hpp 解説
+ * ------------------------------------------------------------
+ * ■役割概要
+ *   - Forwarding Hint を利用した転送判断を補助するテーブル
+ *   - "Producer Region"（コンテンツ提供者領域）の情報を保持
+ *   - Delegation（委譲名）が登録領域に一致したら
+ *       → Producer側に到達したとみなして、本来のInterest Nameで転送
+ *
+ * ■使われる場面（超具体的）
+ *   Interest が Linkオブジェクト（Forwarding Hint）を持つ場合：
+ *
+ *      ① まだ Producer Region に到達していない
+ *         → Forwarding Hint を優先して転送（遠回り許容）
+ *
+ *      ② Producer Region に到達したと判定された
+ *         → 本来の名前で転送（最終ルート探索へ切り替え）
+ *
+ *     → 「いつ本来のルーティングに切り替えるか」を判断する機能
+ *
+ * ■構造
+ *   std::set<Name> を継承
+ *     - insert(), clear(), find(), size() など利用可
+ *
+ * ■判定ロジック（isInProducerRegion）
+ *   - forwardingHint の各 Delegation Name が
+ *     NetworkRegionTable に登録された Region Name の prefix か？
+ *   - 1つでも一致 → true（Producer Regionに到達）
+ *   - 全て不一致   → false（Hintを使って転送継続）
+ *
+ * ■メリット
+ *   - Forwarding Hint による効率的なルーティングをしつつ、
+ *     最終接近時には無駄な迂回を防げる
+ *
+ * ------------------------------------------------------------
+ * NDNにおける Forwarding Hint の賢い利用を支える
+ * 小さいけどめちゃくちゃ重要な仕組み。
+ * ------------------------------------------------------------
+ */
+
+/*
+ * （以下、元コード）
+ */
+
+/*
+ * Copyright (c) 2014-2024,  Regents of the University of California,
+ * ...
+ */
+
+
 namespace nfd {
 
 /** \brief Stores a collection of producer region names.

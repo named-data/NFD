@@ -34,6 +34,35 @@
 
 #include <boost/asio/defer.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Datagram Transport Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * データグラムベースの Transport の実装を定義しています。
+ *
+ * 主な目的:
+ *  - UDP などのデータグラム型プロトコル用の Transport を提供
+ *  - 受信したデータグラムを Face パケットに変換して上位層に渡す
+ *  - 送信キューの管理、非同期送受信、エラー処理を実装
+ *
+ * テンプレートパラメータ:
+ *  1. Protocol : Boost.Asio のデータグラムプロトコル（例: boost::asio::ip::udp）
+ *  2. Addressing : アドレッシングモード。Unicast または Multicast
+ *
+ * 提供されるクラス:
+ *  - nfd::face::DatagramTransport<Protocol, Addressing>
+ *      - Transport の派生クラス
+ *      - ソケット操作、送信・受信、閉鎖処理を非同期で管理
+ *      - recentlyReceived フラグで直近受信状態を確認可能
+ *
+ * 注意:
+ *  - receiveDatagram() 内でパケット解析に失敗した場合は Face の寿命を延長しない
+ *  - エラー処理は TransportState と Face persistency を考慮して行われる
+ *  - async_send / async_receive_from を使用して非同期 I/O を実現
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 struct Unicast {};

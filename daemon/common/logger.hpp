@@ -23,6 +23,38 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+ /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Logging Utilities
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) 内での
+ * ロギング機能のためのヘッダです。ndn-cxx の Logger をラップしており、
+ * NFD 内で統一的にログを出力するためのマクロを提供します。
+ *
+ * 提供される主なマクロ:
+ *  1. NFD_LOG_INIT(name)
+ *     - ログシステムを初期化
+ *
+ *  2. NFD_LOG_MEMBER_DECL()
+ *     - クラス内でログメンバを宣言
+ *
+ *  3. NFD_LOG_MEMBER_INIT(cls, name)
+ *     - クラス内のログメンバを初期化
+ *
+ *  4. ログレベル用マクロ
+ *     - NFD_LOG_TRACE, NFD_LOG_DEBUG, NFD_LOG_INFO
+ *     - NFD_LOG_WARN, NFD_LOG_ERROR, NFD_LOG_FATAL
+ *
+ * 利用例:
+ *   NFD_LOG_INIT(myComponent);
+ *   NFD_LOG_INFO("This is an informational message");
+ *
+ * 注意:
+ *  - 本ヘッダは ndn-cxx の Logger をベースにしており、
+ *    NFD 固有の名前空間管理 (nfd.name) を行う
+ * ---------------------------------------------------------------------------
+ */
+
 #ifndef NFD_DAEMON_COMMON_LOGGER_HPP
 #define NFD_DAEMON_COMMON_LOGGER_HPP
 

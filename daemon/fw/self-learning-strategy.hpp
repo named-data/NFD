@@ -30,6 +30,54 @@
 
 #include <ndn-cxx/prefix-announcement.hpp>
 
+/* -------------------------------------------------------------------------
+ * SelfLearningStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   - SelfLearningStrategy は「最初に Interest をブロードキャストして経路を学習し、
+ *     その後は学習した経路に沿ってユニキャストで Interest を送る」戦略
+ *   - 典型的なユースケースはデータがまだルータにキャッシュされておらず、
+ *     最適な経路を動的に学習する場合
+ *
+ * ■ StrategyInfo
+ *   StrategyInfo を派生させて PIT の in/out レコードに付与
+ *
+ *   1. InRecordInfo (pit::InRecord 用)
+ *      - typeId = 1040
+ *      - isNonDiscoveryInterest : ブロードキャストでない通常 Interest かどうか
+ *
+ *   2. OutRecordInfo (pit::OutRecord 用)
+ *      - typeId = 1041
+ *      - isNonDiscoveryInterest : ブロードキャストでない通常 Interest かどうか
+ *
+ * ■ トリガー関数（Strategy インターフェースのオーバーライド）
+ *   - afterReceiveInterest()
+ *       -> 受信した Interest に基づき、ブロードキャスト or マルチキャストする
+ *   - afterReceiveData()
+ *       -> Data を受信した際の処理、必要なら Prefix Announcement を添付
+ *   - afterReceiveNack()
+ *       -> Nack 受信時の処理
+ *
+ * ■ 内部処理関数
+ *   - broadcastInterest()
+ *       -> FIB に一致する nexthop がない場合に Interest を全ての適切な Face に送信
+ *   - multicastInterest()
+ *       -> 指定された nexthop リストに Interest を送信
+ *   - asyncProcessData()
+ *       -> Data 受信時に RIB スレッドで PrefixAnnouncement を検索し、メインスレッドで処理
+ *   - needPrefixAnn()
+ *       -> Data に Prefix Announcement が必要か判定
+ *   - addRoute()
+ *       -> RibManager::slAnnounce を使いルートを追加
+ *   - renewRoute()
+ *       -> RibManager::slRenew を使い既存ルートを更新
+ *
+ * ■ まとめ
+ *   - SelfLearningStrategy は「探索と学習」を組み合わせた動的フォワーディング戦略
+ *   - StrategyInfo を活用して PIT/FIB の状態を保持
+ *   - Interest/Data/Nack の受信トリガーをオーバーライドして独自の振る舞いを実装
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

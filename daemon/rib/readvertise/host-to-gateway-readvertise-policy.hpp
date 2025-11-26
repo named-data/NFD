@@ -31,6 +31,39 @@
 
 #include <ndn-cxx/security/key-chain.hpp>
 
+/*
+ * HostToGatewayReadvertisePolicy.hpp
+ *
+ * 概要:
+ *   NFD の RIB (Routing Information Base) における Readvertise 機能の一種で、
+ *   「ローカルアプリケーションが登録したルート情報を
+ *     リモート側のゲートウェイへ再広告する（readvertise）」
+ *   ためのポリシーを提供するクラス。
+ *
+ * 役割:
+ *   - RIB に新規ルートが追加された際に、再広告するべきか判定
+ *   - Readvertise の更新周期（refresh interval）を提供
+ *   - KeyChain を利用したセキュリティ設定を保持
+ *
+ * 主な機能:
+ *   - handleNewRoute():
+ *        RIB に新たなルートが登録された際に呼ばれ、
+ *        再広告するための ReadvertiseAction を返す
+ *        → 不要な場合は std::nullopt
+ *
+ *   - getRefreshInterval():
+ *        再広告を定期的に実施するための間隔（秒指定）を返す
+ *
+ * 設定:
+ *   - ConfigSection より refresh interval 等を読み取る設計
+ *   - KeyChain により署名等の必要なセキュリティ処理を可能にする
+ *
+ * 位置付け:
+ *   - ReadvertisePolicy の派生クラス
+ *   - ホスト内で登録された名前空間を、ゲートウェイや他のネットワーク領域へ伝搬し、
+ *     名前解決・データルーティングの到達性向上を目的とするポリシー
+ */
+
 namespace nfd::rib {
 
 /** \brief A policy to readvertise routes registered by local applications into remote gateway.

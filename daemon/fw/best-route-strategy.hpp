@@ -30,6 +30,46 @@
 #include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 
+/* -------------------------------------------------------------------------
+ * BestRouteStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   - 新しい Interest を最もコストの低い nexthop に転送する戦略。
+ *   - 再送が発生した場合（指数バックオフで抑制されない場合）、まだ使われていない
+ *     最も低コストの nexthop に転送。
+ *   - すべての nexthop を使い切った場合は、再度最初の nexthop から開始。
+ *   - FIB に nexthop がない場合や、スコープ違反の場合、Nack を返す。
+ *   - すべての upstream から Nack を受けた場合も、最も軽度な理由で Nack を返す。
+ *
+ * ■ クラス構造
+ *
+ * BestRouteStrategy : public Strategy, ProcessNackTraits<BestRouteStrategy>
+ *   - コンストラクタで Forwarder と戦略名を受け取る
+ *   - static getStrategyName() で戦略名を返す
+ *
+ * トリガーメソッド:
+ *   - afterReceiveInterest()
+ *       -> PIT に対応する Interest を受信した際に呼ばれる
+ *       -> 最良経路に基づき Interest を転送
+ *
+ *   - afterReceiveNack()
+ *       -> upstream から Nack を受信した際に呼ばれる
+ *       -> ProcessNackTraits を利用して downstream に Nack を返す
+ *
+ * メンバ:
+ *   - std::unique_ptr<RetxSuppressionExponential> m_retxSuppression
+ *       -> 再送抑制アルゴリズム（指数バックオフ）を管理
+ *
+ * ■ 特徴
+ *   - 最良経路に基づき Interest を転送することで効率的なデータ取得を実現
+ *   - 再送抑制により無駄な再送を軽減
+ *   - Nack 処理は ProcessNackTraits による共通処理を利用
+ *
+ * ■ まとめ
+ *   - 名前空間ベースで最適経路を選択する戦略
+ *   - 再送抑制と Nack 共通処理を組み合わせることで効率的かつ安全に転送
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

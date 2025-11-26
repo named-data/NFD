@@ -29,6 +29,64 @@
 #include "measurements.hpp"
 #include "strategy-choice.hpp"
 
+
+/*
+ * MeasurementsAccessor.hpp 解説
+ *
+ * 【概要】
+ * - Forwarding Strategy（fw::Strategy）が Measurements テーブルへ
+ *   安全にアクセスするためのアクセサクラス。
+ * - StrategyChoiceが定めた戦略の「権限範囲内の名前空間」だけを参照できる。
+ *
+ * 【役割】
+ * - Measurementsテーブルへの操作をラップし、
+ *   Strategyがアクセスしてよいエントリだけ返すフィルタ機能を提供
+ * - 戦略ごとのNamespace（プレフィックス領域）分離を実現
+ *
+ * 【提供する操作】
+ * 1. get(name/fibEntry/pitEntry)
+ *    - Measurementsエントリを取得、なければ作成
+ *
+ * 2. getParent(childEntry)
+ *    - 子のプレフィックスの親におけるMeasurementsエントリ取得
+ *
+ * 3. findLongestPrefixMatch(...)
+ *    - 最長一致検索（pred条件でフィルタ可能）
+ *
+ * 4. findExactMatch(name)
+ *    - 完全一致検索
+ *
+ * 5. extendLifetime(entry, lifetime)
+ *    - エントリの有効期限延長（アクセス更新）
+ *
+ * ※ 上記すべて「戦略がアクセス権を持つ」場合にのみ有効
+ *   →権限外は filter() によって nullptr を返す
+ *
+ * 【主要メンバ】
+ * - Measurements& m_measurements
+ *     操作対象の Measurements テーブル本体
+ *
+ * - const StrategyChoice& m_strategyChoice
+ *     どの名前空間をどの戦略が担当するかの管理
+ *
+ * - const fw::Strategy* m_strategy
+ *     アクセス元戦略（権限チェックに使用）
+ *
+ * 【ポイント】
+ * - noncopyable：コピー禁止、参照運用が前提
+ * - StrategyChoice による Namespace 分割を厳密に遵守
+ * - “テーブル構造” を知らずに Strategy が利用できる抽象化インタフェース
+ *
+ * 【設計意図】
+ * - Strategy が Measurements テーブルへ直接触るのを防ぎ、
+ *   誤ったプレフィックスへのアクセスを制限
+ * - 複数戦略が共存する環境で名前空間を安全に隔離
+ *
+ * 【利用例のイメージ】
+ * - Interest処理で、Strategyが利用頻度統計を記録
+ * - 成功/失敗情報を測定 → 名前空間ごとの最適な転送判断に活用
+ */
+
 namespace nfd {
 
 namespace fw {

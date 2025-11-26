@@ -32,6 +32,58 @@
 #include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 
+/* -------------------------------------------------------------------------
+ * AsfStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   - ASF（Adaptive SRTT-based Forwarding）は、各 nexthop の RTT（ラウンドトリップ時間）に基づき
+ *     最適な経路を選択する戦略。
+ *   - Nack やタイムアウト、再送抑制（指数バックオフ）を組み合わせて
+ *     効率的な Interest 転送を行う。
+ *   - プローブ機能を使ってまだ未知の nexthop のパフォーマンスも評価する。
+ *
+ * ■ クラス構造
+ *
+ * AsfStrategy : public Strategy, ProcessNackTraits<AsfStrategy>
+ *   - コンストラクタで Forwarder と戦略名を受け取る
+ *   - static getStrategyName() で戦略名を返す
+ *
+ * トリガーメソッド:
+ *   - afterReceiveInterest()
+ *       -> Interest 受信時に最適経路を選択して転送
+ *
+ *   - beforeSatisfyInterest()
+ *       -> Data を PIT に返す直前に呼ばれる
+ *       -> RTT 測定や統計更新に利用
+ *
+ *   - afterReceiveNack()
+ *       -> upstream から Nack を受信した際に呼ばれる
+ *       -> ProcessNackTraits で downstream に返す
+ *
+ * 内部メソッド:
+ *   - forwardInterest()       : Interest を選択した Face に転送
+ *   - sendProbe()             : 未知 nexthop の RTT を測定
+ *   - getBestFaceForForwarding(): 最適な Face を選択
+ *   - onTimeoutOrNack()       : タイムアウトや Nack を受信した場合の処理
+ *   - sendNoRouteNack()       : 利用可能な経路がない場合 Nack を送信
+ *
+ * メンバ:
+ *   - AsfMeasurements m_measurements   : Face ごとの RTT 等の統計情報管理
+ *   - std::unique_ptr<RetxSuppressionExponential> m_retxSuppression
+ *       -> 再送抑制アルゴリズム（指数バックオフ）
+ *   - ProbingModule m_probing           : 未知 nexthop の評価用プローブ
+ *   - size_t m_nMaxTimeouts             : 最大タイムアウト回数
+ *
+ * ■ 特徴
+ *   - RTT に基づく動的経路選択でレイテンシを最小化
+ *   - 再送抑制と Nack 処理で無駄な転送を削減
+ *   - プローブで未知経路も評価して学習
+ *
+ * ■ 参考
+ *   - Vince Lehman et al., "An Experimental Investigation of Hyperbolic Routing
+ *     with a Smart Forwarding Plane in NDN", NDN Technical Report NDN-0042, 2016
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 namespace asf {
 

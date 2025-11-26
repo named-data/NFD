@@ -35,6 +35,25 @@
 
 #include <set>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Network Predicate Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * ネットワークインターフェースや IP アドレスに対する
+ * 受け入れ／拒否判定を提供する Predicate クラス群を定義します。
+ *
+ * - NetworkPredicateBase
+ *   → whitelist / blacklist を保持し、共通の解析・管理機能を提供
+ *
+ * - NetworkInterfacePredicate
+ *   → ndn::net::NetworkInterface に対する受け入れ判定
+ *
+ * - IpAddressPredicate
+ *   → IP アドレスに対する受け入れ判定
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 class NetworkPredicateBase : private boost::equality_comparable<NetworkPredicateBase>

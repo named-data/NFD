@@ -29,6 +29,50 @@
 #include "strategy.hpp"
 #include "process-nack-traits.hpp"
 
+/* -------------------------------------------------------------------------
+ * RandomStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   NFD における転送戦略の一つ。
+ *   受信した Interest を、受信フェース以外のアウトゴーイングフェースの中から
+ *   ランダムに選んで転送する。
+ *
+ * ■ クラス: RandomStrategy
+ *
+ * 継承:
+ *   - Strategy: NFD の基本戦略クラス
+ *   - ProcessNackTraits<RandomStrategy>: NACK 処理の共通機能を提供
+ *
+ * public:
+ *   - RandomStrategy(Forwarder& forwarder, const Name& name = getStrategyName())
+ *       - コンストラクタ
+ *
+ *   - static const Name& getStrategyName()
+ *       - 戦略名を返す
+ *
+ * public triggers:
+ *   - void afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
+ *                               const shared_ptr<pit::Entry>& pitEntry)
+ *       - Interest 受信時の処理
+ *
+ *   - void afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
+ *                           const shared_ptr<pit::Entry>& pitEntry)
+ *       - NACK 受信時の処理
+ *
+ * private:
+ *   - ProcessNackTraits<RandomStrategy> が友達クラスとして NACK 処理を補助
+ *
+ * ■ 動作イメージ
+ *   - PIT に Interest を記録
+ *   - 受信フェース以外の利用可能なフェースをリストアップ
+ *   - その中からランダムに 1 つ選んで Interest を送信
+ *   - NACK が返ってきた場合も ProcessNackTraits が適切に処理
+ *
+ * ■ まとめ
+ *   - ネットワークパスが複数存在する場合、負荷分散効果がある
+ *   - シンプルで理解しやすいが、最適経路選択は行わない
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

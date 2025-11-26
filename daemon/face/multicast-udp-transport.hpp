@@ -31,6 +31,20 @@
 #include <boost/asio/ip/udp.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Multicast UDP Transport Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * UDP ベースのマルチキャスト通信を提供する
+ * MulticastUdpTransport クラスを定義します。
+ *
+ * Boost.Asio の UDP ソケットを用いて、指定されたマルチキャストグループ上で
+ * パケットを送受信します。送受信用に別々のソケットを利用し、ループバックや
+ * ネットワークインターフェース指定もサポートします。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>));

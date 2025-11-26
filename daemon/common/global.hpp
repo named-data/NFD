@@ -30,6 +30,47 @@
 #include <boost/asio/io_context.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Global IO and Scheduler Access
+ * ---------------------------------------------------------------------------
+ * 本ファイルでは、Named Data Networking Forwarding Daemon (NFD) 内で
+ * グローバルに利用される IO コンテキストとスケジューラへのアクセスを提供します。
+ *
+ * 提供される主な機能:
+ *  1. getGlobalIoService()
+ *     - 現在のスレッドで使用されるグローバル io_context を返す
+ *
+ *  2. getScheduler()
+ *     - 現在のスレッドで使用されるグローバル Scheduler を返す
+ *
+ *  3. getMainIoService()
+ *     - メイン処理用の io_context を返す
+ *
+ *  4. getRibIoService()
+ *     - RIB (Routing Information Base) 用の io_context を返す
+ *
+ *  5. setMainIoService(boost::asio::io_context*)
+ *     - メイン用 io_context を設定
+ *
+ *  6. setRibIoService(boost::asio::io_context*)
+ *     - RIB 用 io_context を設定
+ *
+ *  7. resetGlobalIoService() [テスト用]
+ *     - グローバル io_context を破棄し、次回 getGlobalIoService() 呼び出し時に再作成
+ *
+ * 利用例:
+ *  auto& io = nfd::getGlobalIoService();
+ *  auto& sched = nfd::getScheduler();
+ *  io.post([]{  非同期処理 *});
+ *
+ * 注意:
+ *  - これらのグローバルオブジェクトはスレッドローカルで管理されるため、
+ *    マルチスレッド環境での利用時にはスレッドごとに呼び出す必要あり
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd {
 
 /**

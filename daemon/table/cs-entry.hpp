@@ -30,6 +30,48 @@
 
 #include <set>
 
+/*
+・Content Store に格納される 1 件のデータを表すクラス（CS Entry）
+
+【役割】
+- Data パケットを保持
+- Unsolicited（要求されていないデータ）かどうかを記録
+- Freshness（鮮度）の管理
+- Interest に対して満足可能かどうか判定
+
+【主要関数】
+- getData(): 保持している Data を返す
+- getName(): Data の Name を返す（ImplicitDigest 含まない）
+- getFullName(): ImplicitDigest 含む完全な Name
+- isUnsolicited(): 未要求のデータか判定
+- isFresh(): 現時点で FreshnessPeriod を満たすか
+- canSatisfy(Interest): Interest がこの Data を満たすか判定
+- updateFreshUntil(): Freshness 期限を更新
+- clearUnsolicited(): Unsolicited フラグを解除
+
+【保持データ】
+- shared_ptr<const Data> m_data: 実データ
+- bool m_isUnsolicited: 未要求データか否か
+- time_point m_freshUntil: Freshness の期限時刻
+
+【比較演算子】
+- Entry vs Entry、Entry vs Name、Name vs Entry を比較可能
+  → std::set で検索できる設計
+  → Name で検索して Data エントリを高速に見つけられる
+
+【Table 型】
+- using Table = std::set<Entry, std::less<>>
+  → ContentStore 内部での実際の保持コンテナ
+  → 名前順に整列され、重複なし
+  → iterator 同士も比較可能
+
+【まとめ】
+- Entry は CS の基本単位であり、Data の鮮度と利用可能性を管理する
+- Table で ordered container として利用され、
+  ポリシー（LRU、PriorityFIFO 等）がこれを参照したり並び替えたりして
+  エビクション（削除）を行う
+*/
+
 namespace nfd::cs {
 
 /** \brief A ContentStore entry.

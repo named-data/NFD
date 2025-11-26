@@ -35,6 +35,57 @@
 #include <map>
 #include <set>
 
+/* -------------------------------------------------------------------------
+ * strategy.hpp の解説（Strategy クラス定義）
+ *
+ * ■ 役割
+ *   - NDN Forwarder におけるフォワーディング戦略（Interest/Data の送受信方針）を抽象化
+ *   - 各種戦略（例：BestRoute, Multicast, LoadBalancing）をこの基底クラスから派生させる
+ *   - PIT (Pending Interest Table)、FIB (Forwarding Information Base)、CS (Content Store) と連携
+ *   - 送信・再送・NACK・ループ検知などのイベントハンドリングを提供
+ *
+ * ■ 主な機能
+ * 1. **Registry 機能**
+ *   - `registerType<S>()`: 戦略の型を名前付きで登録
+ *   - `create(instanceName, forwarder)`: 名前から戦略インスタンスを生成
+ *   - `canCreate()`, `areSameType()`, `listRegistered()`: 戦略管理用ユーティリティ
+ *
+ * 2. **イベントトリガー**
+ *   - `afterReceiveInterest()`: Interest 受信時の基本トリガー（派生クラスで必須実装）
+ *   - `onInterestLoop()`: ループ検知時
+ *   - `afterContentStoreHit()`: CS にヒットした場合
+ *   - `beforeSatisfyInterest()`, `afterReceiveData()`: Data 受信時
+ *   - `afterReceiveNack()`: Nack 受信時
+ *   - `onDroppedInterest()`, `afterNewNextHop()`: その他管理用トリガー
+ *
+ * 3. **送信アクション**
+ *   - `sendInterest()`, `sendData()`, `sendDataToAll()`
+ *   - `sendNack()`（通常/NACK パイプライン経由なし）
+ *   - `rejectPendingInterest()`, `setExpiryTimer()`
+ *
+ * 4. **補助・アクセス**
+ *   - `lookupFib()`, `getFace()`, `getFaceTable()`, `getMeasurements()`
+ *   - StrategyParameters の解析・取得
+ *
+ * ■ 主要メンバ変数
+ *   - m_name: 戦略インスタンス名（バージョン・パラメータ含む）
+ *   - m_forwarder: Forwarder への参照
+ *   - m_measurements: 測定情報アクセサ
+ *   - afterAddFace, beforeRemoveFace: Face 追加/削除シグナル
+ *
+ * ■ StrategyParameters クラス
+ *   - マップ形式で戦略パラメータを保持
+ *   - getOrDefault() で型変換して取得可能
+ *
+ * ■ マクロ
+ *   - NFD_REGISTER_STRATEGY(S): cpp 内で一度呼ぶことで自動登録
+ *   - NFD_LOG_INTEREST_FROM / NFD_LOG_DATA_FROM / NFD_LOG_NACK_FROM: デバッグログ出力補助
+ *
+ * ■ まとめ
+ *   Strategy クラスは NFD におけるフォワーディングの「意思決定部」であり、
+ *   派生クラスによりさまざまな Interest/Data 転送戦略を実装可能。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 class StrategyParameters;

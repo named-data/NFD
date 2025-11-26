@@ -32,6 +32,60 @@
 
 #include <list>
 
+/* -------------------------------------------------------------------------
+ * Pit::Entry と関連クラスの解説
+ *
+ * ■ PIT（Pending Interest Table）とは
+ *   - 未解決の Interest を追跡するテーブル
+ *   - Data または Nack が返ってくるまで保持される
+ *   - NDN のフォワーディング処理で最重要テーブル
+ *
+ * ■ FaceRecord（基底クラス）
+ *   - 1つの Face（入出力インターフェース）に対する Interest の状態を保持
+ *   - 記録内容：
+ *       ・最後に受信/送信した Interest の Nonce
+ *       ・最後に更新された時刻
+ *       ・Expiry（有効期限：InterestLifetime に基づく）
+ *   - in-record / out-record の共通処理をここに集約
+ *
+ * ■ InRecord（下流から来た Interest の記録）
+ *   - Interest オブジェクト（shared_ptr）を保持
+ *   - 主な役割
+ *       → 下流が Data/Nack を待っていることを示す
+ *
+ * ■ OutRecord（上流に送信した Interest の記録）
+ *   - 上流から受けた Nack を記録（m_incomingNack）
+ *   - Nack の Nonce が一致する場合のみ受理
+ *   - 主な役割
+ *       → Interest のフォワーディング状態を追跡
+ *
+ * ■ InRecordCollection / OutRecordCollection
+ *   - 複数の Face に Interest を送れるため、list で管理
+ *
+ * ■ Pit::Entry クラス
+ *   - 1つの Pending Interest を表す
+ *   - 主な構成要素：
+ *       ・representative Interest（名前・Selector の基準）
+ *       ・InRecordCollection（下流）
+ *       ・OutRecordCollection（上流）
+ *       ・expiryTimer（PIT エントリ削除の期限管理）
+ *       ・isSatisfied（Data により満たされたか）
+ *       ・dataFreshnessPeriod（Data の Freshness 情報）
+ *
+ * ■ canMatch()
+ *   - 新しく来た Interest がこの PIT entry に合致するか判定
+ *   - 名前一致（prefix match）、Selector 一致が条件
+ *
+ * ■ この構造の重要性
+ *   - Interest 循環防止（Nonce 追跡）
+ *   - 重複 Interest の集約（同じ Interest を1回だけ転送）
+ *   - 下流への Data 配布のための記録保持
+ *
+ * ■ まとめ
+ *   Pit::Entry は NDN の「Interest が Data に変わるまでのすべて」を保持し、
+ *   フォワーディング戦略に必要な情報の“中心”となるデータ構造。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd {
 
 namespace face {

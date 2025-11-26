@@ -36,6 +36,18 @@
 #include <map>
 #include <queue>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Link-Layer Reliability Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * リンク層パケットの信頼性送受信を提供する LpReliability クラスを定義します。
+ *
+ * LpPacket の送信/受信を監視し、再送や Ack の管理、損失判定などを行います。
+ * リンク層信頼性はオプションで有効化可能で、再送回数やタイマーなどを設定できます。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 class GenericLinkService;

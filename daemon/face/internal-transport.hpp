@@ -30,6 +30,21 @@
 
 #include <ndn-cxx/transport/transport.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Internal Transport Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * 内部接続用の Transport クラスを定義します。
+ *
+ * InternalForwarderTransport と InternalClientTransport により、
+ * フォワーダー側とクライアント側のトランスポートを相互接続可能です。
+ * ネットワーク層パケットは一方から送信されると、もう一方で受信されます。
+ *
+ * InternalTransportBase を介して、両者を抽象化して扱うことが可能です。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

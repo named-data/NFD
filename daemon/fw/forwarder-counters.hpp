@@ -28,6 +28,50 @@
 
 #include "common/counter.hpp"
 
+/*
+ * 【ForwarderCounters クラスの概要】
+ *
+ * ForwarderCounters は、NFD（Named Data Networking Forwarding Daemon）の
+ * フォワーディング処理に関する統計情報を保持するクラスである。
+ *
+ * Forwarder が処理する各種パケット（Interest / Data / Nack）の
+ * 入出力状況や、Interest 処理の成否、Content Store（CS）ヒット情報など
+ * ルータ性能評価に不可欠な指標をカウントする。
+ *
+ * 【記録される主なカウンタ】
+ *   - nInInterests        : 受信した Interest の数
+ *   - nOutInterests       : 送信した Interest の数
+ *   - nInData             : 受信した Data の数
+ *   - nOutData            : 送信した Data の数
+ *   - nInNacks            : 受信した Nack の数
+ *   - nOutNacks           : 送信した Nack の数
+ *
+ *   - nSatisfiedInterests : Data により満たされた Interest の数
+ *   - nUnsatisfiedInterests : 満たされずに終了した Interest の数
+ *   - nUnsolicitedData    : PIT に一致しない（不要な）Data の受信数
+ *
+ *   - nCsHits             : Content Store ヒット回数
+ *   - nCsMisses           : Content Store ミス回数
+ *
+ * 【用途】
+ *   - NDN ノード動作の性能分析
+ *   - キャッシュ効率評価（Hit / Miss 比率）
+ *   - 実験ログ・研究結果の根拠となる統計収集
+ *   - Forwarder のパケット処理フローの可視化
+ *
+ * 【利用場所】
+ *   Forwarder クラス内部で保持され、各パイプライン処理内で更新される。
+ *   例：
+ *     Interest 受信 → nInInterests++
+ *     Data 送信 → nOutData++
+ *     CS ヒット → nCsHits++
+ *
+ * 【まとめ】
+ * ForwarderCounters は、NFD の通信性能とフォワーディング挙動を
+ * 正確に観測するための基本的な統計管理機能を提供する。
+ * 研究・実装・運用の全局面で有用なデータ源である。
+ */
+
 namespace nfd {
 
 /**

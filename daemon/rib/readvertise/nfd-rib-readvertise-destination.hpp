@@ -33,6 +33,41 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
+/*
+ * このファイルは「NfdRibReadvertiseDestination」クラスの定義を含む。
+ * 本クラスは、NDNのRIB（Routing Information Base）管理プロトコルを使用して、
+ * Prefix（名前プレフィックス）の再広告（Readvertise）を行う役割を担う。
+ *
+ * ◆役割概要
+ * - ReadvertiseDestination クラスを継承し、RIB への経路追加・削除を実装
+ * - コントローラ（ndn::nfd::Controller）を介して NFD へ制御命令を送信する
+ * - ControlParameters / CommandOptions を利用して NFD RIB 操作に必要な情報を設定
+ *
+ * ◆主要機能
+ * 1. advertise()
+ *    - ReadvertisedRoute をもとに NFD RIB にプレフィックスを追加
+ *    - 成功時 / 失敗時にコールバックを実行
+ *
+ * 2. withdraw()
+ *    - NFD RIB から該当プレフィックスを削除
+ *    - 成功時 / 失敗時にコールバックを実行
+ *
+ * ◆内部メンバ
+ * - m_controller:
+ *     RIB 管理コマンドを発行するための管理インタフェース
+ * - m_ribInsertConn / m_ribEraseConn:
+ *     RIB 更新イベント（追加・削除）との接続管理
+ * - m_commandOptions:
+ *     コマンド発行時の設定（タイムアウトなど）
+ * - m_controlParameters:
+ *     経路操作に必要なパラメータ（Origin 属性など）
+ *
+ * ◆まとめ
+ * NFD の管理プロトコルを利用して RIB に対する
+ * 「経路の追加」「経路の削除」を自動的に行うための
+ * Readvertise 機能を提供するクラス。
+ */
+
 namespace nfd::rib {
 
 /** \brief A readvertise destination using NFD RIB management protocol.

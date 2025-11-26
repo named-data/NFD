@@ -28,6 +28,43 @@
 
 #include "strategy.hpp"
 
+/* -------------------------------------------------------------------------
+ * ProcessNackTraits.hpp の解説
+ *
+ * ■ 概要
+ *   NFD で NACK を受信した際の共通処理手順を提供するクラス。
+ *   各戦略クラスはこのクラスを継承することで、標準的な NACK 処理を利用可能。
+ *
+ * ■ 基本動作（ProcessNackTraitsBase）
+ *   1. すべての上流フェースから NACK を受信した場合:
+ *        - 下流に最も軽度な理由の NACK を返す
+ *   2. 上流フェースが複数あり、ほとんどのフェースから NACK 受信済みで
+ *      残りのフェースが下流の場合:
+ *        - 下流フェースに NACK を返す
+ *        - これは「ライブデッドロック」回避のため
+ *   3. それ以外の場合:
+ *        - 追加の NACK または Data の到着を待つ
+ *
+ * ■ 使い方
+ *   - 戦略クラスで ProcessNackTraits<MyStrategy> を継承
+ *   - friend class として宣言
+ *   - Strategy::afterReceiveNack() 内で processNack() を呼ぶ
+ *
+ * ■ クラス構造
+ *
+ * ProcessNackTraitsBase : noncopyable
+ *   - 仮想関数 sendNackForProcessNackTraits, sendNacksForProcessNackTraits を提供
+ *   - processNack() で共通処理を実装
+ *
+ * template<typename S> ProcessNackTraits<S> : ProcessNackTraitsBase
+ *   - S* m_strategy を保持
+ *   - sendNackForProcessNackTraits, sendNacksForProcessNackTraits を戦略クラスのメソッドに委譲
+ *
+ * ■ まとめ
+ *   - NACK の再送や下流への通知を統一的に管理
+ *   - ランダム戦略や他の戦略クラスでも再利用可能
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /** \brief Provides a common procedure for processing Nacks

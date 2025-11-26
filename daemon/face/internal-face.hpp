@@ -30,6 +30,26 @@
 
 #include <ndn-cxx/face.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Internal Face Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * 内部接続用の Face 生成関数を提供します。
+ *
+ * makeInternalFace() 関数は、フォワーダー側 Face とクライアント側 Face
+ * を相互接続したペアを作成します。ネットワーク層パケットは片方から送信
+ * されると、io.poll() 後にもう片方で受信されます。
+ *
+ * パラメータ:
+ *  - clientKeyChain: クライアント側 Face がプレフィックス登録コマンドに
+ *                    署名するために使用する KeyChain
+ *
+ * 戻り値:
+ *  - フォワーダー側 Face とクライアント側 Face の共有ポインタペア
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /** \brief Make a pair of forwarder-side face and client-side face

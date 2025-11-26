@@ -33,6 +33,60 @@
 
 #include <unordered_map>
 
+/* -------------------------------------------------------------------------
+ * AccessStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   - NDN の「アクセスルータ向け」フォワーディング戦略
+ *   - 最終ホップ（ラップトップ接続、ロスのあるリンク、正しい FIB 前提）向け設計
+ *   - 基本動作：
+ *       1. 初回 Interest は全 Nexthop にマルチキャスト
+ *       2. Data が返ってきたら最後に成功した Nexthop を記録
+ *       3. 次回 Interest は記録された Nexthop に送信
+ *          返答がなければ再度マルチキャスト
+ *
+ * ■ 主なクラス
+ *
+ * AccessStrategy
+ *   - Strategy から継承
+ *   - afterReceiveInterest / beforeSatisfyInterest がトリガ
+ *
+ * PitInfo (PIT エントリに付随する StrategyInfo)
+ *   - RTO タイマー保持
+ *
+ * MtInfo (Measurement Table 情報)
+ *   - Prefix 単位で最後に成功した Nexthop を記録
+ *   - RTT 推定器 (RttEstimator) を保持
+ *
+ * FaceInfo
+ *   - グローバルな Face 単位の RTT 情報を保持
+ *
+ * ■ 主な処理
+ *
+ * afterReceiveNewInterest
+ *   - 新しい Interest を受信した際の処理
+ *
+ * afterReceiveRetxInterest
+ *   - 再送 Interest の処理
+ *
+ * sendToLastNexthop
+ *   - 最後に成功した Nexthop に送信
+ *
+ * multicast
+ *   - 全 Nexthop にマルチキャスト送信
+ *
+ * afterRtoTimeout
+ *   - RTO タイムアウト時の再送処理
+ *
+ * updateMeasurements
+ *   - Data 受信後、RTT と最後の成功 Nexthop を更新
+ *
+ * ■ 目的
+ *   - ロスの多い最終ホップで安定して Interests を転送
+ *   - 過去の成功情報を活用して効率的に転送
+ *
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

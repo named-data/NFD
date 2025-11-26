@@ -36,6 +36,28 @@
 #include <boost/logic/tribool.hpp>
 #include <variant>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Face Common Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Face および Transport 共通定義を提供します。
+ *
+ * 主な目的:
+ *  - Face 識別子 (FaceId) とエンドポイント識別子 (EndpointId) の定義
+ *  - Transport や LinkService の初期化パラメータをまとめた FaceParams 構造体
+ *  - Face ログ出力用のユーティリティ FaceLogHelper とマクロ
+ *
+ * 提供される型:
+ *  - FaceId, EndpointId, FaceParams
+ *  - FaceLogHelper<T>
+ *
+ * 推奨:
+ *  - Face, LinkService, Transport 内のログでは、Face 専用マクロ
+ *    NFD_LOG_FACE_* を使用して Face 情報を付加する
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd {
 namespace face {
 

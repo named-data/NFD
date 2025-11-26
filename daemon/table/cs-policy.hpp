@@ -32,6 +32,36 @@
 #include <map>
 #include <set>
 
+・Content Store（CS）における置換（キャッシュ管理）ポリシーを抽象化した基底クラス
+
+・Policyは実際のキャッシュエントリ削除基準（例：LRU、FIFOなど）を決める役割を持つ
+・具体的な置換方式はこのPolicyクラスを継承して実装される
+
+【主な機能】
+- create(policyName): 登録されたポリシー名からインスタンス生成
+- getPolicyNames(): 利用可能なポリシー一覧を返す
+- setLimit(nMaxEntries): キャッシュ上限数を設定し、必要に応じて即時エビクト（削除）
+
+【CSとの連携インタフェース】
+  ・afterInsert(): 新規エントリ挿入時に呼ばれ、必要に応じてエビクト
+  ・afterRefresh(): データ更新時に呼ばれ、内部管理情報を更新可能
+  ・beforeErase(): 管理コマンドによる削除前に呼ばれる（エビクトの場合は呼ばれない）
+  ・beforeUse(): キャッシュヒット（利用前）に呼ばれ、内部管理情報を更新可能
+
+【ポリシー実装者が override するメソッド】
+  ・doAfterInsert(): 新規エントリ受け入れ/拒否（即削除）判断、または他エントリ削除
+  ・doAfterRefresh(): リフレッシュ時の管理情報更新
+  ・doBeforeErase(): 削除前の管理情報更新
+  ・doBeforeUse(): 利用時の管理情報更新
+  ・evictEntries(): 上限を超えないよう必要エントリを削除
+
+【Signal】
+  ・beforeEvict: ポリシーが「このエントリを削除すべき」と判断した際に発火し、CSへ通知
+
+【その他】
+- ポリシー名とファクトリは静的レジストリへ登録、呼び出し可能
+- NFD_REGISTER_CS_POLICY(P) でポリシー自動登録マクロあり
+
 namespace nfd::cs {
 
 class Cs;

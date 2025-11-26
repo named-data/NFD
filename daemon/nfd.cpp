@@ -41,6 +41,61 @@
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/tables-config-section.hpp"
 
+/* -------------------------------------------------------------------------
+ * nfd.cpp の解説（NFD クラス実装）
+ *
+ * ■ 役割
+ *   - NFD (Named Data Networking Forwarding Daemon) のコア機能を実装
+ *   - Face、Forwarder、管理マネージャ（CS, FIB, Face, StrategyChoice 等）を初期化
+ *   - 設定ファイルの読み込み・再読み込み
+ *   - ネットワーク状態変化を監視し、必要に応じて設定を再ロード
+ *
+ * ■ 主なメンバ変数
+ *   - m_keyChain: NDN のセキュリティ管理用 KeyChain
+ *   - m_netmon: ネットワーク状態監視オブジェクト
+ *   - m_faceTable: Face の管理テーブル
+ *   - m_faceSystem: Face の生成・管理システム
+ *   - m_forwarder: フォワーダー本体（FIB / CS / StrategyChoice を管理）
+ *   - m_dispatcher: 管理コマンドのディスパッチャ
+ *   - m_authenticator: 管理コマンドの認証担当
+ *   - 各種 Manager: FaceManager, FibManager, CsManager, StrategyChoiceManager 等
+ *
+ * ■ 主なメソッド
+ *   - Nfd::initialize()
+ *       ・ログ初期化
+ *       ・FaceTable, FaceSystem, Forwarder の生成
+ *       ・管理マネージャの初期化
+ *       ・権限を落とす（PrivilegeHelper::drop）
+ *       ・ネットワーク変化イベントの監視登録
+ *
+ *   - Nfd::configureLogging()
+ *       ・ログ設定ファイルの読み込み（通常 configFile または内部設定）
+ *
+ *   - Nfd::initializeManagement()
+ *       ・InternalFace の生成
+ *       ・管理コマンドディスパッチャと認証器の生成
+ *       ・各種 Manager（CS, FIB, Face, StrategyChoice 等）の生成
+ *       ・設定ファイルの解析
+ *       ・NFD Management Protocol 用 FIB エントリを追加
+ *
+ *   - Nfd::reloadConfigFile()
+ *       ・設定ファイル全体の再読み込み
+ *
+ *   - Nfd::reloadConfigFileFaceSection()
+ *       ・FaceSystem 部分のみ再読み込み（マルチキャスト Face 再初期化用）
+ *
+ * ■ 重要ポイント
+ *   - Interest::setAutoCheckParametersDigest(false) により、自動パラメータダイジェスト検証を無効化
+ *   - 内部 Face と Null Face を予約 Face として FaceTable に登録
+ *   - ネットワーク変化を検知した場合、設定ファイルの face セクションのみを遅延再ロード
+ *   - 設定ファイル解析時に "log" と "rib" セクションは無視、それ以外の未知の NFD セクションはエラー
+ *
+ * ■ まとめ
+ *   Nfd クラスは NFD デーモンの中心クラスであり、Face、Forwarder、
+ *   管理マネージャの初期化・設定、ネットワーク監視、設定再読み込みを統括。
+ *   このクラスが NFD の実際の動作の核となる。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd {
 
 NFD_LOG_INIT(Nfd);

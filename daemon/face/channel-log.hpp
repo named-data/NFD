@@ -28,6 +28,39 @@
 
 #include "common/logger.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Channel Logging Macros
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) の
+ * Face/Channel クラス向けのログ出力マクロを定義しています。
+ *
+ * 主な目的:
+ *  - チャネル固有の情報（例: ローカル URI）をログに付加して出力
+ *  - チャネルごとのログを簡単に識別できるようにする
+ *
+ * 提供されるマクロ:
+ *  1. NFD_LOG_CHAN(level, msg)
+ *     - 任意のログレベルでメッセージを出力
+ *     - this->getUri() をメッセージ先頭に付与
+ *
+ *  2. レベル別ショートカットマクロ:
+ *     - NFD_LOG_CHAN_TRACE(msg)
+ *     - NFD_LOG_CHAN_DEBUG(msg)
+ *     - NFD_LOG_CHAN_INFO(msg)
+ *     - NFD_LOG_CHAN_WARN(msg)
+ *     - NFD_LOG_CHAN_ERROR(msg)
+ *
+ * 利用例:
+ *   NFD_LOG_CHAN_INFO("Channel established successfully");
+ *   NFD_LOG_CHAN_WARN("Channel timeout detected");
+ *
+ * 注意:
+ *  - Channel クラスのメンバ関数内で使用することを想定
+ *  - this->getUri() が正しく取得できることが前提
+ * ---------------------------------------------------------------------------
+ */
+
 /** \defgroup ChannelLogging Channel logging macros
  *
  * These macros augment the log message with some channel-specific information,

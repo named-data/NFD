@@ -32,6 +32,44 @@
 
 #include <list>
 
+/* 
+・Content Store（CS）の置換方式のひとつ「Priority FIFO（優先度付き先入れ先出し）」を実装
+
+【基本方針】
+- 各キャッシュエントリを優先度に応じて3種類のキューに分類し FIFO で管理
+- エビクト（削除）は優先度の低いキューから順に実施
+- 同一エントリは常にどこか1つのキューに存在する
+
+【使用する3つのキュー】
+1. QUEUE_UNSOLICITED：要求されずに届いたデータ（最も優先度低）
+2. QUEUE_STALE：期限切れ・古くなったデータ
+3. QUEUE_FIFO：新鮮なデータ（ヒット率に最も寄与）
+
+→ エビクト順序：UNSOLICITED → STALE → FIFO
+
+【EntryInfo】
+- 各エントリがどのキューに属しているかを追跡する構造体
+- moveStaleEventId により、新鮮（FIFO）→古い（STALE）への自動移動をスケジューリング可能
+
+【オーバーライド（Policy から継承）】
+- doAfterInsert(): 挿入後、適切なキューに配置
+- doAfterRefresh(): 更新された場合、Fresh扱いに変更
+- doBeforeErase(): 削除前にキューから消す
+- doBeforeUse(): キャッシュヒット時にFresh扱いへ
+- evictEntries(): 上限超過時に適切なキューから削除
+
+【内部処理メソッド】
+- evictOne(): 優先度に従って1件削除
+- attachQueue(): キューへ追加
+- detachQueue(): キューから削除
+- moveToStaleQueue(): FIFO → STALE への移動
+
+【特徴】
+- LRU と比べシンプルな管理で済む一方、
+  有効期限（stale化）と unsolicited データの優先的削除により CS 有効活用を狙うポリシー
+- 性能（FIFO）と健全性（stale/unsolicited優先削除）のバランスをとった設計
+*/
+
 namespace nfd::cs {
 namespace priority_fifo {
 

@@ -30,6 +30,40 @@
 
 #include <ndn-cxx/security/signing-info.hpp>
 
+/*
+ * このファイルは ReadvertisePolicy クラスおよび ReadvertiseAction 構造体の
+ * 定義を含む。ReadvertisePolicy は、RIB に登録された経路をどのように
+ * 再広告（Readvertise）するかを決定するためのポリシーを抽象化した基底クラスである。
+ *
+ * ◆ReadvertiseAction（再広告の決定内容を保持）
+ * - prefix:
+ *     再広告すべき名前プレフィックス
+ * - cost:
+ *     経路コスト（再広告先に伝えるメトリックとして利用）
+ * - signer:
+ *     再広告コマンド署名に使用する認証情報（SigningInfo）
+ *
+ * ◆ReadvertisePolicy の役割
+ * - 新しい経路が RIB に登録された際、
+ *   その経路を再広告するべきかどうか判定し、
+ *   必要であれば ReadvertiseAction を生成する
+ * - 再広告した経路を定期リフレッシュする間隔も提供する
+ *
+ * ◆主要機能（純粋仮想関数）
+ * 1. handleNewRoute()
+ *    - 引数：RIB に新規登録された経路
+ *    - 戻り値：再広告すべき場合は ReadvertiseAction、不要なら std::nullopt
+ *
+ * 2. getRefreshInterval()
+ *    - 再広告済み経路の更新（再通知）間隔を返す
+ *
+ * ◆まとめ
+ * 本クラスは「どの経路をどの条件で再広告するか」を決める
+ * 制御ロジックを抽象化したもの。
+ * 具体的なポリシーは派生クラス（例：HostToGatewayReadvertisePolicy）
+ * にて実装し、個々の利用環境に応じた再広告戦略を適用可能とする。
+ */
+
 namespace nfd::rib {
 
 /** \brief A decision made by readvertise policy.

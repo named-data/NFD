@@ -28,6 +28,37 @@
 
 #include "core/common.hpp"
 
+/* -------------------------------------------------------------------------
+ * ScopePrefix.hpp の解説
+ *
+ * ■ 概要
+ *   名前空間に基づくスコープ制御をサポートするための定義
+ *   NFD (Named Data Networking Forwarding Daemon) で、特定の名前
+ *   プレフィックスに基づいて Interest/Data の転送範囲を制限
+ *
+ * ■ 定義されているスコープ
+ *
+ * 1. LOCALHOST ("/localhost")
+ *   - 発信元ホスト上のアプリケーションに限定
+ *   - Interest/Data はローカルフェイス間でのみ送受信可能
+ *
+ * 2. LOCALHOP ("/localhop")
+ *   - 次のノードまでに限定
+ *   - Interest の転送ルール:
+ *       ・ローカルフェイスから受信 → 非ローカルフェイスに転送可
+ *       ・非ローカルフェイスから受信 → 非ローカルフェイスに転送不可
+ *       ・いずれの場合もローカルフェイスには転送可
+ *   - Data の転送は制限なし
+ *
+ * ■ 使い方
+ *   - スコープ制御を行う戦略やルータの内部処理で、この定数を使って
+ *     名前空間のプレフィックスを判定
+ *
+ * ■ まとめ
+ *   - 特定プレフィックスに基づき、Interest/Data の転送範囲を制限
+ *   - NFD 内でスコープ制御を簡単に適用可能
+ * ------------------------------------------------------------------------- */
+
 /** \brief Contain name prefixes that affect namespace-based scope control.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */

@@ -30,6 +30,36 @@
 
 #include <ndn-cxx/mgmt/nfd/forwarder-status.hpp>
 
+/*
+ * ForwarderStatusManager.hpp
+ *
+ * 概要:
+ *   ForwarderStatusManager は NFD (Named Data Networking Forwarding Daemon) における
+ *   Forwarder Status 管理用のクラスです。
+ *   NFD Management Protocol に準拠し、フォワーダ全体の状態情報を収集・提供します。
+ *
+ * 主な役割:
+ *   - フォワーダの一般状態情報の収集 (collectGeneralStatus)
+ *   - 一般状態情報の提供 (listGeneralStatus)
+ *
+ * 特徴:
+ *   - Forwarder オブジェクトの状態を参照して情報を収集
+ *   - Dispatcher を使用して管理プロトコルに基づく応答を実装
+ *   - 起動時刻の管理により稼働時間などの統計情報の算出が可能
+ *
+ * 内部構造:
+ *   - m_forwarder: 状態を収集する対象の Forwarder への参照
+ *   - m_dispatcher: 管理コマンド応答のための Dispatcher への参照
+ *   - m_startTimestamp: フォワーダ起動時刻の記録
+ *
+ * 参考:
+ *   - NFD Management Protocol Wiki: https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
+ *
+ * 注意点:
+ *   - コマンド処理や状態提供は StatusDatasetContext を通じて行う
+ *   - このクラスはコピー禁止 (noncopyable)
+ */
+
 namespace nfd {
 
 class Forwarder;

@@ -30,6 +30,21 @@
 
 #include <ndn-cxx/lp/packet.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Link-Layer Packet Fragmenter Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * ネットワーク層パケットを NDNLPv2 リンク層パケットに分割する
+ * LpFragmenter クラスを定義します。
+ *
+ * このクラスは、リンク層パケットの MTU 制約に応じてフラグメント化を行い、
+ * フラグメントにシーケンス番号を割り当てる機能を提供します。
+ *
+ * オプション構造体を通じて最大フラグメント数などの挙動を制御可能です。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

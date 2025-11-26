@@ -29,6 +29,47 @@
 #include "strategy.hpp"
 #include "retx-suppression-exponential.hpp"
 
+/* -------------------------------------------------------------------------
+ * MulticastStrategy.hpp の解説
+ *
+ * ■ 概要
+ *   - FIB（Forwarding Information Base）の全ての次ホップに対して
+ *     Interest を転送する戦略。
+ *   - 一般的に、目的のデータが複数経路に存在する場合や
+ *     ループ回避・探索のために利用される。
+ *
+ * ■ クラス構造
+ *
+ * MulticastStrategy : public Strategy
+ *   - コンストラクタで Forwarder と戦略名を受け取る
+ *   - static getStrategyName() で戦略名を返す
+ *
+ * トリガーメソッド:
+ *   - afterReceiveInterest()
+ *       -> PIT に対応する Interest を受信した際に呼ばれる
+ *       -> 全 FIB nexthop に Interest を転送
+ *
+ *   - onInterestLoop()
+ *       -> Interest がループした場合に呼ばれる
+ *       -> この戦略では何もしない
+ *
+ *   - afterNewNextHop()
+ *       -> PIT エントリに新しい nexthop が追加された場合に呼ばれる
+ *
+ * メンバ:
+ *   - std::unique_ptr<RetxSuppressionExponential> m_retxSuppression
+ *       -> 再送抑制アルゴリズム（指数バックオフ）を管理
+ *
+ * ■ 特徴
+ *   - FIB の全 nexthop に Interest を送信するため、データ探索に強い
+ *   - 再送抑制により無駄な再送を軽減
+ *   - Interest ループ時は無処理（無限ループ防止は別機構で対応）
+ *
+ * ■ まとめ
+ *   - 名前空間ベースで全経路に Interest を投げる探索的戦略
+ *   - 再送抑制と組み合わせることでネットワーク負荷を抑制
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

@@ -34,6 +34,56 @@
 
 #include <unordered_map>
 
+/* -------------------------------------------------------------------------
+ * AsfMeasurements.hpp の解説
+ *
+ * ■ 概要
+ *   - ASF戦略で使用される Face ごとの RTT / SRTT / タイムアウト情報を管理。
+ *   - Interest に対する RTT 測定とタイムアウト処理を支援。
+ *   - Face ごとの情報を Namespace 単位で管理。
+ *
+ * ■ 主なクラスと役割
+ *
+ * FaceInfo
+ *   - 単一 Face の RTT 情報を保持。
+ *   - メンバ:
+ *       - m_rttEstimator      : RTT 推定器（Smoothed RTT 管理）
+ *       - m_lastRtt           : 最後の RTT 測定値
+ *       - m_nTimeouts          : タイムアウト回数
+ *       - m_timeoutEvent       : Interest に紐づく RTO イベント
+ *   - メソッド:
+ *       - recordRtt()         : RTT 測定値の記録
+ *       - recordTimeout()     : タイムアウト処理
+ *       - scheduleTimeout()   : タイムアウトイベントのスケジュール
+ *       - cancelTimeout()     : タイムアウトのキャンセル
+ *
+ * NamespaceInfo
+ *   - 特定の名前空間（名前プレフィックス）に属する Face の情報を保持。
+ *   - FaceInfo のマップ管理 (FaceId → FaceInfo)
+ *   - プローブスケジュール管理フラグ:
+ *       - m_isProbingDue
+ *       - m_isFirstProbeScheduled
+ *
+ * AsfMeasurements
+ *   - NamespaceInfo を管理するアクセサ。
+ *   - FaceInfo / NamespaceInfo の取得や生成を簡易化。
+ *   - 計測情報の寿命管理（Measurement Lifetime）。
+ *
+ * ■ 定数
+ *   - FaceInfo::RTT_NO_MEASUREMENT = -1_ns : RTT未測定
+ *   - FaceInfo::RTT_TIMEOUT        = -2_ns : タイムアウト
+ *   - AsfMeasurements::DEFAULT_MEASUREMENTS_LIFETIME = 5 分
+ *
+ * ■ 特徴
+ *   - ASF戦略の Interest 転送最適化に利用される。
+ *   - RTT 測定、スムーズ化(SRTT)、タイムアウト回数を保持。
+ *   - Namespace 単位で Face 情報を管理することでスケーラブルに対応。
+ *
+ * ■ 使用例
+ *   - AsfStrategy 内で m_measurements モジュールとして利用
+ *   - ProbingModule や Interest 転送の最適経路選択で使用
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw::asf {
 
 /**

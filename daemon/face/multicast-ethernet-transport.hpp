@@ -28,6 +28,20 @@
 
 #include "ethernet-transport.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Multicast Ethernet Transport Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Ethernet ベースのマルチキャスト通信を提供する
+ * MulticastEthernetTransport クラスを定義します。
+ *
+ * raw Ethernet II フレームを用いて、MAC マルチキャストグループ間で
+ * パケットを送受信します。Linux 環境ではインターフェースインデックスを
+ * 用いてマルチキャスト参加を行います。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

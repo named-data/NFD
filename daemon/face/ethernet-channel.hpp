@@ -35,6 +35,32 @@
 
 #include <map>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Ethernet Channel Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Ethernetベースの Channel の実装を定義しています。
+ *
+ * 主な目的:
+ *  - ネットワークインターフェース上で Ethernet フレームを受信・送信する Channel を提供
+ *  - 新規リモートホストからのフレーム受信時に Face を生成
+ *  - ユニキャスト向け Ethernet Face の接続や作成
+ *  - 受信・送信、非同期 I/O、Face 管理、エラー処理を実装
+ *
+ * 提供されるクラス:
+ *  - nfd::face::EthernetChannel : Channel 派生クラス
+ *      - ローカルネットワークインターフェースにバインドして動作
+ *      - listen() により着信フレームから Face を生成可能
+ *      - connect() によりリモートエンドポイントへのユニキャスト Face を作成
+ *
+ * 注意:
+ *  - 自動的に閉じられる on-demand Face は idleTimeout によって管理
+ *  - 非同期読み取りで libpcap を利用
+ *  - 受信フレームの解析に失敗した場合は Face を生成しない
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

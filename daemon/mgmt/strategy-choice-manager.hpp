@@ -28,6 +28,44 @@
 
 #include "manager-base.hpp"
 
+/*
+ * StrategyChoiceManager.hpp
+ *
+ * 概要:
+ *   本ファイルは、NFD (Named Data Networking Forwarding Daemon) における
+ *   Strategy Choice Management の機能を提供するクラスを定義する。
+ *   StrategyChoiceManager は、NFD Management Protocol の `strategy-choice/*`
+ *   コマンドを受け付け、フォワーディング戦略の設定・解除・一覧取得を行う。
+ *
+ * 主な役割:
+ *   - 特定のプレフィックスに対する転送戦略の設定 (setStrategy)
+ *   - 戦略設定の解除 (unsetStrategy)
+ *   - 現在の戦略選択テーブル一覧取得 (listChoices)
+ *
+ * 対象となるデータ構造:
+ *   - StrategyChoice (strategy_choice::StrategyChoice)
+ *       プレフィックスごとに適用されるフォワーディング戦略を管理
+ *
+ * 管理プロトコル:
+ *   - NFD Management Protocol を通じてコマンドを登録・実行
+ *   - ManagerBase を継承し、権限認証 (CommandAuthenticator) により安全な操作を実現
+ *
+ * 使用例:
+ *   戦略変更例: `/localhost/nfd/strategy-choice/set`
+ *   戦略解除例: `/localhost/nfd/strategy-choice/unset`
+ *   設定一覧取得: `/localhost/nfd/strategy-choice/list`
+ *
+ * 位置づけ:
+ *   - NFD が提供する複数のフォワーディング戦略選択機能の管理コンポーネント
+ *   - 名前空間単位で戦略を柔軟に切り替えることでネットワーク性能の最適化を支援
+ *
+ * 関連仕様:
+ *   https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
+ *
+ * このクラスにより、管理者はプレフィックス単位で forwarding strategy を動的に変更し、
+ * NDN ノードのフォワーディング挙動を柔軟に制御できる。
+ */
+
 namespace nfd {
 
 namespace strategy_choice {

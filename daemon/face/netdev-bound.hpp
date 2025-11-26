@@ -29,6 +29,21 @@
 #include "network-predicate.hpp"
 #include "protocol-factory.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Netdev-Bound Faces Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * ネットワークデバイスにバインドされた Face の管理を提供する
+ * NetdevBound クラスを定義します。
+ *
+ * ネットワークインターフェースの状態や Face の URI に基づき、
+ * Face の生成や削除を制御します。
+ * ルールに従い、複数のリモートエンドポイントやインターフェース条件を
+ * 管理可能です。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 class FaceSystem;

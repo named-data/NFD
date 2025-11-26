@@ -28,6 +28,38 @@
 
 #include "core/common.hpp"
 
+/* -------------------------------------------------------------------------
+ * strategy-info.hpp の解説（StrategyInfo クラス定義）
+ *
+ * ■ 役割
+ *   - NFD において各フォワーディング戦略が PIT/FIB/CS のエントリに
+ *     任意の情報を付与するための抽象基底クラス
+ *   - 例えば、ある戦略が特定の Interest をどの nexthop に送ったかや、
+ *     過去の Data 到達統計などを保持できる
+ *
+ * ■ 主な機能
+ *   - `StrategyInfo` は抽象クラスで、純粋仮想関数はなし
+ *   - デストラクタは virtual で、派生クラスで自由に情報を保持可能
+ *   - DOXYGEN 用に `getTypeId()` が定義されていることを示すコメントあり
+ *     （実際には派生クラスごとにユニークな ID を持たせることが推奨される）
+ *
+ * ■ 使い方の例
+ *   1. StrategyInfo を継承して新しい情報クラスを作成
+ *      ```cpp
+ *      class MyStrategyInfo : public StrategyInfo {
+ *        int hopCount;
+ *      };
+ *      ```
+ *   2. PIT/FIB/CS の各エントリに紐づけて使用
+ *      ```cpp
+ *      pitEntry->setStrategyInfo(std::make_shared<MyStrategyInfo>(...));
+ *      ```
+ *
+ * ■ まとめ
+ *   StrategyInfo は「戦略固有の追加情報」をテーブルエントリに持たせるための拡張ポイント。
+ *   Forwarder はこれを直接操作せず、Strategy が必要に応じて管理する。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

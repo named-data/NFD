@@ -28,6 +28,38 @@
 
 #include "link-service.hpp"
 
+
+/*
+ * NullLinkService.hpp
+ *
+ * 概要:
+ *   NullLinkService は Named Data Networking Forwarding Daemon (NFD) における
+ *   LinkService の派生クラスで、すべてのパケット送受信を無効化します。
+ *
+ * 主な用途:
+ *   - 物理リンクを持たない Face のバックエンドとして使用
+ *   - デバッグやテスト用に、ネットワーク送受信を伴わない Face を作成
+ *
+ * 動作の特徴:
+ *   - Interest、Data、Nack の送信は何も行わない
+ *   - 受信したパケットはすべて破棄
+ *   - 実際のネットワーク通信を行わないため、リンク障害や遅延の影響を受けない
+ *
+ * 関連:
+ *   - Face: NullLinkService は NullFace と組み合わせることで完全に「破棄専用 Face」となる
+ *   - LinkService: NullLinkService は LinkService のインターフェースを実装するが、
+ *     実際には何も処理しない
+ *
+ * 使用例:
+ *   auto nullFace = makeNullFace();
+ *   auto linkService = std::make_shared<NullLinkService>();
+ *   // nullFace に linkService をセットすることで、完全に無効な Face が構築可能
+ *
+ * 注意点:
+ *   - 実際のパケット通信は行われないため、アプリケーション層での動作確認用のみ
+ *   - 運用ネットワークでは使用しない
+ */
+
 namespace nfd::face {
 
 /** \brief A LinkService that drops every packet.

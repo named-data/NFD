@@ -34,6 +34,54 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * DeadNonceList.hpp 解説
+ * ------------------------------------------------------------
+ * ■役割概要
+ *   - NDN におけるループ検知の補助テーブル
+ *   - PIT から削除された Interest の Name + Nonce を保持
+ *   - 「もう使った Nonce を再度受信したら = ループして戻ってきた」
+ *
+ * ■特徴
+ *   - メモリ削減のため Name + Nonce を 64bit ハッシュ値で格納
+ *   - タイムスタンプは保持せず、代わりに
+ *        * MARK と呼ばれる特殊な値を定期挿入
+ *        * MARK の数で実質的な寿命を推定
+ *   - 容量は動的調整（多すぎ → 間引き、少なすぎ → 拡張）
+ *
+ * ■ループ検知に使う理由
+ *   1. PIT から削除された Interest が再び到達
+ *   2. DeadNonceList に記録がある
+ *   → これはループの可能性あり！ その Interest を破棄できる
+ *
+ * ■動作概要（ざっくり）
+ *   add() で登録
+ *       PIT Entry消滅時 → DeadNonceListへ
+ *   has() でチェック
+ *       受信 Interest が DeadNonceList にあればループ検知成功
+ *   mark() & adjustCapacity() で容量制御
+ *
+ * ■保存期間の考え方
+ *   lifetime パラメータ（デフォルト 6秒）
+ *   * 通常は数秒でループは収束するため、この間覚えていればOK
+ *   * 遅延が大きすぎると検知できない可能性
+ *
+ * ■内部構造
+ *   - boost::multi_index_container による
+ *       * Queue (FIFO) … 古い順に削除
+ *       * HashTable … 高速検索
+ *
+ * ------------------------------------------------------------
+ * NDN の堅牢性向上に重要な仕組みだが、
+ * 可能性ループ検知なので false positiveは仕様上許容している。
+ * ------------------------------------------------------------
+ */
+
+/*
+ * （以下、元コード）
+ */
+
 namespace nfd {
 
 /**

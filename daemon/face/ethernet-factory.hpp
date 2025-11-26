@@ -30,6 +30,33 @@
 #include "ethernet-channel.hpp"
 #include "network-predicate.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Ethernet Protocol Factory Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Ethernet プロトコル用の ProtocolFactory を定義しています。
+ *
+ * 主な目的:
+ *  - Ethernet チャネルおよび Face の作成と管理
+ *  - ユニキャストおよびマルチキャスト Face の生成
+ *  - ネットワークインターフェース単位でのチャネルの重複作成防止
+ *  - ユーザ設定（Config）に基づくチャネル・Face の自動生成
+ *
+ * 提供されるクラス:
+ *  - nfd::face::EthernetFactory : ProtocolFactory 派生クラス
+ *      - createChannel() により EthernetChannel を作成
+ *      - createMulticastFace() により指定マルチキャストグループに Face を作成
+ *      - 設定に基づくユニキャスト/マルチキャスト Face の適用
+ *      - 既存チャネル・Face の取得や管理
+ *
+ * 注意:
+ *  - 同じネットワークインターフェースやマルチキャストグループで
+ *    2 回呼び出しても、既存のオブジェクトを返す
+ *  - チャネル作成失敗時には例外を投げる（PcapHelper::Error）
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

@@ -33,6 +33,31 @@
 
 #include <limits>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD GenericLinkService Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * GenericLinkService クラスおよび関連型の定義を提供します。
+ *
+ * GenericLinkService は LinkService の具体実装であり、NDNLPv2 プロトコルを
+ * 実装します。LinkService は Face 上でのネットワーク層パケット配送を
+ * TLV ブロック単位で管理します。
+ *
+ * 主な機能:
+ *  - パケットの断片化 (Fragmentation) / 再構築 (Reassembly)
+ *  - 再送制御 (Reliability)
+ *  - 混雑制御 (Congestion Marking)
+ *  - 自己学習型フォワーディング (Self-Learning Forwarding)
+ *
+ * 提供される型:
+ *  - GenericLinkService::Counters: パケット・バイトカウンタ
+ *  - GenericLinkService::Options: サービスオプション設定
+ *
+ * 参考: NDNLPv2 プロトコル https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

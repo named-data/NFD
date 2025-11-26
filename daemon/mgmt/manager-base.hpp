@@ -35,6 +35,49 @@
 
 #include <functional>
 
+/*
+ * ManagerBase.hpp
+ *
+ * 概要:
+ *   このファイルは、NFD (Named Data Networking Forwarding Daemon) の
+ *   管理モジュール（FaceManager、FibManager、StrategyChoiceManager など）が
+ *   共通して利用する基底クラスを提供します。
+ *   Dispatcher との連携や、NFD Management Protocol における
+ *   コマンド処理の統一的仕組みを担当します。
+ *
+ * 主な機能:
+ *   - 管理コマンド (ControlCommand) ハンドラ登録機能
+ *   - ステータス情報 (StatusDataset) の提供ハンドラ登録
+ *   - 通知 (NotificationStream) の登録と送信機能
+ *   - 利用者認証 (Authorization) の提供
+ *   - コマンド実行者識別の補助関数 (extractSigner)
+ *
+ * 提供インタフェース:
+ *   - registerCommandHandler():
+ *        指定コマンドに対応する処理関数を Dispatcher に登録
+ *   - registerStatusDatasetHandler():
+ *        運用状態情報の取得を提供するデータセットハンドラを登録
+ *   - registerNotificationStream():
+ *        イベント通知機構のストリームを登録
+ *   - makeAuthorization():
+ *        認証処理作成（必要に応じて派生クラスで上書き）
+ *
+ * 特徴:
+ *   - 共通機能を一元化することで、個別 Manager 実装の簡素化を実現
+ *   - デストラクタは protected:
+ *        → 多態的利用を禁止し、誤った delete を防ぐ
+ *   - テンプレートによる型安全なコマンドパラメータ抽出
+ *
+ * 使用される場面:
+ *   - Face 管理、FIB 管理、フォワーダ状態管理などの
+ *     各 Manager クラスがこの基底クラスを継承し、
+ *     NFD Management Protocol の一部を実装する。
+ *
+ * 注意:
+ *   - makeAuthorization() を使用しないコンストラクタを使う場合、
+ *     必ず派生クラス側で makeAuthorization() を override する必要がある。
+ */
+
 namespace nfd {
 
 using ndn::mgmt::Dispatcher;

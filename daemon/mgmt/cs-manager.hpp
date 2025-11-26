@@ -28,6 +28,37 @@
 
 #include "manager-base.hpp"
 
+/*
+ * CsManager.hpp
+ *
+ * 概要:
+ *   CsManager は NFD (Named Data Networking Forwarding Daemon) における
+ *   CS（Content Store）管理用のクラスです。
+ *   NFD Management Protocol に準拠し、CS の設定変更や消去、情報取得を行います。
+ *
+ * 主な役割:
+ *   - CS の設定変更 (cs/config コマンドの処理)
+ *   - CS 内のコンテンツ消去 (cs/erase コマンドの処理)
+ *   - CS 情報の提供 (管理プロトコル経由)
+ *
+ * 特徴:
+ *   - erase() は一度に最大 ERASE_LIMIT（256）アイテムまで処理可能
+ *   - ForwarderCounters と CS インスタンスを参照して管理操作を行う
+ *   - CommandAuthenticator と Dispatcher を利用して権限チェックおよびコマンド実行
+ *
+ * 主なメソッド:
+ *   - changeConfig(): CS 設定を変更
+ *   - erase(): CS 内のコンテンツを削除
+ *   - serveInfo(): CS の情報を返す
+ *
+ * 参考:
+ *   - NFD Management Protocol Wiki: https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
+ *
+ * 注意点:
+ *   - ERASE_LIMIT を超える消去要求は分割して処理する必要がある
+ *   - CS および ForwarderCounters への参照はライフタイム管理に注意
+ */
+
 namespace nfd {
 
 namespace cs {

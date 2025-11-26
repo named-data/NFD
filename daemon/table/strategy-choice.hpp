@@ -31,6 +31,57 @@
 
 #include <boost/range/adaptor/transformed.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * StrategyChoice.hpp 解説
+ * -----------------------------------------------
+ * ■役割概要
+ *   - NDN Forwarder が、名前プレフィックスごとに
+ *     使用する Forwarding Strategy を決定するためのテーブル
+ *   - Prefix に対して任意の Strategy を割り当て可能
+ *   - 明示的に設定がなければ、親 Prefix の Strategy を継承
+ *   - 最長一致 (Longest Prefix Match, LPM) により
+ *     実際に使用される Strategy を決定
+ *
+ * ■内部構造と特徴
+ *   - NameTree を利用して Prefix ごとの管理を効率化
+ *   - insert()/erase() により戦略割り当てを更新
+ *   - findEffectiveStrategy() により Forwarder が転送戦略を決定
+ *   - HTTP 風ステータスコードで処理結果を返す (InsertResult)
+ *
+ * ■利用場面
+ *   - Interest を受信した際、Forwarder が
+ *       → findEffectiveStrategy() で Strategy を取得
+ *       → Strategy の振る舞いに従い転送処理を行う
+ *
+ * ■依存関係
+ *   - Forwarder: StrategyChoice を所有し、戦略適用に利用
+ *   - NameTree: Prefix と Strategy の対応付けを管理
+ *   - Strategy: 実際の転送ロジックを実装するクラス群
+ *
+ * ■NDN内部における位置づけ
+ *   Interest処理：
+ *     StrategyChoice → Strategy決定 → PIT/FIB/Measurements操作へ
+ *
+ *   例）
+ *     Prefix設定:
+ *       /              → best-route
+ *       /video         → multicast
+ *       /video/live    → ncc
+ *
+ *     Interest: /video/live/news/1
+ *       → LPM により /video/live の Strategy が選択
+ *
+ * -----------------------------------------------
+ * これにより、フォワーディングの動作を柔軟に制御できる。
+ * Forwarder における意思決定の最初の基盤となる重要コンポーネント。
+ * -----------------------------------------------
+ */
+
+/*
+ * （以下、元コード）
+ */
+
 namespace nfd {
 
 class Forwarder;

@@ -28,6 +28,71 @@
 
 #include "core/common.hpp"
 
+/*
+ * FIB Entry.hpp 解説
+ *
+ * 【概要】
+ * - FIB（Forwarding Information Base：転送情報ベース）の1エントリを表すクラス。
+ *   NDN で名前（Prefix）に対して転送先（NextHop）の候補を保持する役割。
+ *
+ * 【構造】
+ * ■ fib::Entry
+ * - Prefix（Name）に対応
+ * - NextHopList を保持（複数の転送候補）
+ * - NameTree Entry へのリンク（階層管理）
+ *
+ * ■ NextHop クラス
+ * - 転送先Face（Faceオブジェクト）へのポインタ
+ * - 転送コスト（コスト最適化用）
+ *
+ * → Faceごとのレコード
+ *
+ * 【主な機能】
+ * - getPrefix()  
+ *    → この FIB entry の対象プレフィックスを返す
+ *
+ * - getNextHops(), hasNextHops()  
+ *    →転送候補Faceの一覧取得、空判定
+ *
+ * - hasNextHop(face)  
+ *    →指定されたFaceが既に登録されているかを確認
+ *
+ * - addOrUpdateNextHop(face, cost)  
+ *    →次ホップ追加  
+ *    →既存ならコスト更新  
+ *
+ * - removeNextHop(face)  
+ *    →該当Faceを候補から削除
+ *
+ * - findNextHop(face)  
+ *    →内部検索用（mutating iterator取得）
+ *
+ * - sortNextHops()  
+ *    →コスト順などの整理
+ *
+ * 【内部設計ポイント】
+ * - NextHopはFace&でなくポインタ管理（移動可能性の確保）
+ * - Entryはnoncopyable  
+ *   →複製を禁止し参照整合性を保つ
+ * - FibとNameTree Entryが friend  
+ *   →内部構造への直接アクセスを許可（効率性重視）
+ *
+ * 【役割のまとめ】
+ * - このクラスは「名前空間に対する転送先集合」の最小単位
+ *   例：/ndn/ucla → {Face#1(cost=10), Face#4(cost=15)}
+ *
+ * Forwarding Strategy はこの NextHopList を参照し、
+ * もっとも適した Face に Interest を転送する。
+ *
+ * 【関連】
+ * - Fib（FIB全体管理）
+ * - NameTree（階層的名前空間の構造）
+ *
+ * 【活用例】
+ * - Interest受信時のルート探索
+ * - 複数インタフェース経由の冗長転送（マルチパス制御）
+ */
+
 namespace nfd {
 
 namespace face {

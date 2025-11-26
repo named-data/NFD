@@ -31,6 +31,60 @@
 #include "readvertised-route.hpp"
 #include "rib/rib.hpp"
 
+/*
+ * このファイルは Readvertise クラスの定義を含み、
+ * RIB（Routing Information Base）に登録された経路のうち、
+ * ポリシーに合致するものを選択して別のデスティネーションへ
+ * 「再広告（Readvertise）」する仕組みを実装する。
+ *
+ * ◆Readvertise クラスの役割
+ * - RIB を監視し、経路追加・削除イベントを受け取る
+ * - ReadvertisePolicy に照会して「再広告すべきか」を判断
+ * - ReadvertiseDestination を通じて実際に再広告コマンドを送信
+ * - 再広告済みのルートを追跡・管理する
+ *
+ * ◆主な構成要素
+ * - m_policy:
+ *     再広告を行うかどうかを決めるポリシー（例：ホスト→ゲートウェイ等）
+ *
+ * - m_destination:
+ *     再広告を送信する宛先（例：NFD RIB管理プロトコル、別プロセスのルーティングデーモン）
+ *
+ * - m_rrs（ReadvertisedRouteContainer）:
+ *     再広告済みルートのコンテナ。prefix や cost、署名者情報などを保持。
+ *
+ * - m_routeToRr（map）:
+ *     RIBの経路→再広告済みルート（m_rrs）の対応表。
+ *     経路削除時に正しい readvertised route を撤回するために使用。
+ *
+ * - m_addRouteConn / m_removeRouteConn:
+ *     RIB の経路追加・削除シグナルに対する接続。
+ *
+ * ◆主要メソッド
+ * 1. afterAddRoute()
+ *    - RIB に新規経路が追加されたときに呼ばれる
+ *    - ポリシーに照会し、再広告すべきなら advertise() を実行
+ *
+ * 2. beforeRemoveRoute()
+ *    - RIB から経路が削除される前に呼ばれる
+ *    - 対応する再広告済みルートを withdraw() で撤回
+ *
+ * 3. afterDestinationAvailable() / afterDestinationUnavailable()
+ *    - デスティネーション（NFD RIB など）が利用可能/不可になった時の処理
+ *    - 利用可能になったら未送信ルートを再送するなどの調整を行う
+ *
+ * 4. advertise()
+ *    - ReadvertiseDestination へ実際の "advertise" コマンドを送信
+ *
+ * 5. withdraw()
+ *    - ReadvertiseDestination へ "withdraw" コマンドを送信
+ *
+ * ◆まとめ
+ * Readvertise は「RIB → ポリシー判定 → 適切な宛先へ再広告」という
+ * 一連の処理を統括する中心的クラスであり、NDN の動的経路再広告機構の
+ * コアロジックを構成する。
+ */
+
 namespace nfd::rib {
 
 /** \brief Readvertise a subset of routes to a destination according to a policy.

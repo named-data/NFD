@@ -34,6 +34,20 @@
 
 #include <map>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Link-Layer Packet Reassembler Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * フラグメント化されたネットワーク層パケットを再構築する
+ * LpReassembler クラスを定義します。
+ *
+ * LpFragmenter によって分割された LpPacket を受信し、
+ * 元のネットワーク層パケットに再構成します。
+ * 再構成中のタイムアウトや最大フラグメント数もオプションで制御可能です。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

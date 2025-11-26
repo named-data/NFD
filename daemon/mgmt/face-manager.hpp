@@ -32,6 +32,41 @@
 
 #include <map>
 
+/*
+ * FaceManager.hpp
+ *
+ * 概要:
+ *   FaceManager は NFD (Named Data Networking Forwarding Daemon) における
+ *   Face（通信エンドポイント）管理用のクラスです。
+ *   NFD Management Protocol に準拠し、Face の作成・更新・削除や状態通知、情報取得を行います。
+ *
+ * 主な役割:
+ *   - Face の作成、更新、削除 (管理コマンドの処理)
+ *   - Face およびチャネルの一覧提供 (StatusDataset)
+ *   - Face の状態変化やイベントの通知 (NotificationStream)
+ *
+ * 特徴:
+ *   - createFace(), updateFace(), destroyFace() で Face の制御操作を実行
+ *   - listFaces(), listChannels(), queryFaces() で Face 情報やチャネル情報を提供
+ *   - notifyFaceEvent() で Face イベント（追加・削除・状態変化）を通知
+ *   - FaceSystem と FaceTable の参照を利用して Face の管理を行う
+ *   - Face ごとの状態変化シグナルを管理し、必要に応じて通知を発行
+ *
+ * 内部構造:
+ *   - m_faceSystem: 管理対象の FaceSystem への参照
+ *   - m_faceTable: Face の登録テーブルへの参照
+ *   - m_postNotification: NFD 管理プロトコルで通知を送信するためのオブジェクト
+ *   - m_faceAddConn / m_faceRemoveConn: Face の追加・削除イベントのシグナル接続
+ *   - m_faceStateChangeConn: Face ごとの状態変化シグナル接続を保持
+ *
+ * 参考:
+ *   - NFD Management Protocol Wiki: https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
+ *
+ * 注意点:
+ *   - Face 作成後の成功ハンドリングは afterCreateFaceSuccess() で行う
+ *   - Face の状態変化やイベント通知は signal::ScopedConnection で接続管理
+ */
+
 namespace nfd {
 
 /**

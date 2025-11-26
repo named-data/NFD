@@ -32,6 +32,49 @@
 #error "Cannot include this file when libpcap is not available"
 #endif
 
+/*
+ * PcapHelper.hpp
+ *
+ * 概要:
+ *   PcapHelper は NFD (Named Data Networking Forwarding Daemon) における
+ *   libpcap ハンドルのラッパークラスです。ネットワークインタフェースからの
+ *   パケットキャプチャを簡単に扱えるように設計されています。
+ *
+ * 主な用途:
+ *   - libpcap を使ったライブパケットキャプチャ
+ *   - NFD 内でのパケット解析やデバッグ
+ *   - BPF フィルタを用いたパケット選別
+ *
+ * 動作の特徴:
+ *   - コンストラクタで指定したネットワークインタフェースに対して libpcap コンテキストを作成
+ *   - activate() によりパケットキャプチャを開始し、リンク層ヘッダタイプ (DLT) を設定可能
+ *   - getFd() で select()/poll() に利用できるファイルディスクリプタを取得可能
+ *   - readNextPacket() で次のパケットを取得し、パケットデータを read-only で返す
+ *   - getNDropped() でカーネル側でドロップされたパケット数を取得可能
+ *   - setPacketFilter() により BPF フィルタを適用して不要なパケットを除外可能
+ *   - close() によりキャプチャを終了しハンドルを解放
+ *
+ * エラー処理:
+ *   - PcapHelper::Error をスローすることで libpcap のエラーをラップ
+ *   - getLastError() で直近の libpcap エラーを文字列として取得可能
+ *
+ * 使用例:
+ *   try {
+ *     PcapHelper pcap("eth0");
+ *     pcap.activate(DLT_EN10MB);
+ *     pcap.setPacketFilter("udp port 6363");
+ *     auto [packet, err] = pcap.readNextPacket();
+ *     // packet を処理
+ *   } catch (const PcapHelper::Error& e) {
+ *     std::cerr << "Pcap error: " << e.what() << std::endl;
+ *   }
+ *
+ * 注意点:
+ *   - libpcap がインストールされていない環境ではコンパイルできない (#error 指定)
+ *   - readNextPacket() の返すデータは次回呼び出しまで有効
+ *   - activate() 呼び出し前に getFd() や setPacketFilter() を呼ぶと未定義動作
+ */
+
 // forward declarations
 struct pcap;
 typedef pcap pcap_t;

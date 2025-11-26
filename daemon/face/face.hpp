@@ -30,6 +30,33 @@
 #include "link-service.hpp"
 #include "transport.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Face System Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * FaceSystem クラスの定義を提供します。
+ *
+ * FaceSystem は NFD の Face サブシステムのエントリーポイントであり、
+ * すべての ProtocolFactory オブジェクトを所有します。
+ *
+ * サブシステムの構造:
+ *  FaceSystem
+ *    └── ProtocolFactory
+ *         └── Channel
+ *              └── Face
+ *
+ * 主な機能:
+ *  - ProtocolFactory の管理と検索（ID または FaceUri スキームによる）
+ *  - FaceTable へのアクセス
+ *  - 設定ファイル (ConfigFile) に基づく Face サブシステム設定の適用
+ *
+ * 提供される型:
+ *  - GeneralConfig: 一般設定（例: 混雑制御マークの有効化）
+ *  - ConfigContext: ProtocolFactory 設定処理用コンテキスト
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd {
 namespace face {
 

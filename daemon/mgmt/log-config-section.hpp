@@ -28,6 +28,37 @@
 
 #include "common/config-file.hpp"
 
+/*
+ * LogConfigSection.hpp
+ *
+ * 概要:
+ *   このファイルは、NFD (Named Data Networking Forwarding Daemon) における
+ *   ログ設定 (Logging Configuration) を担当する関数の宣言を提供します。
+ *   NFD の設定ファイル (ConfigFile) に「log」セクションを適用するために
+ *   使用されます。
+ *
+ * 主な役割:
+ *   - ログ出力に関する設定項目を ConfigFile に登録する。
+ *   - ロギングシステムの初期設定を可能にする。
+ *
+ * 提供機能:
+ *   - setConfigFile():
+ *       ConfigFile オブジェクトに対して、ログ設定セクションを追加する。
+ *       ログレベルやログ出力先などの設定内容を関連付ける。
+ *
+ * 特徴:
+ *   - 実際のログ処理機能は担当せず、
+ *     設定ファイルとの紐付けのみを責務とする。
+ *   - nfd::log 名前空間内で定義され、
+ *     他の設定セクションと明確に分離されている。
+ *
+ * 使用タイミング:
+ *   - NFD 起動時または設定ファイル再読み込み時に呼び出される。
+ *
+ * 注意:
+ *   - 設定項目の詳細なバリデーションは ConfigFile に依存する。
+ */
+
 namespace nfd::log {
 
 void

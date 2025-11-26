@@ -28,6 +28,35 @@
 
 #include "transport.hpp"
 
+/*
+ * NullTransport.hpp
+ *
+ * 概要:
+ *   NullTransport は Named Data Networking Forwarding Daemon (NFD) における
+ *   Transport の派生クラスで、すべてのパケット送信を無効化します。
+ *
+ * 主な用途:
+ *   - 物理リンクや実際のネットワークを使用しない Face のバックエンドとして使用
+ *   - デバッグやテスト用に、ネットワーク送受信を伴わない Transport を提供
+ *
+ * 動作の特徴:
+ *   - doSend() メソッドは何もせず、送信パケットはすべて破棄
+ *   - doClose() は TransportState を CLOSED に設定するのみ
+ *   - 実際のネットワーク通信を行わないため、遅延や障害の影響を受けない
+ *
+ * 関連:
+ *   - Face と組み合わせることで、完全に破棄専用の NullFace/NullTransport を構築可能
+ *   - NullLinkService と同様に、テスト用やデバッグ用に利用
+ *
+ * 使用例:
+ *   auto nullTransport = std::make_shared<NullTransport>();
+ *   // この transport を Face にセットすれば、すべての送信が破棄される
+ *
+ * 注意点:
+ *   - 実際のパケット送信は行わないため、運用ネットワークでの使用は不可
+ *   - 完全に「破棄専用」の Transport として設計されている
+ */
+
 namespace nfd::face {
 
 /** \brief A Transport that drops every packet.

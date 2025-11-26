@@ -26,6 +26,46 @@
 #ifndef NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
 #define NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
 
+/*
+ * 【FaceEndpoint クラスの概要】
+ *
+ * FaceEndpoint は、Forwarder 内でパケットの入出力に使用される
+ * 「Face（通信インタフェース）＋通信エンドポイント」の組を表現するクラスである。
+ *
+ * Face とは？
+ *   - アプリケーションやネットワークと接続する通信口
+ *   - Interest / Data / Nack の送受信単位となる
+ *
+ * EndpointId とは？
+ *   - Face 内のより細かい識別子
+ *   - 同一 Face 上の複数の経路識別に利用される場合がある
+ *
+ * 【用途】
+ *   - Forwarder のパイプライン（例：onIncomingInterest）で
+ *     「どの Face のどのエンドポイントから受信したか」を明確に示す
+ *
+ *   - ログ出力やデバッグ時に、
+ *     Face と EndpointId を組で表示可能にする（operator<< による出力）
+ *
+ * 【設計ポイント】
+ *   - Face 参照を保持（所有権は持たない）
+ *   - EndpointId は const として固定し不変性を保障
+ *   - print() メソッドによりオブジェクトの可視化をサポート
+ *
+ * 【Forwarder との関係】
+ *   - 受信処理では ingress（入力元）
+ *   - 送信処理では egress（送信先）
+ *   を表すために使われる
+ *
+ * 例：
+ *   onIncomingInterest(const Interest&, const FaceEndpoint& ingress)
+ *   → 「どこから届いたのか」が FaceEndpoint で明示される
+ *
+ * 【まとめ】
+ * FaceEndpoint は、NDN ノード内のパケット伝達経路を
+ * Face単位より細かく表現し、Forwarder の正確な入出力管理に寄与する。
+ */
+
 #include "face.hpp"
 
 namespace nfd {

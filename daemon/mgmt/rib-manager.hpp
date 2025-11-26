@@ -35,6 +35,58 @@
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+/*
+ * RibManager.hpp
+ *
+ * 概要:
+ *   本ファイルは、NFD (Named Data Networking Forwarding Daemon) の
+ *   RIB (Routing Information Base) 管理機能を実装するクラスを提供する。
+ *   RIB Manager は、NFD Management Protocol における `rib/*` コマンド処理を担当し、
+ *   経路情報の登録・削除・取得、Prefix Announcement による自己学習（Self-learning）
+ *   支援を行う。
+ *
+ * 主な機能:
+ *   - rib/register : 経路エントリの追加（RIB/FIB 更新）
+ *   - rib/unregister : 経路エントリの削除
+ *   - rib/list : 登録済み経路情報の取得
+ *   - rib/announce : Prefix Announcement 処理
+ *   - /localhop/nfd/rib による管理コマンド受付の制御（セキュリティ設定）
+ *   - 自己学習による経路更新 (slAnnounce, slRenew, slFindAnn)
+ *   - Active Face 監視および無効 Face の削除
+ *
+ * Self-learning 対応:
+ *   - Prefix Announcement を基に経路を動的に追加・更新
+ *   - 検証失敗、期限切れ、エントリ未検出等に応じた結果通知
+ *
+ * セキュリティ:
+ *   - localhost_security 設定 : ローカルのみ管理可能
+ *   - localhop_security 設定 : /localhop/nfd/rib で遠隔管理許可
+ *   - prefix_announcement_validation 設定 : Prefix Announcement 検証
+ *
+ * 使用される主なクラス/モジュール:
+ *   - rib::Rib : RIB 本体
+ *   - Controller : NFD 制御命令の送信
+ *   - Dispatcher : コマンド登録およびディスパッチ
+ *   - FaceMonitor : Active Face 情報の取得
+ *   - ValidatorConfig : コマンド/Announcement 検証
+ *
+ * 特徴:
+ *   - ManagerBase の派生クラスとして動作し、共通管理インタフェースを継承
+ *   - addRoute, beginRibUpdate による非同期 RIB 更新
+ *   - 公開定数 LOCALHOP_TOP_PREFIX = "/localhop/nfd"
+ *   - テスト向け NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE による可視性制御
+ *
+ * 注意点:
+ *   - self-learning の同時操作競合に起因する不整合が既知の問題として存在
+ *   - localhop 利用時は適切な信頼設定が不可欠
+ *
+ * 関連仕様:
+ *   https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
+ *
+ * このクラスにより、管理者はネットワーク環境の動的変化に対応した
+ * RIB/FIB 維持と、NFD の経路管理をセキュアに行える。
+ */
+
 namespace nfd {
 
 namespace rib {

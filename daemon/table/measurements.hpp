@@ -31,6 +31,82 @@
 
 #include <functional>
 
+/*
+ * measurements.hpp 解説
+ *
+ * このファイルは NFD (Named Data Networking Forwarding Daemon) の
+ * Measurements Table を定義している。
+ *
+ * Measurements Table の役割:
+ * - Forwarding Strategy が名前プレフィックスごとに計測・学習した情報
+ *   （遅延、成功率、Face の優先度など）を保存するデータベース。
+ * - 情報は StrategyInfo を継承するクラスとして格納される。
+ * - 名前階層ごとに探索でき、最長一致探索が可能（Longest Prefix Match）。
+ *
+ * 関連概念:
+ * - FIB と類似した階層構造だが、「制御情報や学習情報」を保持する点が異なる。
+ * - PIT/FIB と連携し、より適切な転送戦略を実現するための補助機能。
+ *
+ * ----------------------------------------------
+ * 主なメンバ変数
+ * ----------------------------------------------
+ * - NameTree& m_nameTree:
+ *     名前階層を表す NameTree を参照し、Measurements エントリを管理。
+ *
+ * - size_t m_nItems:
+ *     エントリ数。メモリ管理などに利用。
+ *
+ * ----------------------------------------------
+ * EntryPredicate:
+ * - Entry を条件付きで受け入れるフィルタ関数型。
+ * - Strategy 情報の有無などで探索対象を絞る場合に利用。
+ *
+ * Examples:
+ *   AnyEntry: すべての Entry を有効
+ *   EntryWithStrategyInfo<T>: 特定の StrategyInfo<T> が存在する Entry のみ一致
+ *
+ * ----------------------------------------------
+ * 主なメソッド
+ * ----------------------------------------------
+ * - get(const Name&):
+ *     指定した名前のエントリを取得、存在しなければ追加。
+ *     深さ制限 (getMaxDepth) を超える場合は切り詰める。
+ *
+ * - get(const fib::Entry&) / get(const pit::Entry&):
+ *     FIB / PIT の情報から Measurements エントリを取得。
+ *
+ * - getParent(const Entry&):
+ *     親階層の Measurements エントリを参照。
+ *
+ * - findLongestPrefixMatch(...):
+ *     名前の最長一致検索。
+ *     EntryPredicate を指定することで条件検索が可能。
+ *
+ * - findExactMatch(const Name&):
+ *     完全一致するエントリを返す。なければ nullptr。
+ *
+ * - extendLifetime(Entry&, lifetime):
+ *     エントリの有効期限を延長。自動クリーンアップを調整。
+ *
+ * - size():
+ *     現在のエントリ数を返す。
+ *
+ * ----------------------------------------------
+ * 内部処理
+ * ----------------------------------------------
+ * - cleanup(): 期限切れのエントリを削除。
+ * - findLongestPrefixMatchImpl(): LPM 探索内部処理。
+ * - get(name_tree::Entry&): NameTree のエントリを Measurements Entry に変換。
+ *
+ * ----------------------------------------------
+ * 使用例
+ * ----------------------------------------------
+ *   Measurements ms(nameTree);
+ *   auto& e = ms.get(Name("/example/test"));
+ *   ms.extendLifetime(e, 1_s);
+ *   auto* match = ms.findLongestPrefixMatch(Name("/example"));
+ */
+
 namespace nfd {
 
 namespace fib {

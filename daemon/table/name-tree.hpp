@@ -28,6 +28,63 @@
 
 #include "name-tree-iterator.hpp"
 
+/*
+ * NameTree.hpp 解説
+ *
+ * 【概要】
+ * NameTreeクラスは、NFD（Named Data Networking Forwarding Daemon）で
+ * FIB（Forwarding Information Base）、PIT（Pending Interest Table）、 
+ * StrategyChoice、Measurements など複数のテーブルで共通に使用される
+ * 名前ベースのインデックス構造を提供する。
+ *
+ * 名前（Name）を階層構造の木として管理し、効率的な検索、挿入、
+ * 削除、プレフィックスマッチングを可能にする。
+ *
+ * 【主な機能】
+ * 1. lookup()
+ *    - 名前からエントリを検索し、存在しなければ作成する
+ *    - 最大深さ(getMaxDepth())による制限で、名前が非常に長い場合の処理コストを抑制
+ *
+ * 2. getEntry()
+ *    - 特定のテーブルエントリに対応するNameTreeのEntryを取得
+ *    - エントリが接続されていなければnullptrを返す
+ *
+ * 3. eraseIfEmpty()
+ *    - エントリが空の場合に削除
+ *    - canEraseAncestors=trueの場合、祖先エントリも空なら削除
+ *
+ * 4. プレフィックスマッチング
+ *    - findExactMatch()：完全一致検索
+ *    - findLongestPrefixMatch()：最長プレフィックス一致
+ *    - findAllMatches()：すべてのプレフィックス一致
+ *
+ * 5. 列挙 (Enumeration)
+ *    - fullEnumerate()：全エントリの列挙
+ *    - partialEnumerate()：指定プレフィックス以下のエントリ列挙
+ *    - begin()/end()：C++標準イテレータ互換で列挙可能
+ *
+ * 【内部構造】
+ * - m_ht: Hashtable型のメンバで、エントリをハッシュテーブルとして管理
+ * - Entry: NameTree内のノード構造。各テーブルの情報を保持
+ * - 非コピー可能(noncopyable)として実装され、コピーを禁止
+ *
+ * 【設計意図】
+ * - 名前階層を木構造で表現することで、効率的な最長一致検索や
+ *   全プレフィックス検索を可能にしている
+ * - テーブルエントリとの結合により、FIBやPIT、StrategyChoice、測定データ
+ *   を同一の構造で扱える
+ * - イテレータや検索アルゴリズムは既存のエントリに影響を与えず安全に動作
+ *
+ * 【注意点】
+ * - lookup時のprefixLenはNameサイズとgetMaxDepth()を超えないこと
+ * - findLongestPrefixMatch()やgetEntry()は、正しく接続されていないエントリでは未定義動作
+ * - 列挙中にエントリを挿入/削除するとスキップや重複訪問の可能性がある
+ *
+ * 【用途】
+ * - NFDの名前ベースルーティングにおける中心的データ構造
+ * - 名前階層に基づくルーティング、キャッシュ、戦略選択、測定に活用
+ */
+
 namespace nfd {
 namespace name_tree {
 

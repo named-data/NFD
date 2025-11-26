@@ -28,6 +28,36 @@
 
 #include "manager-base.hpp"
 
+/*
+ * FibManager.hpp
+ *
+ * 概要:
+ *   FibManager は NFD (Named Data Networking Forwarding Daemon) における
+ *   FIB（Forwarding Information Base）管理用のクラスです。
+ *   NFD Management Protocol に準拠し、FIB の次ホップ追加・削除や情報取得を行います。
+ *
+ * 主な役割:
+ *   - FIB エントリの次ホップ追加 (addNextHop)
+ *   - FIB エントリの次ホップ削除 (removeNextHop)
+ *   - FIB の一覧取得 (listEntries)
+ *
+ * 特徴:
+ *   - Interest および ControlParameters を用いて管理コマンドを処理
+ *   - FIB の状態を管理し、必要に応じて FaceTable を参照して登録情報を取得
+ *   - 自己登録用の Face 設定をサポート (setFaceForSelfRegistration)
+ *
+ * 内部構造:
+ *   - m_fib: 管理対象の FIB への参照
+ *   - m_faceTable: Face の登録テーブルへの参照
+ *
+ * 参考:
+ *   - NFD Management Protocol Wiki: https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
+ *
+ * 注意点:
+ *   - コマンド処理後の結果通知は CommandContinuation を通じて行う
+ *   - addNextHop や removeNextHop は Interest パケットに基づいて実行される
+ */
+
 namespace nfd {
 
 namespace fib {

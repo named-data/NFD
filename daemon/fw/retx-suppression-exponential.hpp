@@ -29,6 +29,51 @@
 #include "retx-suppression.hpp"
 #include "strategy.hpp"
 
+/* -------------------------------------------------------------------------
+ * RetxSuppressionExponential.hpp の解説
+ *
+ * ■ 概要
+ *   NFD における Interest 再送の抑制アルゴリズムの一種。
+ *   「指数バックオフ」により再送を抑制する。
+ *   再送回数が増えるほど、抑制間隔が指数的に伸びる。
+ *
+ * ■ クラス: RetxSuppressionExponential
+ *
+ * public:
+ *   - RetxSuppressionExponential(Duration initialInterval, Duration maxInterval, float multiplier)
+ *       - コンストラクタ
+ *       - initialInterval: 最初の抑制間隔（デフォルト 10ms）
+ *       - maxInterval: 抑制間隔の上限（デフォルト 250ms）
+ *       - multiplier: 再送ごとに間隔を増やす倍率（デフォルト 2.0）
+ *
+ *   - RetxSuppressionResult decidePerPitEntry(pit::Entry& pitEntry)
+ *       - PIT エントリ単位で再送かどうか判定
+ *
+ *   - RetxSuppressionResult decidePerUpstream(pit::Entry& pitEntry, Face& outFace)
+ *       - 上流フェース単位で再送かどうか判定
+ *
+ *   - void incrementIntervalForOutRecord(pit::OutRecord& outRecord)
+ *       - OutRecord の抑制間隔を増加させる
+ *
+ *   - static std::unique_ptr<RetxSuppressionExponential> construct(const StrategyParameters& params)
+ *       - Strategy パラメータから構築するユーティリティ関数
+ *
+ * public static:
+ *   - DEFAULT_INITIAL_INTERVAL = 10ms
+ *   - DEFAULT_MAX_INTERVAL = 250ms
+ *   - DEFAULT_MULTIPLIER = 2.0
+ *
+ * private (テスト用に公開):
+ *   - m_initialInterval, m_maxInterval, m_multiplier
+ *
+ * ■ 動作のイメージ
+ *   - i 回目の再送では、前回送信から `min(initialInterval * multiplier^(i-1), maxInterval)` 内なら抑制
+ *   - 再送間隔が指数的に増えるため、ループや洪水の影響を効率的に軽減
+ *
+ * ■ まとめ
+ *   - 固定時間抑制より柔軟で、ネットワーク状況に応じて再送の伝播を抑制
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

@@ -33,6 +33,48 @@
 
 #include <map>
 
+/*
+ * 【FaceTable クラスの概要】
+ *
+ * FaceTable は、NFD（Named Data Networking Forwarding Daemon）に
+ * 現在存在するすべての Face（通信インタフェース）を保持・管理する
+ * データ構造である。
+ *
+ * NDN では、通信は Face（＝ネットワーク接続口）単位で行われ、
+ * Forwarder は FaceTable を参照して Interest / Data を送受信する。
+ *
+ * 【主な機能】
+ *   - add() / addReserved() で Face を追加
+ *     共有所有権（shared_ptr）を保持し、Face のライフサイクル管理を補助
+ *
+ *   - get(faceId) で Face を ID に基づいて取得
+ *     ルーティング処理での転送先決定に利用
+ *
+ *   - size() で登録 Face 数を取得
+ *
+ *   - begin() / end() による列挙（イテレーション）
+ *     → Forwarder や Strategy が全 Face を対象に操作可能
+ *
+ * 【FaceId に関する注意】
+ *   - FaceId は自動採番される（m_lastFaceId により管理）
+ *   - addReserved() の場合、指定した FaceId を用いる
+ *     → 特殊用途（アプリ Face など）に利用
+ *
+ * 【イベント通知（シグナル）】
+ *   - afterAdd   : Face 追加直後に発火（新規接続の通知）
+ *   - beforeRemove : Face 削除直前に発火（終了処理に利用）
+ *
+ * 【設計上のポイント】
+ *   - noncopyable：コピー禁止（共有管理の整合性維持のため）
+ *   - map による FaceId → Face の高速参照
+ *   - shared_ptr 管理により Face 破棄の安全性を担保
+ *
+ * 【まとめ】
+ * FaceTable は NFD の「インタフェース管理台帳」であり、
+ * Forwarder のフォワーディング処理を支える基盤コンポーネント。
+ * 全 Face の一元管理により、正確な転送制御と終了処理を可能にしている。
+ */
+
 namespace nfd {
 
 /**

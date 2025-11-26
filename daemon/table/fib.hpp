@@ -31,6 +31,66 @@
 
 #include <boost/range/adaptor/transformed.hpp>
 
+/*
+ * fib.hpp 解説
+ *
+ * このヘッダファイルは NFD (Named Data Networking Forwarding Daemon) における
+ * Forwarding Information Base (FIB) を定義しています。
+ * FIB はネットワークの転送情報を保持するテーブルで、名前ベースのルーティングに
+ * 使用されます。
+ *
+ * クラス Fib の役割:
+ * - 名前に基づいてパケットを転送するための情報を管理する。
+ * - 長さ優先マッチ (Longest Prefix Match, LPM) による検索を提供。
+ * - FIB エントリの追加、削除、NextHop の追加や更新を行う。
+ * - FIB 内のエントリの列挙（イテレーション）を可能にする。
+ *
+ * 主要メンバ:
+ * - NameTree& m_nameTree: 名前ツリーの参照。FIB エントリを階層的に管理。
+ * - size_t m_nItems: FIB に登録されているエントリ数。
+ * - static const unique_ptr<Entry> s_emptyEntry: マッチしない場合に返される空エントリ。
+ *
+ * 主要メソッド:
+ * - size(): 登録されている FIB エントリ数を返す。
+ *
+ * - findLongestPrefixMatch(): 指定された名前に対して最長一致の FIB エントリを返す。
+ *   オーバーロードにより Name、pit::Entry、measurements::Entry に対応。
+ *
+ * - findExactMatch(): 名前に対して完全一致する FIB エントリを返す。
+ *
+ * - insert(): 指定された名前の FIB エントリを検索し、存在しなければ新規追加。
+ *   戻り値はエントリポインタと新規追加フラグのペア。
+ *
+ * - erase(): 指定された名前またはエントリを削除。
+ *
+ * - addOrUpdateNextHop(): FIB エントリに NextHop を追加する。既存の場合はコストを更新。
+ *
+ * - removeNextHop(): 指定した Face に対応する NextHop を削除。
+ *   削除結果に応じて NO_SUCH_NEXTHOP / NEXTHOP_REMOVED / FIB_ENTRY_REMOVED を返す。
+ *
+ * イテレーション:
+ * - begin() / end() によって FIB 内のエントリを列挙可能。
+ * - 列挙中に FIB を変更すると未定義動作の可能性あり。
+ *
+ * シグナル:
+ * - afterNewNextHop: 新しい NextHop が追加された際に通知を行うためのシグナル。
+ *
+ * 内部処理:
+ * - findLongestPrefixMatchImpl(): テンプレート実装により LPM 検索の内部処理を共通化。
+ * - erase(name_tree::Entry*, bool): 内部で FIB エントリを削除する際に使用。
+ * - getRange(): NameTree をラップして FIB エントリの範囲を返す。
+ *
+ * 注意:
+ * - FIB エントリの最大深さは NameTree::getMaxDepth() で制限されている。
+ * - FIB エントリは NextHop を持つことができ、各 NextHop は Face とコスト情報を保持。
+ *
+ * 使用例:
+ *   Fib fib(nameTree);
+ *   auto [entry, isNew] = fib.insert(someName);
+ *   fib.addOrUpdateNextHop(*entry, face, 10);
+ *   auto match = fib.findLongestPrefixMatch(pitEntry);
+ */
+
 namespace nfd {
 
 namespace measurements {

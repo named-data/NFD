@@ -33,6 +33,61 @@
 
 #include <functional>
 
+/*
+ * NameTree Iterator.hpp 解説
+ *
+ * 【概要】
+ * NameTreeのイテレーション（列挙）機能を提供する。
+ * NameTree内のエントリを順番に走査するためのクラスとヘルパー構造体を定義。
+ * fullEnumerate, partialEnumerate, findAllMatchesなどで使用される。
+ *
+ * 【主な構成要素】
+ * 1. EntrySelector / AnyEntry
+ *    - エントリを受け入れるか拒否する述語関数
+ *    - AnyEntryは全てのEntryを受け入れるデフォルト
+ *
+ * 2. EntrySubTreeSelector / AnyEntrySubTree
+ *    - エントリおよび子ノードを受け入れるかどうかを返す述語
+ *    - std::pair<bool,bool>で返却
+ *       first = エントリを受け入れるか
+ *       second = 子ノードを訪問するか
+ *    - AnyEntrySubTreeは全てのEntryと子を受け入れる
+ *
+ * 3. Iteratorクラス
+ *    - NameTreeの前方イテレータ
+ *    - boost::forward_iterator_helperを継承
+ *    - operator*()で現在のEntryを取得
+ *    - operator++()で次のEntryに進む
+ *    - m_impl: 列挙処理の実装を保持（nullptrならend）
+ *    - m_entry: 現在のEntry
+ *    - m_ref: 列挙実装用の参照Entry（部分列挙やプレフィックスマッチで使用）
+ *    - m_state: 列挙処理状態
+ *
+ * 4. EnumerationImplクラス
+ *    - 列挙処理の抽象基底クラス
+ *    - advance(Iterator&)純粋仮想関数で次のEntryへ進める
+ *    - nt, ht: 列挙対象のNameTreeとHashtable参照
+ *
+ * 5. 派生列挙実装
+ *    - FullEnumerationImpl: 全Entryを列挙
+ *    - PartialEnumerationImpl: 指定プレフィックス以下の部分列挙
+ *    - PrefixMatchImpl: 最長プレフィックスマッチしたEntryからの列挙
+ *
+ * 6. Range
+ *    - boost::iterator_range<Iterator>を用いた前方レンジ型
+ *    - begin()/end()を持ち、range-based forで利用可能
+ *
+ * 【設計意図】
+ * - NameTreeの全Entry、部分ツリー、プレフィックスマッチの列挙を統一的に扱う
+ * - 述語関数による柔軟なフィルタリングが可能
+ * - Iteratorは列挙中に安全にエントリを操作できる構造
+ *
+ * 【注意点】
+ * - IteratorやEnumerationImplは列挙中にエントリが追加・削除されると
+ *   挙動が未定義になる場合がある
+ * - PartialEnumerationImplではm_stateのLSBが子ノード訪問フラグとして使用される
+ */
+
 namespace nfd::name_tree {
 
 class NameTree;

@@ -28,6 +28,42 @@
 
 #include "readvertised-route.hpp"
 
+/*
+ * このファイルは ReadvertiseDestination クラスの定義を含む。
+ * ReadvertiseDestination は、再広告（Readvertise）対象となる宛先を
+ * 抽象化したインタフェースクラス（基底クラス）である。
+ *
+ * ◆役割概要
+ * - 経路の再広告（追加・削除）機能のインタフェースを提供
+ * - 具体的な宛先（例: NFD RIB など）は派生クラスで実装する
+ * - 宛先が利用可能かどうかの状態管理も提供
+ *
+ * ◆主要機能（純粋仮想関数）
+ * 1. advertise()
+ *    - 指定された ReadvertisedRoute を宛先へ追加する処理を実装するための入口
+ *    - 成功時・失敗時にコールバックを実行
+ *
+ * 2. withdraw()
+ *    - 宛先から指定経路を削除するための入口
+ *    - 成功時・失敗時にコールバックを実行
+ *
+ * ◆可用性制御
+ * - isAvailable():
+ *     宛先が利用可能かどうかを返す
+ * - setAvailability():
+ *     利用可能状態を更新（protected：派生クラスから操作）
+ *
+ * ◆イベント通知
+ * - afterAvailabilityChange:
+ *     利用可能状態の変化時にシグナル通知（true=利用可能 / false=利用不可）
+ *
+ * ◆まとめ
+ * Readvertise（再広告）を行う際の
+ * 「宛先の抽象インタフェース」として設計された基底クラス。
+ * 利用可能状態の管理とイベント通知機能を備え、
+ * 具象クラスで実際の RIB 操作やネットワーク制御を実装する。
+ */
+
 namespace nfd::rib {
 
 /** \brief A destination to readvertise into.

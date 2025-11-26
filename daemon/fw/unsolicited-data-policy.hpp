@@ -32,6 +32,57 @@
 #include <map>
 #include <set>
 
+/*
+ * 【UnsolicitedDataPolicy の概要】
+ *
+ * 本クラスは、PIT に一致しない Data（＝ unsolicited Data）を受信した際に、
+ * それを ContentStore に格納するか、破棄するかを決定するための
+ * ポリシー（方針）を管理する仕組みを提供する。
+ *
+ * unsolicited Data とは？
+ *   - PIT に対応する Interest が存在しない状態で届いた Data
+ *   - 攻撃や無関係なパケットの可能性があるため扱いに注意が必要
+ *
+ * 【主な用途】
+ *   - Forwarder の Data 処理パイプライン（onIncomingData 内）で利用され、
+ *     unsolicited Data の安全かつ最適な取り扱いを制御する。
+ *
+ * 【UnsolicitedDataDecision】
+ *   - DROP  : Data を破棄する
+ *   - CACHE : ContentStore に登録する
+ *
+ * 【ポリシークラス】
+ *   以下の派生クラスが用意されており、
+ *   それぞれが Data の受信元に応じて判断を行う：
+ *
+ *   - DropAllUnsolicitedDataPolicy
+ *       全て破棄（セキュリティを最重視）
+ *
+ *   - AdmitLocalUnsolicitedDataPolicy
+ *       ローカル Face（アプリ等）からの Data をキャッシュ可とする
+ *
+ *   - AdmitNetworkUnsolicitedDataPolicy
+ *       ネットワーク側 Face の Data を許可
+ *
+ *   - AdmitAllUnsolicitedDataPolicy
+ *       全てキャッシュ（柔軟性を最優先）
+ *
+ * 【ポリシー登録と生成】
+ *   - registerPolicy() により名前と一緒にレジストリへ登録できる
+ *   - create(name) により Policy インスタンスを動的生成可能
+ *   - getPolicyNames() で利用可能ポリシー一覧取得可能
+ *
+ *   ※ POLICY_NAME により設定ファイルから指定可能
+ *
+ * 【デフォルト設定】
+ *   - DefaultUnsolicitedDataPolicy = DropAllUnsolicitedDataPolicy
+ *     → unsolicited Data は基本破棄（安全志向）
+ *
+ * 【まとめ】
+ * unsolicited Data の取り扱いは、性能とセキュリティのトレードオフとなる。
+ * 本ポリシー機構により、NFD の運用環境に応じて柔軟に設定変更できる。
+ */
+
 namespace nfd::fw {
 
 /**

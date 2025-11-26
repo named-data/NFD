@@ -29,6 +29,43 @@
 #include "retx-suppression.hpp"
 #include "table/pit-entry.hpp"
 
+/* -------------------------------------------------------------------------
+ * RetxSuppressionFixed.hpp の解説
+ *
+ * ■ 概要
+ *   NFD における Interest 再送の抑制アルゴリズムの一種。
+ *   「一定時間内の再送は抑制する」という単純なルールで
+ *   再送 Interest の転送を制御する。
+ *
+ * ■ クラス: RetxSuppressionFixed
+ *
+ * public:
+ *   - RetxSuppressionFixed(const time::milliseconds& minRetxInterval)
+ *       - コンストラクタ
+ *       - minRetxInterval: 再送とみなすまでの最小間隔（デフォルト 100ms）
+ *
+ *   - RetxSuppressionResult decidePerPitEntry(pit::Entry& pitEntry) const
+ *       - 指定した PIT エントリに基づき、受信 Interest が新規か再送かを判定
+ *       - 判定結果に応じて、NEW / FORWARD / SUPPRESS のいずれかを返す
+ *
+ * public static:
+ *   - DEFAULT_MIN_RETX_INTERVAL = 100ms
+ *       - デフォルトの再送抑制間隔
+ *
+ * private:
+ *   - m_minRetxInterval
+ *       - 再送とみなす最小間隔を保持
+ *
+ * ■ 動作のイメージ
+ *   - PIT に同じ Interest が登録されてから m_minRetxInterval 内に
+ *     再度同じ Interest が来た場合は SUPPRESS
+ *   - この時間を過ぎると再送として FORWARD される場合もある
+ *
+ * ■ まとめ
+ *   - 固定時間ルールによる簡単で効率的な再送抑制
+ *   - Interest のループや無駄な転送を減らす
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 
 /**

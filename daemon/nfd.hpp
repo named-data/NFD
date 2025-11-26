@@ -34,6 +34,60 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+/* -------------------------------------------------------------------------
+ * nfd.hpp の解説（NFD クラス定義）
+ *
+ * ■ 役割
+ *   - NFD (Named Data Networking Forwarding Daemon) の中心クラス
+ *   - NFD デーモンの各コンポーネント（FaceTable, FaceSystem, Forwarder 等）の生成と管理
+ *   - 設定ファイルの読み込み・再読み込み機能を提供
+ *   - 管理コマンドディスパッチャや各種 Manager (FaceManager, FibManager, CsManager, StrategyChoiceManager) を初期化
+ *   - 内部 Face や NetworkMonitor を利用して NFD の動作を統括
+ *
+ * ■ 主なコンストラクタ
+ *   - Nfd(const std::string& configFile, KeyChain& keyChain)
+ *       ・設定ファイルパスを用いた初期化
+ *   - Nfd(const ConfigSection& config, KeyChain& keyChain)
+ *       ・解析済み ConfigSection を使った初期化
+ *       ・NS-3 や Android など組み込み環境向け
+ *   - Nfd(KeyChain& keyChain)
+ *       ・内部用コンストラクタ
+ *
+ * ■ 主なメソッド
+ *   - initialize()
+ *       ・FaceTable、FaceSystem、Forwarder、各種 Manager を生成
+ *       ・ログ設定、ネットワーク監視、Face 初期化
+ *   - reloadConfigFile()
+ *       ・設定ファイル全体の再読み込み
+ *   - reloadConfigFileFaceSection()
+ *       ・FaceSystem 部分のみ再読み込み（マルチキャスト Face 再初期化用）
+ *   - configureLogging()
+ *       ・ログ設定ファイルの読み込みと初期化
+ *   - initializeManagement()
+ *       ・管理用 Dispatcher と Authenticator の生成
+ *       ・各種 Manager の生成
+ *       ・管理用 FIB エントリ追加
+ *
+ * ■ 主なメンバ変数
+ *   - m_configFile: 設定ファイルパス
+ *   - m_configSection: 解析済み設定
+ *   - m_faceTable: Face のテーブル
+ *   - m_faceSystem: Face の生成・管理システム
+ *   - m_forwarder: Forwarder 本体
+ *   - m_keyChain: NDN セキュリティ用 KeyChain
+ *   - m_internalFace, m_internalClientFace: 内部管理用 Face
+ *   - m_dispatcher: 管理コマンドディスパッチャ
+ *   - m_authenticator: 管理コマンド認証器
+ *   - m_forwarderStatusManager, m_faceManager, m_fibManager, m_csManager, m_strategyChoiceManager:
+ *       各種管理マネージャ
+ *   - m_netmon: ネットワーク監視オブジェクト
+ *   - m_reloadConfigEvent: 設定再読み込みイベント
+ *
+ * ■ まとめ
+ *   Nfd クラスは NFD の中心クラスとして、Forwarder や Face、管理マネージャを初期化・統括し、
+ *   設定ファイル管理やネットワーク監視まで行う。NFD デーモンの「脳」とも言える存在。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd {
 
 class FaceTable;

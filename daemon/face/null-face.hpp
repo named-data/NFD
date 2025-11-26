@@ -28,6 +28,38 @@
 
 #include "face.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Null Face Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルでは「Null Face」を提供します。
+ * Null Face は物理的なトランスポートを持たず、
+ * 送信されるすべてのパケットを破棄する特殊な Face です。
+ *
+ * 用途:
+ * - デバッグやテスト
+ * - 特定の Face の動作を無効化したい場合
+ * ---------------------------------------------------------------------------
+
+#ifndef NFD_DAEMON_FACE_NULL_FACE_HPP
+#define NFD_DAEMON_FACE_NULL_FACE_HPP
+
+#include "face.hpp"
+
+namespace nfd::face {
+
+ * \brief 物理トランスポートを持たず、全パケットを破棄する Face を生成
+ * \param uri Face の URI（省略時は "null://"）
+ * \return 生成された Face の shared_ptr
+ 
+shared_ptr<Face>
+makeNullFace(const FaceUri& uri = FaceUri("null://"));
+
+} // namespace nfd::face
+
+#endif // NFD_DAEMON_FACE_NULL_FACE_HPP
+*/
+
 namespace nfd::face {
 
 /**

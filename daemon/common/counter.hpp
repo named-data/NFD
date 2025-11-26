@@ -28,6 +28,51 @@
 
 #include "core/common.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Counter Classes
+ * ---------------------------------------------------------------------------
+ * 本ファイルでは、Named Data Networking Forwarding Daemon (NFD) における
+ * 各種カウンタを提供します。これらのカウンタはパケット数、バイト数、
+ * およびテーブルサイズなどの計測に使用されます。
+ *
+ * 特徴:
+ *  1. SimpleCounter
+ *     - 単純な整数値をラップした基本カウンタ
+ *     - コピー禁止 (noncopyable) により、誤ってコピーした場合のカウント
+ *       のズレを防止
+ *     - 暗黙的に整数として取得可能
+ *
+ *  2. PacketCounter
+ *     - パケット数カウンタ
+ *     - ++ 演算子で簡単にインクリメント可能
+ *
+ *  3. ByteCounter
+ *     - バイト数カウンタ
+ *     - += 演算子で任意のバイト数を加算可能
+ *
+ *  4. SizeCounter<T>
+ *     - テーブルサイズを監視するカウンタ
+ *     - T は size() メンバ関数を持つ型であることが前提
+ *     - observe() で監視対象のテーブルを設定可能
+ *     - カウント値は常に最新のテーブルサイズを反映
+ *
+ * 利用例:
+ *  PacketCounter pktCount;
+ *  ++pktCount;  // パケット1個カウント
+ *
+ *  ByteCounter byteCount;
+ *  byteCount += 1500;  // 1500バイト加算
+ *
+ *  SizeCounter<std::unordered_map<int,int>> tableSize(&table);
+ *  auto size = tableSize; // 現在のテーブルサイズを取得
+ *
+ * 注意:
+ *  - PacketCounter / ByteCounter はオーバーフローの可能性あり
+ *  - SizeCounter は observe() で対象テーブルを変更可能
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd {
 
 /**

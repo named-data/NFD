@@ -29,6 +29,64 @@
 #include "name-tree.hpp"
 #include "pit-entry.hpp"
 
+/*
+ * pit.hpp 解説
+ *
+ * このヘッダファイルは NFD (Named Data Networking Forwarding Daemon) における
+ * Pending Interest Table (PIT) を定義しています。
+ * PIT は、受信した Interest パケットの情報を保持し、対応する Data パケットが到着した際に
+ * 転送先に返すために使われます。
+ *
+ * 型定義:
+ * - DataMatchResult: Data パケットにマッチする PIT エントリをまとめた std::vector。
+ *
+ * クラス Iterator の役割:
+ * - PIT 内の全エントリを列挙するためのイテレータ。
+ * - NameTree 内の PIT エントリ群に対して順次アクセス可能。
+ * - operator*() により現在の PIT エントリを参照。
+ * - operator++() により次の PIT エントリに進む。
+ *
+ * クラス Pit の役割:
+ * - NFD の Interest Table を管理する。
+ * - Interest の登録、検索、削除、Data マッチングを提供。
+ *
+ * 主要メンバ:
+ * - NameTree& m_nameTree: 名前ツリーへの参照。PIT エントリを階層的に管理。
+ * - size_t m_nItems: 現在の PIT エントリ数。
+ *
+ * 主要メソッド:
+ * - size(): 登録されている PIT エントリ数を返す。
+ *
+ * - find(const Interest& interest): 指定 Interest と完全一致する PIT エントリを返す。
+ *   存在しない場合は nullptr。
+ *
+ * - insert(const Interest& interest): 指定 Interest の PIT エントリを挿入。
+ *   既存エントリがあればそれを返し、新規なら true のフラグを返す。
+ *
+ * - findAllDataMatches(const Data& data): Data パケットにマッチするすべての PIT エントリを返す。
+ *
+ * - erase(Entry* entry): 指定 PIT エントリを削除。
+ *
+ * - deleteInOutRecords(Entry* entry, const Face& face): 指定 Face に関連する
+ *   入力/出力レコードを削除。
+ *
+ * イテレーション:
+ * - const_iterator = Iterator を使用。
+ * - begin() / end() で PIT 内の全エントリを列挙可能。
+ * - 列挙中に FIB/PIT/Measurements/StrategyChoice の変更があると未定義動作になる。
+ *
+ * 内部処理:
+ * - erase(Entry*, bool): 内部で PIT エントリを削除する際に使用。
+ * - findOrInsert(const Interest&, bool): Interest に対応する PIT エントリを検索・挿入。
+ *   allowInsert フラグで新規挿入の可否を制御。
+ *
+ * 使用例:
+ *   Pit pit(nameTree);
+ *   auto [entry, isNew] = pit.insert(someInterest);
+ *   auto matches = pit.findAllDataMatches(someData);
+ *   pit.erase(entry.get());
+ */
+
 namespace nfd {
 namespace pit {
 

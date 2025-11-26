@@ -39,6 +39,73 @@
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
 
+/*
+ * forwarder.hpp
+ *
+ * 【概要】
+ *   - NFD (Named Data Networking Forwarding Daemon) の中心クラス
+ *   - 全てのテーブル（FIB, PIT, CS, Measurements など）を保持し、
+ *     Interest / Data / Nack のフォワーディング処理パイプラインを実装する
+ *
+ * 【Forwarder クラスの役割】
+ *   - NDN ノードの「フォワーディングエンジン」
+ *   - NFD の各種テーブルとフォワーディング戦略を統括する
+ *   - 受信パケットに応じて適切なパイプラインを実行
+ *
+ * 【保持している主要テーブル】
+ *   - FaceTable：接続されている Face（インタフェース）の一覧
+ *   - NameTree：名前階層構造
+ *   - Fib：フォワーディング情報ベース（ルーティング情報）
+ *   - Pit：Pending Interest Table（待ち状態の Interest）
+ *   - Cs：Content Store（キャッシュ）
+ *   - Measurements：性能測定データ
+ *   - StrategyChoice：名前空間ごとのフォワーディング戦略選択
+ *   - DeadNonceList：ループ防止用の Nonce 記録
+ *   - NetworkRegionTable：ネットワーク領域（地域）情報
+ *
+ * 【設定関連】
+ *   - setConfigFile(): forwarder セクションの設定読み込み
+ *   - Config 構造体には defaultHopLimit（Interest の hop-limit 初期値）を保持
+ *
+ * 【主要パイプライン（処理フロー）】
+ *
+ *   --- Interest 関連 ---
+ *   - onIncomingInterest(): Interest 受信時の入口
+ *   - onInterestLoop(): ループした Interest の処理
+ *   - onContentStoreMiss(): CS に存在しなかった場合
+ *   - onContentStoreHit(): CS にヒットした場合（Data が返せる）
+ *   - onOutgoingInterest(): Interest を上流へ転送する際の処理
+ *   - onInterestFinalize(): Interest の最終処理（PIT entry の cleanup など）
+ *
+ *   --- Data 関連 ---
+ *   - onIncomingData(): Data を受信した時の入口
+ *   - onDataUnsolicited(): 予期しない Data（Interest なし）を受信した場合
+ *   - onOutgoingData(): Data を下流へ転送
+ *
+ *   --- Nack 関連 ---
+ *   - onIncomingNack(): Nack 受信時の処理
+ *   - onOutgoingNack(): Nack 送信時の処理
+ *
+ *   --- その他 ---
+ *   - onDroppedInterest(): Interest をドロップした際の処理
+ *   - onNewNextHop(): 新しい NextHop が追加された際の更新通知
+ *
+ * 【内部処理メソッド】
+ *   - setExpiryTimer(): PIT entry のタイマー更新
+ *   - insertDeadNonceList(): Dead Nonce List へ Nonce を追加（ループ防止）
+ *   - processConfig(): 設定ファイルの forwarder セクションを処理
+ *
+ * 【設計ポイント】
+ *   - Forwarder は多くの処理をフォワーディング戦略（Strategy）に委譲
+ *   - Strategy は Forwarder のパイプラインにアクセス可能（friend 指定）
+ *   - NFD のフォワーディング動作の中心核となる部分
+ *
+ * 【まとめ】
+ *   - このヘッダは NFD の「心臓部」
+ *   - Interest / Data / Nack の受信から送信までの流れをすべて統括
+ *   - 各種テーブルと戦略が連携してフォワーディング機能を実現している
+ */
+
 namespace nfd {
 
 namespace fw {

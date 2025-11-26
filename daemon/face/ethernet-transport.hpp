@@ -33,6 +33,30 @@
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Ethernet Transport Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Ethernet ベースの Transport クラス定義を提供します。
+ *
+ * 主な目的:
+ *  - Ethernet フレーム送受信の共通処理を抽象化
+ *  - ペイロードの受信と TLV ブロック送信
+ *  - ネットワークインタフェース状態変化のハンドリング
+ *
+ * 提供されるクラス:
+ *  - nfd::face::EthernetTransport
+ *      - Ethernet フレームの送受信を行う基底クラス
+ *      - 受信ペイロード処理: receivePayload()
+ *      - フレーム送信: sendPacket()
+ *
+ * 注意:
+ *  - Boost.Asio の stream_descriptor と libpcap を利用
+ *  - NFD Transport 抽象クラスを継承
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

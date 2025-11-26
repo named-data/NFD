@@ -31,6 +31,30 @@
 #include <ndn-cxx/net/ethernet.hpp>
 #include <net/ethernet.h>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Ethernet Protocol Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Ethernet フレーム処理関連の定義を提供します。
+ *
+ * 主な目的:
+ *  - Ethernet フレームヘッダのチェック
+ *  - ローカルおよび宛先アドレスに基づくフレームの検証
+ *
+ * 提供される関数:
+ *  - nfd::ethernet::checkFrameHeader(span<const uint8_t> packet,
+ *                                     const Address& localAddr,
+ *                                     const Address& destAddr)
+ *      - Ethernet フレームのヘッダを解析
+ *      - 正常な場合は ether_header とペイロードを返す
+ *
+ * 注意:
+ *  - ndn::ethernet 名前空間を利用
+ *  - Linux の net/ethernet.h の構造体を使用
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::ethernet {
 
 using namespace ndn::ethernet;

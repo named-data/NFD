@@ -66,6 +66,58 @@
 #include <stdint.h>
 #include <utility>
 
+/* -------------------------------------------------------------------------
+ * CityHash.hpp の解説
+ *
+ * ■ 概要
+ *   - Google が開発した非暗号用の高速ハッシュ関数ライブラリ
+ *   - 小～中規模の文字列に対して高速かつ高品質のハッシュ値を生成
+ *   - 特に 64-bit x86 環境での性能が優れる
+ *
+ * ■ 特徴
+ *   - 小さな文字列向け：CityHash64 が最速クラス
+ *   - 大きな文字列向け：CityHash128 / CityHashCrc128 が高速
+ *   - Murmur3 や SpookyHash と競合
+ *   - 暗号用ではない（予測困難性は保証されない）
+ *   - Big-endian は軽くしかテストされていない
+ *   - 小規模なアンアラインドアクセスにペナルティの少ない CPU に最適
+ *
+ * ■ 型定義
+ *
+ *   - uint8, uint32, uint64 : 標準型に対する別名
+ *   - uint128 : std::pair<uint64, uint64> で 128-bit を表現
+ *
+ * ■ ユーティリティ関数
+ *
+ *   - Uint128Low64(x) / Uint128High64(x)
+ *       → uint128 の下位/上位 64bit を取得
+ *
+ * ■ ハッシュ関数
+ *
+ *   - CityHash64(const char* buf, size_t len)
+ *       → 64-bit ハッシュ
+ *   - CityHash64WithSeed(const char* buf, size_t len, uint64 seed)
+ *       → シード付き 64-bit ハッシュ
+ *   - CityHash64WithSeeds(const char* buf, size_t len, uint64 seed0, uint64 seed1)
+ *       → 2つのシード付き 64-bit ハッシュ
+ *   - CityHash128(const char* s, size_t len)
+ *       → 128-bit ハッシュ
+ *   - CityHash128WithSeed(const char* s, size_t len, uint128 seed)
+ *       → 128-bit シード付きハッシュ
+ *   - CityHash32(const char* buf, size_t len)
+ *       → 32-bit ハッシュ（32-bit バイナリ向け）
+ *
+ * ■ 補助関数
+ *
+ *   - Hash128to64(const uint128& x)
+ *       → 128-bit を 64-bit に圧縮する Murmur 系ハッシュ
+ *
+ * ■ 注意点
+ *   - a + b のハッシュを a と b のハッシュから直接計算することはできない
+ *   - 暗号用途には不向き
+ *
+ * ------------------------------------------------------------------------- */
+
 typedef uint8_t uint8;
 typedef uint32_t uint32;
 typedef uint64_t uint64;

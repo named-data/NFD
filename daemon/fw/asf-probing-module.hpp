@@ -28,6 +28,55 @@
 
 #include "asf-measurements.hpp"
 
+/* -------------------------------------------------------------------------
+ * AsfProbingModule.hpp の解説
+ *
+ * ■ 概要
+ *   - ASF（Adaptive SRTT-based Forwarding）戦略で利用されるプローブ機能。
+ *   - FIB に登録された Face の性能（RTT、SRTT、コストなど）を定期的に測定。
+ *   - 測定結果は ASF の経路選択に活用される。
+ *
+ * ■ 主な構造体
+ *
+ * FaceStats
+ *   - Face ごとの RTT・SRTT・コスト情報を保持。
+ *   - メンバ:
+ *       - face  : Face のポインタ
+ *       - rtt   : 最新 RTT
+ *       - srtt  : 平滑化 RTT (Smoothed RTT)
+ *       - cost  : Face のコスト
+ *
+ * FaceStatsProbingCompare
+ *   - std::set 内で FaceStats を比較・順位付けする関数オブジェクト
+ *   - RTT や SRTT を基準に評価
+ *
+ * ■ 主なクラス
+ *
+ * ProbingModule
+ *   - コンストラクタ: AsfMeasurements への参照を受け取り初期化
+ *   - scheduleProbe()  : 指定 FIB エントリの Face に対しプローブをスケジュール
+ *   - getFaceToProbe() : 次にプローブすべき Face を決定
+ *   - isProbingNeeded(): Interest に対してプローブが必要か判定
+ *   - afterForwardingProbe(): プローブ送信後に統計を更新
+ *   - set/getProbingInterval(): プローブ間隔を設定／取得
+ *
+ * ■ メンバ変数
+ *   - m_probingInterval : プローブ間隔（time::milliseconds）
+ *   - m_measurements    : Face ごとの RTT 統計管理 (AsfMeasurements)
+ *
+ * ■ 定数
+ *   - DEFAULT_PROBING_INTERVAL = 1 分
+ *   - MIN_PROBING_INTERVAL     = 1 秒
+ *
+ * ■ 特徴
+ *   - ASF の動的経路選択を補助
+ *   - RTT 情報の更新により Interest 転送の最適化を支援
+ *   - Face の性能が低下した場合も適切に評価可能
+ *
+ * ■ 使用例
+ *   - AsfStrategy クラス内で m_probing モジュールとして利用
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw::asf {
 
 /**

@@ -33,6 +33,123 @@
 #include <functional>
 #include <map>
 
+/*
+ * 【ConfigFile クラスの概要】
+ *
+ * NFD の設定ファイル（例：/usr/local/etc/ndn/nfd.conf）を解析し、
+ * Forwarder モジュールへ正しく設定を反映させる中核コンポーネント。
+ *
+ * 設定内容はセクション単位で分割され、それぞれに対応する
+ * セクションハンドラ（ConfigSectionHandler）が呼び出される。
+ *
+ * →「Forwarder の設定処理を一元管理する司令塔」
+ *
+ * 【主な機能】
+ *  - 設定ファイルの読み込み（ファイル / 文字列 / ストリーム）
+ *  - セクションごとの処理関数への振り分け
+ *  - 未知のセクションの扱い制御（エラー／無視）
+ *  - 設定値の型チェックとエラーレポート
+ *
+ * 例：yes/no、整数、範囲検証
+ *
+ *   bool enable = ConfigFile::parseYesNo(sec, "enable", "face_system");
+ *   int size = ConfigFile::parseNumber<int>(sec, "capacity", "cs");
+ *
+ *
+ * 【設定が適用される仕組み】
+ *
+ *   addSectionHandler("cs", handler) により購読登録
+ *                         ↓
+ *   parse() で設定を読み込む
+ *                         ↓
+ *   handler(sec, isDryRun, filename) が呼び出される
+ *
+ *
+ * 【Dry-Run モード】
+ *   isDryRun = true の場合は
+ *   →設定の形式チェックのみ行い、実際の動作には反映しない
+ *
+ * 設定適用前の検証に使用（安全）
+ *
+ *
+ * ============================================================
+ * A. セクション例（nfd.confより）
+ * ============================================================
+ * 例：ContentStore の設定
+ *
+ *   content_store
+ *   {
+ *     capacity 65536
+ *   }
+ *
+ * →対応するハンドラが呼ばれ、CSサイズを変更
+ *
+ *
+ * 例：UDPフェース設定
+ *
+ *   face_system
+ *   {
+ *     enable_udp yes
+ *     port 6363
+ *   }
+ *
+ *
+ * ============================================================
+ * B. 新しい設定セクションを追加する手順
+ * ============================================================
+ * ① Forwarder側でセクション名に対応する関数を登録
+ *
+ *   configFile.addSectionHandler("my_section",
+ *     [](const ConfigSection& sec, bool dryRun, const std::string& file) {
+ *       // 設定適用ロジック
+ *     });
+ *
+ * ② config へ my_section を書けば動作
+ *
+ *   my_section
+ *   {
+ *     key1 value
+ *   }
+ *
+ *
+ * ============================================================
+ * C. MANET / 無線研究向けに触ることが多い設定
+ * ============================================================
+ *
+ * 例：ContentStore 無効化（攻撃耐性評価で使用）
+ *
+ *   content_store
+ *   {
+ *     capacity 0
+ *   }
+ *
+ * 例：Faceの保持時間（移動環境で有効）
+ *
+ *   face_system
+ *   {
+ *     idle_timeout 2000 ; ミリ秒
+ *   }
+ *
+ *
+ * ============================================================
+ * D. Forwarder 起動時の設定処理フロー
+ * ============================================================
+ *
+ *  nfd → Nfd::initialize()
+ *       → ConfigFile::parse(nfd.conf)
+ *           ↓
+ *       各セクションハンドラを順次呼び出し
+ *           ↓
+ *       モジュール（CS/PIT/FIB/FaceSystem）が設定を反映
+ *
+ *
+ * 【まとめ】
+ *
+ * - ConfigFile は NFD の設定読み込みすべてを管理する
+ * - Forwarder の動作仕様を外から決める最重要コンポーネント
+ * - 研究のために新しい設定項目を追加する際の入口となる
+ */
+
 namespace nfd {
 
 /**

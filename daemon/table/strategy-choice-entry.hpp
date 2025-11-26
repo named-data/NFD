@@ -28,6 +28,41 @@
 
 #include "core/common.hpp"
 
+/* -------------------------------------------------------------------------
+ * StrategyChoice::Entry の解説
+ *
+ * ■ Strategy Choice Table とは
+ *   - NDN で名前プレフィックスごとに適用するフォワーディング戦略を管理するテーブル
+ *   - どの名前にどの戦略を適用するかを保持する
+ *
+ * ■ Entry クラス
+ *   - Strategy Choice Table の 1 エントリを表す
+ *   - 主な構成要素：
+ *       ・m_prefix：この戦略を適用する名前プレフィックス
+ *       ・m_strategy：このプレフィックスに対応する Strategy インスタンス
+ *       ・m_nameTreeEntry：名前ツリー（NameTree）内の対応エントリへのポインタ
+ *
+ * ■ メソッドの役割
+ *   - getPrefix()
+ *       → このエントリが管理する名前プレフィックスを取得
+ *   - getStrategyInstanceName()
+ *       → 適用中の Strategy インスタンス名を取得
+ *   - getStrategy()
+ *       → 実際に使用される Strategy オブジェクトを取得
+ *   - setStrategy()
+ *       → 新しい Strategy インスタンスを設定
+ *
+ * ■ 重要なポイント
+ *   - プレフィックスごとに異なる戦略を適用できる
+ *   - フォワーディングの柔軟性を高める設計
+ *   - NameTree と連携して効率よく検索・更新可能
+ *
+ * ■ まとめ
+ *   StrategyChoice::Entry は、名前プレフィックスと戦略のマッピングを保持する
+ *   中核データ構造。NDN フォワーディングにおける「どの戦略を使うか」を決める
+ *   キーポイントとなる。
+ * ------------------------------------------------------------------------- */
+
 namespace nfd::fw {
 class Strategy;
 } // namespace nfd::fw

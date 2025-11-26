@@ -32,6 +32,44 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
+/*
+・Content Store の置換方式「LRU（Least Recently Used）」を実装
+
+【基本方針】
+- 最も長い間使われていない（使用履歴が古い）エントリから削除する方式
+- キャッシュヒットしたエントリは「最新利用」として末尾へ移動
+- 使われる頻度の高いデータを残し、無駄なデータを削除しやすい
+
+【データ構造】
+- Boost.MultiIndexContainer による 2 つのインデックス管理
+  ① sequenced：挿入順／利用順を管理（LRU のキュー）
+     → 古い側が先頭、新しい側が後尾
+  ② ordered_unique：EntryRef の一意性管理
+
+- m_queue が LRU キュー本体
+
+【オーバーライド（Policy から継承）】
+- doAfterInsert(): 新規挿入 → 末尾へ（最新利用）
+  必要なら制限超過分をエビクト
+- doAfterRefresh(): 既存データの再挿入 → 末尾へ移動
+- doBeforeErase(): 削除前にキューから除去
+- doBeforeUse(): ヒット時に末尾へ移動（最新利用）
+- evictEntries(): 上限超過時、先頭（最も古い）から削除
+
+【内部処理】
+- insertToQueue(i, isNewEntry):
+  - 新規 or 使用されたエントリを末尾へ再配置
+  - LRU キューの順序を保つ重要処理
+
+【メリット】
+- ヒット率改善に有効
+- 最近頻繁に利用されているデータを優先して残す
+
+【特徴まとめ】
+- 一般的なキャッシュで最も多く利用される置換方式
+- PriorityFIFO と違い、古さの基準が「利用時刻」
+*/
+
 namespace nfd::cs {
 namespace lru {
 

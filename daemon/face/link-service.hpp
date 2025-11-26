@@ -30,6 +30,21 @@
 #include "transport.hpp"
 #include "common/counter.hpp"
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Link Service Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Face の上位層（LinkService）を定義します。
+ *
+ * LinkService は Transport と Face の間の抽象層であり、
+ * Interest、Data、Nack パケットの送受信処理や統計カウンタを提供します。
+ *
+ * サブクラスは send/receive の低レイヤー処理を実装し、
+ * 上位層の Forwarding や Reliability に通知する仕組みを構築します。
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /**

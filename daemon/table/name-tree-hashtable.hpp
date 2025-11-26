@@ -30,6 +30,68 @@
 
 #include <limits>
 
+/*
+ * NameTree Hashtable.hpp 解説
+ *
+ * 【概要】
+ * NameTree内の高速な名前検索を支えるハッシュテーブル機構を定義。
+ * 各Entryはハッシュ値に基づきバケットに格納され、衝突は双方向リンクリストで解決。
+ * サイズに応じて自動で拡張・縮小される。
+ *
+ * 【主な構成要素】
+ * 1. HashValue / HashSequence
+ *    - HashValue: 名前のハッシュ値
+ *    - HashSequence: 名前の各プレフィックスのハッシュ値の列
+ *    - computeHash: 指定プレフィックスのハッシュ値を計算
+ *    - computeHashes: 名前の全プレフィックスのハッシュ値列を計算
+ *
+ * 2. Nodeクラス
+ *    - Hashtableの各バケット内に格納されるノード
+ *    - 双方向リンク(prev/next)で衝突解決
+ *    - entry: NameTreeのEntryを保持
+ *    - getNode: Entryから対応するNodeを取得
+ *
+ * 3. foreachNode
+ *    - リンクリスト内の全Nodeに対して関数を適用
+ *    - 関数内でノード削除も安全に可能
+ *
+ * 4. HashtableOptions
+ *    - ハッシュテーブルの初期サイズや拡張/縮小パラメータを設定
+ *    - initialSize: 初期バケット数
+ *    - minSize: 最小バケット数
+ *    - expandLoadFactor, expandFactor: 拡張閾値と倍率
+ *    - shrinkLoadFactor, shrinkFactor: 縮小閾値と倍率
+ *
+ * 5. Hashtableクラス
+ *    - NameTreeのエントリを格納するハッシュテーブル
+ *    - m_buckets: バケット配列
+ *    - m_size: 現在のノード数
+ *    - m_expandThreshold/m_shrinkThreshold: 拡張・縮小の閾値
+ *
+ *    主な操作:
+ *    - size()/getNBuckets(): ノード数・バケット数取得
+ *    - computeBucketIndex(h): ハッシュ値からバケット番号を計算
+ *    - getBucket(i): i番目のバケット取得
+ *    - find(name, prefixLen): 指定プレフィックスのノード検索
+ *    - insert(name, prefixLen, hashes): ノード検索または挿入
+ *    - erase(node): ノード削除
+ *
+ *    内部処理:
+ *    - attach/detach: バケットへのノード追加・削除
+ *    - findOrInsert: 検索し、存在しなければ挿入
+ *    - computeThresholds: 拡張/縮小閾値計算
+ *    - resize: バケット数を変更
+ *
+ * 【設計意図】
+ * - NameTreeのエントリに対して高速な正確検索を実現
+ * - 衝突は双方向リストで解決し、ハッシュテーブルの動的サイズ調整に対応
+ * - NodeをEntryと1:1で対応させ、NameTreeの内部構造を効率的に管理
+ *
+ * 【注意点】
+ * - find/insertで渡すprefixLenはname.size()以下であることが前提
+ * - Nodeの削除・挿入はバケットのリンクリストを正しく維持する必要あり
+ */
+
 namespace nfd::name_tree {
 
 class Entry;

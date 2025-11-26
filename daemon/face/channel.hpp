@@ -31,6 +31,38 @@
 
 #include <functional>
 
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * NFD Face Channel Header
+ * ---------------------------------------------------------------------------
+ * 本ファイルは、Named Data Networking Forwarding Daemon (NFD) における
+ * Face の通信チャネル（Channel）を定義しています。
+ *
+ * 主な目的:
+ *  - ローカルエンドポイントでの受信待ちや、送信接続の開始を管理
+ *  - Face オブジェクトの生成と共有所有権の管理
+ *
+ * 提供されるクラス・型:
+ *  1. nfd::face::Channel
+ *     - Face の通信チャネルを表す抽象クラス
+ *     - ローカル URI の取得、デフォルト MTU の取得、チャネルの状態確認など
+ *     - 派生クラスで具体的な通信方式（TCP/UDPなど）を実装
+ *
+ *  2. FaceCreatedCallback
+ *     - Face が作成された際に呼び出されるコールバック型
+ *
+ *  3. FaceCreationFailedCallback
+ *     - Face の作成に失敗した際に呼び出されるコールバック型
+ *
+ *  4. connectFaceClosedSignal
+ *     - Face が CLOSED 状態になった際にコールバックを呼び出す補助関数
+ *
+ * 注意:
+ *  - Channel クラスは noncopyable
+ *  - this->getUri() でチャネル固有の URI が取得可能
+ * ---------------------------------------------------------------------------
+ */
+
 namespace nfd::face {
 
 /** \brief Represents a channel that listens on a local endpoint.

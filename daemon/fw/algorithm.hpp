@@ -29,6 +29,51 @@
 #include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 
+/* -------------------------------------------------------------------------
+ * Algorithm.hpp の解説
+ *
+ * ■ 概要
+ *   - NFDの各種戦略で共通して使われる PIT/FIB 関連アルゴリズムを提供
+ *   - スコープ違反、重複 Nonce、NextHop 選択、PIT の送信状況などを判定
+ *
+ * ■ 主な関数
+ *
+ * wouldViolateScope
+ *   - Interest を outFace に転送した場合にスコープ違反が発生するか判定
+ *   - inFace, Interest, outFace を入力
+ *
+ * findDuplicateNonce
+ *   - PIT Entry 内で同じ Nonce が重複しているか判定
+ *   - DuplicateNonceWhere 列挙型でどの場所に重複があるかを返す
+ *     - NONE / IN_SAME / IN_OTHER / OUT_SAME / OUT_OTHER
+ *
+ * hasPendingOutRecords
+ *   - PIT エントリに未応答の out-record があるか判定
+ *
+ * getLastOutgoing
+ *   - PIT エントリの最後に送信した out-record の時刻を返す
+ *   - precondition: 少なくとも1つの未期限 out-record が存在
+ *
+ * findEligibleNextHopWithEarliestOutRecord
+ *   - 送信可能な NextHop のうち、最も古い out-record を持つものを選択
+ *   - Interest 転送の順序決定に利用
+ *
+ * isNextHopEligible
+ *   - NextHop が転送可能か判定（inFace と同じでないことや、未使用条件など）
+ *   - wantUnused = true の場合、未使用の NextHop である必要がある
+ *
+ * ■ 列挙型
+ *
+ * DuplicateNonceWhere
+ *   - 重複 Nonce の場所をビットフラグで表現
+ *   - OR 結果で複数箇所の重複を一度に表現可能
+ *
+ * ■ 利用例
+ *   - BestRouteStrategy, AsfStrategy, MulticastStrategy などで使用
+ *   - Interest 転送前の Eligibility 判定、スコープ違反防止、重複 Interest 検出
+ *
+ * ------------------------------------------------------------------------- */
+
 /** \file
  *  This file contains common algorithms used by forwarding strategies.
  */
