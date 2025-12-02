@@ -31,6 +31,224 @@
 
 #include <cmath>
 
+/**
+ * GenericLinkService は NFD のリンク層アダプテーションを担当するクラス。
+ * 
+ * 目的：
+ *   - NDNLPv2 の機能（Fragmentation / Reliability / Congestion Marking / Local fields 等）
+ *     を Transport と Network Layer（Interest/Data）との間で仲介する。
+ *
+ * 主な処理内容：
+ *   - Interest / Data / Nack の送信処理（encode → fragment → reliability → send）
+ *   - LpPacket の受信処理（reassemble → decode → 上位層へ通知）
+ *   - Fragmentation（分割）と Reassembly（再構築）の管理
+ *   - 信頼性機能（ACK/NACKベースの Loss Recovery）
+ *   - 輻輳マーキング（CoDelベース）
+ *   - Local Fields（IncomingFaceId / CongestionMark / PrefixAnnouncement 等）付加
+ *
+ * 内部構成：
+ *   - m_fragmenter     : LpFragmenter クラス（パケットを MTU に合わせて分割）
+ *   - m_reassembler    : LpReassembler クラス（分割されたパケットを再構築）
+ *   - m_reliability    : LpReliability クラス（信頼性送信・再送制御）
+ *   - Options          : 本サービスの設定一式
+ *   - m_lastSeqNo      : LpPacket の Sequence 番号管理
+ *
+ * 大まかな動作の流れ：
+ *   (送信側)
+ *     doSendInterest / doSendData / doSendNack
+ *        → encodeLpFields(タグ → LpHeader へ変換)
+ *        → sendNetPacket（分割・シーケンス付与・信頼性制御）
+ *        → sendLpPacket（最終的に wireEncode して Transport へ）
+ *
+ *   (受信側)
+ *     doReceivePacket
+ *        → 信頼性チェック（duplicate など）
+ *        → fragment 判定 → Reassembler へ
+ *        → decodeNetPacket（Interest/Data/Nack を識別して上位層へ通知）
+ *
+ * 各機能の詳細：
+ *
+ * ● encodeLpFields()
+ *   - PacketBase に付与されているタグ（IncomingFaceIdTag / CongestionMarkTag 等）を
+ *     LpPacket のヘッダフィールドへ変換し付与する。
+ *
+ * ● sendNetPacket()
+ *   - MTU を考慮し fragmenter で複数の LpPacket に分割。
+ *   - 信頼性機能が有効なら Sequence 番号を付与。
+ *   - 各 fragment を sendLpPacket() に渡す。
+ *
+ * ● sendLpPacket()
+ *   - Congestion Marking（CoDel）で輻輳判定し、必要なら CongestionMark を付加。
+ *   - wireEncode → Transport 層の sendPacket() へ。
+ *
+ * ● doReceivePacket()
+ *   - 受信 LpPacket を解析し、fragment があれば Reassembler へ。
+ *   - 完成した network-layer packet は decodeNetPacket() へ。
+ *
+ * ● decodeInterest / decodeData / decodeNack
+ *   - 再構築した netPkt を Interest や Data に decode。
+ *   - 成功すれば NFD の上位（forwarder）側へ通知するシグナルを発火。
+ *
+ * ● checkCongestionLevel()
+ *   - Transport の送信キュー長を見て、一定以上なら CongestionMark を付与（CoDel）。
+ *
+ *
+ * このクラスの役割まとめ：
+ *   - 「Transport から直接受け取る LpPacket」と
+ *     「NFD の forwarder が扱う Interest/Data」との
+ *     中間レイヤ（NDNLPv2）を完全に処理する中心的クラス。
+ *
+ */
+
+ /**
+ * ==== 受信処理系（receive path） ====
+ *
+ * doReceivePacket()
+ *   - Transport から届いた raw LpPacket を受け取るエントリポイント。
+ *   - 主な処理順序：
+ *       1. ワイヤフォーマットの Block をパースし LpPacket に変換
+ *       2. 信頼性チェック（ACK/NACK フラグの処理）
+ *       3. Fragment 判定 → fragmenter へ渡す
+ *       4. Reassember により network-layer packet が復元されたら decodeNetPacket() へ
+ *
+ *   - EndpointId:
+ *       どの Transport / Face から届いたかを示す識別子。
+ *
+ *
+ * decodeNetPacket()
+ *   - Reassembler によって完成した netPkt (Block) を、Interest/Data/Nack に分岐して処理する。
+ *   - firstPkt は最初の fragment の LpPacket（LocalFields はここに集約されている）
+ *
+ *   流れ：
+ *      - TLV-TYPE 判定（Interest？Data？Nack？）
+ *      - この種類に応じて decodeInterest / decodeData / decodeNack を呼ぶ
+ *      - 成功すれば NFD forwarder へイベント通知（receiveInterest など）
+ *      - 失敗した場合は logWarning
+ *
+ *
+ * decodeInterest()
+ *   - netPkt（Interest TLV）を Interest オブジェクトとして decode
+ *   - Nack フィールドが firstPkt に含まれていないことを確認
+ *   - 成功すれば receiveInterest シグナルを emit
+ *   - LpHeader の parse error は tlv::Error を throw
+ *
+ *
+ * decodeData()
+ *   - Data パケットの解釈を担当
+ *   - LocalFields（CongestionMark、IncomingFaceId など）もここで抽出され、
+ *     上位の PIT / CS などに影響する
+ *
+ *
+ * decodeNack()
+ *   - Nack の decode を行う
+ *   - Nack フィールドの種類で Reason（例：NO_ROUTE、CONGESTION 等）を読み取る
+ *   - 受信した Interest の firstPkt の LocalFields と組み合わせて
+ *     上位側に Nack イベントを通知する
+ *
+ *
+ *
+ * ==== Fragmentation / Reassembly ====
+ *
+ * m_fragmenter (LpFragmenter)
+ *   - 送信時に MTU に合わせて TLV パケットを分割する
+ *   - LpPacket に Fragment フィールドや Sequence 番号を付加する
+ *   - 大きい Data パケット（署名付き等）は必ず複数 fragment になる
+ *
+ *
+ * m_reassembler (LpReassembler)
+ *   - 受信した fragment 群を組み立て、元の network-layer packet を復元する
+ *   - 仕様：
+ *        - fragment ID ごとのバッファリング
+ *        - 欠損 fragment がある場合は一定時間待って捨てる
+ *        - 完成したら Block として上位へ返す
+ *
+ *
+ * ==== 信頼性制御（Loss Recovery） ====
+ *
+ * m_reliability (LpReliability)
+ *   - NDNLPv2 の Reliability 機能を実装（TCP の ACK/NACK に近い）
+ *   - 主な機能：
+ *       - Sequence 番号（lp::Sequence）によるパケット識別
+ *       - 送信済みフラグメントの再送制御
+ *       - ACK/NACK の処理
+ *   - 有効になっている場合、sendNetPacket() 内で SeqNo が自動付与される
+ *
+ *
+ * ==== Sequence 番号管理 ====
+ *
+ * m_lastSeqNo
+ *   - 送信に使った最後の Sequence 番号
+ *   - static_cast<lp::Sequence>(-2) で初期化されている理由：
+ *       → 初回使用時に -1 → 0 へ移行するように調整している
+ *         （NDNLPv2 の仕様で Sequence=0 は特別扱いされるため）
+ *
+ *
+ * ==== Options ====
+ *
+ * Options m_options;
+ *   - サービス全体の設定集
+ *   - 主な設定例：
+ *       - isReliabilityEnabled
+ *       - isFragmentationEnabled
+ *       - mtu
+ *       - allowCongestionMarking
+ *       - allowIncomingFaceId
+ *       - CoDel パラメータ（target / interval など）
+ *
+ *   - 実行時に Face(Transport) 側から渡される
+ *
+ *
+ * ==== GenericLinkService の位置付け ====
+ *
+ *                ┌─────────────┐
+ *                │   Forwarder  │
+ *                │  (NFD core)  │
+ *                └──────┬──────┘
+ *                       ▲ decode
+ *                       │ encode
+ *                ┌──────┴──────┐
+ *                │GenericLinkSvc│ ← ここ
+ *                └──────┬──────┘
+ *                       ▼
+ *                ┌─────────────┐
+ *                │  Transport   │
+ *                │ (Ethernet,   │
+ *                │   UDP, TCP)  │
+ *                └─────────────┘
+ *
+ * - Forwarder（Interest/Data の処理本体）との間で
+ *     「NDNLPv2 ヘッダ付け・分割・再構築・信頼性・LocalFields」
+ *   を提供する役割。
+ *
+ * - Transport は単なる byte stream / packet stream なので
+ *   network-layer packet をそのまま流すことはできない。
+ *   → GenericLinkService が NDNLPv2 の規則に沿って適切に整形して送受信する。
+ *
+ *
+ * ==== このクラスが扱う Local Fields の例 ====
+ *
+ * - IncomingFaceId
+ * - CongestionMark
+ * - HopLimit
+ * - TxSequence / RxSequence
+ * - PrefixAnnouncement（名前空間の告知）
+ *
+ * これらはすべて LpPacket のヘッダ部分に格納され、forwarder に渡る。
+ *
+ *
+ * ==== まとめ ====
+ *
+ * GenericLinkService は Transport と Forwarder の間で NDNLPv2 を処理する中心クラスであり、
+ *   - Fragmentation / Reassembly
+ *   - Reliability
+ *   - Local Fields（IncomingFaceId など）
+ *   - Congestion Marking (CoDel)
+ * を全て管理している。
+ *
+ * NDN のリンク層の仕様（RFC 8548 相当）を完全に実装する非常に重要なコンポーネント。
+ *
+ */
+
 namespace nfd::face {
 
 NFD_LOG_INIT(GenericLinkService);
@@ -147,6 +365,11 @@ GenericLinkService::assignSequences(std::vector<lp::Packet>& pkts)
     pkt.set<lp::SequenceField>(++m_lastSeqNo);
   });
 }
+/**
+ * ------------------------------------------------------------------------------------------------
+ * //以下のメソッドでLPpacket要素の付加を行っている。　このタイミングで署名の付与をするべきではないだろうか
+ * ------------------------------------------------------------------------------------------------
+ */
 
 void
 GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket)

@@ -30,6 +30,66 @@
 
 #include <list>
 
+/*
+ * === File Overview: RibEntry (RIB Entry Representation) ============================
+ *
+ * このファイルは NFD（Named Data Networking Forwarding Daemon）の
+ * RIB（Routing Information Base）における「1つの名前プレフィックス」に
+ * 対応するエントリを表現するクラス RibEntry を定義している。
+ *
+ * 【RibEntry の役割】
+ * - 1つの名前プレフィックスに紐づく複数の routing entries (Route) を保持
+ * - 階層構造（親エントリ・子エントリ）を持ち、NDN の名前階層に対応
+ * - 継承されたルート（Inherited Routes）の管理
+ * - “capture” フラグの有無による「継承ルートの遮断」判定
+ * - 最適ルート選択（最小コストなど）を提供
+ * - Prefix Announcement の生成ロジックを提供
+ *
+ * 【主な機能】
+ * 1. 名前(prefix)・親子関係の管理
+ *    - getName(), setName()
+ *    - getParent(), getChildren()
+ *    - addChild(), removeChild()
+ *
+ * 2. Route の挿入・削除・検索
+ *    - insertRoute(): 同一 faceId + origin の重複挿入は不可
+ *    - eraseRoute(): ルート削除（値比較 or イテレータ）
+ *    - hasFaceId(): 当該 faceId を持つ route があるか判定
+ *    - findRoute(): route の検索
+ *
+ * 3. Inherited Route（継承されるルート）の管理
+ *    - addInheritedRoute(), removeInheritedRoute()
+ *    - getInheritedRoutes(): 現在適用されている継承ルート一覧
+ *    - hasInheritedRoute(), findInheritedRoute()
+ *    - hasChildInheritOnFaceId(): 子への継承が有効な inherited route の存在判定
+ *
+ * 4. ルート選択（最小コストなど）
+ *    - getRouteWithLowestCostByFaceId()
+ *    - getRouteWithSecondLowestCostByFaceId()
+ *    - getRouteWithLowestCostAndChildInheritByFaceId()
+ *
+ * 5. Prefix Announcement の生成
+ *    - getPrefixAnnouncement():
+ *      ・既存ルートが持つアナウンスのうち最も遅く expire するものを返す
+ *      ・存在しない場合は新規生成（RIB entry の lifetime に基づく）
+ *
+ * 6. capture フラグの管理
+ *    - hasCapture():
+ *      capture が 1つ以上存在する場合、継承ルートをブロックする判定に使う
+ *
+ * 【内部状態】
+ * - m_name: このエントリが表す名前プレフィックス
+ * - m_routes: この prefix のローカルルート一覧
+ * - m_inheritedRoutes: 上位から継承されたルート一覧
+ * - m_children, m_parent: RIB 木構造のノード間関係
+ * - m_nRoutesWithCaptureSet: capture フラグが立っているルートの数
+ *
+ * このクラスは FIB Updater など他の RIB 管理コンポーネントから利用され、
+ * RIB の階層構造とルート状態を正確に管理するための基盤となる。
+ *
+ * ================================================================================ 
+ */
+
 namespace nfd::rib {
 
 /**

@@ -30,6 +30,50 @@
 
 #include <list>
 
+/*
+ * === File Overview: RibUpdate & RibUpdateBatch ====================================
+ *
+ * このファイルは NFD（Named Data Networking Forwarding Daemon）の RIB
+ * （Routing Information Base）に対する更新情報を表現するための
+ * データ構造を定義している。RIB へ適用される「ルート追加・削除」などの
+ * 更新操作を表し、それらを FaceId ごとにまとめて扱うためのクラス群を提供する。
+ *
+ * 【RibUpdate の役割】
+ * - 1つのルート更新操作（add/remove 等）を表す単位データ構造
+ * - 内容：
+ *     ・action: 更新種別（REGISTER / UNREGISTER / REMOVE_FACE）
+ *     ・name  : 更新対象となる名前プレフィックス
+ *     ・route : 追加・削除対象の Route 情報
+ *
+ * 【Action の意味】
+ * - REGISTER   : route を登録（追加）する更新
+ * - UNREGISTER : route を登録解除（削除）する更新
+ * - REMOVE_FACE: Face 破棄通知により、その face に紐づく route を削除する更新
+ *
+ * 【補助機能】
+ * - operator<< : RibUpdate, Action を人間が読める文字列形式へ出力
+ *
+ * 【RibUpdateBatch の役割】
+ * - 特定の FaceId に対して適用される複数の RibUpdate をまとめて保持するクラス
+ * - “face 単位での RIB 更新バッチ処理” を実現するためのデータ構造
+ *
+ *  主な機能：
+ *   - getFaceId(): このバッチが対象とする FaceId を取得
+ *   - add(): RibUpdate をバッチへ追加
+ *   - begin(), end(): 追加された更新一覧を iterator として取得
+ *   - size(): バッチ内の更新数を取得
+ *
+ * 【内部状態】
+ *   - m_faceId : この更新バッチが対象とする FaceId
+ *   - m_updates: RibUpdate の list（更新操作の集合）
+ *
+ * このファイルは FIB/RIB Updater などの上位コンポーネントから利用され、
+ * 「どの face に対して、どんな更新をまとめて適用するか」を管理するための
+ * 重要な構造を提供する。
+ *
+ * ================================================================================
+ */
+
 namespace nfd::rib {
 
 /**

@@ -38,6 +38,49 @@
 #include <ndn-cxx/transport/transport.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+/**
+ * @brief NFD-RIB Service 全体の概要
+ *
+ * このヘッダは、Named Data Networking Forwarding Daemon (NFD) における
+ * RIB (Routing Information Base) サービスの中核クラス `nfd::rib::Service`
+ * を定義する。
+ *
+ * 【主な役割】
+ * - RIB サービススレッドを初期化し、NFD 内で唯一の RIB インスタンスを提供する。
+ * - RIB 構成ファイル（nfd.conf）の読み込み、構文チェック、適用を行う。
+ * - KeyChain を用いた管理用通信や署名を扱う。
+ * - ndn::Face を作成し、管理パケット（Mgmt）や RIB Manager の操作を受け付ける。
+ * - FIB Updater と連携し、RIB での経路変更を FIB に反映する。
+ * - Readvertise（経路再広告）モジュールの管理。
+ *
+ * 【クラス全体の構造】
+ * - RIB サービスは Singleton として実装され、同時に 1 インスタンスのみ生成可能。
+ * - コンストラクタは設定ファイルまたは ConfigSection から初期化できる。
+ * - get() 関数により唯一の Service インスタンスへアクセス可能。
+ * - RibManager, Dispatcher, FIB Updater、Face、Controller など
+ *   RIB 管理に関わるすべてのコンポーネントを統合して保持する。
+ *
+ * 【処理の流れ】
+ * 1. Service インスタンスの生成
+ * 2. Config のチェック（checkConfig）
+ * 3. Config の適用（applyConfig）
+ * 4. Face や Controller の初期化
+ * 5. RIB Manager が管理パケットを処理可能な状態になる
+ *
+ * 【主要メンバー】
+ * - m_keyChain: 署名・認証を行う KeyChain
+ * - m_face: 管理用の ndn::Face
+ * - m_nfdController: NFD へ管理コマンドを送信する Controller
+ * - m_rib: RIB データベース本体
+ * - m_fibUpdater: RIB → FIB の同期処理を担当
+ * - m_dispatcher: 管理パケットのディスパッチャ
+ * - m_ribManager: RIB エントリの追加・削除を扱うマネージャ
+ * - Readvertise 関係: 経路再広告機構
+ *
+ * このファイルは、NFD における RIB 機能全体の基盤を成し、
+ * RIB の初期化・設定・管理の中心的役割を担う重要なクラスを提供する。
+ */
+
 namespace nfd::rib {
 
 class Readvertise;

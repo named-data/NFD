@@ -260,6 +260,7 @@ private: // send path
    *  \param netPkt network-layer packet to extract tags from
    *  \param lpPacket LpPacket to add link protocol fields to
    */
+
   void
   encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket);
 

@@ -33,6 +33,70 @@
 
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 
+/*
+ * 【概要】
+ * このファイルは、NFD（Named Data Networking Forwarding Daemon）の RIB（Routing
+ * Information Base）から FIB（Forwarding Information Base）へ反映させるための更新処理を
+ * 担うクラス **FibUpdater** を定義している。
+ *
+ * FibUpdater は、RIB 内で発生した経路変更（追加・削除・更新）を基に FIB 更新内容を計算し、
+ * NFD に対して「次ホップ追加」「次ホップ削除」などのコマンドを送り、Forwarder の
+ * ルーティングテーブル（FIB）を最新状態に保つ役割を持つ。
+ *
+ * 【主な責務】
+ * - RIB の更新バッチ（RibUpdateBatch）を受け取り、必要な FIB 更新（FibUpdate）を計算。
+ * - Face ID の一致/不一致によって更新を 2 種類に分類して送信順序を管理。
+ * - NFD の管理 API（Controller）を用いて Add / Remove Next Hop コマンドを送信。
+ * - 成功・失敗に応じてコールバックを呼び出し、エラー時にはリトライや回復不能エラーの処理を実行。
+ * - 経路の継承ルールに従って「子プレフィックスへの継承ルート」の記録と更新を行う。
+ *
+ * 【主な機能とメソッド】
+ *
+ * ● computeAndSendFibUpdates(batch, onSuccess, onFailure)
+ *    - バッチに含まれる RIB 更新を解析し、必要な FIB 更新を計算。
+ *    - 計算後、更新を NFD に送信。
+ *
+ * ● computeUpdates(batch)
+ *    - 登録 / 削除 / 更新など、RIB の更新種別に応じて適切な計算ルーチンを呼び分ける。
+ *
+ * ● sendUpdates(…)
+ *    - 生成した FIB 更新リストを NFD へ送信する共通処理。
+ *
+ * ● sendAddNextHopUpdate / sendRemoveNextHopUpdate
+ *    - NFD の Controller API を使って「次ホップ追加 / 削除」コマンドを送信。
+ *    - タイムアウト時はリトライし、Face 不存在時の扱いなど細かいエラーハンドリングも担当。
+ *
+ * ● onUpdateSuccess / onUpdateError
+ *    - 更新送信後に呼ばれ、更新の進捗管理・エラー分類・再試行・失敗判定を行う。
+ *
+ * ● addInheritedRoutes / removeInheritedRoutes
+ *    - 子エントリへのルート継承を処理（RIB の階層構造に応じた継承管理）。
+ *
+ * ● createFibUpdatesForNewRoute / UpdatedRoute / ErasedRoute
+ *    - 経路の追加・変更・削除それぞれに応じた FIB 更新計算ロジック。
+ *
+ * 【内部データ構造】
+ * - m_updatesForBatchFaceId  
+ *       → 更新バッチの Face ID と一致する更新を保持
+ *
+ * - m_updatesForNonBatchFaceId  
+ *       → Face ID が異なる更新を保持
+ *
+ * - m_inheritedRoutes  
+ *       → 経路継承の結果生じた更新を記録
+ *
+ * - m_controller  
+ *       → NFD 管理コマンドを送信するための Controller
+ *
+ * - m_rib  
+ *       → 現在の RIB 状態を参照するための参照
+ *
+ * 【総括】
+ * FibUpdater は、RIB の変化を FIB に正しく反映させるための「更新計算」「送信管理」
+ * 「エラー処理」「継承経路処理」を包括的に行う重要コンポーネントである。
+ * RIB と FIB の整合性維持の中心的役割を担っており、NDN のフォワーディング挙動に大きな影響を与える。
+ */
+
 namespace nfd::rib {
 
 /**

@@ -34,6 +34,105 @@
 #include <functional>
 #include <map>
 
+/*
+ * === File Overview: Rib (Routing Information Base) =================================
+ *
+ * このファイルは NFD (Named Data Networking Forwarding Daemon) における
+ * Routing Information Base（RIB）の中心的なデータ構造を定義する。
+ * RIB は NDN の名前空間に対して登録された Route の集合を管理し、
+ * 各名前プレフィックスに対応する RibEntry を保持する階層構造の
+ * ルーティングデータベースである。
+ *
+ * 本ファイルは以下の役割を担う：
+ *   - RIB 全体を表すクラス Rib の定義
+ *   - RIB 内の単一 Route を参照する RibRouteRef の定義
+ *   - FIB との同期処理（FibUpdater）との連携
+ *   - ルート登録/削除/Face 破棄に伴う RIB 更新処理の開始
+ *   - 更新バッチ（RibUpdateBatch）の管理と更新キュー処理
+ *   - 名前階層に基づく継承ルート（inherited routes）の取得／反映
+ *   - RIB の変更を通知するシグナル発行（afterInsertEntry, afterAddRoute など）
+ *
+ * -----------------------------------------------------------------------------
+ * 【RibRouteRef】
+ *   - RIB 内の特定の Route への参照を保持する構造体
+ *   - RibEntry とその entry 内の Route iterator の組で識別
+ *   - operator< により、ルート比較のための順序付けが提供される
+ *
+ * -----------------------------------------------------------------------------
+ * 【クラス Rib の概要】
+ *   RIB 全体の管理を行うクラスであり、以下の責務を持つ。
+ *
+ *   ■ 基本データ管理
+ *     - m_rib: Name → RibEntry のマップ (RIB の主要テーブル)
+ *     - m_faceEntries: FaceId → この face を利用する RibEntry の対応付け
+ *     - m_nItems: 登録されている Route 数
+ *
+ *   ■ 参照インタフェース
+ *     - find(prefix):     指定 prefix の RibEntry を取得
+ *     - find(prefix,route): 指定 prefix 下の一致する Route を取得
+ *     - findLongestPrefix(prefix, route):
+ *         longest prefix match (LPM) に基づき Route を探索
+ *     - findParent(prefix): prefix の親となるエントリを探索
+ *
+ *   ■ 更新の開始 (FIB 更新を伴う操作)
+ *     - beginApplyUpdate():
+ *         RibUpdate を受け取り、FibUpdater に FIB 更新処理を依頼。
+ *         成功時：RIB へ更新適用
+ *         失敗時：RIB は変更せず、エラーを返す
+ *     - beginRemoveFace():
+ *         Face 破棄に伴う route の削除処理を開始
+ *     - beginRemoveFailedFaces():
+ *         使用不能になった face 群に対応する削除処理を開始
+ *     - insert():
+ *         新規 Route を RIB に登録（内部で更新キューへ enqueue）
+ *     - onRouteExpiration():
+ *         有効期限切れによる route 削除
+ *
+ *   ■ 更新キューとバッチ処理
+ *     - RibUpdateBatch を update queue に蓄積し、FIFO で処理
+ *     - sendBatchFromQueue():
+ *         現在処理中の更新がなければ、キュー先頭のバッチを FIB 更新へ送信
+ *     - onFibUpdateSuccess(), onFibUpdateFailure():
+ *         FIB 側の結果に基づき RIB の整合性を更新 / rollback
+ *
+ *   ■ ルート継承（Inherited Routes）
+ *     - getAncestorRoutes(entry or name):
+ *         名前階層に基づく祖先プレフィックスから継承する Route を取得
+ *     - modifyInheritedRoutes():
+ *         継承された Route 群を各 RibEntry の inheritedRoutes に適用
+ *     - findDescendants(prefix):
+ *         prefix 配下にある子孫エントリを取得（削除・継承更新用途）
+ *
+ *   ■ RIB エントリ操作
+ *     - erase() / eraseEntry():
+ *         指定 route の削除、および そのプレフィックスに対応する RIB entry の
+ *         route が空になった場合は Entry ごと削除
+ *
+ * -----------------------------------------------------------------------------
+ * 【FibUpdater との連携】
+ *   RIB 単独では FIB を変更しない。  
+ *   全てのルーティング更新は FibUpdater を通して FIB と同期した上で最終適用される。
+ *   この “FIB 更新成功後に RIB 更新を適用する” という非同期処理を管理するため、
+ *   更新バッチと更新キューが不可欠な役割を担う。
+ *
+ * -----------------------------------------------------------------------------
+ * 【シグナル（通知機構）】
+ *   RIB の状態変化を外部へ通知する signal::Signal:
+ *     - afterInsertEntry: 新規プレフィックスが RIB に追加された直後
+ *     - afterEraseEntry : プレフィックスが RIB から削除された直後
+ *     - afterAddRoute   : Route が追加された直後
+ *     - beforeRemoveRoute: Route が削除される直前
+ *
+ *   これにより、管理ツールや統計収集などが RIB の更新を追跡可能になる。
+ *
+ * -----------------------------------------------------------------------------
+ * 【総合】
+ *   Rib クラスは NFD のルーティング管理の中核を成し、
+ *   “名前空間ごとの Route 登録” と “階層的継承ルート管理”、
+ *   “FIB 同期との整合性確保” の 3 つを中心に、完全な RIB 機能を提供する。
+ *
+ * ================================================================================
+ */
 namespace nfd::rib {
 
 using ndn::nfd::ControlParameters;

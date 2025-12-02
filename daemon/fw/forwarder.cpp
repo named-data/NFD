@@ -35,6 +35,11 @@
 
 #include <ndn-cxx/lp/pit-token.hpp>
 #include <ndn-cxx/lp/tags.hpp>
+/**
+ * 署名検証処理のため以下のhppファイルをインクルードする
+ */
+#include <mini-ndn/dl/ndn-cxx/security/ecdsa/ecdsa_sig.hpp>
+
 
 namespace nfd {
 
@@ -91,6 +96,17 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
 {
   interest.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
   ++m_counters.nInInterests;
+
+  /**
+   * <------------------------------追加部分------------------------------->
+   * ここにLP packetに含めた集約署名検証処理を追加する
+   */
+  // ecdsa_sig ecdsa; 
+  // bool verification_result=ecdsa.verify(std::uint8_t *buf);
+  if(!verification_result){
+    std::cout<<"Interest signature verification failed. Dropping Interest."<<std::endl;
+    return;
+  }
 
   // ensure the received Interest has a Nonce
   auto nonce = interest.getNonce();
@@ -257,6 +273,15 @@ Forwarder::onOutgoingInterest(const Interest& interest, Face& egress,
     ++egress.getCounters().nOutHopLimitZero;
     return nullptr;
   }
+
+  /**
+   * <-----------------------------追加部分------------------------------->
+   * ここにinterestの署名追加処理を追加する。
+   * interestsignerを使って署名を追加する。
+   * interestsignerはecdsa_sigの署名生成関数を使って署名を生成するように実装する。
+   */
+   
+   
 
   NFD_LOG_DEBUG("onOutgoingInterest out=" << egress.getId() << " interest=" << interest.getName()
                 << " nonce=" << interest.getNonce() << " hop-limit="

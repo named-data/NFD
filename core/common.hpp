@@ -23,6 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+ /**
+  * NFDで拡張する際は、このhppファイルをincludeすることでndn-cxxの機能を流用することができる。
+  * 名前空間で共有しているため。
+  */
+
 #ifndef NFD_CORE_COMMON_HPP
 #define NFD_CORE_COMMON_HPP
 

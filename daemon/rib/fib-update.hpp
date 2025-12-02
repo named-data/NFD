@@ -30,6 +30,52 @@
 
 #include <boost/operators.hpp>
 
+/*
+ * 【概要】
+ * このヘッダファイルは、NFD (Named Data Networking Forwarding Daemon) の
+ * RIB（Routing Information Base）から FIB（Forwarding Information Base）へ
+ * 伝達される更新情報を表現するためのクラス **FibUpdate** を定義している。
+ *
+ * 【FibUpdate クラスの役割】
+ * - RIB でルート情報が変更された際に、FIB に対して「次ホップの追加」または
+ *   「次ホップの削除」を指示するデータ構造として機能する。
+ * - FIB 更新の種類（ADD / REMOVE）、対象となる名前、faceId、コストなどの
+ *   必要情報を保持する。
+ *
+ * 【主要フィールド】
+ * - `Name name`  
+ *     → 更新対象となる名前プレフィックス
+ *
+ * - `uint64_t faceId`  
+ *     → 次ホップに対応する Face の ID  
+ *       （ADD / REMOVE いずれの操作でも使用）
+ *
+ * - `uint64_t cost`  
+ *     → 経路コスト（ADD の場合のみ意味を持つ）
+ *
+ * - `Action action`  
+ *     → ADD_NEXTHOP または REMOVE_NEXTHOP を示す列挙型
+ *
+ * 【主な機能】
+ * ● `createAddUpdate(name, faceId, cost)`  
+ *     → 次ホップ追加用の FibUpdate を生成
+ *
+ * ● `createRemoveUpdate(name, faceId)`  
+ *     → 次ホップ削除用の FibUpdate を生成
+ *
+ * ● `operator==`  
+ *     → 2 つの FibUpdate が完全に一致するか比較できる
+ *
+ * ● `operator<<`  
+ *     → FibUpdate の情報を文字列として出力（ログで利用）
+ *
+ * 【用途】
+ * - RIB モジュールが、ルーティング変更を Forwarder の FIB へ反映させる際に利用。
+ * - FIB の更新処理は Forwarder のパケット転送に影響するため、重要な中間情報。
+ *
+ * このファイルは、RIB と FIB の間の「更新通知」のための最小限のデータ構造を提供する。
+ */
+
 namespace nfd::rib {
 
 /**

@@ -38,6 +38,7 @@
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
+#include <../../../ndn-cxx/ndn-cxx/security/interestsigner.hpp>
 
 /*
  * forwarder.hpp

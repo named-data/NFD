@@ -35,6 +35,81 @@
 
 #include <type_traits>
 
+/*
+ * === File Overview: Route (RIB Route Representation) ================================
+ *
+ * このファイルは NFD (Named Data Networking Forwarding Daemon) の
+ * Routing Information Base (RIB) 内で利用される **Route クラス** を定義する。
+ *
+ * Route は「ある名前プレフィックスに対してどの Face へ転送するのか」という
+ * ルーティング情報の最小単位であり、次の情報を保持する。
+ *
+ * -----------------------------------------------------------------------------
+ * 【Route クラスの役割】
+ *   - RIB に登録される「1つの経路情報（route）」を表現するデータ構造
+ *   - ルートの属性（faceId, cost, origin, flags など）を保持
+ *   - PrefixAnnouncement から生成されるルートに対応
+ *   - 有効期限付きルート（expires, annExpires）を管理
+ *   - スケジューラを使ったルート有効期限イベント m_expirationEvent の管理
+ *
+ * -----------------------------------------------------------------------------
+ * 【主なメンバ変数】
+ *   - faceId:
+ *       このルートが向く Face の識別子
+ *   - origin:
+ *       ルートの起源種別（アプリケーション、管理コマンド、PrefixAnnouncement 等）
+ *   - cost:
+ *       ルートのコスト値（PrefixAnnouncement の場合は PA_ROUTE_COST=2048 ）
+ *   - flags:
+ *       ndn::nfd::RouteFlags に基づくフラグビット
+ *   - expires:
+ *       Route の有効期限（Route 全体に対する expiration）
+ *   - announcement:
+ *       PrefixAnnouncement から生成された場合のメタ情報
+ *   - annExpires:
+ *       PrefixAnnouncement 自体の有効期限タイムスタンプ
+ *   - m_expirationEvent:
+ *       scheduler による expiration イベント ID
+ *
+ * -----------------------------------------------------------------------------
+ * 【コンストラクタ】
+ *   - Route():
+ *       デフォルト初期化
+ *   - Route(const PrefixAnnouncement&, faceId):
+ *       PrefixAnnouncement を元に Route を生成
+ *       主に動的なプレフィックス広告を受信した際に使用される
+ *
+ * -----------------------------------------------------------------------------
+ * 【主なメソッド】
+ *   - getExpirationEvent():
+ *       有効期限イベント ID を返す
+ *   - setExpirationEvent():
+ *       有効期限イベント ID をセット
+ *   - cancelExpirationEvent():
+ *       期限切れイベントのキャンセル
+ *   - getFlags():
+ *       RouteFlags を数値として取得
+ *
+ * -----------------------------------------------------------------------------
+ * 【演算子】
+ *   - operator==:
+ *       faceId・origin・cost・flags・expires・announcement を比較し
+ *       Route の等価性を判断
+ *
+ * -----------------------------------------------------------------------------
+ * 【総合】
+ *   Route クラスは RIB の「最小単位のルート情報」を表すクラスであり、
+ *   以下を主眼として設計されている。
+ *     - NDN の PrefixAnnouncement や管理コマンドによるルート追加へ対応
+ *     - ルートの種類・出自・有効期限を一元的に管理
+ *     - RIB からの削除タイミングを scheduler と連携して制御
+ *
+ *   RIB (RibEntry / Rib) の上位構造と連携し、NDN の階層型名前空間に基づく
+ *   安全かつ動的なルーティング管理を支える基盤となる。
+ *
+ * ================================================================================
+ */
+
 namespace nfd::rib {
 
 /**
