@@ -2,8 +2,14 @@
 #define ECDSA_SIG_HPP
 
 #include <mcl/bn_c384_256.h>
-#include "../isdsr/signature_scheme.hpp"
 #include <string>
+
+#include <ndn-cxx/encoding/block-helpers.hpp>
+#include <ndn-cxx/encoding/block.hpp>
+#include <vector>
+
+#define ADDR_SIZE 4
+//#define ADDR_SIZE 6 //MACアドレスをIDとする場合こっちを使う
 
 /**
  * @file ecdsa_sig.hpp
@@ -43,8 +49,6 @@
  * このクラスは mcl ライブラリを用いて BN 曲線 (BN254 など) 上で
  * 計算を行うことを前提としている。
  */
-
-namespace oit::ist::nws::adhoc_routing{
 
 #define G1_LENGTH mclBn_getG1ByteSize()
 #define G2_LENGTH mclBn_getG2ByteSize()
@@ -90,11 +94,12 @@ typedef struct{
   mclBnG2 g3g2;
 } signature;
 
-class ecdsa_sig:public signature_scheme{
+class ecdsa_sig{
     protected:
     master_pk mpk;
     master_sk msk;
     id_secret_key isk;
+    std::vector<uint8_t> id;
 
     void H1(mclBnG1 *g1, const std::uint8_t *msg, int length);
     void H2(mclBnG1 *g1, const std::uint8_t *msg, int length);
@@ -105,12 +110,22 @@ class ecdsa_sig:public signature_scheme{
     public:
     ecdsa_sig(){}
     ~ecdsa_sig(){}
-    virtual void setup() override;
-    virtual void key_derivation() override;
-    virtual void sign(std::uint8_t *buf) override;
-    virtual bool verify(std::uint8_t *buf) override;
-    virtual std::string signature_scheme_name() override {return "ecdsa";};
-    virtual std::uint32_t signature_size() override;
-};
+
+    //virtual void setup() override;
+    //virtual void key_derivation() override;
+    //virtual void sign(std::uint8_t *buf) override;
+    //virtual bool verify(std::uint8_t *buf) override;
+    //virtual std::string signature_scheme_name() override {return "ecdsa";};
+    //virtual std::uint32_t signature_size() override;
+
+    //追加部分
+    std::uint32_t signature_size();
+    void setup();
+    void key_derivation();
+    std::vector<uint8_t> sign(const std::vector<std::vector<uint8_t>>& RI, std::vector<uint8_t> signed_sig);
+    bool verify(const std::vector<std::vector<uint8_t>>& RI ,const std::vector<uint8_t> verified_sig);
+    // 【追加】任意のIDを設定する関数
+    void set_id(const std::vector<uint8_t> ID);
+    void printVector(const std::vector<uint8_t>& v);
 };
 #endif

@@ -547,6 +547,12 @@ void
 GenericLinkService::decodeNetPacket(const Block& netPkt, const lp::Packet& firstPkt,
                                     const EndpointId& endpointId)
 {
+  /**-----------------------------------------------------------------
+   * ここに署名検証処理を加えるか。
+   *-----------------------------------------------------------------
+   */
+  
+
   try {
     switch (netPkt.type()) {
       case tlv::Interest:

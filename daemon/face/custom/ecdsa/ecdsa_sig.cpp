@@ -3,6 +3,12 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <string>
+
+
+#define  ADDR_SIZE 4
+
+
 
 /**
  * @file ecdsa_sig.cpp
@@ -33,7 +39,16 @@
  * - バッファサイズやオフセット (INDEX_*) に依存しているため、呼び出し側は注意
  */
 
-using namespace oit::ist::nws::adhoc_routing;
+
+void ecdsa_sig::printVector(const std::vector<uint8_t>& v)
+{
+    for (auto b : v) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(b) << " ";
+    }
+    std::cout << std::dec << std::endl;
+}
+
 std::uint32_t ecdsa_sig::signature_size(){
     std::cerr<<"signature length:"<<std::to_string(mclBn_getG1ByteSize()*3+mclBn_getG2ByteSize())<<std::endl;
     return mclBn_getG1ByteSize()*3+mclBn_getG2ByteSize();
@@ -77,11 +92,21 @@ void ecdsa_sig::deserialize_sig(signature *sig, const std::uint8_t *buf){
 	mclBnG1_deserialize(&(sig->g3g1),&(buf[INDEX_SIG_3G1]),G1_LENGTH);
 	mclBnG2_deserialize(&(sig->g3g2),&(buf[INDEX_SIG_3G2]),G2_LENGTH);
 }
+
+void ecdsa_sig::set_id(const std::vector<uint8_t> ID) {
+
+    //引数のIDをコピー　
+    this->id = ID;
+
+    //ちゃんとコピーされているかを確認
+    printVector(this->id);
+
+}
     
 void ecdsa_sig::setup(){
     std::cerr<<"ecdsa setup1"<<std::endl;
     std::cerr<<"id:["<<std::to_string(this->id[0]);
-    for(int i=1;i<ADDR_SIZE;i++){
+    for(int i=1;i<this->id.size();i++){
         std::cerr<<","<<std::to_string(this->id[i]);
     }
     std::cerr<<"]"<<std::endl;
@@ -98,31 +123,45 @@ void ecdsa_sig::setup(){
 
 void ecdsa_sig::key_derivation(){
 	mclBnG1 tmp;
-    this->H1(&tmp,this->id,ADDR_SIZE);
+    this->H1(&tmp,this->id.data(),this->id.size());
     mclBnG1_mul(&(this->isk.isk1),&tmp,&(this->msk.msk1));
-    this->H2(&tmp,this->id,ADDR_SIZE);
+    this->H2(&tmp,this->id.data(),this->id.size());
     mclBnG1_mul(&(this->isk.isk2),&tmp,&(this->msk.msk2));
     std::cerr<<"finish key derivation"<<std::endl;
 }
 
-void ecdsa_sig::sign(std::uint8_t *buf){
-	signature sig;
-    if(buf[INDEX_RI_LENGTH]==1){
-        std::cerr<<"ri is 1"<<std::endl;
+/**
+ * 引数 経路情報 RIと集約署名 signed_sig
+ */
+std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI, std::vector<uint8_t> signed_sig) {
+    signature sig;
+
+    // -----------------------------------------------------------
+    // 経路情報の数で確認
+    // -----------------------------------------------------------
+    // RIが空なら何もできない
+    if (RI.empty()) return {};
+
+    // RIのサイズが1 = 自分が最初の署名者
+    if (RI.size() == 1) {
+        // 初期化
         mclBnG1_clear(&(sig.g1));
-		mclBnG1_clear(&(sig.g2));
-		mclBnG1_clear(&(sig.g3g1));
-		mclBnG2_clear(&(sig.g3g2));
+        mclBnG1_clear(&(sig.g2));
+        mclBnG1_clear(&(sig.g3g1));
+        mclBnG2_clear(&(sig.g3g2));
     }
-    else{
-        this->deserialize_sig(&sig,&(buf[INDEX_RI+buf[INDEX_RI_LENGTH]*ADDR_SIZE]));
+    else {
+        // 前の署名を復元
+        // 注意: signed_sig が空でないかチェックが必要かもしれません
+        this->deserialize_sig(&sig, signed_sig.data());
     }
-	
-    mclBnFr x,r;
+    
+    // 2. 署名計算用の係数設定 (テスト用固定値)
+    mclBnFr x, r;
     mclBnFr_setInt(&x, 13);
     mclBnFr_setInt(&r, 7);
-    //mclBnFr_setByCSPRNG(&x);
-    //mclBnFr_setByCSPRNG(&r);
+    // mclBnFr_setByCSPRNG(&x);
+    // mclBnFr_setByCSPRNG(&r);
 
     mclBnG1 h3isk1;
     mclBnG1 rsig3;
@@ -131,54 +170,95 @@ void ecdsa_sig::sign(std::uint8_t *buf){
     mclBnG2 xg2;
     mclBnG1 rg;
 
-    mclBnG1_mul(&rg, &(mpk.mpk1g1),&r);//rg
-    mclBnG1_add(&(sig.g2),&(sig.g2),&rg);// newsig2=rg+sig2 sig2' is done
+    // --- 計算処理 ---
+    mclBnG1_mul(&rg, &(mpk.mpk1g1), &r);         // rg
+    mclBnG1_add(&(sig.g2), &(sig.g2), &rg);      // newsig2 = rg + sig2
 
-    mclBnG1_mul(&rsig3, &(sig.g3g1),&r);// r*sig3
-    mclBnG1_mul(&xsig2p,&(sig.g2),&x);// tmp = sig2'*x
+    mclBnG1_mul(&rsig3, &(sig.g3g1), &r);        // r * sig3
+    mclBnG1_mul(&xsig2p, &(sig.g2), &x);         // tmp = sig2' * x
 
-    int idmsglength=ADDR_SIZE+SEQUENCE_NO_SIZE+TYPE_SIZE+PACKET_LENGTH_SIZE+ADDR_SIZE+ADDR_SIZE+RI_LENGTH_SIZE+buf[INDEX_RI_LENGTH]*ADDR_SIZE;
+    // 3. ID || Message の結合バッファ作成
+    //size_t msg_len = message.size();
+    //size_t idmsglength = ADDR_SIZE + msg_len; 
 
-    std::uint8_t idmsg[idmsglength];//id||msg
-    std::memcpy(idmsg,this->id,ADDR_SIZE);//copy own id
-    std::memcpy(&(idmsg[ADDR_SIZE]),buf,idmsglength-ADDR_SIZE);//copy dsr header to tmp array
+    std::cout << "RI check : " << RI.size() << std::endl;
+
+    
+
+    // IDをコピー
+    // 末尾が自分のID
+    const auto& my_ID = RI.back();
+
+    // 必要な合計サイズを計算
+    size_t total_size = my_ID.size();
+    // 自分以外の過去の履歴分を加算 (RI.size()-1 まで)
+    for(size_t k = 0; k < RI.size() - 1; ++k) {
+        total_size += RI[k].size();
+    }
+
+    std::vector<uint8_t> idmsg(total_size);
+    size_t offset = 0;
+
+    // (1) 先頭に自分のIDをコピー
+    std::memcpy(idmsg.data() + offset, my_ID.data(), my_ID.size());
+    offset += my_ID.size();
+
+    // (2) 過去の経路履歴をコピー
+    for (size_t k = 0; k < RI.size() - 1; ++k) {
+        std::memcpy(idmsg.data() + offset, RI[k].data(), RI[k].size());
+        offset += RI[k].size();
+    }
+
+    // --- デバッグ用出力コード開始 ---
+    std::cout << "DEBUG: idmsg size = " << idmsg.size() << std::endl;
+    std::cout << "DEBUG: idmsg data = ";
+    for (const auto& byte : idmsg) {
+        // 2桁の16進数で表示 (例: 0a 00 ff ...)
+        std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                << static_cast<int>(byte) << " ";
+    }
+    std::cout << std::dec << std::endl; // 10進数に戻して改行
     
     mclBnFr h3;
-    std::cerr<<"signing"<<std::endl;
-    this->H3(&h3,idmsg,idmsglength);// H3(ID || m)
+    std::cout << "id check : ";
+    
+    // ハッシュ計算 H3(ID || m)
+    this->H3(&h3, idmsg.data(), idmsg.size());
 
-    mclBnG1_mul(&h3isk1,&(this->isk.isk1),&h3);// sk1 * H3(ID||m), sk1:alpha1*H1(ID)
-    mclBnG1_add(&(sig.g1),&(sig.g1), &rsig3);
-    mclBnG1_add(&(sig.g1),&(sig.g1), &xsig2p);
-    mclBnG1_add(&(sig.g1),&(sig.g1), &(this->isk.isk2));
-    mclBnG1_add(&(sig.g1),&(sig.g1), &h3isk1);
+    // --- 署名構成要素の更新 ---
+    mclBnG1_mul(&h3isk1, &(this->isk.isk1), &h3); // sk1 * H3(ID||m)
+    
+    mclBnG1_add(&(sig.g1), &(sig.g1), &rsig3);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &xsig2p);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &(this->isk.isk2));
+    mclBnG1_add(&(sig.g1), &(sig.g1), &h3isk1);
 
-    mclBnG1_mul(&xg1, &(this->mpk.mpk1g1),&x);// newsig3g1=xg
-    mclBnG2_mul(&xg2, &(this->mpk.mpk1g2),&x);// newsig3g2=xg
-    mclBnG1_add(&(sig.g3g1),&(sig.g3g1), &xg1);// newsig3g1=xg+sig3g1 sig3' is done
-    mclBnG2_add(&(sig.g3g2),&(sig.g3g2), &xg2);// newsig3g2=xg+sig3g2 sig3' is done
+    mclBnG1_mul(&xg1, &(this->mpk.mpk1g1), &x);    // newsig3g1
+    mclBnG2_mul(&xg2, &(this->mpk.mpk1g2), &x);    // newsig3g2
+    mclBnG1_add(&(sig.g3g1), &(sig.g3g1), &xg1);   // newsig3g1 update
+    mclBnG2_add(&(sig.g3g2), &(sig.g3g2), &xg2);   // newsig3g2 update
 
-	serialize_sig(&sig,&(buf[INDEX_RI+buf[INDEX_RI_LENGTH]*ADDR_SIZE]));
-   
-    //p.set_sig(tmp);
-	return;
+    
+    // 署名サイズ分のvectorを確保
+    std::vector<uint8_t> result_sig(this->signature_size());
+
+    // バッファに書き込み
+    serialize_sig(&sig, result_sig.data());
+
+    // そのまま返す
+    return result_sig;
 }
 
-bool ecdsa_sig::verify(std::uint8_t *buf){
+/**
+ * 引数　i番目のIDとそれにより署名されたmessageのリスト、署名(型は後から)
+ */
+bool ecdsa_sig::verify(const std::vector<std::vector<uint8_t>>& RI ,const std::vector<uint8_t> verified_sig){
 	signature sig;
-	deserialize_sig(&sig,&(buf[INDEX_RI+buf[INDEX_RI_LENGTH]*ADDR_SIZE]));
+	deserialize_sig(&sig,verified_sig.data());
 
 	mclBnGT t1,t2;
     mclBn_pairing(&t1, &(sig.g1),&(this->mpk.mpk1g2));
     mclBn_pairing(&t2, &(sig.g2),&(sig.g3g2));
-
-    std::uint32_t plen;
-    std::memcpy(&plen,&(buf[INDEX_PACKET_LENGTH]),PACKET_LENGTH_SIZE);
-    int header=plen-SIG_LENGTH;
-    int idmsglength=ADDR_SIZE+header;
-    std::uint8_t idmsg[idmsglength];
-    std::memset(idmsg,0,idmsglength);
-    std::memcpy(&(idmsg[ADDR_SIZE]),buf,header);
 
     std::cerr<<"verify\n"<<std::endl;
     mclBnG1 t3,t4,t5,t7;
@@ -186,29 +266,68 @@ bool ecdsa_sig::verify(std::uint8_t *buf){
     mclBnG1_clear(&t3);
     mclBnG1_clear(&t7);
 
+
     int i=0;
     std::uint32_t len;
 
-    do{
-        len=plen-(ADDR_SIZE*i);
-        std::memcpy(&(idmsg[ADDR_SIZE+INDEX_PACKET_LENGTH]),&len,PACKET_LENGTH_SIZE);
-        idmsg[ADDR_SIZE+INDEX_RI_LENGTH]=buf[INDEX_RI_LENGTH]-i;
-        this->H2(&t4,&(idmsg[ADDR_SIZE+INDEX_RI+(idmsg[ADDR_SIZE+INDEX_RI_LENGTH]-1)*ADDR_SIZE]),ADDR_SIZE);
-        mclBnG1_add(&t3,&t3,&t4);
-        this->H1(&t5,&(idmsg[ADDR_SIZE+INDEX_RI+(idmsg[ADDR_SIZE+INDEX_RI_LENGTH]-1)*ADDR_SIZE]),ADDR_SIZE);
-        std::memcpy(idmsg,&(idmsg[ADDR_SIZE+INDEX_RI+(idmsg[ADDR_SIZE+INDEX_RI_LENGTH]-1)*ADDR_SIZE]),ADDR_SIZE);
-        this->H3(&t6,idmsg,idmsglength-(i*ADDR_SIZE));
-        mclBnG1_mul(&t5,&t5,&t6);
-        mclBnG1_add(&t7,&t7,&t5);
-        i++;
-    }while(i<buf[INDEX_RI_LENGTH]);
-    mclBnGT t8,t9;
-    mclBn_pairing(&t8, &t3,&(mpk.mpk3));
-    mclBn_pairing(&t9, &t7,&(mpk.mpk2));
+    // ハッシュ計算用バッファ
+    std::vector<uint8_t> buffer;
 
-    mclBnGT_mul(&t2,&t2,&t8);
-    mclBnGT_mul(&t2,&t2,&t9);
+    //リストを走査してハッシュ値を累積
+    for(int i=0; i< RI.size(); ++i) {
 
-    int ret=mclBnGT_isEqual(&t1,&t2);
-    return (ret==1);
+        // i番目のIDを取得 (これが現在の検証対象ID)
+        const std::vector<uint8_t>& current_id_vec = RI.at(i);
+
+        buffer.clear();
+        //署名対象データの作成
+        buffer.insert(buffer.end(), current_id_vec.begin(), current_id_vec.end());
+
+        for(size_t k = 0; k < i; k++){
+            buffer.insert(buffer.end(),RI[k].begin(),RI[k].end());
+        }
+
+            // ---検証 デバッグ用出力コード開始 ---
+        std::cout << "DEBUG: idmsg size = " << buffer.size() << std::endl;
+        std::cout << "DEBUG: idmsg data = ";
+        for (const auto& byte : buffer) {
+            // 2桁の16進数で表示 (例: 0a 00 ff ...)
+            std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                    << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl; // 10進数に戻して改行
+
+
+    
+        // --- H2(ID) の計算 ---
+        // t4 = H2(ID)
+        this->H2(&t4, current_id_vec.data(), current_id_vec.size());
+        // t3 += t4 (累積)
+        mclBnG1_add(&t3, &t3, &t4);
+
+        // --- H1(ID) の計算 ---
+        // t5 = H1(ID)
+        this->H1(&t5, current_id_vec.data(), current_id_vec.size());
+
+        // --- H3(ID || Message) の計算 ---        
+        this->H3(&t6, buffer.data(), buffer.size());
+
+        // t5 = t5 * t6 ( = H1(ID) * H3(ID||Msg) )
+        mclBnG1_mul(&t5, &t5, &t6);
+        
+        // t7 += t5 (累積)
+        mclBnG1_add(&t7, &t7, &t5);
+    }
+
+    mclBnGT t8, t9;
+    // e(t3, mpk.mpk3)
+    mclBn_pairing(&t8, &t3, &(this->mpk.mpk3));
+    // e(t7, mpk.mpk2)
+    mclBn_pairing(&t9, &t7, &(this->mpk.mpk2));
+
+    mclBnGT_mul(&t2, &t2, &t8);
+    mclBnGT_mul(&t2, &t2, &t9);
+
+    int ret = mclBnGT_isEqual(&t1, &t2);
+    return (ret == 1);
 }
