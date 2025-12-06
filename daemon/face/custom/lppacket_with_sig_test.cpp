@@ -2,9 +2,8 @@
  * simple_tlv_test.cpp
  * 目的:
  * 1. ecdsa_sig クラスの実際のメソッド (setup, sign, verify) を使用する。
- * 2. NDNパケット (Interest) を作成し、カスタム署名を生成する。
- * 3. LPパケットとしてエンコードし、バイト列にする。
- * 4. バイト列からデコードし、署名検証 (verify) を行う。
+ * 2. 経路情報および、署名を載せたLPパケットとしてエンコードし、バイト列にする。
+ * 3. バイト列からデコードし、署名検証 (verify) を行う。
  *
  * 必要ファイル: ecdsa_sig.hpp, ecdsa_sig.cpp
  * 依存ライブラリ: ndn-cxx, mcl, openssl

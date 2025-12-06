@@ -1,0 +1,2 @@
+これはmini-ndnにcustom機能を付与するためのブランチを発行する際のfisrst commit用ファイルです。
+NFD_customブランチのfisrt commitでもある。
