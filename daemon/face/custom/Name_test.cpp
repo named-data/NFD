@@ -3,6 +3,14 @@
 #include <iostream>
 #include <vector>
 
+/**
+ * Nameクラスを色々と触ってみる
+ * 
+ * コンパイルコマンド
+ * ukyo@hasegawa:~/workspace/mini-ndn/dl/NFD/daemon/face/custom$ g++ -o Name_test Name_test.cpp -std=c++17 \
+ * `pkg-config --cflags --libs libndn-cxx`
+ *
+ */
 
 int main() {
     // ---------------------------------------------------------
