@@ -248,6 +248,131 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI
     // そのまま返す
     return result_sig;
 }
+/**
+ * 引数はLppacketをバイト列にしたもので考える？ 
+ * バイト列だとどこに何があるのかがわからないから非常に危険では？
+ * 渡すバイト列はすでにLPpacketを受信した端末により署名に必要なデータのみとしたら？
+ * そしてそのバイト列の順番はID + RI + sig + Interestname...の順なら？
+ * IDは固定長なのでRIも推測可能
+ * 署名方式からsigは固定長となる。
+ * 残りは何も考えずにハッシュ値に突っ込めばOK?
+ * 検証も同様に行える？
+ */
+std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI, std::vector<uint8_t> signed_sig) {
+    signature sig;
+
+    // -----------------------------------------------------------
+    // 経路情報の数で確認
+    // -----------------------------------------------------------
+    // RIが空なら何もできない
+    if (RI.empty()) return {};
+
+    // RIのサイズが1 = 自分が最初の署名者
+    if (RI.size() == 1) {
+        // 初期化
+        mclBnG1_clear(&(sig.g1));
+        mclBnG1_clear(&(sig.g2));
+        mclBnG1_clear(&(sig.g3g1));
+        mclBnG2_clear(&(sig.g3g2));
+    }
+    else {
+        // 前の署名を復元
+        // 注意: signed_sig が空でないかチェックが必要かもしれません
+        this->deserialize_sig(&sig, signed_sig.data());
+    }
+    
+    // 2. 署名計算用の係数設定 (テスト用固定値)
+    mclBnFr x, r;
+    mclBnFr_setInt(&x, 13);
+    mclBnFr_setInt(&r, 7);
+    // mclBnFr_setByCSPRNG(&x);
+    // mclBnFr_setByCSPRNG(&r);
+
+    mclBnG1 h3isk1;
+    mclBnG1 rsig3;
+    mclBnG1 xsig2p;
+    mclBnG1 xg1;
+    mclBnG2 xg2;
+    mclBnG1 rg;
+
+    // --- 計算処理 ---
+    mclBnG1_mul(&rg, &(mpk.mpk1g1), &r);         // rg
+    mclBnG1_add(&(sig.g2), &(sig.g2), &rg);      // newsig2 = rg + sig2
+
+    mclBnG1_mul(&rsig3, &(sig.g3g1), &r);        // r * sig3
+    mclBnG1_mul(&xsig2p, &(sig.g2), &x);         // tmp = sig2' * x
+
+    // 3. ID || Message の結合バッファ作成
+    //size_t msg_len = message.size();
+    //size_t idmsglength = ADDR_SIZE + msg_len; 
+
+    std::cout << "RI check : " << RI.size() << std::endl;
+
+    
+
+    // IDをコピー
+    // 末尾が自分のID
+    const auto& my_ID = RI.back();
+
+    // 必要な合計サイズを計算
+    size_t total_size = my_ID.size();
+    // 自分以外の過去の履歴分を加算 (RI.size()-1 まで)
+    for(size_t k = 0; k < RI.size() - 1; ++k) {
+        total_size += RI[k].size();
+    }
+
+    std::vector<uint8_t> idmsg(total_size);
+    size_t offset = 0;
+
+    // (1) 先頭に自分のIDをコピー
+    std::memcpy(idmsg.data() + offset, my_ID.data(), my_ID.size());
+    offset += my_ID.size();
+
+    // (2) 過去の経路履歴をコピー
+    for (size_t k = 0; k < RI.size() - 1; ++k) {
+        std::memcpy(idmsg.data() + offset, RI[k].data(), RI[k].size());
+        offset += RI[k].size();
+    }
+
+    // --- デバッグ用出力コード開始 ---
+    std::cout << "DEBUG: idmsg size = " << idmsg.size() << std::endl;
+    std::cout << "DEBUG: idmsg data = ";
+    for (const auto& byte : idmsg) {
+        // 2桁の16進数で表示 (例: 0a 00 ff ...)
+        std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                << static_cast<int>(byte) << " ";
+    }
+    std::cout << std::dec << std::endl; // 10進数に戻して改行
+    
+    mclBnFr h3;
+    std::cout << "id check : ";
+    
+    // ハッシュ計算 H3(ID || m)
+    this->H3(&h3, idmsg.data(), idmsg.size());
+
+    // --- 署名構成要素の更新 ---
+    mclBnG1_mul(&h3isk1, &(this->isk.isk1), &h3); // sk1 * H3(ID||m)
+    
+    mclBnG1_add(&(sig.g1), &(sig.g1), &rsig3);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &xsig2p);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &(this->isk.isk2));
+    mclBnG1_add(&(sig.g1), &(sig.g1), &h3isk1);
+
+    mclBnG1_mul(&xg1, &(this->mpk.mpk1g1), &x);    // newsig3g1
+    mclBnG2_mul(&xg2, &(this->mpk.mpk1g2), &x);    // newsig3g2
+    mclBnG1_add(&(sig.g3g1), &(sig.g3g1), &xg1);   // newsig3g1 update
+    mclBnG2_add(&(sig.g3g2), &(sig.g3g2), &xg2);   // newsig3g2 update
+
+    
+    // 署名サイズ分のvectorを確保
+    std::vector<uint8_t> result_sig(this->signature_size());
+
+    // バッファに書き込み
+    serialize_sig(&sig, result_sig.data());
+
+    // そのまま返す
+    return result_sig;
+}
 
 /**
  * 引数　i番目のIDとそれにより署名されたmessageのリスト、署名(型は後から)
