@@ -1,17 +1,6 @@
 /*
- * simple_tlv_test.cpp
- * 目的:
- * 1. ecdsa_sig クラスの実際のメソッド (setup, sign, verify) を使用する。
- * 2. interestの作成を行う
- * 2. interest, 経路情報および、署名を載せたLPパケットとしてエンコードし、バイト列にする。
- * 3. バイト列からデコードし、署名検証 (verify) を行う。
- *
- * 必要ファイル: ecdsa_sig.hpp, ecdsa_sig.cpp
- * 依存ライブラリ: ndn-cxx, mcl, openssl
+ *bufの中身が想定通りになっているかを確認するプログラム
  */
-
-#include "ecdsa/ecdsa_sig.hpp"
-#include "my-extension-tlv.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/lp/tlv.hpp>
@@ -30,47 +19,18 @@
 #include <memory>
 #include <stdexcept>
 
-// 経路情報をstringへ変換するメソッド
-std::string vector_vector_To_String(const std::vector<std::vector<uint8_t>>& routeInfo)
-{
-    std::string result;
+#define ID_SIZE 4
 
-    for (size_t i = 0; i < routeInfo.size(); ++i) {
-        const auto& v = routeInfo[i];
-
-        // vector<uint8_t> → string の追加
-        if (!v.empty()) {
-            result.append(reinterpret_cast<const char*>(v.data()), v.size());
-        }
-
-        // 最後以外は改行で区切り
-        if (i + 1 < routeInfo.size()) {
-            result.push_back('\n');
-        }
-    }
-
-    return result;
-}
 
 int main() {
     std::cout << "--- Start Standalone Signature Verification Test (Real MCL) ---" << std::endl;
 
     try {
         std::cout << "[Setup] Initializing ecdsa_sig scheme..." << std::endl;
-        ecdsa_sig signer;
-
 
         // ルーターID（ipアドレス）の設定 std::vector<uint8_t>を使うことになったため。 "10.0.0.1"で初期化
         std::vector<uint8_t> my_test_id = {10, 0, 0, 1};
-        // ★ここでIDを設定
-        signer.set_id(my_test_id);
-
-        // マスター鍵等の生成・読み込み
-        signer.setup();
-        signer.key_derivation(); // IDに基づいて鍵が作られる
-        std::cout << " -> OK" << std::endl;
-
-        std::vector<uint8_t> empty_sig;
+        
         std::vector<std::vector<uint8_t>> RI1 = {{my_test_id}};
 
         //経路情報の格納準備 2次元配列を1次元配列に変換
@@ -116,10 +76,12 @@ int main() {
         offset = my_test_id.size();
         //経由端末数(RI of Number)の格納
         buf[offset] = RI_of_Number;
-        offset += RI_of_Number;
-
+        offset += 1;
+        
         //bufに格納したRI_of_Numberを確認
         std::cout << "RI_of_Number in buf: " << static_cast<int>(buf[my_test_id.size()]) << std::endl;
+        std::cout << "RI_of_Number in buf[ID_SIZE]: " << static_cast<int>(buf[ID_SIZE]) << std::endl;
+
 
         
         //RIの格納
@@ -129,72 +91,12 @@ int main() {
         std::memcpy(buf.data() + offset, signed_name_Block.data(), signed_name_Block.size());
         offset += signed_name_Block.size(); 
 
-        // 署名作成
-        std::vector<uint8_t> signature1 = signer.sign(RI1, empty_sig);
-
-        std::cout << " -> Generated Signature Size: " << signature1.size() << " bytes" << std::endl;
-
-        // LPpacketの作成。
-        ndn::lp::Packet lpPacket;
-
-        //routeinformationをlppacketにset
-        lpPacket.set<ndn::lp::RouteInformationField>(RI1);
-
-        
-        // 署名ブロック (Type: Signature_ecdsaField) をヘッダーフィールドとして追加
-        lpPacket.set<ndn::lp::Signature_ecdsaField>(signature1);
-
-        
-        /**
-         * ここまででlppacketに載せる経路情報、署名の作成及びlppacketへの搭載は終了している．
-        */
-
-        //エンコード (Packet -> Wire/Block)
-        ndn::Block wire = lpPacket.wireEncode();
-        std::cout << "1. Wire Encoded. Total Size: " << wire.size() << " bytes" << std::endl;
-
-        //デコード (Wire -> New Packet)
-        ndn::lp::Packet receivedPacket(wire);
-        std::cout << "2. Decoded into new lp::Packet." << std::endl;
-
-        //デコードしたLPpacketの中身をとりだす。
-        if(receivedPacket.has<ndn::lp::RouteInformationField>()) {
-            auto riDecoded = receivedPacket.get<ndn::lp::RouteInformationField>();
-
-            std::cout << "[Decoded] RouteInformation : " << std::endl;
-            for(size_t i = 0; i < riDecoded.size(); ++i){
-                std::cout << "Node" << i << ": ";
-                for(uint8_t b : riDecoded[i]){
-                    printf("%d.", b);
-                }
-                std::cout << std::endl;
-            }
-        } else {
-            std::cout << "Could not find the RouteInformation in the LP packet." << std::endl;
+        //bufの中身を全て確認
+        std::cout << "Buffer contents:" << std::endl;
+        for (size_t i = 0; i < buf.size(); ++i) {
+            std::cout << static_cast<int>(buf[i]) << " ";
         }
-
-        //署名検証を行う。
-        //デコードしたLPpacketの中身をとりだす。
-        if(receivedPacket.has<ndn::lp::Signature_ecdsaField>()) {
-            auto sig_Decoded = receivedPacket.get<ndn::lp::Signature_ecdsaField>();
-            std::cout << "Signature information confirmed." << std::endl;
-
-            auto ri_Decoded = receivedPacket.get<ndn::lp::RouteInformationField>();
-
-            bool verify_result = signer.verify(ri_Decoded,sig_Decoded);
-
-            if(verify_result) {
-                std::cout << "verify passed" << std::endl;
-            } else {
-                std::cout << "verify failed" << std::endl;
-            }
-
-            
-        } else {
-            std::cout << "Could not find the RouteInformation in the LP packet." << std::endl;
-        }
-
-
+        std::cout << std::endl;
 
         } catch (const std::exception& e) {
         std::cerr << "Exception during verification: " << e.what() << std::endl;

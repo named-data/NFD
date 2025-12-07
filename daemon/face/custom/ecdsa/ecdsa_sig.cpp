@@ -5,11 +5,6 @@
 #include <cstring>
 #include <string>
 
-
-#define  ADDR_SIZE 4
-
-
-
 /**
  * @file ecdsa_sig.cpp
  * @brief IDベース ECDSA 署名スキームの実装
@@ -257,18 +252,23 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI
  * 署名方式からsigは固定長となる。
  * 残りは何も考えずにハッシュ値に突っ込めばOK?
  * 検証も同様に行える？
+ * 
+ * 
+ * bufに格納されているものの想定
+ * 
+ * ID(4byte) || RI_of_Number ||  RI(4byte*端末数) || 署名対象要素（Interstの各要素）
+ * この端末数どうやって求める？byte列から求めるのか？RIの先頭を割り出してそこから4byteずつ切り取って求める....は厳しいなraw dataである以上そこの区切りがわからないから。
+ * 経由端末数を示す要素を格納する必要がある
+ * 
  */
-std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI, std::vector<uint8_t> signed_sig) {
+std::vector<uint8_t> ecdsa_sig::sign(const std::vector<uint8_t>& buf, std::vector<uint8_t> signed_sig) {
     signature sig;
 
     // -----------------------------------------------------------
     // 経路情報の数で確認
     // -----------------------------------------------------------
-    // RIが空なら何もできない
-    if (RI.empty()) return {};
-
     // RIのサイズが1 = 自分が最初の署名者
-    if (RI.size() == 1) {
+    if (buf[ID_SIZE] == 1) {
         // 初期化
         mclBnG1_clear(&(sig.g1));
         mclBnG1_clear(&(sig.g2));
@@ -306,20 +306,23 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI
     //size_t msg_len = message.size();
     //size_t idmsglength = ADDR_SIZE + msg_len; 
 
-    std::cout << "RI check : " << RI.size() << std::endl;
-
-    
+    std::cout << "buf check : " << buf.size() << std::endl;
 
     // IDをコピー
-    // 末尾が自分のID
-    const auto& my_ID = RI.back();
-
+    // 末尾が自分のID 
+    std::vector<uint8_t> my_ID;
+    memcpy(&my_ID, &buf[0], ID_SIZE);
+    
     // 必要な合計サイズを計算
     size_t total_size = my_ID.size();
+    
     // 自分以外の過去の履歴分を加算 (RI.size()-1 まで)
-    for(size_t k = 0; k < RI.size() - 1; ++k) {
-        total_size += RI[k].size();
+    for(size_t k = 0; k < buf[INDEX_RI_LENGTH]; ++k) {
+        total_size += ID_SIZE;
     }
+
+    //残りの署名対象要素分を加算
+    total_size += buf.size() - (ID_SIZE + RI_LENGTH_SIZE + buf[INDEX_RI_LENGTH] * ID_SIZE);
 
     std::vector<uint8_t> idmsg(total_size);
     size_t offset = 0;
@@ -329,9 +332,9 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI
     offset += my_ID.size();
 
     // (2) 過去の経路履歴をコピー
-    for (size_t k = 0; k < RI.size() - 1; ++k) {
-        std::memcpy(idmsg.data() + offset, RI[k].data(), RI[k].size());
-        offset += RI[k].size();
+    for (size_t k = 0; k < buf[INDEX_RI_LENGTH]; ++k) {
+        std::memcpy(idmsg.data() + offset, buf.data() + ID_SIZE + RI_LENGTH_SIZE + k * ID_SIZE, ID_SIZE);
+        offset += ID_SIZE;
     }
 
     // --- デバッグ用出力コード開始 ---

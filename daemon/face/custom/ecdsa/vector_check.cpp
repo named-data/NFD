@@ -1,9 +1,32 @@
 #include <vector>
 #include <iostream>
+#include <string>
 
 /**
  * vectorの動作確認のためのコード
  */
+
+// 経路情報をstringへ変換するメソッド
+std::string vector_vector_To_String(const std::vector<std::vector<uint8_t>>& routeInfo)
+{
+    std::string result;
+
+    for (size_t i = 0; i < routeInfo.size(); ++i) {
+        const auto& v = routeInfo[i];
+
+        // vector<uint8_t> → string の追加
+        if (!v.empty()) {
+            result.append(reinterpret_cast<const char*>(v.data()), v.size());
+        }
+
+        // 最後以外は改行で区切り
+        if (i + 1 < routeInfo.size()) {
+            result.push_back('\n');
+        }
+    }
+
+    return result;
+}
 
 
 int main() {
