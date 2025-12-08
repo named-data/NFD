@@ -81,6 +81,7 @@ void ecdsa_sig::serialize_sig(const signature *sig, std::uint8_t *buf){
 	mclBnG1_serialize(&(buf[INDEX_SIG_3G1]),G1_LENGTH,&(sig->g3g1));
 	mclBnG2_serialize(&(buf[INDEX_SIG_3G2]),G2_LENGTH,&(sig->g3g2));
 }
+
 void ecdsa_sig::deserialize_sig(signature *sig, const std::uint8_t *buf){
 	mclBnG1_deserialize(&(sig->g1),&(buf[INDEX_SIG_1G1]),G1_LENGTH);
 	mclBnG1_deserialize(&(sig->g2),&(buf[INDEX_SIG_2G1]),G1_LENGTH);
@@ -119,9 +120,9 @@ void ecdsa_sig::setup(){
 void ecdsa_sig::key_derivation(){
 	mclBnG1 tmp;
     this->H1(&tmp,this->id.data(),this->id.size());
-    mclBnG1_mul(&(this->isk.isk1),&tmp,&(this->msk.msk1));
+    mclBnG1_mul(&(this->isk.isk1),&tmp,&(this->msk.msk1)); //msk.msk1=a1
     this->H2(&tmp,this->id.data(),this->id.size());
-    mclBnG1_mul(&(this->isk.isk2),&tmp,&(this->msk.msk2));
+    mclBnG1_mul(&(this->isk.isk2),&tmp,&(this->msk.msk2)); //msk.msk2=a2
     std::cerr<<"finish key derivation"<<std::endl;
 }
 
@@ -256,7 +257,7 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<std::vector<uint8_t>>& RI
  * 
  * bufに格納されているものの想定
  * 
- * ID(4byte) || RI_of_Number ||  RI(4byte*端末数) || 署名対象要素（Interstの各要素）
+ * RI_of_Number ||  RI(4byte*端末数、署名者のIDも含む) || 署名対象要素（Interstの各要素）
  * この端末数どうやって求める？byte列から求めるのか？RIの先頭を割り出してそこから4byteずつ切り取って求める....は厳しいなraw dataである以上そこの区切りがわからないから。
  * 経由端末数を示す要素を格納する必要がある
  * 
@@ -268,7 +269,7 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<uint8_t>& buf, std::vecto
     // 経路情報の数で確認
     // -----------------------------------------------------------
     // RIのサイズが1 = 自分が最初の署名者
-    if (buf[ID_SIZE] == 1) {
+    if (buf[0] == 1) {
         // 初期化
         mclBnG1_clear(&(sig.g1));
         mclBnG1_clear(&(sig.g2));
@@ -277,8 +278,14 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<uint8_t>& buf, std::vecto
     }
     else {
         // 前の署名を復元
-        // 注意: signed_sig が空でないかチェックが必要かもしれません
+        // 注意: signed_sig が空でないかチェックが必要かもしれない
         this->deserialize_sig(&sig, signed_sig.data());
+    }
+
+    if (mclBnG1_isZero(&(sig.g1))) {
+        std::cout << "g1 is ZERO" << std::endl;
+    } else {
+        std::cout << "g1 is NOT zero" << std::endl;
     }
     
     // 2. 署名計算用の係数設定 (テスト用固定値)
@@ -306,49 +313,43 @@ std::vector<uint8_t> ecdsa_sig::sign(const std::vector<uint8_t>& buf, std::vecto
     //size_t msg_len = message.size();
     //size_t idmsglength = ADDR_SIZE + msg_len; 
 
-    std::cout << "buf check : " << buf.size() << std::endl;
+    std::cout << "buf size check : " << buf.size() << std::endl;
 
-    // IDをコピー
-    // 末尾が自分のID 
-    std::vector<uint8_t> my_ID;
-    memcpy(&my_ID, &buf[0], ID_SIZE);
+    //RI_LENGTH分を加算
+    size_t total_size = buf.size();
     
-    // 必要な合計サイズを計算
-    size_t total_size = my_ID.size();
-    
-    // 自分以外の過去の履歴分を加算 (RI.size()-1 まで)
-    for(size_t k = 0; k < buf[INDEX_RI_LENGTH]; ++k) {
-        total_size += ID_SIZE;
-    }
-
-    //残りの署名対象要素分を加算
-    total_size += buf.size() - (ID_SIZE + RI_LENGTH_SIZE + buf[INDEX_RI_LENGTH] * ID_SIZE);
+    std::cout<<"total_size:"<<total_size<<std::endl;
 
     std::vector<uint8_t> idmsg(total_size);
     size_t offset = 0;
 
-    // (1) 先頭に自分のIDをコピー
-    std::memcpy(idmsg.data() + offset, my_ID.data(), my_ID.size());
-    offset += my_ID.size();
+    // (2) RI_LENGTHをコピー
+    std::memcpy(idmsg.data() + offset, buf.data(), RI_LENGTH_SIZE);
+    offset += RI_LENGTH_SIZE;
 
-    // (2) 過去の経路履歴をコピー
-    for (size_t k = 0; k < buf[INDEX_RI_LENGTH]; ++k) {
-        std::memcpy(idmsg.data() + offset, buf.data() + ID_SIZE + RI_LENGTH_SIZE + k * ID_SIZE, ID_SIZE);
+    // (2) 自身のIDを含む経路情報をコピー
+    for (size_t k = 0; k < buf[0]; ++k) {
+        std::memcpy(idmsg.data() + offset, buf.data() + RI_LENGTH_SIZE + k * ID_SIZE, ID_SIZE);
         offset += ID_SIZE;
     }
 
-    // --- デバッグ用出力コード開始 ---
-    std::cout << "DEBUG: idmsg size = " << idmsg.size() << std::endl;
-    std::cout << "DEBUG: idmsg data = ";
+    // (3) 署名対象要素をコピー
+    size_t sig_target_offset = RI_LENGTH_SIZE + buf[0] * ID_SIZE;
+    size_t sig_target_size = buf.size() - sig_target_offset;
+    std::memcpy(idmsg.data() + offset, buf.data() + sig_target_offset, sig_target_size);
+    offset += sig_target_size;
+
+    //std::cout << std::dec << std::endl; // 10進数に戻して改行
+    mclBnFr h3;
+            // ---検証 デバッグ用出力コード開始 ---
+    std::cout << "DEBUG: signed message size = " << idmsg.size() << std::endl;
+    std::cout << "DEBUG: signed message data = ";
     for (const auto& byte : idmsg) {
         // 2桁の16進数で表示 (例: 0a 00 ff ...)
         std::cout << std::hex << std::setw(2) << std::setfill('0') 
                 << static_cast<int>(byte) << " ";
     }
     std::cout << std::dec << std::endl; // 10進数に戻して改行
-    
-    mclBnFr h3;
-    std::cout << "id check : ";
     
     // ハッシュ計算 H3(ID || m)
     this->H3(&h3, idmsg.data(), idmsg.size());
@@ -454,6 +455,148 @@ bool ecdsa_sig::verify(const std::vector<std::vector<uint8_t>>& RI ,const std::v
     mclBn_pairing(&t9, &t7, &(this->mpk.mpk2));
 
     mclBnGT_mul(&t2, &t2, &t8);
+    mclBnGT_mul(&t2, &t2, &t9);
+
+    int ret = mclBnGT_isEqual(&t1, &t2);
+    return (ret == 1);
+}
+/**
+ * バイト列を受け取る想定の検証関数
+ * バイト列の中身は
+ * RI_of_Number ||  RI(4byte*端末数、署名者のIDも含む) || 署名対象要素（Interstの各要素）になっているはず。
+ * 一つ目を取り出してRIの数を取得し、その数だけIDを取り出して、検証に使用する。
+ */
+
+bool ecdsa_sig::verify(const std::vector<std::uint8_t>& buf, const std::vector<uint8_t> verified_sig){
+	signature sig;
+	deserialize_sig(&sig,verified_sig.data());
+
+	mclBnGT t1,t2;
+    mclBn_pairing(&t1, &(sig.g1),&(this->mpk.mpk1g2)); 
+    mclBn_pairing(&t2, &(sig.g2),&(sig.g3g2)); //
+
+    std::cerr<<"verify\n"<<std::endl;
+    mclBnG1 t3,t4,t5,t7;
+    mclBnFr t6;
+    mclBnG1_clear(&t3);
+    mclBnG1_clear(&t7);
+
+
+    int i=0;
+    size_t offset = 0;
+    size_t ri_count = buf[0];
+    // 経路情報部分のサイズ
+    size_t ri_total = RI_LENGTH_SIZE + ri_count * ID_SIZE;
+
+    // 署名対象データのサイズ（ID 群より後ろ）
+    size_t msg_len = buf.size() - ri_total;
+
+    // buffer の必要サイズ
+    size_t buffer_size = RI_LENGTH_SIZE + ID_SIZE + msg_len;    
+
+    std::cout<<"total_size:"<<buffer_size<<std::endl;
+
+    // ---検証 デバッグ用出力コード開始 ---
+    std::cout << "DEBUG: first buf size = " << buf.size() << std::endl;
+    std::cout << "DEBUG: first buf data = ";
+    for (const auto& byte : buf) {
+        // 2桁の16進数で表示 (例: 0a 00 ff ...)
+        std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                << static_cast<int>(byte) << " ";
+    }
+    std::cout << std::dec << std::endl; // 10進数に戻して改行
+
+
+    // ハッシュ計算用バッファ
+    std::vector<uint8_t> buffer;
+
+    //リストを走査してハッシュ値を累積
+    do{
+        //ここでi+1番目のIDを取り出す
+        std::vector<uint8_t> current_id_vec(ID_SIZE);
+        memcpy(current_id_vec.data(), &buf[RI_LENGTH_SIZE + i * ID_SIZE], ID_SIZE);
+
+        //i番目のIDを確認する．
+        std::cout << "DEBUG: current_id_vec data = ";
+        for (const auto& byte : current_id_vec) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                      << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl;
+
+        //i+1番目のIDによる署名対象メッセージ分のサイズを計算する
+        size_t I_plus_1_th_buffer_size = RI_LENGTH_SIZE + (i+1)*ID_SIZE + msg_len;
+
+
+        buffer.clear();
+        buffer.resize(I_plus_1_th_buffer_size);
+
+        //RI_of_Numberの格納を行う
+        memcpy(buffer.data(), buf.data(), RI_LENGTH_SIZE);
+        offset = RI_LENGTH_SIZE;
+        //検証対象データの作成、RI_LENGTH_SIZE+署名を行った経路情報
+        memcpy(buffer.data() + offset, buf.data() + RI_LENGTH_SIZE, (i + 1) * ID_SIZE);
+
+
+        // ---検証 デバッグ用出力コード開始 ---
+        std::cout << "DEBUG: second buffer.size() = " << buffer.size() << std::endl;
+        std::cout << "DEBUG: second buffer data = ";
+        for (const auto& byte : buffer) {
+            // 2桁の16進数で表示 (例: 0a 00 ff ...)
+            std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                    << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl; // 10進数に戻して改行
+
+        // offset の正しい位置（例：RI_LENGTH_SIZE + (i+1)*ID_SIZE）
+        offset = RI_LENGTH_SIZE + (i+1) * ID_SIZE;
+
+        //offsetの中身を確認する
+        std::cout << "DEBUG: offset = " << offset << std::endl;
+        
+        //経路情報よりも後の署名対象要素を追加
+        //RI_of_Number ||  RI(4byte*端末数、署名者のIDも含む) || 署名対象要素（Interstの各要素）のうち署名対象要素の部分をコピーする。
+        memcpy(buffer.data()+offset, &buf[ri_total], msg_len);
+
+        // ---検証 デバッグ用出力コード開始 ---
+        std::cout << "DEBUG: third buffer.size() = " << buffer.size() << std::endl;
+        std::cout << "DEBUG: third buffer data = ";
+        for (const auto& byte : buffer) {
+            // 2桁の16進数で表示 (例: 0a 00 ff ...)
+            std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                    << static_cast<int>(byte) << " ";
+        }
+        std::cout << std::dec << std::endl; // 10進数に戻して改行
+
+
+    
+        // --- H2(ID) の計算 ---
+        // t4 = H2(ID)
+        this->H2(&t4, current_id_vec.data(), current_id_vec.size());
+        // t3 += t4 (累積)
+        mclBnG1_add(&t3, &t3, &t4);  //t3 = H2(ID_i)の累積
+
+        // --- H1(ID) の計算 ---
+        // t5 = H1(ID)
+        this->H1(&t5, current_id_vec.data(), current_id_vec.size());  //t5 = H1(ID_i)
+
+        // --- H3(ID || Message) の計算 ---        
+        this->H3(&t6, buffer.data(), buffer.size()); //t6 = H3(ID_i || message)
+
+        // t5 = t5 * t6 ( = H1(ID) * H3(ID||Msg) )
+        mclBnG1_mul(&t5, &t5, &t6); //t5 = H1(ID_i) * H3(ID_i || message)
+        
+        // t7 += t5 (累積)
+        mclBnG1_add(&t7, &t7, &t5); //t7 = Σ(H1(ID_i) * H3(ID_i || message) )
+    }while(++i < ri_count);
+
+    mclBnGT t8, t9;
+    // e(t3, mpk.mpk3)
+    mclBn_pairing(&t8, &t3, &(this->mpk.mpk3)); //mpk3はおそらくa1*g, t3はΣH2(ID_i)
+    // e(t7, mpk.mpk2)
+    mclBn_pairing(&t9, &t7, &(this->mpk.mpk2)); //mpk2はおそらくa2*g
+
+    mclBnGT_mul(&t2, &t2, &t8); //
     mclBnGT_mul(&t2, &t2, &t9);
 
     int ret = mclBnGT_isEqual(&t1, &t2);

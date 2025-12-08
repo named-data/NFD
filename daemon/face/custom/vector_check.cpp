@@ -41,6 +41,8 @@ int main() {
     std::cout << "RI.size() : " << RI.size() << std::endl;
     std::cout << "RI.at(0).size() : " << RI.at(0).size() << std::endl; 
     //std::cout << "RI[3] : " <<  RI[3] << std::endl;
+    RI.clear();
+    std::cout << "After clear, RI.size() : " << RI.size() << std::endl;
 
 
 }
