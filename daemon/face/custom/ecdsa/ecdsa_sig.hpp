@@ -127,9 +127,11 @@ class ecdsa_sig{
     std::vector<uint8_t> sign(const std::vector<std::vector<uint8_t>>& RI, std::vector<uint8_t> signed_sig);
     std::vector<uint8_t> sign(const std::vector<uint8_t>& buf, std::vector<uint8_t> signed_sig);
     void sign(std::vector<uint8_t>& buf);
+    std::vector<uint8_t> OneSigsign(std::vector<uint8_t>& buf);
+    bool verify(const std::vector<std::uint8_t>& buf);
     bool verify(const std::vector<std::vector<uint8_t>>& RI ,const std::vector<uint8_t> verified_sig);
     bool verify(const std::vector<std::uint8_t>& buf, const std::vector<uint8_t> verified_sig);
-    bool verify(const std::vector<std::uint8_t>& buf);
+    int OneSigverify(const std::vector<std::uint8_t>& buf);
     // 【追加】任意のIDを設定する関数
     void set_id(const std::vector<uint8_t> ID);
     void printVector(const std::vector<uint8_t>& v);

@@ -126,6 +126,127 @@ void ecdsa_sig::key_derivation(){
     std::cerr<<"finish key derivation"<<std::endl;
 }
 
+
+/**
+ * バフの中身の想定署名 || RI_of_Number ||  RI(4byte*端末数、署名者のIDも含む) || 署名対象要素（Interstの各要素）
+ */
+std::vector<uint8_t> ecdsa_sig::OneSigsign(std::vector<uint8_t> &buf)
+{
+    signature sig;
+    //int i = 1;
+
+    // 署名対象要素のサイズを加算 RI_of_Number +  RI + 署名対象要素
+    size_t signature_size = this->signature_size();
+    size_t ri_size = buf[signature_size] * ID_SIZE;
+    size_t total_size = buf.size() - signature_size;
+
+    // bufを送信してきた端末のIDを取り出す
+    std::vector<uint8_t> current_id_vec(ID_SIZE);
+    memcpy(current_id_vec.data(), &buf[signature_size + RI_LENGTH_SIZE + ri_size - ID_SIZE], ID_SIZE);
+    // -----------------------------------------------------------
+    // 経路情報の数で確認
+    // -----------------------------------------------------------
+    // RIのサイズが1 = 自分が最初の署名者
+    //if (buf[signature_size] == 1)
+    //{
+        // std::cout<<"initializing signature"<<std::endl;
+        //  初期化
+    mclBnG1_clear(&(sig.g1));
+    mclBnG1_clear(&(sig.g2));
+    mclBnG1_clear(&(sig.g3g1));
+    mclBnG2_clear(&(sig.g3g2));
+    //}
+    // else
+    // {
+    //     this->deserialize_sig(&sig, buf.data());
+    // }
+
+    // 2. 署名計算用の係数設定 (テスト用固定値)
+    mclBnFr x, r;
+    mclBnFr_setInt(&x, 13);
+    mclBnFr_setInt(&r, 7);
+    // mclBnFr_setByCSPRNG(&x);
+    // mclBnFr_setByCSPRNG(&r);
+
+    mclBnG1 h3isk1;
+    mclBnG1 rsig3;
+    mclBnG1 xsig2p;
+    mclBnG1 xg1;
+    mclBnG2 xg2;
+    mclBnG1 rg;
+
+    // --- 計算処理 ---
+    mclBnG1_mul(&rg, &(mpk.mpk1g1), &r);    // rg
+    mclBnG1_add(&(sig.g2), &(sig.g2), &rg); // newsig2 = rg + sig2
+
+    mclBnG1_mul(&rsig3, &(sig.g3g1), &r); // r * sig3
+    mclBnG1_mul(&xsig2p, &(sig.g2), &x);  // tmp = sig2' * x
+
+    total_size += ID_SIZE; // ID分を加算
+
+    // 署名対象メッセージ（IDの数 || 経路情報 || 署名対象要素（Interstの各要素））の作成
+    std::vector<uint8_t> idmsg(total_size, 0);
+    size_t offset = 0;
+
+    // 署名者のIDをコピー
+    std::memcpy(idmsg.data() + offset, current_id_vec.data(), ID_SIZE);
+    offset += ID_SIZE;
+
+    // IDの数をコピー
+    std::memcpy(idmsg.data() + offset, buf.data() + signature_size, RI_LENGTH_SIZE);
+    offset += RI_LENGTH_SIZE;
+
+    // 自身のIDを含む経路情報をコピー
+    memcpy(idmsg.data() + offset, buf.data() + signature_size + RI_LENGTH_SIZE, ri_size);
+    offset += ri_size;
+
+    // (3) 署名対象要素をコピー
+    size_t sig_target_offset = signature_size + RI_LENGTH_SIZE + ri_size;
+    // sig_target_offsetの中身を確認
+    // std::cout << "sig_target_offset: " << sig_target_offset << std::endl;
+
+    size_t sig_target_size = buf.size() - sig_target_offset;
+    // std::cout << "sig_target_size: " << sig_target_size << std::endl;
+
+    std::memcpy(idmsg.data() + offset, buf.data() + sig_target_offset, sig_target_size);
+    offset += sig_target_size;
+
+    mclBnFr h3;
+    mclBnFr h22;
+
+    // ハッシュ計算 H3(ID || m) //messageは署名そのものを除く全て。
+    this->H3(&h3, idmsg.data(), idmsg.size());
+    //this->H3(&h22, idmsg.data(), idmsg.size());
+    // writeFrHexToFile(h22, i, "InterestSignHash.txt");
+
+    // dumpIdMsgToFile(idmsg, "SignDebug.txt", i);
+
+    // --- 署名構成要素の更新 ---
+    mclBnG1_mul(&h3isk1, &(this->isk.isk1), &h3); // sk1 * H3(ID||m)
+
+    mclBnG1_add(&(sig.g1), &(sig.g1), &rsig3);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &xsig2p);
+    mclBnG1_add(&(sig.g1), &(sig.g1), &(this->isk.isk2));
+    mclBnG1_add(&(sig.g1), &(sig.g1), &h3isk1);
+
+    mclBnG1_mul(&xg1, &(this->mpk.mpk1g1), &x);  // newsig3g1
+    mclBnG2_mul(&xg2, &(this->mpk.mpk1g2), &x);  // newsig3g2
+    mclBnG1_add(&(sig.g3g1), &(sig.g3g1), &xg1); // newsig3g1 update
+    mclBnG2_add(&(sig.g3g2), &(sig.g3g2), &xg2); // newsig3g2 update
+
+    // バッファに書き込み
+    serialize_sig(&sig, buf.data());
+
+    // bufの先頭ECDSASIZE分が署名データ
+    // returnは、この部分だけで良い
+    std::vector<uint8_t> return_buf(240);
+    std::memcpy(return_buf.data(), buf.data(), 240);
+
+    // std::cout << "Signature generated. Returning signature of size: " << return_buf.size() << " bytes." << std::endl;
+
+    return return_buf;
+}
+
 /**
  * バフの中身の想定　署名 || RI_of_Number ||  RI(4byte*端末数、署名者のIDも含む) || 署名対象要素（Interstの各要素）
  */
@@ -271,6 +392,101 @@ void ecdsa_sig::sign(std::vector<uint8_t>& buf) {
     serialize_sig(&sig,buf.data());
 
     return;
+}
+
+/**
+ * バフの中身の想定署名(240byte) || IDの数(1byte) ||  経路情報(4byte*IDの数、署名者のIDも含む) || 署名対象要素（Interstの各要素で可変長）
+ */
+int ecdsa_sig::OneSigverify(const std::vector<std::uint8_t> &buf)
+{
+    signature sig;
+    // 全体サイズ
+    // size_t total_size = buf.size();
+    // 署名サイズ
+    size_t signature_size = this->signature_size();
+    // IDの数
+    size_t ri_count = buf[signature_size];
+    // 経路情報サイズ
+    size_t ri_size = ri_count * ID_SIZE;
+    // 署名したIDへのアクセスを補助するためのサイズ
+    size_t access_next_ID = ri_size;
+    // 署名対象要素サイズ
+    // ここ怪しくね？
+    size_t signed_element_size = buf.size() - (signature_size + RI_LENGTH_SIZE + ri_size);
+    // 署名の復元
+    deserialize_sig(&sig, buf.data());
+    mclBnGT t1, t2;
+    mclBn_pairing(&t1, &(sig.g1), &(this->mpk.mpk1g2));
+    mclBn_pairing(&t2, &(sig.g2), &(sig.g3g2)); //
+    // std::cerr<<"verify\n"<<std::endl;
+    mclBnG1 t3, t4, t5, t7;
+    mclBnFr t6;
+    mclBnG1_clear(&t3);
+    mclBnG1_clear(&t7);
+    //size_t i = 0;
+    size_t offset = 0;
+
+    // ハッシュ計算用バッファ（ここに署名されたメッセージを格納する）
+    std::vector<uint8_t> buffer;
+
+    // do
+    // {
+        // bufを送信してきた端末のIDを取り出す
+    std::vector<uint8_t> current_id_vec(ID_SIZE);
+    memcpy(current_id_vec.data(), &buf[signature_size + RI_LENGTH_SIZE + access_next_ID - ID_SIZE], ID_SIZE);
+    // 署名対象メッセージの作成
+    buffer.clear();
+    // buffer の必要サイズをi+1番目の署名対象メッセージのみ格納する予定。
+    size_t buffer_size = ID_SIZE + RI_LENGTH_SIZE + access_next_ID + signed_element_size;
+    buffer.resize(buffer_size);
+    memcpy(buffer.data(), current_id_vec.data(), ID_SIZE);
+    offset += ID_SIZE;
+    buffer[offset] = ri_count;
+    offset += RI_LENGTH_SIZE;
+    memcpy(buffer.data() + offset, buf.data() + signature_size + RI_LENGTH_SIZE, ri_count  * ID_SIZE);
+    offset += ri_count * ID_SIZE;
+    memcpy(buffer.data() + offset, buf.data() + signature_size + RI_LENGTH_SIZE + ri_size, signed_element_size);
+    // --- H2(ID) の計算 ---
+    // t4 = H2(ID)
+    this->H2(&t4, buffer.data(), ID_SIZE); // bufferの先頭にID_iが格納されているため
+    // t3 += t4 (累積)
+    mclBnG1_add(&t3, &t3, &t4); // t3 = H2(ID_i)の累積
+    // --- H1(ID) の計算 ---
+    // t5 = H1(ID)
+    this->H1(&t5, buffer.data(), ID_SIZE); // t5 = H1(ID_i) bufferの先頭にID_iが格納されているため
+    // --- H3(ID || Message) の計算 ---
+    this->H3(&t6, buffer.data(), buffer.size()); // t6 = H3(ID_i || message)
+
+    // this->toHex(buffer);
+    //  t5 = t5 * t6 ( = H1(ID) * H3(ID||Msg) )
+    mclBnG1_mul(&t5, &t5, &t6); // t5 = H1(ID_i) * H3(ID_i || message)
+    // t7 += t5 (累積)
+    mclBnG1_add(&t7, &t7, &t5); // t7 = Σ(H1(ID_i) * H3(ID_i || message) )
+    // ここから次のIDへの準備
+    // offsetを初期化
+    offset = 0;
+    // 次のIDへ移動
+    access_next_ID -= ID_SIZE;
+    // std::cout << "i : " << i << std::endl;
+    //} while (++i < ri_count);
+    
+    mclBnGT t8, t9;
+    // e(t3, mpk.mpk3)
+    mclBn_pairing(&t8, &t3, &(this->mpk.mpk3)); // mpk3はおそらくa1*g, t3はΣH2(ID_i)
+    // e(t7, mpk.mpk2)
+    mclBn_pairing(&t9, &t7, &(this->mpk.mpk2)); // mpk2はおそらくa2*g
+    mclBnGT_mul(&t2, &t2, &t8);                 //
+    mclBnGT_mul(&t2, &t2, &t9);
+    int ret = mclBnGT_isEqual(&t1, &t2);
+    if (ret == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+    // return (ret == 1);
 }
 
 /**

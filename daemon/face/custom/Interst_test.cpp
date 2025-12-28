@@ -25,6 +25,11 @@ int main() {
         auto interest3 = std::make_shared<ndn::Interest>();
         std::cout << "Interest3 created with default name" << std::endl;
 
+        interest1->getNonce(); // Nonceを取得（存在しない場合は生成される）
+        std::cout << "Interest1 Nonce: " << interest1->getNonce() << std::endl;
+
+        
+
     } catch (const std::invalid_argument& e) {
         std::cerr << "Invalid argument: " << e.what() << std::endl;
     } catch (const std::bad_weak_ptr& e) {
