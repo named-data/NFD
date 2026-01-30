@@ -3,17 +3,11 @@ NFD: Named Data Networking Forwarding Daemon
 
 .. toctree::
    :hidden:
-   :maxdepth: 3
 
    overview
    INSTALL
    FAQ
    manpages
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-
    release-notes
    releases
 
