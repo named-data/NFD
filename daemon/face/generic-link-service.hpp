@@ -142,6 +142,10 @@ struct GenericLinkServiceOptions
    */
   bool allowSelfLearning = true;
 
+  /** \brief Enables adaptive multicast suppression (AMS) on multicast faces.
+   */
+  bool enableMulticastSuppression = false;
+
   /** \brief Overrides the MTU provided by Transport.
    *
    *  This MTU value will be used instead of the MTU provided by the transport if it is less than

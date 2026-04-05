@@ -134,6 +134,7 @@ private:
     udp::Endpoint groupV6 = udp::getDefaultMulticastGroupV6();
     ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
+    bool enableMulticastSuppression = false;
   };
   MulticastConfig m_mcastConfig;
   std::map<udp::Endpoint, shared_ptr<Face>> m_mcastFaces;
