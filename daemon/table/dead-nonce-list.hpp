@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2026,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,7 +41,7 @@ namespace nfd {
  *
  * The Dead Nonce List is a global table that supplements the PIT for loop detection.
  * When a Nonce is erased (dead) from a PIT entry, the Nonce and the Interest Name are added to
- * the Dead Nonce List and kept for a duration in which most loops are expected to have occured.
+ * the Dead Nonce List and kept for a duration in which most loops are expected to have occurred.
  *
  * To reduce memory usage, the Interest Name and Nonce are stored as a 64-bit hash.
  * The probability of false positives (a non-looping Interest considered as looping) is small
@@ -59,7 +59,7 @@ public:
   /**
    * \brief Constructs the Dead Nonce List
    * \param lifetime expected lifetime of each nonce, must be no less than #MIN_LIFETIME.
-   *        This should be set to a duration over which most loops would have occured.
+   *        This should be set to a duration over which most loops would have occurred.
    *        A loop cannot be detected if the total delay of the cycle is greater than lifetime.
    * \throw std::invalid_argument if lifetime is less than #MIN_LIFETIME
    */
