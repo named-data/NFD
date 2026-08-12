@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2025,  Regents of the University of California,
+ * Copyright (c) 2014-2026,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,6 +35,7 @@
 #include <ndn-cxx/util/io.hpp>
 
 #include <filesystem>
+#include <fstream>
 
 namespace security = ndn::security;
 
@@ -150,7 +151,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
 
     bool isAny = false;
-    shared_ptr<security::Certificate> cert;
+    security::Certificate cert;
     if (certfile == "any") {
       isAny = true;
       NFD_LOG_WARN("'certfile any' is intended for demo purposes only and "
@@ -159,10 +160,13 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     else {
       auto certfilePath = std::filesystem::absolute(filename).parent_path() / certfile;
       certfilePath = certfilePath.lexically_normal();
-      cert = ndn::io::load<security::Certificate>(certfilePath);
-      if (cert == nullptr) {
-        NDN_THROW(ConfigFile::Error("cannot load certfile '" + certfilePath.native() +
-                                    "' for authorize[" + std::to_string(authSectionIndex) + "]"));
+      try {
+        std::ifstream ifs(certfilePath);
+        cert = ndn::io::loadTlv<security::Certificate>(ifs);
+      }
+      catch (const std::runtime_error&) {
+        NDN_THROW_NESTED(ConfigFile::Error("cannot load certfile '" + certfilePath.native() +
+                                           "' for authorize[" + std::to_string(authSectionIndex) + "]"));
       }
     }
 
@@ -196,10 +200,9 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
         NFD_LOG_INFO("authorize module=" << module << " signer=any");
       }
       else {
-        const Name& keyName = cert->getKeyName();
-        security::Certificate certCopy = *cert;
-        found->second->loadAnchor(certfile, std::move(certCopy));
-        NFD_LOG_INFO("authorize module=" << module << " signer=" << keyName << " certfile=" << certfile);
+        found->second->loadAnchor(certfile, security::Certificate(cert));
+        NFD_LOG_INFO("authorize module=" << module << " signer=" << cert.getKeyName()
+                     << " certfile=" << certfile);
       }
     }
 

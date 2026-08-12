@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2026,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 #include <ndn-cxx/util/io.hpp>
 
 #include <filesystem>
+#include <fstream>
 #include <system_error>
 
 namespace nfd::tests {
@@ -52,7 +53,8 @@ KeyChainFixture::saveCert(const Data& cert, const std::string& filename)
 {
   m_certFiles.push_back(filename);
   try {
-    ndn::io::save(cert, filename);
+    std::ofstream file(filename);
+    ndn::io::saveTlv(cert, file, ndn::io::BASE64);
     return true;
   }
   catch (const ndn::io::Error&) {
