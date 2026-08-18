@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Copyright (c) 2014-2024,  Regents of the University of California,
+Copyright (c) 2014-2026,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,6 +62,9 @@ class NfdStatusHandler(SimpleHTTPRequestHandler):
             # (yes, this is a ugly hack)
             if (pos := output.find(">") + 1) != 0:
                 xml = output[:pos] + '<?xml-stylesheet type="text/xsl" href="nfd-status.xsl"?>' + output[pos:]
+                rootstart = xml.find("<nfdStatus")
+                if rootstart != -1 and (rootend := xml.find(">", rootstart) + 1) != 0:
+                    xml = xml[:rootend] + '<script src="xslt-polyfill.min.js" xmlns="http://www.w3.org/1999/xhtml"></script>' + xml[rootend:]
                 self.send_response(200)
                 self.send_header("Content-Type", "text/xml; charset=UTF-8")
                 self.end_headers()

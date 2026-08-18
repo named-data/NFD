@@ -68,3 +68,5 @@ NFD contains third-party software, licensed under the following licenses:
 * The *WebSocket++* library is licensed under the
   [3-clause BSD license](https://github.com/zaphoyd/websocketpp/blob/0.8.1/COPYING)
 * The *waf* build system is licensed under the [3-clause BSD license](waf)
+* *XSLT Polyfill* is licensed under the
+  [3-clause BSD license](https://github.com/mfreed7/xslt_polyfill/blob/main/LICENSE)

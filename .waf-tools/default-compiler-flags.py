@@ -204,6 +204,8 @@ class GccFlags(GccClangCommonFlags):
         flags['CXXFLAGS'] += self.__cxxFlags
         if platform.machine() == 'armv7l':
             flags['CXXFLAGS'] += ['-Wno-psabi'] # Bug #5106
+        if get_compiler_ver(conf) >= (16, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-error=uninitialized'] # Bug #5390
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -241,6 +243,8 @@ class ClangFlags(GccClangCommonFlags):
     def getDebugFlags(self, conf):
         flags = super().getDebugFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
+        if get_compiler_ver(conf) >= (22, 0, 0) and get_compiler_ver(conf) < (23, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-c2y-extensions'] # Bug #5391
         flags['DEFINES'] += [
             # Enable assertions in libc++
             # https://libcxx.llvm.org/Hardening.html
@@ -254,4 +258,6 @@ class ClangFlags(GccClangCommonFlags):
     def getOptimizedFlags(self, conf):
         flags = super().getOptimizedFlags(conf)
         flags['CXXFLAGS'] += self.__cxxFlags
+        if get_compiler_ver(conf) >= (22, 0, 0) and get_compiler_ver(conf) < (23, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-c2y-extensions'] # Bug #5391
         return flags
