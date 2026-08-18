@@ -165,6 +165,7 @@ face_system
     mcast_group_v6 ff02::1234 ; UDP multicast group (IPv6)
     mcast_port_v6 56363 ; UDP multicast port number (IPv6)
     mcast_ad_hoc no ; set to 'yes' to make all UDP multicast faces "ad hoc", default 'no'
+    mcast_suppression no ; set to 'yes' to enable adaptive multicast suppression (AMS), default 'no'
 
     ; Whitelist and blacklist can contain, in no particular order:
     ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
@@ -220,6 +221,7 @@ face_system
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
   @IF_HAVE_LIBPCAP@  mcast_ad_hoc no ; set to 'yes' to make all Ethernet multicast faces "ad hoc", default 'no'
+  @IF_HAVE_LIBPCAP@  mcast_suppression no ; set to 'yes' to enable adaptive multicast suppression (AMS), default 'no'
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
   @IF_HAVE_LIBPCAP@  ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')

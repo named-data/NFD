@@ -163,6 +163,9 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
         bool wantAdHoc = ConfigFile::parseYesNo(pair, "face_system.udp");
         mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
       }
+      else if (key == "mcast_suppression") {
+        mcastConfig.enableMulticastSuppression = ConfigFile::parseYesNo(pair, "face_system.udp");
+      }
       else if (key == "whitelist") {
         mcastConfig.netifPredicate.parseWhitelist(value);
       }
@@ -365,6 +368,7 @@ UdpFactory::createMulticastFace(const net::NetworkInterface& netif,
 
   GenericLinkService::Options options;
   options.allowCongestionMarking = m_wantCongestionMarking;
+  options.enableMulticastSuppression = m_mcastConfig.enableMulticastSuppression;
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<MulticastUdpTransport>(mcastEp, std::move(rxSock), std::move(txSock),
                                                       m_mcastConfig.linkType);

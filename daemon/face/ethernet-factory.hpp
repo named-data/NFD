@@ -121,6 +121,7 @@ private:
     ethernet::Address group = ethernet::getDefaultMulticastAddress();
     ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
+    bool enableMulticastSuppression = false;
   };
   MulticastConfig m_mcastConfig;
 

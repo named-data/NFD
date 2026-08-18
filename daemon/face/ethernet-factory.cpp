@@ -107,6 +107,9 @@ EthernetFactory::doProcessConfig(OptionalConfigSection configSection,
         bool wantAdHoc = ConfigFile::parseYesNo(pair, "face_system.ether");
         mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
       }
+      else if (key == "mcast_suppression") {
+        mcastConfig.enableMulticastSuppression = ConfigFile::parseYesNo(pair, "face_system.ether");
+      }
       else if (key == "whitelist") {
         mcastConfig.netifPredicate.parseWhitelist(value);
       }
@@ -248,6 +251,7 @@ EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
   GenericLinkService::Options opts;
   opts.allowFragmentation = true;
   opts.allowReassembly = true;
+  opts.enableMulticastSuppression = m_mcastConfig.enableMulticastSuppression;
 
   auto linkService = make_unique<GenericLinkService>(opts);
   auto transport = make_unique<MulticastEthernetTransport>(netif, address, m_mcastConfig.linkType);

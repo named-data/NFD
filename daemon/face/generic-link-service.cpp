@@ -48,6 +48,7 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   m_reassembler.beforeTimeout.connect([this] (auto&&...) { ++nReassemblyTimeouts; });
   m_reliability.onDroppedInterest.connect([this] (const auto& i) { notifyDroppedInterest(i); });
   nReassembling.observe(&m_reassembler);
+  setMulticastSuppression(m_options.enableMulticastSuppression);
 }
 
 void
@@ -57,6 +58,7 @@ GenericLinkService::setOptions(const GenericLinkService::Options& options)
   m_fragmenter.setOptions(m_options.fragmenterOptions);
   m_reassembler.setOptions(m_options.reassemblerOptions);
   m_reliability.setOptions(m_options.reliabilityOptions);
+  setMulticastSuppression(m_options.enableMulticastSuppression);
 }
 
 ssize_t
